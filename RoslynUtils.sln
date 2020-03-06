@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneralRoslyn", "GeneralRos
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectAssetsJson", "ProjectAssetsJson\ProjectAssetsJson.csproj", "{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "external", "external", "{D6E68EA2-FEF0-4FE6-96F6-60A909D632A8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "J4JLogging", "..\J4JLogging\J4JLogging\J4JLogging.csproj", "{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +25,16 @@ Global
 		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8} = {D6E68EA2-FEF0-4FE6-96F6-60A909D632A8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B6C4AD5-74D8-42B9-9AFA-2C0FE1CC0357}
