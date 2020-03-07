@@ -4,7 +4,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class WarningProperty : ProjectAssetsBase, ILoadFromNamed<List<string>>
+    public class WarningProperty : ProjectAssetsBase, IInitializeFromNamed<List<string>>
     {
         public WarningProperty( IJ4JLogger<ProjectAssetsBase> logger ) 
             : base( logger )
@@ -14,9 +14,9 @@ namespace J4JSoftware.Roslyn
         public WarningType WarningType { get; set; }
         public List<string> Codes { get; set; }
 
-        public bool Load( string rawName, List<string> container )
+        public bool Initialize( string rawName, List<string> container )
         {
-            if( !ValidateLoadArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container ) )
                 return false;
 
             WarningType warnType;

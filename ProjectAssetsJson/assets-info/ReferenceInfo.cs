@@ -6,18 +6,17 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ReferenceInfo
+    public class ReferenceInfo : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
     {
-        private readonly IJ4JLogger<ReferenceInfo> _logger;
         private readonly Func<DependencyInfo> _diCreator;
 
         public ReferenceInfo(
             Func<DependencyInfo> diCreator,
             IJ4JLogger<ReferenceInfo> logger
         )
+            : base( logger )
         {
-            _diCreator = diCreator ?? throw new NullReferenceException( nameof( diCreator ) );
-            _logger = logger ?? throw new NullReferenceException( nameof( logger ) );
+            _diCreator = diCreator ?? throw new NullReferenceException( nameof(diCreator) );
         }
 
         public string Assembly { get; set; }
@@ -27,23 +26,12 @@ namespace J4JSoftware.Roslyn
         public List<string> Runtime { get; set; }
         public List<DependencyInfo> Dependencies { get; set; }
 
-        public bool Load( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container )
         {
-            if( container == null )
-            {
-                _logger.Error( $"Undefined {nameof( container )}" );
-
+            if( !ValidateInitializationArguments( rawName, container ) )
                 return false;
-            }
 
-            if( String.IsNullOrEmpty( rawName ) )
-            {
-                _logger.Error( $"Undefined or empty {nameof( rawName )}" );
-
-                return false;
-            }
-
-            if( !VersionedText.CreateVersionedText(rawName, out var verText, _logger) )
+            if( !VersionedText.CreateVersionedText(rawName, out var verText, Logger) )
                 return false;
 
             Assembly = verText.TextComponent;
@@ -60,7 +48,7 @@ namespace J4JSoftware.Roslyn
 
             if( depDict == null )
             {
-                _logger.Error(
+                Logger.Error(
                     $"{nameof( container )} does not have a 'dependencies' property which is an {nameof( ExpandoObject )}" );
 
                 return false;
@@ -72,7 +60,7 @@ namespace J4JSoftware.Roslyn
             {
                 if( kvp.Value is string versionText )
                 {
-                    if( VersionedText.TryParseSemanticVersion( versionText, out var version, _logger ) )
+                    if( VersionedText.TryParseSemanticVersion( versionText, out var version, Logger ) )
                     {
                         var newItem = _diCreator();
 

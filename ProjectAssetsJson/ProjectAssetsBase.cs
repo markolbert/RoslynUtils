@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
     public class ProjectAssetsBase
     {
+        public static ExpandoObject RootContainer { get; set; }
+
         public ProjectAssetsBase(
             IJ4JLogger<ProjectAssetsBase> logger
         )
@@ -18,21 +21,21 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger<ProjectAssetsBase> Logger { get; }
 
-        protected virtual bool ValidateLoadArguments<TContainer>( 
+        protected virtual bool ValidateInitializationArguments<TContainer>( 
             string rawName, 
             TContainer container, 
             [CallerMemberName] string callerName = "" )
         {
             if( container == null )
             {
-                Logger.Error( $"Undefined {nameof( container )} in {this.GetType().Name}::{callerName}" );
+                Logger.Error( $"Undefined {nameof( container )}, {nameof( rawName )} is '{rawName}' (called from {GetCallerPath( callerName )})" );
 
                 return false;
             }
 
             if( String.IsNullOrEmpty( rawName ) )
             {
-                Logger.Error( $"Undefined or empty {nameof( rawName )} in {this.GetType().Name}::{callerName}" );
+                Logger.Error( $"Undefined or empty {nameof( rawName )}  (called from {GetCallerPath( callerName )})" );
 
                 return false;
             }
@@ -40,13 +43,13 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected virtual bool ValidateLoadArguments<TContainer>( 
+        protected virtual bool ValidateInitializationArguments<TContainer>( 
             TContainer container, 
             [CallerMemberName] string callerName = "" )
         {
             if( container == null )
             {
-                Logger.Error( $"Undefined {nameof( container )} in {this.GetType().Name}::{callerName}" );
+                Logger.Error( $"Undefined {nameof( container )} (called from {GetCallerPath( callerName )})" );
 
                 return false;
             }
@@ -58,8 +61,9 @@ namespace J4JSoftware.Roslyn
             ExpandoObject container, 
             Func<TItem> itemCreator, 
             out List<TItem> result,
-            bool containerCanBeNull = false )
-            where TItem : ILoadFromNamed<TContainer>
+            bool containerCanBeNull = false,
+            [CallerMemberName] string callerName = "")
+            where TItem : IInitializeFromNamed<TContainer>
         {
             if( container == null )
             {
@@ -68,7 +72,7 @@ namespace J4JSoftware.Roslyn
                 if( containerCanBeNull )
                     return true;
 
-                Logger.Error( $"Undefined {nameof( container )}" );
+                Logger.Error( $"Undefined {nameof( container )} (called from {GetCallerPath( callerName )})" );
 
                 return false;
             }
@@ -82,14 +86,20 @@ namespace J4JSoftware.Roslyn
                 {
                     var newItem = itemCreator();
 
-                    if( newItem.Load( kvp.Key, childContainer ) )
+                    if( newItem.Initialize( kvp.Key, childContainer ) )
                         result.Add( newItem );
                     else
                         isOkay = false;
                 }
                 else
                 {
-                    Logger.Error( $"{kvp.Key} property is not a {nameof( ExpandoObject )}" );
+                    // empty json arrays are always List<object>...which likely won't be the type of
+                    // list defined by TContainer. so check for that case
+                    if( kvp.Value is List<object> objArray && ( objArray.Count <= 0 ) ) continue;
+
+                    Logger.Error(
+                        $"{kvp.Key} property is not a {nameof(ExpandoObject)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container )}" );
+
                     isOkay = false;
                 }
             }
@@ -103,7 +113,8 @@ namespace J4JSoftware.Roslyn
         protected bool LoadNamesFromContainer( 
             ExpandoObject container, 
             out List<string> result, 
-            bool containerCanBeNull = false )
+            bool containerCanBeNull = false,
+            [CallerMemberName] string callerName = "" )
         {
             if( container == null )
             {
@@ -112,7 +123,7 @@ namespace J4JSoftware.Roslyn
                 if( containerCanBeNull )
                     return true;
 
-                Logger.Error($"Undefined {nameof(container)}"  );
+                Logger.Error($"Undefined {nameof(container)} (called from {GetCallerPath( callerName )})"  );
 
                 return false;
             }
@@ -133,10 +144,19 @@ namespace J4JSoftware.Roslyn
             bool optional = false,
             [CallerMemberName] string callerName = "" )
         {
-            if( container == null || String.IsNullOrEmpty( propName ) )
+            if( container == null )
             {
                 Logger.Error(
-                    $"Undefined {nameof(container)} and/or undefined/empty {nameof(propName)} (called from {GetCallerPath( callerName )})" );
+                    $"Undefined {nameof(container)} (called from {GetCallerPath( callerName )})" );
+                result = default;
+
+                return false;
+            }
+
+            if( String.IsNullOrEmpty( propName ) )
+            {
+                Logger.Error(
+                    $"Undefined/empty {nameof(propName)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container )}" );
                 result = default;
 
                 return false;
@@ -175,21 +195,20 @@ namespace J4JSoftware.Roslyn
 
             if( !hasKey )
             {
+                result = default;
+
+                var mesg =
+                    $"{nameof(container)} doesn't contain a {propName} property (called from {GetCallerPath( callerName )}){GetPropertyPath( container )}";
+
                 // it's okay if optional properties don't exist
                 if( optional )
                 {
-                    result = default;
+                    Logger.Information( mesg );
 
                     return true;
                 }
 
-                var mesg =
-                    $"{nameof(container)} doesn't contain a {propName} property (called from {GetCallerPath( callerName )})";
-
-                if( optional ) Logger.Information( mesg );
-                else Logger.Error( mesg );
-
-                result = default;
+                Logger.Error( mesg );
 
                 return false;
             }
@@ -209,9 +228,59 @@ namespace J4JSoftware.Roslyn
             return false;
         }
 
-        protected string GetCallerPath( string callerName )
+        protected string GetCallerPath( string callerName, [CallerMemberName] string immediateCaller = "" )
         {
-            return $"{this.GetType().Name}::{callerName}";
+            return $"{this.GetType().Name}::{callerName}::{immediateCaller}";
+        }
+
+        protected string GetPropertyPath<TContainer>( TContainer toFind )
+        {
+            StringBuilder sb = new StringBuilder();
+            var propertyStack = new Stack<string>();
+
+            if( TraverseContainerTree<TContainer>( toFind, RootContainer, propertyStack ) )
+            {
+                while( propertyStack.Count > 0 )
+                {
+                    if( sb.Length > 0 ) sb.Insert( 0, "->" );
+                    sb.Insert( 0, propertyStack.Pop() );
+                }
+            }
+
+            if( sb.Length > 0 )
+            {
+                sb.Insert( 0, " [" );
+                sb.Append( "]" );
+            }
+
+            return sb.ToString();
+        }
+
+        protected bool TraverseContainerTree<TContainer>( TContainer toFind, ExpandoObject curExpando, Stack<string> propertyStack )
+        {
+            var asDict = (IDictionary<string, object>) curExpando;
+
+            foreach( var kvp in asDict )
+            {
+                switch( kvp.Value )
+                {
+                    case TContainer container when Object.Equals( container, toFind ):
+                        propertyStack.Push( kvp.Key );
+                        return true;
+
+                    case ExpandoObject expando:
+                        propertyStack.Push(kvp.Key);
+
+                        if( TraverseContainerTree<TContainer>( toFind, expando, propertyStack ))
+                            return true;
+
+                        break;
+                }
+            }
+
+            propertyStack.Pop();
+
+            return false;
         }
     }
 }

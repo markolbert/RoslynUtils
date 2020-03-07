@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
         public List<string> PackageFolders { get; set; }
         public ProjectInfo Project { get; set; }
 
-        public bool Load( string projectAssetsPath )
+        public bool Initialize( string projectAssetsPath )
         {
             if( String.IsNullOrEmpty( projectAssetsPath ) )
             {
@@ -71,17 +71,15 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            return Load( expando );
+            return Initialize( expando );
         }
 
-        public bool Load( ExpandoObject container )
+        public bool Initialize( ExpandoObject container )
         {
-            if( container == null )
-            {
-                Logger.Error( $"Undefined {nameof(container)}" );
-
+            if( !ValidateInitializationArguments( container ) )
                 return false;
-            }
+
+            RootContainer = container;
 
             if( !GetProperty<ExpandoObject>( container, "targets", out var tgtDict )
                 || !GetProperty<ExpandoObject>( container, "libraries", out var libDict )
@@ -100,7 +98,7 @@ namespace J4JSoftware.Roslyn
                 || !LoadFromContainer<ProjectFileDependencyGroup, List<string>>( projFileDepDict, _pfdgCreator,
                     out var pfdgList )
                 || !LoadNamesFromContainer( pkgDict, out var pkgList )
-                || !project.Load( projDict ) )
+                || !project.Initialize( projDict ) )
                 return false;
 
             Version = version;

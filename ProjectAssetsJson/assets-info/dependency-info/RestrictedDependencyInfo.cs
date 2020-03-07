@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn
         public SemanticVersion Version { get; set; }
         public VersionConstraint Constraint { get; set; }
 
-        public virtual bool Load( string text )
+        public virtual bool Initialize( string text )
         {
             var parts = text.Split( ' ', StringSplitOptions.RemoveEmptyEntries );
 

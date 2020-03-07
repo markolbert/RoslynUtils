@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
@@ -51,8 +52,13 @@ namespace J4JSoftware.Roslyn
                     AddItemType<decimal>();
                     break;
 
+                case ExpandoObject eoVal:
+                    _items.Add( eoVal );
+                    AddItemType<ExpandoObject>();
+                    break;
+
                 default:
-                    _items.Add(value  );
+                    _items.Add( value );
                     AddItemType<object>();
                     break;
             }

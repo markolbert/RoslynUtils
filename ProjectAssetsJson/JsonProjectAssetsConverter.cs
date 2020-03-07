@@ -9,29 +9,29 @@ namespace J4JSoftware.Roslyn
 {
     public class JsonProjectAssetsConverter : JsonConverter<ExpandoObject>
     {
-        private readonly Stack<ExpandoObject> _containers = new Stack<ExpandoObject>();
-        private readonly ITypedListCreator _listCreator;
+        private readonly Stack<ExpandoObject> _expandos = new Stack<ExpandoObject>();
         private readonly IJ4JLogger<JsonProjectAssetsConverter> _logger;
+        private readonly Stack<string> _propertyNames = new Stack<string>();
+        private readonly ITypedListCreator _listBuilder;
 
-        private string _propName;
         private bool _buildingArray;
 
         public JsonProjectAssetsConverter(
-            ITypedListCreator listCreator,
+            ITypedListCreator listBuilder,
             IJ4JLogger<JsonProjectAssetsConverter> logger
         )
         {
-            _listCreator = listCreator ?? throw new NullReferenceException( nameof(listCreator) );
+            _listBuilder = listBuilder ?? throw new NullReferenceException( nameof(listBuilder) );
             _logger = logger ?? throw new NullReferenceException( nameof(logger) );
         }
 
         public override ExpandoObject Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )
         {
-            _containers.Push( new ExpandoObject() );
+            _expandos.Push( new ExpandoObject() );
 
             IterateTokens(ref reader );
 
-            return (ExpandoObject) _containers.Pop();
+            return (ExpandoObject) _expandos.Pop();
         }
 
         protected void IterateTokens( ref Utf8JsonReader reader )
@@ -47,13 +47,12 @@ namespace J4JSoftware.Roslyn
             switch( reader.TokenType )
             {
                 case JsonTokenType.StartObject:
-                    var expando = new ExpandoObject();
+                    // containers can be either a named property or
+                    // an unnamed item that's part of a list...so we decide what to 
+                    // do after the object is completed/closed
 
-                    RecordValue( expando );
-
-                    // push new container onto stack after adding property 
-                    // because otherwise you'll create a self-reference
-                    _containers.Push( expando );
+                    // push new container onto stack 
+                    _expandos.Push( new ExpandoObject() );
 
                     IterateTokens( ref reader );
 
@@ -61,12 +60,11 @@ namespace J4JSoftware.Roslyn
 
                 case JsonTokenType.EndObject:
                     // we don't want to pop off what is hopefully the final result
-                    // on the last EndObject
-                    if( _containers.Count > 1 )
-                        _containers.Pop();
-
-                    // erase the existing name
-                    _propName = null;
+                    // on the last EndObject (the very last EndObject can't be for an
+                    // expando that's in a list because lists can't define/close a
+                    // json file
+                    if( _expandos.Count > 1 )
+                        RecordValue( _expandos.Pop() );
 
                     return;
 
@@ -74,7 +72,7 @@ namespace J4JSoftware.Roslyn
                     // we don't create the value list at this point because
                     // we don't yet know what kind of List<> to create
                     _buildingArray = true;
-                    _listCreator.Clear();
+                    _listBuilder.Clear();
 
                     IterateTokens( ref reader );
 
@@ -86,14 +84,14 @@ namespace J4JSoftware.Roslyn
                     // to itself
                     _buildingArray = false;
 
-                    RecordValue( _listCreator.GetList() );
+                    RecordValue( _listBuilder.GetList() );
 
-                    _listCreator.Clear();
+                    _listBuilder.Clear();
 
                     return;
 
                 case JsonTokenType.PropertyName:
-                    _propName = reader.GetString();
+                    _propertyNames.Push( reader.GetString() );
 
                     break;
 
@@ -137,20 +135,20 @@ namespace J4JSoftware.Roslyn
 
         protected void RecordValue<TProp>( TProp value )
         {
+            if( String.IsNullOrEmpty( _propertyNames.Peek() ))
+                System.Diagnostics.Debugger.Break();
+
             // where we record the value depends on whether or not
             // we're in the midst of building an array
-            if( _buildingArray )
-            {
-                // just add the value to the list creator
-                _listCreator.Add( value );
-            }
+            
+            // if we're building an array just add the value to the list builder
+            if( _buildingArray ) _listBuilder.Add( value );
             else
             {
-                if( !_containers.Peek().TryAdd( _propName, value ) )
-                    _logger.Error( $"Failed to add property '{_propName}' to container" );
+                var propName = _propertyNames.Pop();
 
-                // discard the property name once we've added the property
-                _propName = null;
+                if( !_expandos.Peek().TryAdd( propName, value ) )
+                    _logger.Error( $"Failed to add property '{propName}' to container" );
             }
         }
 

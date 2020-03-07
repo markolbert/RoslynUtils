@@ -1,46 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Runtime.CompilerServices;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TargetInfo : ILoadFromNamed<ExpandoObject>
+    public class TargetInfo : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
     {
         private readonly Func<ReferenceInfo> _refCreator;
-        private readonly IJ4JLogger<TargetInfo> _logger;
 
         public TargetInfo(
             Func<ReferenceInfo> refCreator,
             IJ4JLogger<TargetInfo> logger
         )
+            : base( logger )
         {
-            _refCreator = refCreator ?? throw new NullReferenceException( nameof( refCreator ) );
-            _logger = logger ?? throw new NullReferenceException( nameof( logger ) );
+            _refCreator = refCreator ?? throw new NullReferenceException( nameof(refCreator) );
         }
 
         public CSharpFrameworks Target { get; set; }
         public SemanticVersion Version { get; set; }
         public List<ReferenceInfo> Packages { get; set; }
 
-        public bool Load( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container )
         {
-            if( container == null )
-            {
-                _logger.Error( $"Undefined {nameof( container )}" );
-
+            if( !ValidateInitializationArguments( rawName, container ) )
                 return false;
-            }
 
-            if( String.IsNullOrEmpty( rawName ) )
-            {
-                _logger.Error( $"Undefined or empty {nameof( rawName )}" );
-
-                return false;
-            }
-
-            if( !TargetFramework.CreateTargetFramework( rawName, out var tgtFramework, _logger ) )
+            if( !TargetFramework.CreateTargetFramework( rawName, out var tgtFramework, Logger ) )
                 return false;
 
             Target = tgtFramework.Framework;
@@ -56,14 +45,14 @@ namespace J4JSoftware.Roslyn
 
                 if( kvp.Value is ExpandoObject childContainer )
                 {
-                    if( newItem.Load( kvp.Key, childContainer ) )
+                    if( newItem.Initialize( kvp.Key, childContainer ) )
                         Packages.Add( newItem );
                     else
                         retVal = false;
                 }
                 else
                 {
-                    _logger.Error( $"{kvp.Key} property is not a {nameof( ExpandoObject )}" );
+                    Logger.Error( $"{kvp.Key} property is not a {nameof( ExpandoObject )}" );
 
                     retVal = false;
                 }

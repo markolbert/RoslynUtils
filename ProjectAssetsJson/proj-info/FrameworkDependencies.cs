@@ -29,9 +29,9 @@ namespace J4JSoftware.Roslyn
         public List<FrameworkLibraryReference> FrameworkLibraryReferences { get; set; }
         public string RuntimeIdentifierGraphPath { get; set; }
 
-        public override bool Load( string rawName, ExpandoObject container )
+        public override bool Initialize( string rawName, ExpandoObject container )
         {
-            if( !ValidateLoadArguments( rawName, container ) )
+            if( !base.Initialize( rawName, container ) )
                 return false;
 
             if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework(rawName, out var tgtFramework, Logger ))

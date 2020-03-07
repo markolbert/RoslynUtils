@@ -6,7 +6,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependencyList : DependencyInfoBase, ILoadFromNamed<ExpandoObject>
+    public class DependencyList : DependencyInfoBase, IInitializeFromNamed<ExpandoObject>
     {
         public DependencyList( IJ4JLogger<DependencyList> logger ) 
             : base( logger )
@@ -16,9 +16,9 @@ namespace J4JSoftware.Roslyn
         public ReferenceType TargetType { get; set; }
         public List<SemanticVersion> Versions { get; set; }
 
-        public virtual bool Load( string rawName, ExpandoObject container )
+        public virtual bool Initialize( string rawName, ExpandoObject container )
         {
-            if( !ValidateLoadArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container ) )
                 return false;
 
             if( !GetProperty<string>( container, "target", out var tgtTypeText ) )

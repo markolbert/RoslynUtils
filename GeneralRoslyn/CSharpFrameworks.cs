@@ -4,6 +4,7 @@
     {
         Net,
         NetCoreApp,
-        NetStandard
+        NetStandard,
+        NetFramework
     }
 }

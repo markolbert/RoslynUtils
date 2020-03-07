@@ -3,7 +3,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class FrameworkLibraryReference : ProjectAssetsBase, ILoadFromNamed<ExpandoObject>
+    public class FrameworkLibraryReference : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
     {
         public FrameworkLibraryReference( IJ4JLogger<ProjectAssetsBase> logger ) 
             : base( logger )
@@ -13,9 +13,9 @@ namespace J4JSoftware.Roslyn
         public string LibraryName { get; set; }
         public string PrivateAssets { get; set; }
 
-        public bool Load( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container )
         {
-            if( !ValidateLoadArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container ) )
                 return false;
 
             if( !GetProperty<string>( container, "privateAssets", out var privateAssets ) )

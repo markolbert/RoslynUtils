@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Runtime.CompilerServices;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ILoadFromNamed<in TContainer>
-    {
-        bool Load( string rawName, TContainer container );
-    }
-
-    public class LibraryInfo : ProjectAssetsBase, ILoadFromNamed<ExpandoObject>
+    public class LibraryInfo : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
     {
         public LibraryInfo(
             IJ4JLogger<LibraryInfo> logger
@@ -27,9 +23,9 @@ namespace J4JSoftware.Roslyn
         public string Path { get; set; }
         public List<string> Files { get; set; }
 
-        public bool Load( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container )
         {
-            if( !ValidateLoadArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container ) )
                 return false;
 
             if( !VersionedText.CreateVersionedText( rawName, out var verText, Logger ) )
@@ -46,9 +42,11 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !GetProperty<string>( container, "SHA512", out var sha512 )
+            var isProject = libType == ReferenceType.Project;
+
+            if( !GetProperty<string>( container, "SHA512", out var sha512, optional: isProject )
                 || !GetProperty<string>( container, "path", out var path )
-                || !GetProperty<List<string>>( container, "files", out var files )
+                || !GetProperty<List<string>>( container, "files", out var files, optional: isProject )
             )
                 return false;
 

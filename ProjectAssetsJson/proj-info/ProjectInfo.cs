@@ -30,9 +30,9 @@ namespace J4JSoftware.Roslyn
         public List<FrameworkReferences> Frameworks { get; set; }
         public List<WarningProperty> WarningProperties { get; set; }
 
-        public bool Load( ExpandoObject container )
+        public bool Initialize( ExpandoObject container )
         {
-            if( !ValidateLoadArguments( container ) )
+            if( !ValidateInitializationArguments( container ) )
                 return false;
 
             if( !GetProperty<string>( container, "version", out var versionText )

@@ -20,9 +20,9 @@ namespace J4JSoftware.Roslyn
 
         public List<ProjectReference> ProjectReferences { get; set; }
 
-        public override bool Load( string rawName, ExpandoObject container )
+        public override bool Initialize( string rawName, ExpandoObject container )
         {
-            if( !base.Load( rawName, container ) )
+            if( !base.Initialize( rawName, container ) )
                 return false;
 
             if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework(rawName, out var tgtFramework, Logger ) )
