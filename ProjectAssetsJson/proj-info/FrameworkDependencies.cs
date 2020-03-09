@@ -29,27 +29,29 @@ namespace J4JSoftware.Roslyn
         public List<FrameworkLibraryReference> FrameworkLibraryReferences { get; set; }
         public string RuntimeIdentifierGraphPath { get; set; }
 
-        public override bool Initialize( string rawName, ExpandoObject container )
+        public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !base.Initialize( rawName, container ) )
+            if( !base.Initialize( rawName, container, context ) )
                 return false;
 
-            if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework(rawName, out var tgtFramework, Logger ))
+            if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework( rawName, out var tgtFramework, Logger ) )
                 return false;
 
-            if( !GetProperty<ExpandoObject>( container, "dependencies", out var depContainer )
-                || !GetProperty<List<string>>( container, "imports", out var importTexts )
-                || !GetProperty<ExpandoObject>( container, "frameworkReferences", out var fwContainer )
-                || !GetProperty<bool>( container, "assetTargetFallback", out var fallback )
-                || !GetProperty<bool>( container, "warn", out var warn )
-                || !GetProperty<string>( container, "runtimeIdentifierGraphPath", out var rtGraph )
-            )
-                return false;
+            var okay = GetProperty<ExpandoObject>( container, "dependencies", context, out var depContainer );
+            okay &= GetProperty<List<string>>( container, "imports", context, out var importTexts );
+            okay &= GetProperty<ExpandoObject>( container, "frameworkReferences", context, out var fwContainer );
+            okay &= GetProperty<bool>( container, "assetTargetFallback", context, out var fallback );
+            okay &= GetProperty<bool>( container, "warn", context, out var warn );
+            okay &= GetProperty<string>( container, "runtimeIdentifierGraphPath", context, out var rtGraph );
 
-            if( !LoadFromContainer<DependencyList, ExpandoObject>( depContainer, _depListCreator, out var depList )
-                || !LoadFromContainer<FrameworkLibraryReference, ExpandoObject>( fwContainer, _fwlCreator,
-                    out var fwList ) )
-                return false;
+            if( !okay ) return false;
+
+            okay = LoadFromContainer<DependencyList, ExpandoObject>( depContainer, _depListCreator, context,
+                out var depList );
+            okay &= LoadFromContainer<FrameworkLibraryReference, ExpandoObject>( fwContainer, _fwlCreator, context,
+                out var fwList );
+
+            if( !okay ) return false;
 
             var importsValid = true;
 

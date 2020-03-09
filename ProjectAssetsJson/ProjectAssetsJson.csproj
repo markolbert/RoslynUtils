@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -13,7 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="assets-info\LibraryCreatorFactory.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="System.Text.Json" Version="4.7.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.4.0" />
   </ItemGroup>
 
   <ItemGroup>

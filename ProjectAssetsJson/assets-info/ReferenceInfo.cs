@@ -26,9 +26,9 @@ namespace J4JSoftware.Roslyn
         public List<string> Runtime { get; set; }
         public List<DependencyInfo> Dependencies { get; set; }
 
-        public bool Initialize( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
             if( !VersionedText.CreateVersionedText(rawName, out var verText, Logger) )

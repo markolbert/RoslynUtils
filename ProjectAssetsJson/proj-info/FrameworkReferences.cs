@@ -20,18 +20,18 @@ namespace J4JSoftware.Roslyn
 
         public List<ProjectReference> ProjectReferences { get; set; }
 
-        public override bool Initialize( string rawName, ExpandoObject container )
+        public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !base.Initialize( rawName, container ) )
+            if( !base.Initialize( rawName, container, context ) )
                 return false;
 
             if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework(rawName, out var tgtFramework, Logger ) )
                 return false;
 
-            if( !GetProperty<ExpandoObject>( container, "projectReferences", out var refContainer, optional: true ) )
+            if( !GetProperty<ExpandoObject>( container, "projectReferences", context, out var refContainer, optional: true ) )
                 return false;
 
-            LoadFromContainer<ProjectReference, ExpandoObject>( refContainer, _refCreator, out var refList, containerCanBeNull: true );
+            LoadFromContainer<ProjectReference, ExpandoObject>( refContainer, _refCreator, context, out var refList, containerCanBeNull: true );
 
             TargetFramework = tgtFramework.Framework;
             TargetVersion = tgtFramework.Version;

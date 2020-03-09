@@ -16,12 +16,12 @@ namespace J4JSoftware.Roslyn
         public ReferenceType TargetType { get; set; }
         public List<SemanticVersion> Versions { get; set; }
 
-        public virtual bool Initialize( string rawName, ExpandoObject container )
+        public virtual bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "target", out var tgtTypeText ) )
+            if( !GetProperty<string>( container, "target", context, out var tgtTypeText ) )
                 return false;
 
             if( !Enum.TryParse<ReferenceType>( tgtTypeText, true, out var tgtType ) )

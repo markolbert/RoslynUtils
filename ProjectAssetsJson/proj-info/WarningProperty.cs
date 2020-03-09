@@ -14,9 +14,9 @@ namespace J4JSoftware.Roslyn
         public WarningType WarningType { get; set; }
         public List<string> Codes { get; set; }
 
-        public bool Initialize( string rawName, List<string> container )
+        public bool Initialize( string rawName, List<string> container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
             WarningType warnType;

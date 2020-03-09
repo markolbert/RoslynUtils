@@ -10,8 +10,6 @@ namespace J4JSoftware.Roslyn
 {
     public class ProjectAssetsBase
     {
-        public static ExpandoObject RootContainer { get; set; }
-
         public ProjectAssetsBase(
             IJ4JLogger<ProjectAssetsBase> logger
         )
@@ -23,7 +21,8 @@ namespace J4JSoftware.Roslyn
 
         protected virtual bool ValidateInitializationArguments<TContainer>( 
             string rawName, 
-            TContainer container, 
+            TContainer container,
+            ProjectAssetsContext context,
             [CallerMemberName] string callerName = "" )
         {
             if( container == null )
@@ -40,11 +39,19 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
+            if( context == null )
+            {
+                Logger.Error( $"Undefined or empty {nameof( context )}  (called from {GetCallerPath( callerName )})" );
+
+                return false;
+            }
+
             return true;
         }
 
         protected virtual bool ValidateInitializationArguments<TContainer>( 
             TContainer container, 
+            ProjectAssetsContext context,
             [CallerMemberName] string callerName = "" )
         {
             if( container == null )
@@ -54,12 +61,20 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
+            if( context == null )
+            {
+                Logger.Error( $"Undefined or empty {nameof( context )}  (called from {GetCallerPath( callerName )})" );
+
+                return false;
+            }
+
             return true;
         }
 
         protected bool LoadFromContainer<TItem, TContainer>( 
             ExpandoObject container, 
-            Func<TItem> itemCreator, 
+            Func<TItem> itemCreator,
+            ProjectAssetsContext context,
             out List<TItem> result,
             bool containerCanBeNull = false,
             [CallerMemberName] string callerName = "")
@@ -86,7 +101,7 @@ namespace J4JSoftware.Roslyn
                 {
                     var newItem = itemCreator();
 
-                    if( newItem.Initialize( kvp.Key, childContainer ) )
+                    if( newItem.Initialize( kvp.Key, childContainer, context ) )
                         result.Add( newItem );
                     else
                         isOkay = false;
@@ -98,7 +113,7 @@ namespace J4JSoftware.Roslyn
                     if( kvp.Value is List<object> objArray && ( objArray.Count <= 0 ) ) continue;
 
                     Logger.Error(
-                        $"{kvp.Key} property is not a {nameof(ExpandoObject)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container )}" );
+                        $"{kvp.Key} property is not a {nameof(ExpandoObject)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}" );
 
                     isOkay = false;
                 }
@@ -139,6 +154,7 @@ namespace J4JSoftware.Roslyn
         protected bool GetProperty<TProp>( 
             ExpandoObject container, 
             string propName, 
+            ProjectAssetsContext context,
             out TProp result,
             bool caseSensitive = false, 
             bool optional = false,
@@ -156,7 +172,7 @@ namespace J4JSoftware.Roslyn
             if( String.IsNullOrEmpty( propName ) )
             {
                 Logger.Error(
-                    $"Undefined/empty {nameof(propName)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container )}" );
+                    $"Undefined/empty {nameof(propName)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}" );
                 result = default;
 
                 return false;
@@ -198,7 +214,7 @@ namespace J4JSoftware.Roslyn
                 result = default;
 
                 var mesg =
-                    $"{nameof(container)} doesn't contain a {propName} property (called from {GetCallerPath( callerName )}){GetPropertyPath( container )}";
+                    $"{nameof(container)} doesn't contain a {propName} property (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}";
 
                 // it's okay if optional properties don't exist
                 if( optional )
@@ -233,12 +249,12 @@ namespace J4JSoftware.Roslyn
             return $"{this.GetType().Name}::{callerName}::{immediateCaller}";
         }
 
-        protected string GetPropertyPath<TContainer>( TContainer toFind )
+        protected string GetPropertyPath<TContainer>( TContainer toFind, ProjectAssetsContext context )
         {
             StringBuilder sb = new StringBuilder();
             var propertyStack = new Stack<string>();
 
-            if( TraverseContainerTree<TContainer>( toFind, RootContainer, propertyStack ) )
+            if( TraverseContainerTree<TContainer>( toFind, context.RootContainer, propertyStack ) )
             {
                 while( propertyStack.Count > 0 )
                 {

@@ -25,23 +25,25 @@ namespace J4JSoftware.Roslyn
         public List<string> Sources { get; set; }
         public List<object> Frameworks { get; set; }
 
-        public bool Initialize( ExpandoObject container )
+        public bool Initialize( ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( container ) )
+            if( !ValidateInitializationArguments( container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "projectStyle", out var styleText )
-                || !GetProperty<string>( container, "projectUniqueName", out var uniqueName )
-                || !GetProperty<string>( container, "projectName", out var projName )
-                || !GetProperty<string>( container, "projectPath", out var path )
-                || !GetProperty<string>( container, "packagesPath", out var pkgPath, optional : true )
-                || !GetProperty<string>( container, "outputPath", out var outPath )
-                || !GetProperty<List<string>>( container, "fallbackFolders", out var fallbackList, optional : true )
-                || !GetProperty<List<string>>( container, "configFilePaths", out var configPaths, optional : true )
-                || !GetProperty<List<string>>( container, "originalTargetFrameworks", out var origFWText )
-                || !GetProperty<ExpandoObject>( container, "sources", out var srcContainer, optional : true )
-            )
-                return false;
+            var okay = GetProperty<string>( container, "projectStyle", context, out var styleText );
+            okay &= GetProperty<string>( container, "projectUniqueName", context, out var uniqueName );
+            okay &= GetProperty<string>( container, "projectName", context, out var projName );
+            okay &= GetProperty<string>( container, "projectPath", context, out var path );
+            okay &= GetProperty<string>( container, "packagesPath", context, out var pkgPath, optional : true );
+            okay &= GetProperty<string>( container, "outputPath", context, out var outPath );
+            okay &= GetProperty<List<string>>( container, "fallbackFolders", context, out var fallbackList,
+                optional : true );
+            okay &= GetProperty<List<string>>( container, "configFilePaths", context, out var configPaths,
+                optional : true );
+            okay &= GetProperty<List<string>>( container, "originalTargetFrameworks", context, out var origFWText );
+            okay &= GetProperty<ExpandoObject>( container, "sources", context, out var srcContainer, optional : true );
+
+            if( !okay ) return false;
 
             if( !Enum.TryParse<ProjectStyle>( styleText, true, out var style ) )
             {

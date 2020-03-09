@@ -8,10 +8,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectAssetsJson", "ProjectAssetsJson\ProjectAssetsJson.csproj", "{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "external", "external", "{D6E68EA2-FEF0-4FE6-96F6-60A909D632A8}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "J4JLogging", "..\J4JLogging\J4JLogging\J4JLogging.csproj", "{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileTester", "FileTester\FileTester.csproj", "{CB651D8C-2C34-4A61-A075-E02F44B4F66F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileTester", "FileTester\FileTester.csproj", "{CB651D8C-2C34-4A61-A075-E02F44B4F66F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

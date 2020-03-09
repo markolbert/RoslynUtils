@@ -67,12 +67,12 @@ namespace J4JSoftware.Roslyn
         private readonly List<string> _patterns = new List<string>();
         private readonly string _patternList;
 
-        public VersionedText( params string[] patterns )
+        public VersionedText( string[] patterns = null )
         {
             if( patterns == null || patterns.Length == 0 )
             {
-                _patterns.Add( @"(\D*)(\d*\.?\d*)?" );
-                _patterns.Add( @"(\D*)/(\d*\.?\d*)?" );
+                _patterns.Add( @"(.*)/(\d*)[.]?(\d)?[.]?(\d)?" );
+                _patterns.Add( @"(\D*)(\d*)[.]?(\d)?[.]?(\d)?" );
             }
             else _patterns.AddRange( patterns );
 
@@ -106,17 +106,36 @@ namespace J4JSoftware.Roslyn
 
             TextComponent = result.Groups[ 1 ].Value;
 
-            // the SemanticVersion parser doesn't like 'partial' versions (e.g., '2.1' rather than '2.1.0')
-            // so use our own
-            if( !TryParseSemanticVersion(result.Groups[2].Value, out var version, logger))
-            {
-                LastError = $"Couldn't parse version text '{result.Groups[ 2 ].Value}' to a {nameof( SemanticVersion )}";
-                logger?.Error(LastError);
+            // the number of groups = number of SemanticVersion 'levels' plus 2 (one for the entire string and
+            // one for the text component)
+            var svLevels = result.Groups.Where( ( g, idx ) => idx > 1 )
+                .Select( g =>
+                {
+                    if( int.TryParse( g.Value, out var retVal ) )
+                        return retVal;
 
-                return false;
+                    return 0;
+                } )
+                .ToList();
+
+            // pad out to 3 levels with zeroes
+            for( int idx = 0; idx < 3; idx++ )
+            {
+                if( idx >= svLevels.Count )
+                    svLevels.Add( 0 );
             }
 
-            Version = version;
+            //// the SemanticVersion parser doesn't like 'partial' versions (e.g., '2.1' rather than '2.1.0')
+            //// so use our own
+            //if( !TryParseSemanticVersion(result.Groups[2].Value, out var version, logger))
+            //{
+            //    LastError = $"Couldn't parse version text '{result.Groups[ 2 ].Value}' to a {nameof( SemanticVersion )}";
+            //    logger?.Error(LastError);
+
+            //    return false;
+            //}
+
+            Version = new SemanticVersion( svLevels[ 0 ], svLevels[ 1 ], svLevels[ 2 ] );
 
             return true;
         }
@@ -125,7 +144,9 @@ namespace J4JSoftware.Roslyn
         {
             var match = Regex.Match( text, pattern );
 
-            if( !match.Success || match.Groups.Count != 3 )
+            // the number of groups = number of SemanticVersion 'levels' plus 2 (one for the entire string and
+            // one for the text component), so must be at least 3 (i.e., only a 'major' level)
+            if( !match.Success || match.Groups.Count < 3 )
             {
                 result = null;
 

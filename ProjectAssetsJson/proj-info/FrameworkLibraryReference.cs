@@ -13,12 +13,12 @@ namespace J4JSoftware.Roslyn
         public string LibraryName { get; set; }
         public string PrivateAssets { get; set; }
 
-        public bool Initialize( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "privateAssets", out var privateAssets ) )
+            if( !GetProperty<string>( container, "privateAssets", context, out var privateAssets ) )
                 return false;
 
             LibraryName = rawName;

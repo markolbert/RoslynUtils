@@ -14,9 +14,9 @@ namespace J4JSoftware.Roslyn
         public CSharpFrameworks TargetFramework { get; set; }
         public SemanticVersion TargetVersion { get; set; }
 
-        public virtual bool Initialize( string rawName, ExpandoObject container )
+        public virtual bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
             return true;

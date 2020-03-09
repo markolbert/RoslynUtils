@@ -13,12 +13,12 @@ namespace J4JSoftware.Roslyn
         public string ProjectName { get; set; }
         public string ProjectPath { get; set; }
 
-        public bool Initialize( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "projectPath", out var path ) )
+            if( !GetProperty<string>( container, "projectPath", context, out var path ) )
                 return false;
 
             ProjectName = rawName;

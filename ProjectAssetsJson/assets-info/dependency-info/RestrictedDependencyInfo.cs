@@ -42,5 +42,22 @@ namespace J4JSoftware.Roslyn
 
             return true;
         }
+
+        public bool MeetsConstraint( SemanticVersion toCheck )
+        {
+            if( toCheck == null ) return false;
+
+            return Constraint switch
+            {
+                VersionConstraint.GreaterThan => toCheck > Version,
+                VersionConstraint.Minimum => toCheck >= Version,
+                VersionConstraint.LessThan => toCheck < Version,
+                VersionConstraint.EqualTo => toCheck == Version,
+                VersionConstraint.Maximum => toCheck < Version,
+                VersionConstraint.Undefined => true,
+                // should never get here...
+                _ => false
+            };
+        }
     }
 }

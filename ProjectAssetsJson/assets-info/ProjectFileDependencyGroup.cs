@@ -22,9 +22,9 @@ namespace J4JSoftware.Roslyn
         public SemanticVersion TargetVersion { get; set; }
         public List<RestrictedDependencyInfo> Dependencies { get; set; }
 
-        public bool Initialize( string rawName, List<string> container )
+        public bool Initialize( string rawName, List<string> container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
             if( String.IsNullOrEmpty( rawName ) )

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 
@@ -27,32 +28,39 @@ namespace J4JSoftware.Roslyn
 
         public SemanticVersion Version { get; set; }
         public RestoreInfo Restore { get; set; }
+
+        public bool IsNetCoreApplication =>
+            Frameworks?.All( fw => fw.TargetFramework == CSharpFrameworks.NetCoreApp ) ?? false;
+
         public List<FrameworkReferences> Frameworks { get; set; }
         public List<WarningProperty> WarningProperties { get; set; }
 
-        public bool Initialize( ExpandoObject container )
+        public bool Initialize( ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( container ) )
+            if( !ValidateInitializationArguments( container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "version", out var versionText )
-                || !GetProperty<ExpandoObject>( container, "restore", out var restoreContainer )
-                || !GetProperty<ExpandoObject>( container, "frameworks", out var frameContainer )
-                || !GetProperty<ExpandoObject>( container, "warningProperties", out var warnContainer,
-                    optional : true ) )
-                return false;
+            var okay = GetProperty<string>( container, "version", context, out var versionText );
+            okay &= GetProperty<ExpandoObject>( container, "restore", context, out var restoreContainer );
+            okay &= GetProperty<ExpandoObject>( container, "frameworks", context, out var frameContainer );
+            okay &= GetProperty<ExpandoObject>( container, "warningProperties", context, out var warnContainer,
+                optional : true );
+
+            if( !okay ) return false;
 
             if( !VersionedText.TryParseSemanticVersion( versionText, out var version, Logger ) )
                 return false;
 
             var restore = _restoreCreator();
-            if( !restore.Initialize( restoreContainer ) )
+            if( !restore.Initialize( restoreContainer, context ) )
                 return false;
 
-            if( !LoadFromContainer<FrameworkReferences, ExpandoObject>( frameContainer, _fwCreator, out var fwList ) )
+            if( !LoadFromContainer<FrameworkReferences, ExpandoObject>( frameContainer, _fwCreator, context,
+                out var fwList ) )
                 return false;
-            
-            LoadFromContainer<WarningProperty, List<string>>( warnContainer, _wpCreator, out var warnList, containerCanBeNull: true );
+
+            LoadFromContainer<WarningProperty, List<string>>( warnContainer, _wpCreator, context, out var warnList,
+                containerCanBeNull : true );
 
             Version = version;
             Restore = restore;

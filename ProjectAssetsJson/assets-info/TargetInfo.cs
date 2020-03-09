@@ -24,9 +24,9 @@ namespace J4JSoftware.Roslyn
         public SemanticVersion Version { get; set; }
         public List<ReferenceInfo> Packages { get; set; }
 
-        public bool Initialize( string rawName, ExpandoObject container )
+        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
-            if( !ValidateInitializationArguments( rawName, container ) )
+            if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
             if( !TargetFramework.CreateTargetFramework( rawName, out var tgtFramework, Logger ) )
@@ -45,7 +45,7 @@ namespace J4JSoftware.Roslyn
 
                 if( kvp.Value is ExpandoObject childContainer )
                 {
-                    if( newItem.Initialize( kvp.Key, childContainer ) )
+                    if( newItem.Initialize( kvp.Key, childContainer, context ) )
                         Packages.Add( newItem );
                     else
                         retVal = false;
