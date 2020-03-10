@@ -39,14 +39,27 @@ namespace J4JSoftware.Roslyn
 
         public List<string> SourceFiles { get; private set; }
 
-        public SemanticVersion FileVersion
+        public Version DotNetVersion
         {
             get
             {
-                var text = ProjectElement?.Descendants( "FileVersion" ).FirstOrDefault()?.Value;
+                var text = ProjectElement?.Descendants( "AssemblyVersion" ).FirstOrDefault()?.Value ?? "";
 
-                if( !SemanticVersion.TryParse(text, out var parsed) )
-                    return Version;
+                if( !System.Version.TryParse( text, out var parsed ) )
+                    return new System.Version();
+
+                return parsed;
+            }
+        }
+
+        public Version FileVersion
+        {
+            get
+            {
+                var text = ProjectElement?.Descendants( "FileVersion" ).FirstOrDefault()?.Value ?? "";
+
+                if( !System.Version.TryParse(text, out var parsed) )
+                    return new System.Version();
 
                 return parsed;
             }
