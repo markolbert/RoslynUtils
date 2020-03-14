@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
-using System.Text;
 using System.Text.Json;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
@@ -213,8 +212,6 @@ namespace J4JSoftware.Roslyn
             var okay = true;
 
             // add the basic/core libraries
-            //var alc = new ProjectAssetsAssemblyLoadContext();
-
             switch( tgtFramework.Framework )
             {
                 case CSharpFrameworks.Net:
@@ -238,8 +235,6 @@ namespace J4JSoftware.Roslyn
 
                     break;
             }
-
-            okay = true;
 
             foreach( var libInfo in Libraries.Where(lib=>lib is PackageLibrary  ) )
             {

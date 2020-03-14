@@ -6,7 +6,6 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using J4JSoftware.Logging;
-using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
