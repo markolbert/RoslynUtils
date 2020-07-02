@@ -11,16 +11,16 @@ namespace J4JSoftware.Roslyn
 
         public ProjectFileDependencyGroup(
             Func<RestrictedDependencyInfo> depCreator,
-            IJ4JLogger<ProjectFileDependencyGroup> logger
+            IJ4JLogger logger
         )
             : base( logger )
         {
             _depCreator = depCreator ?? throw new NullReferenceException( nameof(depCreator) );
         }
 
-        public CSharpFrameworks TargetFramework { get; set; }
-        public SemanticVersion TargetVersion { get; set; }
-        public List<RestrictedDependencyInfo> Dependencies { get; set; }
+        public CSharpFramework TargetFramework { get; set; }
+        public SemanticVersion TargetVersion { get; set; } = new SemanticVersion( 0, 0, 0 );
+        public List<RestrictedDependencyInfo> Dependencies { get; } = new List<RestrictedDependencyInfo>();
 
         public bool Initialize( string rawName, List<string> container, ProjectAssetsContext context )
         {
@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
 
             TargetFramework = tgtFramework.Framework;
             TargetVersion = tgtFramework.Version;
-            Dependencies = new List<RestrictedDependencyInfo>();
+            Dependencies.Clear();
 
             var retVal = true;
 

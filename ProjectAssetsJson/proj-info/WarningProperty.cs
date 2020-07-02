@@ -6,13 +6,13 @@ namespace J4JSoftware.Roslyn
 {
     public class WarningProperty : ProjectAssetsBase, IInitializeFromNamed<List<string>>
     {
-        public WarningProperty( IJ4JLogger<ProjectAssetsBase> logger ) 
+        public WarningProperty( IJ4JLogger logger ) 
             : base( logger )
         {
         }
 
-        public WarningType WarningType { get; set; }
-        public List<string> Codes { get; set; }
+        public WarningType WarningType { get; private set; }
+        public List<string> Codes { get; } = new List<string>();
 
         public bool Initialize( string rawName, List<string> container, ProjectAssetsContext context )
         {
@@ -28,7 +28,9 @@ namespace J4JSoftware.Roslyn
             }
 
             WarningType = warnType;
-            Codes = container;
+
+            Codes.Clear();
+            Codes.AddRange(container);
 
             return true;
         }

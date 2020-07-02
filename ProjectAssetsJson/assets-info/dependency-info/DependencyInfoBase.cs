@@ -1,10 +1,11 @@
 ﻿using J4JSoftware.Logging;
+#pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn
 {
     public class DependencyInfoBase : ProjectAssetsBase
     {
-        protected DependencyInfoBase( IJ4JLogger<DependencyInfoBase> logger )
+        protected DependencyInfoBase( IJ4JLogger logger )
             : base( logger )
         {
         }

@@ -8,13 +8,13 @@ namespace J4JSoftware.Roslyn
 {
     public class TypedListCreator : ITypedListCreator
     {
-        private readonly IJ4JLogger<TypedListCreator> _logger;
+        private readonly IJ4JLogger _logger;
         private readonly List<object> _items = new List<object>();
         private readonly List<Type> _itemTypes = new List<Type>();
 
-        public TypedListCreator( IJ4JLogger<TypedListCreator> logger )
+        public TypedListCreator( IJ4JLogger logger )
         {
-            _logger = logger ?? throw new NullReferenceException( nameof(logger) );
+            _logger = logger;
         }
 
         public void Clear()
@@ -58,7 +58,7 @@ namespace J4JSoftware.Roslyn
                     break;
 
                 default:
-                    _items.Add( value );
+                    _items.Add( value! );
                     AddItemType<object>();
                     break;
             }
@@ -77,11 +77,11 @@ namespace J4JSoftware.Roslyn
             var listType = typeof(List<>);
             var genListType = listType.MakeGenericType( GetListType() );
 
-            var retVal = (IList) Activator.CreateInstance( genListType );
+            var retVal = Activator.CreateInstance( genListType ) as IList;
 
-            _items.ForEach(x=>retVal.Add(x));
+            _items.ForEach(x=>retVal!.Add(x));
 
-            return retVal;
+            return retVal!;
         }
 
         private void AddItemType<TItem>()

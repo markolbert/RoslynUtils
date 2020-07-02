@@ -8,13 +8,13 @@ namespace J4JSoftware.Roslyn
 {
     public class DependencyList : DependencyInfoBase, IInitializeFromNamed<ExpandoObject>
     {
-        public DependencyList( IJ4JLogger<DependencyList> logger ) 
+        public DependencyList( IJ4JLogger logger ) 
             : base( logger )
         {
         }
 
         public ReferenceType TargetType { get; set; }
-        public List<SemanticVersion> Versions { get; set; }
+        public List<SemanticVersion> Versions { get; } = new List<SemanticVersion>();
 
         public virtual bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
@@ -41,14 +41,14 @@ namespace J4JSoftware.Roslyn
 
             var versionTexts = rawName.Split( ',', StringSplitOptions.RemoveEmptyEntries );
 
-            Versions = new List<SemanticVersion>();
+            Versions.Clear();
 
             var retVal = true;
 
             foreach( var versionText in versionTexts )
             {
                 if( VersionedText.TryParseSemanticVersion( versionText, out var version, Logger ) )
-                    Versions.Add( version );
+                    Versions.Add( version! );
                 else retVal = false;
             }
 

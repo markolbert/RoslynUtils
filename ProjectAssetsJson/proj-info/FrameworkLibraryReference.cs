@@ -5,13 +5,13 @@ namespace J4JSoftware.Roslyn
 {
     public class FrameworkLibraryReference : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
     {
-        public FrameworkLibraryReference( IJ4JLogger<ProjectAssetsBase> logger ) 
+        public FrameworkLibraryReference( IJ4JLogger logger ) 
             : base( logger )
         {
         }
 
-        public string LibraryName { get; set; }
-        public string PrivateAssets { get; set; }
+        public string LibraryName { get; set; } = string.Empty;
+        public string PrivateAssets { get; set; } = string.Empty;
 
         public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {

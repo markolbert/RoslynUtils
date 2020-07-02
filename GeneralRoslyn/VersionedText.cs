@@ -9,15 +9,17 @@ namespace J4JSoftware.Roslyn
 {
     public class VersionedText : IEquatable<VersionedText>
     {
-        public static bool CreateVersionedText<TCaller>( string text, out VersionedText result, IJ4JLogger<TCaller> logger = null )
+        public static bool CreateVersionedText( string text, out VersionedText result, IJ4JLogger? logger )
         {
             result = new VersionedText();
 
             return result.Initialize( text, logger );
         }
 
-        public static bool TryParseSemanticVersion<TCaller>( string text, out SemanticVersion result,
-            IJ4JLogger<TCaller> logger = null )
+        public static bool TryParseSemanticVersion( 
+            string text, 
+            out SemanticVersion? result,
+            IJ4JLogger logger )
         {
             var pattern = @"(\d *)\.?(\d *)?\.?(\d *)?";
             var matches = Regex.Match( text, pattern );
@@ -30,13 +32,13 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            string unparsedText = null;
+            string? unparsedText = null;
 
-            var numbers = matches.Groups
+            var numbers = matches.Groups.Cast<Group>()
                 .Where( ( g, idx ) => idx > 0 && !String.IsNullOrEmpty(g.Value) )
                 .Select( g =>
                 {
-                    if( int.TryParse( g.Value, out var number ) )
+                    if( int.TryParse( g.Value as string, out var number ) )
                         return number;
 
                     unparsedText = g.Value;
@@ -55,7 +57,7 @@ namespace J4JSoftware.Roslyn
 
             for( int idx = 0; idx < 3; idx++ )
             {
-                if( idx >= numbers.Count )
+                if( idx >= numbers.Count() )
                     numbers.Add( 0 );
             }
 
@@ -67,7 +69,7 @@ namespace J4JSoftware.Roslyn
         private readonly List<string> _patterns = new List<string>();
         private readonly string _patternList;
 
-        public VersionedText( string[] patterns = null )
+        public VersionedText( string[]? patterns = null )
         {
             if( patterns == null || patterns.Length == 0 )
             {
@@ -80,15 +82,15 @@ namespace J4JSoftware.Roslyn
             _patternList = String.Join( " ", _patterns );
         }
 
-        public virtual string TextComponent { get; protected set; }
-        public SemanticVersion Version { get; protected set; }
-        public string LastError { get; protected set; }
+        public virtual string TextComponent { get; protected set; } = string.Empty;
+        public SemanticVersion Version { get; protected set; } = new SemanticVersion( 0, 0, 0 );
+        public string? LastError { get; protected set; }
 
-        public virtual bool Initialize<TCaller>( string text, IJ4JLogger<TCaller> logger = null )
+        public virtual bool Initialize( string text, IJ4JLogger? logger )
         {
             LastError = null;
 
-            Match result = null;
+            Match? result = null;
 
             foreach( var pattern in _patterns )
             {
@@ -108,10 +110,10 @@ namespace J4JSoftware.Roslyn
 
             // the number of groups = number of SemanticVersion 'levels' plus 2 (one for the entire string and
             // one for the text component)
-            var svLevels = result.Groups.Where( ( g, idx ) => idx > 1 )
+            var svLevels = result.Groups.Cast<Group>().Where( ( g, idx ) => idx > 1 )
                 .Select( g =>
                 {
-                    if( int.TryParse( g.Value, out var retVal ) )
+                    if( int.TryParse( g.Value as string, out var retVal ) )
                         return retVal;
 
                     return 0;
@@ -121,7 +123,7 @@ namespace J4JSoftware.Roslyn
             // pad out to 3 levels with zeroes
             for( int idx = 0; idx < 3; idx++ )
             {
-                if( idx >= svLevels.Count )
+                if( idx >= svLevels.Count() )
                     svLevels.Add( 0 );
             }
 
@@ -140,7 +142,7 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected bool TryMatch( string text, string pattern, out Match result )
+        protected bool TryMatch( string text, string pattern, out Match? result )
         {
             var match = Regex.Match( text, pattern );
 
@@ -158,14 +160,14 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public bool Equals( VersionedText other )
+        public bool Equals( VersionedText? other )
         {
             if( ReferenceEquals( null, other ) ) return false;
             if( ReferenceEquals( this, other ) ) return true;
             return TextComponent == other.TextComponent && Equals( Version, other.Version );
         }
 
-        public override bool Equals( object obj )
+        public override bool Equals( object? obj )
         {
             if( ReferenceEquals( null, obj ) ) return false;
             if( ReferenceEquals( this, obj ) ) return true;

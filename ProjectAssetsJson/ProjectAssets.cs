@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Text.Json;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
@@ -16,7 +15,7 @@ namespace J4JSoftware.Roslyn
     {
         private class ProjectAssetsAssemblyLoadContext : AssemblyLoadContext
         {
-            protected override Assembly Load( AssemblyName assemblyName )
+            protected override Assembly? Load( AssemblyName assemblyName )
             {
                 return null;
             }
@@ -36,7 +35,7 @@ namespace J4JSoftware.Roslyn
             Func<ProjectLibrary> projLibCreator,
             Func<ProjectFileDependencyGroup> pfdgCreator,
             Func<ProjectInfo> projCreator,
-            IJ4JLogger<ProjectAssets> logger 
+            IJ4JLogger logger
             )
             : base(logger)
         {
@@ -49,14 +48,14 @@ namespace J4JSoftware.Roslyn
         }
 
         public int Version { get; private set; }
-        public string ProjectFile { get; private set; }
-        public List<TargetInfo> Targets { get; private set; }
-        public List<ILibraryInfo> Libraries { get; private set; }
-        public List<ProjectFileDependencyGroup> ProjectFileDependencyGroups { get; private set; }
-        public List<string> PackageFolders { get; private set; }
-        public ProjectInfo Project { get; private set; }
-        public string ProjectFilePath => Project?.Restore?.ProjectPath;
-        public ProjectLibrary ProjectLibrary { get; private set; }
+        public string ProjectFile { get; private set; } = string.Empty;
+        public List<TargetInfo> Targets { get; } = new List<TargetInfo>();
+        public List<ILibraryInfo> Libraries { get; } = new List<ILibraryInfo>();
+        public List<ProjectFileDependencyGroup> ProjectFileDependencyGroups { get; } = new List<ProjectFileDependencyGroup>();
+        public List<string> PackageFolders { get; } = new List<string>();
+        public ProjectInfo? Project { get; private set; }
+        public string ProjectFilePath => Project?.Restore?.ProjectPath ?? string.Empty;
+        public ProjectLibrary? ProjectLibrary { get; private set; }
 
         public bool InitializeFromProjectFile( string projectFilePath, [CallerMemberName] string callerName = "" )
         {
@@ -166,9 +165,9 @@ namespace J4JSoftware.Roslyn
             var project = _projCreator();
 
             okay = LoadFromContainer<TargetInfo, ExpandoObject>( tgtDict, _tgtCreator, context, out var tgtList );
-            okay &= LoadFromContainer<PackageLibrary, ExpandoObject>( pkgLibDict, _pkgLibCreator, context,
+            okay &= LoadFromContainer<PackageLibrary, ExpandoObject>( pkgLibDict!, _pkgLibCreator, context,
                 out var pkgLibList );
-            okay &= LoadFromContainer<ProjectLibrary, ExpandoObject>( projLibDict, _projLibCreator, context,
+            okay &= LoadFromContainer<ProjectLibrary, ExpandoObject>( projLibDict!, _projLibCreator, context,
                 out var projLibList );
             okay &= LoadFromContainer<ProjectFileDependencyGroup, List<string>>( projFileDepDict, _pfdgCreator, context,
                 out var pfdgList );
@@ -183,82 +182,89 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             Version = version;
-            Targets = tgtList;
 
-            Libraries = new List<ILibraryInfo>();
-            Libraries.AddRange( pkgLibList );
-            Libraries.AddRange( projLibList );
+            Targets.Clear();
+            Targets.AddRange(tgtList!);
 
-            ProjectFileDependencyGroups = pfdgList;
+            Libraries.Clear();
+            Libraries.AddRange( pkgLibList! );
+            Libraries.AddRange( projLibList! );
+
+            ProjectFileDependencyGroups.Clear();
+            ProjectFileDependencyGroups.AddRange(pfdgList!);
+
             Project = project;
-            PackageFolders = pkgList;
+
+            PackageFolders.Clear();
+            PackageFolders.AddRange(pkgList!);
+
             ProjectLibrary = projLib;
 
             return true;
         }
 
-        public bool GetLibraryPaths( TargetFramework tgtFramework, out List<MetadataReference> result )
+        public bool GetLibraryPaths( TargetFramework tgtFramework, out CompilationReferences? result )
         {
             result = null;
 
-            if( tgtFramework == null )
-            {
-                Logger.Error( $"Undefined {nameof(tgtFramework)}" );
+            //if( tgtFramework == null )
+            //{
+            //    Logger.Error( $"Undefined {nameof(tgtFramework)}" );
 
-                return false;
-            }
-
-            result = new List<MetadataReference>();
-            var okay = true;
+            //    return false;
+            //}
 
             // add the basic/core libraries
             switch( tgtFramework.Framework )
             {
-                case CSharpFrameworks.Net:
+                case CSharpFramework.Net:
                     Logger.Error( "net framework is not supported" );
                     return false;
 
-                case CSharpFrameworks.NetCoreApp:
+                case CSharpFramework.NetCoreApp:
                     //@TODO what goes here?
                     Logger.Error( "netcoreapp framework is not supported" );
                     return false;
 
-                case CSharpFrameworks.NetStandard:
-                    okay &= TryAddMetadataReference( "netstandard", result );
-                    okay &= TryAddMetadataReference( "System.Private.CoreLib", result );
-                    okay &= TryAddMetadataReference( "System.Private.Uri", result );
-                    okay &= TryAddMetadataReference( "System.Runtime.Extensions", result );
+                case CSharpFramework.NetStandard:
+                    result = new CompilationReferences();
 
-                    if( !okay )
-                        Logger.Error(
-                            $"Problems encountered loading standard {CSharpFrameworks.NetStandard} assemblies" );
+                    result.Add( new NamedReference( "netstandard" ) { IsVirtual = true } );
+                    //result.Add( new NamedMetadata( "System.Linq" ) );
+                    //result.Add( new NamedMetadata( "System.Private.CoreLib" ) );
+                    //result.Add( new NamedMetadata( "System.Private.Uri" ) );
+                    //result.Add( new NamedMetadata( "System.Runtime.Extensions" ) );
 
-                    break;
+                    return true;
             }
 
-            foreach( var libInfo in Libraries.Where(lib=>lib is PackageLibrary  ) )
-            {
-                // first try loading library by name
-                if( TryAddMetadataReference( libInfo.Assembly, result ) )
-                    continue;
+            //foreach( var libInfo in Libraries.Where(lib=>lib is PackageLibrary  ) )
+            //{
+            //    // first try loading library by name
+            //    if( TryAddMetadataReference( libInfo.Assembly, result ) )
+            //        continue;
 
-                // if that fails, try loading by absolute path
-                var absPath = libInfo.GetAbsolutePath( PackageFolders, tgtFramework );
+            //    // if that fails, try loading by absolute path
+            //    var absPath = libInfo.GetAbsolutePath( PackageFolders, tgtFramework );
 
-                if( String.IsNullOrEmpty( absPath ) )
-                    continue;
+            //    if( String.IsNullOrEmpty( absPath ) )
+            //        continue;
 
-                if( !TryAddMetadataReference( absPath, result, isPath: true ) )
-                {
-                    //okay = false;
-                    Logger.Warning( $"Couldn't load assembly '{absPath}'" );
-                }
-            }
+            //    if( !TryAddMetadataReference( absPath, result, isPath: true ) )
+            //    {
+            //        //okay = false;
+            //        Logger.Warning( $"Couldn't load assembly '{absPath}'" );
+            //    }
+            //}
 
-            return okay;
+            //return okay;
+
+            Logger.Error( $"Unsupported {nameof(CSharpFramework)} '{tgtFramework.Framework}'" );
+
+            return false;
         }
 
-        public bool GetSourceFiles( out List<string> srcFiles )
+        public bool GetSourceFiles( out List<string>? srcFiles )
         {
             srcFiles = null;
 
@@ -282,7 +288,7 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool FilterLibraries( ExpandoObject libDict, ReferenceType refType, ProjectAssetsContext context, out ExpandoObject result )
+        private bool FilterLibraries( ExpandoObject libDict, ReferenceType refType, ProjectAssetsContext context, out ExpandoObject? result )
         {
             result = null;
 
@@ -321,7 +327,7 @@ namespace J4JSoftware.Roslyn
 
         private bool TryAddMetadataReference( 
             string libInfo, 
-            List<MetadataReference> references, 
+            List<Microsoft.CodeAnalysis.MetadataReference> references, 
             bool isPath = false,
             [CallerMemberName] string callerName = "" )
         {
@@ -339,13 +345,13 @@ namespace J4JSoftware.Roslyn
                 if( isPath ) assembly = Assembly.LoadFile( libInfo );
                 else assembly = Assembly.Load( libInfo );
 
-                var mdRef = MetadataReference.CreateFromFile( assembly.Location );
+                var mdRef = Microsoft.CodeAnalysis.MetadataReference.CreateFromFile( assembly.Location );
                 references.Add( mdRef );
             }
-            catch( Exception e )
+            catch
             {
-                //Logger.Warning(
-                //    $"Couldn't add assembly '{libInfo}' (called from {GetCallerPath( callerName )})" );
+                Logger.Information(
+                    $"Couldn't add assembly '{libInfo}' (called from {GetCallerPath( callerName )})" );
 
                 return false;
             }

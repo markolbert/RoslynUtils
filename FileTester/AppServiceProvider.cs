@@ -1,9 +1,6 @@
-﻿using System;
-using Autofac;
+﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
-using Serilog;
-using Serilog.Events;
 
 namespace J4JSoftware.Roslyn.Testing
 {
@@ -19,21 +16,6 @@ namespace J4JSoftware.Roslyn.Testing
 
             builder.RegisterType<J4JLoggerConfiguration>()
                 .As<IJ4JLoggerConfiguration>()
-                .SingleInstance();
-
-            builder.Register<ILogger>( ( c, p ) => new LoggerConfiguration()
-                    .Enrich.FromLogContext()
-                    .SetMinimumLevel(LogEventLevel.Error )
-                    .WriteTo.Console( restrictedToMinimumLevel: LogEventLevel.Error )
-                    .WriteTo.File(
-                        path: J4JLoggingExtensions.DefineExeLogPath( "log.txt" ),
-                        restrictedToMinimumLevel: LogEventLevel.Error
-                    )
-                    .CreateLogger() )
-                .SingleInstance();
-
-            builder.RegisterGeneric( typeof( J4JLogger<> ) )
-                .As( typeof( IJ4JLogger<> ) )
                 .SingleInstance();
 
             builder.RegisterType<ProjectAssets>()

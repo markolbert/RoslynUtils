@@ -6,12 +6,12 @@ namespace J4JSoftware.Roslyn
 {
     public class DependencyInfo : DependencyInfoBase
     {
-        public DependencyInfo( IJ4JLogger<DependencyInfo> logger )
+        public DependencyInfo( IJ4JLogger logger )
             : base( logger )
         {
         }
 
-        public SemanticVersion Version { get; set; }
+        public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );
 
         public virtual bool Initialize( string text )
         {

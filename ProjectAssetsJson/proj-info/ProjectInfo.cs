@@ -17,7 +17,7 @@ namespace J4JSoftware.Roslyn
             Func<RestoreInfo> restoreCreator,
             Func<FrameworkReferences> fwCreator,
             Func<WarningProperty> wpCreator,
-            IJ4JLogger<ProjectInfo> logger 
+            IJ4JLogger logger
             )
             : base( logger )
         {
@@ -26,14 +26,14 @@ namespace J4JSoftware.Roslyn
             _wpCreator = wpCreator ?? throw new NullReferenceException( nameof(wpCreator) );
         }
 
-        public SemanticVersion Version { get; set; }
-        public RestoreInfo Restore { get; set; }
+        public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );
+        public RestoreInfo? Restore { get; private set; }
 
         public bool IsNetCoreApplication =>
-            Frameworks?.All( fw => fw.TargetFramework == CSharpFrameworks.NetCoreApp ) ?? false;
+            Frameworks?.All( fw => fw.TargetFramework == CSharpFramework.NetCoreApp ) ?? false;
 
-        public List<FrameworkReferences> Frameworks { get; set; }
-        public List<WarningProperty> WarningProperties { get; set; }
+        public List<FrameworkReferences> Frameworks { get; } = new List<FrameworkReferences>();
+        public List<WarningProperty> WarningProperties { get; } = new List<WarningProperty>();
 
         public bool Initialize( ExpandoObject container, ProjectAssetsContext context )
         {
@@ -62,10 +62,14 @@ namespace J4JSoftware.Roslyn
             LoadFromContainer<WarningProperty, List<string>>( warnContainer, _wpCreator, context, out var warnList,
                 containerCanBeNull : true );
 
-            Version = version;
+            Version = version!;
             Restore = restore;
-            Frameworks = fwList;
-            WarningProperties = warnList;
+
+            Frameworks.Clear();
+            Frameworks.AddRange(fwList!);
+
+            WarningProperties.Clear();
+            WarningProperties.AddRange(warnList!);
 
             return true;
         }

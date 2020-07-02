@@ -7,7 +7,7 @@ namespace J4JSoftware.Roslyn
 {
     public class TargetFramework : VersionedText, IEquatable<TargetFramework>
     {
-        public static bool CreateTargetFramework<TCaller>( string text, out TargetFramework result, IJ4JLogger<TCaller> logger = null )
+        public static bool CreateTargetFramework( string text, out TargetFramework result, IJ4JLogger? logger )
         {
             result = new TargetFramework();
 
@@ -16,20 +16,20 @@ namespace J4JSoftware.Roslyn
 
         private bool _isApp = false;
 
-        public CSharpFrameworks Framework { get; protected set; }
+        public CSharpFramework Framework { get; protected set; }
 
         public bool IsApp
         {
-            get => Framework == CSharpFrameworks.NetCoreApp || _isApp;
+            get => Framework == CSharpFramework.NetCoreApp || _isApp;
             set => _isApp = value;
         }
 
-        public override bool Initialize<TCaller>( string text, IJ4JLogger<TCaller> logger = null )
+        public override bool Initialize( string text, IJ4JLogger? logger )
         {
-            if( !base.Initialize<TCaller>( text, logger ) )
+            if( !base.Initialize( text, logger ) )
                 return false;
 
-            if( Enum.TryParse<CSharpFrameworks>( TextComponent, true, out var framework ) )
+            if( Enum.TryParse<CSharpFramework>( TextComponent, true, out var framework ) )
             {
                 Framework = framework;
 
@@ -42,15 +42,15 @@ namespace J4JSoftware.Roslyn
 
             if( !matches.Success || matches.Groups.Count < 2 )
             {
-                LastError = $"Couldn't parse framework name '{TextComponent}' to a {nameof( CSharpFrameworks )}";
+                LastError = $"Couldn't parse framework name '{TextComponent}' to a {nameof( CSharpFramework )}";
                 logger?.Error( LastError );
 
                 return false;
             }
 
-            if( !Enum.TryParse<CSharpFrameworks>( matches.Groups[1].Value, true, out var framework2 ) )
+            if( !Enum.TryParse<CSharpFramework>( matches.Groups[1].Value, true, out var framework2 ) )
             {
-                LastError = $"Couldn't parse framework name '{matches.Groups[ 1 ].Value}' to a {nameof( CSharpFrameworks )}";
+                LastError = $"Couldn't parse framework name '{matches.Groups[ 1 ].Value}' to a {nameof( CSharpFramework )}";
                 logger?.Error( LastError );
 
                 return false;
@@ -67,14 +67,14 @@ namespace J4JSoftware.Roslyn
 
             sb.Append( Framework );
 
-            if( Framework == CSharpFrameworks.Net )
+            if( Framework == CSharpFramework.Net )
                 sb.Append( Version.Major );
             else sb.Append( $"{Version.Major}.{Version.Minor}" );
 
             return sb.ToString();
         }
 
-        public override bool Equals( object obj )
+        public override bool Equals( object? obj )
         {
             if( ReferenceEquals( null, obj ) )
                 return false;
@@ -86,7 +86,7 @@ namespace J4JSoftware.Roslyn
             return Equals( (TargetFramework) obj );
         }
 
-        public bool Equals( TargetFramework other )
+        public bool Equals( TargetFramework? other )
         {
             if( ReferenceEquals( null, other ) )
                 return false;
@@ -100,17 +100,17 @@ namespace J4JSoftware.Roslyn
             return HashCode.Combine( (int) Framework, IsApp, Version );
         }
 
-        public static bool operator ==( TargetFramework left, TargetFramework right )
+        public static bool operator ==( TargetFramework? left, TargetFramework? right )
         {
             return Equals( left, right );
         }
 
-        public static bool operator !=( TargetFramework left, TargetFramework right )
+        public static bool operator !=( TargetFramework? left, TargetFramework? right )
         {
             return !Equals( left, right );
         }
 
-        public static bool operator >( TargetFramework left, TargetFramework right )
+        public static bool operator >( TargetFramework? left, TargetFramework? right )
         {
             if( left == null && right == null ) return false;
             if( left == null ) return false;
@@ -122,7 +122,7 @@ namespace J4JSoftware.Roslyn
             return left.Version > right.Version;
         }
 
-        public static bool operator <( TargetFramework left, TargetFramework right )
+        public static bool operator <( TargetFramework? left, TargetFramework? right )
         {
             if( left == null && right == null ) return false;
             if( left == null ) return true;
@@ -134,14 +134,14 @@ namespace J4JSoftware.Roslyn
             return left.Version < right.Version;
         }
 
-        public static bool operator >=( TargetFramework left, TargetFramework right )
+        public static bool operator >=( TargetFramework? left, TargetFramework? right )
         {
             if( Equals( left, right ) ) return true;
 
             return left > right;
         }
 
-        public static bool operator <=( TargetFramework left, TargetFramework right )
+        public static bool operator <=( TargetFramework? left, TargetFramework? right )
         {
             if( Equals( left, right ) ) return true;
 

@@ -1,42 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using J4JSoftware.Logging;
+using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
+    public enum OutputType
+    {
+        Library,
+        Exe,
+        Module,
+        WinExe
+    }
+
     public class ProjectLibrary : LibraryInfo
     {
         public ProjectLibrary(
-            IJ4JLogger<ProjectLibrary> logger
+            IJ4JLogger logger
         )
             : base( ReferenceType.Project, logger )
         {
         }
 
-        public string ProjectFilePath { get; private set; }
-        public string ProjectDirectory => System.IO.Path.GetDirectoryName( ProjectFilePath );
+        public string ProjectFilePath { get; private set; } = string.Empty;
+        public string ProjectDirectory => System.IO.Path.GetDirectoryName( ProjectFilePath ) ?? string.Empty;
         
-        public List<TargetFramework> TargetFrameworks { get; private set; }
+        public List<TargetFramework> TargetFrameworks { get; } = new List<TargetFramework>();
+        public OutputType OutputType { get; private set; } = OutputType.Library;
 
-        public XDocument Document { get; private set; }
-        public XElement ProjectElement { get; private set; }
-        public string AssemblyName => ProjectElement?.Descendants( "AssemblyName" ).FirstOrDefault()?.Value;
-        public string RootNamespace => ProjectElement?.Descendants( "RootNamespace" ).FirstOrDefault()?.Value;
-        public string Authors => ProjectElement?.Descendants( "Authors" ).FirstOrDefault()?.Value;
-        public string Company => ProjectElement.Descendants( "Company" ).FirstOrDefault()?.Value;
-        public string Description => ProjectElement.Descendants( "Description" ).FirstOrDefault()?.Value;
-        public string Copyright => ProjectElement.Descendants( "Copyright" ).FirstOrDefault()?.Value;
-        public List<string> ExcludedFiles => Document.Root?.Descendants()
-            .Where( e => e.Name == "Compile" && e.Attribute( "Remove" ) != null )
-            .Select( e => e.Attribute( "Remove" )?.Value )
-            .ToList();
+        public OutputKind OutputKind => OutputType switch
+        {
+            OutputType.Library => OutputKind.DynamicallyLinkedLibrary,
+            OutputType.Exe => OutputKind.ConsoleApplication,
+            OutputType.Module => OutputKind.NetModule,
+            OutputType.WinExe => OutputKind.WindowsRuntimeApplication,
+            _ => throw new ArgumentOutOfRangeException( $"Unhandled {nameof(Roslyn.OutputType)} '{OutputType}'" )
+        };
 
-        public List<string> SourceFiles { get; private set; }
+        public XDocument? Document { get; private set; }
+        public XElement? ProjectElement { get; private set; }
+
+        public string? AssemblyName => ProjectElement?.Descendants( "AssemblyName" ).FirstOrDefault()?.Value;
+        public string? RootNamespace => ProjectElement?.Descendants( "RootNamespace" ).FirstOrDefault()?.Value;
+        public string? Authors => ProjectElement?.Descendants( "Authors" ).FirstOrDefault()?.Value;
+        public string? Company => ProjectElement?.Descendants( "Company" ).FirstOrDefault()?.Value;
+        public string? Description => ProjectElement?.Descendants( "Description" ).FirstOrDefault()?.Value;
+        public string? Copyright => ProjectElement?.Descendants( "Copyright" ).FirstOrDefault()?.Value;
+
+        public List<string> ExcludedFiles => Document?.Root?.Descendants()
+                                                 .Where( e => e.Name == "Compile" && e.Attribute( "Remove" ) != null )
+                                                 .Select( e => e.Attribute( "Remove" )?.Value! )
+                                                 .ToList()
+                                             ?? new List<string>();
+
+        public List<string> SourceFiles { get; } = new List<string>();
 
         public Version DotNetVersion
         {
@@ -98,7 +121,7 @@ namespace J4JSoftware.Roslyn
             if( !GetProperty<string>( container, "msbuildProject", context, out var rawPath ) )
                 return false;
 
-            var projPath = System.IO.Path.GetFullPath( System.IO.Path.Combine( context.ProjectDirectory, rawPath ) );
+            var projPath = System.IO.Path.GetFullPath( System.IO.Path.Combine( context.ProjectDirectory!, rawPath ) );
 
             if( !IsFileSupported( projPath ) )
                 return false;
@@ -120,9 +143,9 @@ namespace J4JSoftware.Roslyn
 
         protected bool ParseProjectFile()
         {
-            TargetFrameworks = new List<TargetFramework>();
+            TargetFrameworks.Clear();
 
-            XDocument projDoc = CreateProjectDocument( ProjectFilePath );
+            XDocument? projDoc = CreateProjectDocument( ProjectFilePath );
             if( projDoc == null )
                 return false;
 
@@ -138,16 +161,29 @@ namespace J4JSoftware.Roslyn
 
             Document = projDoc;
 
+            // determine if project produces an executable
+            var typeText = ProjectElement.Descendants( "OutputType" ).FirstOrDefault()?.Value;
+
+            if( !string.IsNullOrEmpty( typeText ) )
+            {
+                if( Enum.TryParse<OutputType>( typeText, true, out var projType ) )
+                    OutputType = projType;
+                else
+                {
+                    Logger.Error( $"Couldn't parse OutputType from project file" );
+                    return false;
+                }
+            }
+
             if( !InitializeTargetFrameworks() )
             {
                 Logger.Error( $"Failed to initialize target framework(s) from project file" );
-
                 return false;
             }
 
-            SourceFiles = Directory.GetFiles( ProjectDirectory, $"*.cs" ).ToList()
-                    .Where( f => !ExcludedFiles.Any( x => f.Equals( x, StringComparison.OrdinalIgnoreCase ) ) )
-                    .ToList();
+            SourceFiles.Clear();
+            SourceFiles.AddRange( Directory.GetFiles( ProjectDirectory, $"*.cs" ).ToList()
+                .Where( f => !ExcludedFiles.Any( x => f.Equals( x, StringComparison.OrdinalIgnoreCase ) ) ) );
 
             return true;
         }
@@ -175,22 +211,22 @@ namespace J4JSoftware.Roslyn
 
             TargetFrameworks.Clear();
 
-            var singleFramework = ProjectElement.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
+            var singleFramework = ProjectElement?.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
 
             if( singleFramework != null )
                 return add_frameworks( new[] { singleFramework } );
 
-            if( !add_frameworks( ProjectElement
+            if( !add_frameworks( ProjectElement?
                 .Descendants( "TargetFrameworks" ).FirstOrDefault()?.Value
-                .Split( ';' ) ) )
+                .Split( ';' )! ) )
                 return false;
 
             return true;
         }
 
-        protected XDocument CreateProjectDocument( string projectFilePath )
+        protected XDocument? CreateProjectDocument( string projectFilePath )
         {
-            XDocument retVal = null;
+            XDocument? retVal = null;
 
             if( !IsFileSupported( projectFilePath ) )
                 return null;

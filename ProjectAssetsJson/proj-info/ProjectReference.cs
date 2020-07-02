@@ -5,13 +5,13 @@ namespace J4JSoftware.Roslyn
 {
     public class ProjectReference : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
     {
-        public ProjectReference( IJ4JLogger<ProjectAssetsBase> logger ) 
+        public ProjectReference( IJ4JLogger logger ) 
             : base( logger )
         {
         }
 
-        public string ProjectName { get; set; }
-        public string ProjectPath { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
+        public string ProjectPath { get; set; } = string.Empty;
 
         public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {

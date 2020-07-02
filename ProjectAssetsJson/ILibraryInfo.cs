@@ -10,6 +10,6 @@ namespace J4JSoftware.Roslyn
         SemanticVersion Version { get; }
         ReferenceType Type { get; }
         string Path { get; }
-        string GetAbsolutePath( IEnumerable<string> repositoryPaths, TargetFramework tgtFramework );
+        bool GetAbsolutePath( IEnumerable<string> repositoryPaths, TargetFramework tgtFramework, out PackageAbsolutePath? result );
     }
 }

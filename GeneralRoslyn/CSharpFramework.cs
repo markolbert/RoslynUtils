@@ -1,6 +1,6 @@
 ﻿namespace J4JSoftware.Roslyn
 {
-    public enum CSharpFrameworks
+    public enum CSharpFramework
     {
         Net,
         NetCoreApp,

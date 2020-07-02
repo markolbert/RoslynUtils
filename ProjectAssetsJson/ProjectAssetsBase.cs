@@ -11,13 +11,13 @@ namespace J4JSoftware.Roslyn
     public class ProjectAssetsBase
     {
         public ProjectAssetsBase(
-            IJ4JLogger<ProjectAssetsBase> logger
+            IJ4JLogger logger
         )
         {
-            Logger = logger ?? throw new NullReferenceException( nameof( logger ) );
+            Logger = logger;
         }
 
-        protected IJ4JLogger<ProjectAssetsBase> Logger { get; }
+        protected IJ4JLogger Logger { get; }
 
         protected virtual bool ValidateInitializationArguments<TContainer>( 
             string rawName, 
@@ -25,12 +25,12 @@ namespace J4JSoftware.Roslyn
             ProjectAssetsContext context,
             [CallerMemberName] string callerName = "" )
         {
-            if( container == null )
-            {
-                Logger.Error( $"Undefined {nameof( container )}, {nameof( rawName )} is '{rawName}' (called from {GetCallerPath( callerName )})" );
+            //if( container == null )
+            //{
+            //    Logger.Error( $"Undefined {nameof( container )}, {nameof( rawName )} is '{rawName}' (called from {GetCallerPath( callerName )})" );
 
-                return false;
-            }
+            //    return false;
+            //}
 
             if( String.IsNullOrEmpty( rawName ) )
             {
@@ -39,12 +39,12 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( context == null )
-            {
-                Logger.Error( $"Undefined or empty {nameof( context )}  (called from {GetCallerPath( callerName )})" );
+            //if( context == null )
+            //{
+            //    Logger.Error( $"Undefined or empty {nameof( context )}  (called from {GetCallerPath( callerName )})" );
 
-                return false;
-            }
+            //    return false;
+            //}
 
             return true;
         }
@@ -75,7 +75,7 @@ namespace J4JSoftware.Roslyn
             ExpandoObject container, 
             Func<TItem> itemCreator,
             ProjectAssetsContext context,
-            out List<TItem> result,
+            out List<TItem>? result,
             bool containerCanBeNull = false,
             [CallerMemberName] string callerName = "")
             where TItem : IInitializeFromNamed<TContainer>
@@ -127,7 +127,7 @@ namespace J4JSoftware.Roslyn
 
         protected bool LoadNamesFromContainer( 
             ExpandoObject container, 
-            out List<string> result, 
+            out List<string>? result, 
             bool containerCanBeNull = false,
             [CallerMemberName] string callerName = "" )
         {
@@ -164,7 +164,7 @@ namespace J4JSoftware.Roslyn
             {
                 Logger.Error(
                     $"Undefined {nameof(container)} (called from {GetCallerPath( callerName )})" );
-                result = default;
+                result = default!;
 
                 return false;
             }
@@ -173,7 +173,7 @@ namespace J4JSoftware.Roslyn
             {
                 Logger.Error(
                     $"Undefined/empty {nameof(propName)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}" );
-                result = default;
+                result = default!;
 
                 return false;
             }
@@ -211,7 +211,7 @@ namespace J4JSoftware.Roslyn
 
             if( !hasKey )
             {
-                result = default;
+                result = default!;
 
                 var mesg =
                     $"{nameof(container)} doesn't contain a {propName} property (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}";
@@ -239,7 +239,7 @@ namespace J4JSoftware.Roslyn
             Logger.Error(
                 $"The {propName} property is not a {typeof(TProp).Name} (called from {GetCallerPath( callerName )})" );
 
-            result = default;
+            result = default!;
 
             return false;
         }

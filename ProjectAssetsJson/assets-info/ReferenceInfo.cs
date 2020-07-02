@@ -12,19 +12,19 @@ namespace J4JSoftware.Roslyn
 
         public ReferenceInfo(
             Func<DependencyInfo> diCreator,
-            IJ4JLogger<ReferenceInfo> logger
+            IJ4JLogger logger
         )
             : base( logger )
         {
             _diCreator = diCreator ?? throw new NullReferenceException( nameof(diCreator) );
         }
 
-        public string Assembly { get; set; }
-        public SemanticVersion Version { get; set; }
+        public string Assembly { get; set; } = string.Empty;
+        public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );
         public ReferenceType Type { get; set; }
-        public List<string> Compile { get; set; }
-        public List<string> Runtime { get; set; }
-        public List<DependencyInfo> Dependencies { get; set; }
+        public List<string> Compile { get; } = new List<string>();
+        public List<string> Runtime { get; } = new List<string>();
+        public List<DependencyInfo> Dependencies { get; } = new List<DependencyInfo>();
 
         public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn
 
             Assembly = verText.TextComponent;
             Version = verText.Version;
-            Dependencies = new List<DependencyInfo>();
+            Dependencies.Clear();
 
             var asDict = (IDictionary<string, object>) container;
 
@@ -65,7 +65,7 @@ namespace J4JSoftware.Roslyn
                         var newItem = _diCreator();
 
                         newItem.Assembly = kvp.Key;
-                        newItem.Version = version;
+                        newItem.Version = version!;
 
                         Dependencies.Add( newItem );
                     }

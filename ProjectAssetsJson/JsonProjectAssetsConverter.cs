@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn
     public class JsonProjectAssetsConverter : JsonConverter<ExpandoObject>
     {
         private readonly Stack<ExpandoObject> _expandos = new Stack<ExpandoObject>();
-        private readonly IJ4JLogger<JsonProjectAssetsConverter> _logger;
+        private readonly IJ4JLogger _logger;
         private readonly Stack<string> _propertyNames = new Stack<string>();
         private readonly ITypedListCreator _listBuilder;
 
@@ -18,11 +18,11 @@ namespace J4JSoftware.Roslyn
 
         public JsonProjectAssetsConverter(
             ITypedListCreator listBuilder,
-            IJ4JLogger<JsonProjectAssetsConverter> logger
+            IJ4JLogger logger
         )
         {
-            _listBuilder = listBuilder ?? throw new NullReferenceException( nameof(listBuilder) );
-            _logger = logger ?? throw new NullReferenceException( nameof(logger) );
+            _listBuilder = listBuilder;
+            _logger = logger;
         }
 
         public override ExpandoObject Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )

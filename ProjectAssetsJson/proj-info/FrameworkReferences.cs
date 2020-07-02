@@ -11,14 +11,14 @@ namespace J4JSoftware.Roslyn
 
         public FrameworkReferences( 
             Func<ProjectReference> refCreator,
-            IJ4JLogger<ProjectAssetsBase> logger
+            IJ4JLogger logger
             ) 
             : base( logger )
         {
             _refCreator = refCreator ?? throw new NullReferenceException( nameof(refCreator) );
         }
 
-        public List<ProjectReference> ProjectReferences { get; set; }
+        public List<ProjectReference> ProjectReferences { get; } = new List<ProjectReference>();
 
         public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
@@ -35,7 +35,9 @@ namespace J4JSoftware.Roslyn
 
             TargetFramework = tgtFramework.Framework;
             TargetVersion = tgtFramework.Version;
-            ProjectReferences = refList;
+
+            ProjectReferences.Clear();
+            ProjectReferences.AddRange(refList!);
 
             return true;
         }

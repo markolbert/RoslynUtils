@@ -8,21 +8,28 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
+    public class PackageAbsolutePath
+    {
+        public TargetFramework? TargetFramework { get; set; }
+        public string DllPath { get; set; } = string.Empty;
+        public bool IsVirtual => DllPath != null && DllPath == "_._";
+    }
+
     public class LibraryInfo : ProjectAssetsBase, ILibraryInfo
     {
         protected LibraryInfo(
             ReferenceType refType,
-            IJ4JLogger<LibraryInfo> logger
+            IJ4JLogger logger
         )
             : base( logger )
         {
             Type = refType;
         }
 
-        public string Assembly { get; private set; }
-        public SemanticVersion Version { get; private set; }
+        public string Assembly { get; private set; } = string.Empty;
+        public SemanticVersion Version { get; private set; } = new SemanticVersion( 0, 0, 0 );
         public ReferenceType Type { get; }
-        public string Path { get; private set; }
+        public string Path { get; private set; } = string.Empty;
 
         public virtual bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
@@ -60,19 +67,21 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public virtual string GetAbsolutePath( IEnumerable<string> repositoryPaths, TargetFramework tgtFramework )
+        public virtual bool GetAbsolutePath( IEnumerable<string> repositoryPaths, TargetFramework tgtFramework, out PackageAbsolutePath? result )
         {
-            if( repositoryPaths == null )
-            {
-                Logger.Error( $"Undefined {nameof(repositoryPaths)}" );
-                return null;
-            }
+            result = null;
 
-            if( tgtFramework == null )
-            {
-                Logger.Error( $"Undefined {nameof(tgtFramework)}" );
-                return null;
-            }
+            //if( repositoryPaths == null )
+            //{
+            //    Logger.Error( $"Undefined {nameof(repositoryPaths)}" );
+            //    return false;
+            //}
+
+            //if( tgtFramework == null )
+            //{
+            //    Logger.Error( $"Undefined {nameof(tgtFramework)}" );
+            //    return false;
+            //}
 
             foreach( var repositoryPath in repositoryPaths )
             {
@@ -109,25 +118,27 @@ namespace J4JSoftware.Roslyn
                 if( match == null )
                     continue;
 
-                var filePath = System.IO.Path.Combine( match.path, $"{Assembly}.dll" );
+                var filePath1 = System.IO.Path.Combine( match.path, $"{Assembly}.dll" );
+                var filePath2 = System.IO.Path.Combine( match.path, $"_._" );
 
-                if( File.Exists( filePath ) )
-                    return filePath;
+                if( File.Exists( filePath1 ) || File.Exists(filePath2) )
+                {
+                    result = new PackageAbsolutePath()
+                    {
+                        DllPath = filePath1,
+                        TargetFramework = tgtFramework
+                    };
 
-                // check to see if the "it's already included from elsewhere" marker file is there
-                // in which case return null but don't issue a warning
-                filePath = System.IO.Path.Combine( match.path, "_._" );
-
-                if( File.Exists( filePath ) )
-                    return null;
+                    return true;
+                }
             }
 
             // nuget appears to use directories starting with "runtime" to indicate runtime-only libraries,
             // typically for other operating systems...suppress warnings associated with such
             if( Path.IndexOf( "runtime", StringComparison.Ordinal ) != 0 )
-                Logger.Warning( $"Couldn't find '{Path}' in provided repositories" );
+                Logger.Information( $"Couldn't find '{Path}' in provided repositories" );
 
-            return null;
+            return false;
         }
     }
 }

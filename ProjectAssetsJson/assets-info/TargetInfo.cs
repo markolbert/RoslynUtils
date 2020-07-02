@@ -12,16 +12,16 @@ namespace J4JSoftware.Roslyn
 
         public TargetInfo(
             Func<ReferenceInfo> refCreator,
-            IJ4JLogger<TargetInfo> logger
+            IJ4JLogger logger
         )
             : base( logger )
         {
             _refCreator = refCreator ?? throw new NullReferenceException( nameof(refCreator) );
         }
 
-        public CSharpFrameworks Target { get; set; }
-        public SemanticVersion Version { get; set; }
-        public List<ReferenceInfo> Packages { get; set; }
+        public CSharpFramework Target { get; set; }
+        public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );
+        public List<ReferenceInfo> Packages { get; } = new List<ReferenceInfo>();
 
         public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
@@ -34,7 +34,7 @@ namespace J4JSoftware.Roslyn
             Target = tgtFramework.Framework;
             Version = tgtFramework.Version;
 
-            Packages = new List<ReferenceInfo>();
+            Packages.Clear();
 
             var retVal = true;
 

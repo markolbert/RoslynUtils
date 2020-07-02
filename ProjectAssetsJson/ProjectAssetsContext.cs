@@ -6,12 +6,12 @@ namespace J4JSoftware.Roslyn
 {
     public class ProjectAssetsContext
     {
-        public ExpandoObject RootContainer { get; set; }
+        public ExpandoObject RootContainer { get; set; } = new ExpandoObject();
 
-        public string ProjectDirectory =>
+        public string? ProjectDirectory =>
             String.IsNullOrEmpty( ProjectPath ) ? null : Path.GetDirectoryName( ProjectPath );
 
-        public string ProjectPath { get; set; }
-        public string ProjectAssetsJsonPath { get; set; }
+        public string ProjectPath { get; set; } = string.Empty;
+        public string ProjectAssetsJsonPath { get; set; } = string.Empty;
     }
 }

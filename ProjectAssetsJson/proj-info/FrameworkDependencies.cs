@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn
         public FrameworkDependencies(
             Func<DependencyList> depListCreator,
             Func<FrameworkLibraryReference> fwlCreator,
-            IJ4JLogger<ProjectAssetsBase> logger
+            IJ4JLogger logger
         )
             : base( logger )
         {
@@ -22,12 +22,12 @@ namespace J4JSoftware.Roslyn
             _fwlCreator = fwlCreator ?? throw new NullReferenceException( nameof(fwlCreator) );
         }
 
-        public List<DependencyList> Dependencies { get; set; }
-        public List<TargetFramework> Imports { get; set; }
+        public List<DependencyList> Dependencies { get; } = new List<DependencyList>();
+        public List<TargetFramework> Imports { get; } = new List<TargetFramework>();
         public bool AssetTargetFallback { get; set; }
         public bool Warn { get; set; }
-        public List<FrameworkLibraryReference> FrameworkLibraryReferences { get; set; }
-        public string RuntimeIdentifierGraphPath { get; set; }
+        public List<FrameworkLibraryReference> FrameworkLibraryReferences { get; } = new List<FrameworkLibraryReference>();
+        public string RuntimeIdentifierGraphPath { get; set; } = string.Empty;
 
         public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
         {
@@ -73,11 +73,19 @@ namespace J4JSoftware.Roslyn
 
             TargetFramework = tgtFramework.Framework;
             TargetVersion = tgtFramework.Version;
-            Dependencies = depList;
-            Imports = imports;
+
+            Dependencies.Clear();
+            Dependencies.AddRange(depList!);
+
+            Imports.Clear();
+            Imports.AddRange(imports!);
+
             AssetTargetFallback = fallback;
             Warn = warn;
-            FrameworkLibraryReferences = fwList;
+
+            FrameworkLibraryReferences.Clear();
+            FrameworkLibraryReferences.AddRange(fwList!);
+
             RuntimeIdentifierGraphPath = rtGraph;
 
             return true;

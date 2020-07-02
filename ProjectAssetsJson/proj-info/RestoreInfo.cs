@@ -8,22 +8,22 @@ namespace J4JSoftware.Roslyn
 {
     public class RestoreInfo : ProjectAssetsBase
     {
-        public RestoreInfo( IJ4JLogger<RestoreInfo> logger )
+        public RestoreInfo( IJ4JLogger logger )
             : base( logger )
         {
         }
 
-        public string ProjectUniqueName { get; set; }
-        public string ProjectName { get; set; }
-        public string ProjectPath { get; set; }
-        public string PackagesPath { get; set; }
-        public string OutputPath { get; set; }
-        public ProjectStyle ProjectStyle { get; set; }
-        public List<string> FallbackFolders { get; set; }
-        public List<string> ConfigurationFilePaths { get; set; }
-        public List<TargetFramework> OriginalTargetFrameworks { get; set; }
-        public List<string> Sources { get; set; }
-        public List<object> Frameworks { get; set; }
+        public string ProjectUniqueName { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public string ProjectPath { get; set; } = string.Empty;
+        public string PackagesPath { get; set; } = string.Empty;
+        public string OutputPath { get; set; } = string.Empty;
+        public ProjectStyle? ProjectStyle { get; private set; }
+        public List<string> FallbackFolders { get; } = new List<string>();
+        public List<string> ConfigurationFilePaths { get; } = new List<string>();
+        public List<TargetFramework> OriginalTargetFrameworks { get; } = new List<TargetFramework>();
+        public List<string> Sources { get; } = new List<string>();
+        public List<object> Frameworks { get; } = new List<object>();
 
         public bool Initialize( ExpandoObject container, ProjectAssetsContext context )
         {
@@ -69,7 +69,7 @@ namespace J4JSoftware.Roslyn
             if( !origFWValid )
                 return false;
 
-            List<string> sources = null;
+            List<string>? sources = null;
             if( srcContainer != null && !LoadNamesFromContainer( srcContainer, out sources ) )
                 return false;
 
@@ -78,11 +78,20 @@ namespace J4JSoftware.Roslyn
             ProjectName = projName;
             ProjectPath = path;
             PackagesPath = pkgPath;
-            OriginalTargetFrameworks = tgtFrameworks;
+
+            OriginalTargetFrameworks.Clear();
+            OriginalTargetFrameworks.AddRange( tgtFrameworks! );
+
             OutputPath = outPath;
-            FallbackFolders = fallbackList;
-            ConfigurationFilePaths = configPaths;
-            Sources = sources;
+
+            FallbackFolders.Clear();
+            FallbackFolders.AddRange(fallbackList);
+
+            ConfigurationFilePaths.Clear();
+            ConfigurationFilePaths.AddRange(configPaths);
+
+            Sources.Clear();
+            Sources.AddRange(sources!);
 
             return true;
         }
