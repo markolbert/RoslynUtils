@@ -15,6 +15,7 @@ namespace J4JSoftware.Roslyn
         public TypedListCreator( IJ4JLogger logger )
         {
             _logger = logger;
+            _logger.SetLoggedType( this.GetType() );
         }
 
         public void Clear()

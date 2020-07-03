@@ -19,14 +19,14 @@ namespace J4JSoftware.Roslyn
 
             if( parts.Length != 3 )
             {
-                Logger.Error( $"Couldn't parse assembly constraint '{text}'" );
+                Logger.Error<string>( "Couldn't parse assembly constraint '{text}'", text );
 
                 return false;
             }
 
             if( !SemanticVersion.TryParse( parts[ 2 ], out var version ) )
             {
-                Logger.Error( $"Couldn't parse '{parts[ 2 ]}' as a {nameof( SemanticVersion )}" );
+                Logger.Error<string, string>( "Couldn't parse '{0}' as a {1}", parts[ 2 ], nameof(SemanticVersion) );
 
                 return false;
             }

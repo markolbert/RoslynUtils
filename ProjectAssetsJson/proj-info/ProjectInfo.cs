@@ -7,7 +7,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectInfo : ProjectAssetsBase
+    public class ProjectInfo : ConfigurationBase
     {
         private readonly Func<RestoreInfo> _restoreCreator;
         private readonly Func<FrameworkReferences> _fwCreator;
@@ -21,9 +21,9 @@ namespace J4JSoftware.Roslyn
             )
             : base( logger )
         {
-            _restoreCreator = restoreCreator ?? throw new NullReferenceException( nameof(restoreCreator) );
-            _fwCreator = fwCreator ?? throw new NullReferenceException( nameof(fwCreator) );
-            _wpCreator = wpCreator ?? throw new NullReferenceException( nameof(wpCreator) );
+            _restoreCreator = restoreCreator;
+            _fwCreator = fwCreator;
+            _wpCreator = wpCreator;
         }
 
         public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );

@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn
             ) 
             : base( logger )
         {
-            _refCreator = refCreator ?? throw new NullReferenceException( nameof(refCreator) );
+            _refCreator = refCreator;
         }
 
         public List<ProjectReference> ProjectReferences { get; } = new List<ProjectReference>();

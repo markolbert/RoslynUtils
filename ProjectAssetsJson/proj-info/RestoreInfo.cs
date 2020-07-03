@@ -6,7 +6,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class RestoreInfo : ProjectAssetsBase
+    public class RestoreInfo : ConfigurationBase
     {
         public RestoreInfo( IJ4JLogger logger )
             : base( logger )
@@ -47,7 +47,9 @@ namespace J4JSoftware.Roslyn
 
             if( !Enum.TryParse<ProjectStyle>( styleText, true, out var style ) )
             {
-                Logger.Error( $"Couldn't parse projectStyle text '{styleText}' as a {nameof(ProjectStyle)}" );
+                Logger.Error<string, string>( "Couldn't parse projectStyle text '{0}' as a {1}", 
+                    styleText,
+                    nameof(ProjectStyle) );
 
                 return false;
             }

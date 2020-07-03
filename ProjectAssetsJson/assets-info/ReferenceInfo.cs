@@ -6,7 +6,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ReferenceInfo : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
+    public class ReferenceInfo : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
     {
         private readonly Func<DependencyInfo> _diCreator;
 
@@ -16,7 +16,7 @@ namespace J4JSoftware.Roslyn
         )
             : base( logger )
         {
-            _diCreator = diCreator ?? throw new NullReferenceException( nameof(diCreator) );
+            _diCreator = diCreator;
         }
 
         public string Assembly { get; set; } = string.Empty;
@@ -48,8 +48,10 @@ namespace J4JSoftware.Roslyn
 
             if( depDict == null )
             {
-                Logger.Error(
-                    $"{nameof( container )} does not have a 'dependencies' property which is an {nameof( ExpandoObject )}" );
+                Logger.Error<string, string>(
+                    "{0} does not have a 'dependencies' property which is an {1}", 
+                    nameof(container),
+                    nameof(ExpandoObject) );
 
                 return false;
             }

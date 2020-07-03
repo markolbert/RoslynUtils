@@ -4,7 +4,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class WarningProperty : ProjectAssetsBase, IInitializeFromNamed<List<string>>
+    public class WarningProperty : ConfigurationBase, IInitializeFromNamed<List<string>>
     {
         public WarningProperty( IJ4JLogger logger ) 
             : base( logger )
@@ -22,7 +22,7 @@ namespace J4JSoftware.Roslyn
             WarningType warnType;
             if( !Enum.TryParse<WarningType>( rawName, true, out warnType ) )
             {
-                Logger.Error($"Couldn't parse '{rawName}' as a {nameof(WarningType)}");
+                Logger.Error<string, string>( $"Couldn't parse '{0}' as a {1}", rawName, nameof(WarningType) );
 
                 return false;
             }

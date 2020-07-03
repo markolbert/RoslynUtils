@@ -22,7 +22,9 @@ namespace J4JSoftware.Roslyn
         )
         {
             _listBuilder = listBuilder;
+
             _logger = logger;
+            _logger.SetLoggedType( this.GetType() );
         }
 
         public override ExpandoObject Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )
@@ -123,7 +125,7 @@ namespace J4JSoftware.Roslyn
                         return;
                     }
 
-                    _logger.Error($"Failed to retrieve numeric token");
+                    _logger.Error("Failed to retrieve numeric token");
                     break;
 
                 case JsonTokenType.String:
@@ -148,13 +150,13 @@ namespace J4JSoftware.Roslyn
                 var propName = _propertyNames.Pop();
 
                 if( !_expandos.Peek().TryAdd( propName, value ) )
-                    _logger.Error( $"Failed to add property '{propName}' to container" );
+                    _logger.Error<string>( "Failed to add property '{0}' to container", propName );
             }
         }
 
         public override void Write( Utf8JsonWriter writer, ExpandoObject value, JsonSerializerOptions options )
         {
-            _logger.Error($"{nameof(Write)} not implemented");
+            _logger.Error<string>( $"{0} not implemented", nameof(Write) );
         }
     }
 }

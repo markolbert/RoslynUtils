@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
 
             if( parts.Length != 3 )
             {
-                Logger.Error( $"Couldn't parse assembly constraint '{text}'" );
+                Logger.Error<string>( "Couldn't parse assembly constraint '{text}'", text );
 
                 return false;
             }

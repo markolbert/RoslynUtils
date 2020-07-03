@@ -5,7 +5,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectFileDependencyGroup : ProjectAssetsBase, IInitializeFromNamed<List<string>>
+    public class ProjectFileDependencyGroup : ConfigurationBase, IInitializeFromNamed<List<string>>
     {
         private readonly Func<RestrictedDependencyInfo> _depCreator;
 
@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn
         )
             : base( logger )
         {
-            _depCreator = depCreator ?? throw new NullReferenceException( nameof(depCreator) );
+            _depCreator = depCreator;
         }
 
         public CSharpFramework TargetFramework { get; set; }
@@ -27,9 +27,9 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( String.IsNullOrEmpty( rawName ) )
+            if( string.IsNullOrEmpty( rawName ) )
             {
-                Logger.Error( $"Undefined or empty {nameof( rawName )}" );
+                Logger.Error<string>( "Undefined or empty {0}", nameof(rawName) );
 
                 return false;
             }

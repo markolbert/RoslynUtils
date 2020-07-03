@@ -8,13 +8,12 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectAssetsBase
+    public class ConfigurationBase
     {
-        public ProjectAssetsBase(
-            IJ4JLogger logger
-        )
+        protected ConfigurationBase( IJ4JLogger logger )
         {
             Logger = logger;
+            Logger.SetLoggedType( this.GetType() );
         }
 
         protected IJ4JLogger Logger { get; }
@@ -25,59 +24,25 @@ namespace J4JSoftware.Roslyn
             ProjectAssetsContext context,
             [CallerMemberName] string callerName = "" )
         {
-            //if( container == null )
-            //{
-            //    Logger.Error( $"Undefined {nameof( container )}, {nameof( rawName )} is '{rawName}' (called from {GetCallerPath( callerName )})" );
+            if( !string.IsNullOrEmpty( rawName ) ) 
+                return true;
 
-            //    return false;
-            //}
+            Logger.Error<string>( "Undefined or empty {rawName}", rawName );
 
-            if( String.IsNullOrEmpty( rawName ) )
-            {
-                Logger.Error( $"Undefined or empty {nameof( rawName )}  (called from {GetCallerPath( callerName )})" );
+            return false;
 
-                return false;
-            }
-
-            //if( context == null )
-            //{
-            //    Logger.Error( $"Undefined or empty {nameof( context )}  (called from {GetCallerPath( callerName )})" );
-
-            //    return false;
-            //}
-
-            return true;
         }
 
-        protected virtual bool ValidateInitializationArguments<TContainer>( 
-            TContainer container, 
-            ProjectAssetsContext context,
-            [CallerMemberName] string callerName = "" )
-        {
-            if( container == null )
-            {
-                Logger.Error( $"Undefined {nameof( container )} (called from {GetCallerPath( callerName )})" );
-
-                return false;
-            }
-
-            if( context == null )
-            {
-                Logger.Error( $"Undefined or empty {nameof( context )}  (called from {GetCallerPath( callerName )})" );
-
-                return false;
-            }
-
-            return true;
-        }
+        protected virtual bool ValidateInitializationArguments<TContainer>(
+            TContainer container,
+            ProjectAssetsContext context ) => true;
 
         protected bool LoadFromContainer<TItem, TContainer>( 
-            ExpandoObject container, 
+            ExpandoObject? container, 
             Func<TItem> itemCreator,
             ProjectAssetsContext context,
             out List<TItem>? result,
-            bool containerCanBeNull = false,
-            [CallerMemberName] string callerName = "")
+            bool containerCanBeNull = false )
             where TItem : IInitializeFromNamed<TContainer>
         {
             if( container == null )
@@ -87,7 +52,7 @@ namespace J4JSoftware.Roslyn
                 if( containerCanBeNull )
                     return true;
 
-                Logger.Error( $"Undefined {nameof( container )} (called from {GetCallerPath( callerName )})" );
+                Logger.Error<string>( "Undefined {0}", nameof(container) );
 
                 return false;
             }
@@ -112,8 +77,7 @@ namespace J4JSoftware.Roslyn
                     // list defined by TContainer. so check for that case
                     if( kvp.Value is List<object> objArray && ( objArray.Count <= 0 ) ) continue;
 
-                    Logger.Error(
-                        $"{kvp.Key} property is not a {nameof(ExpandoObject)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}" );
+                    Logger.Error<string, string>( "{0} property is not a {1}", kvp.Key, nameof(ExpandoObject) );
 
                     isOkay = false;
                 }
@@ -126,10 +90,9 @@ namespace J4JSoftware.Roslyn
         }
 
         protected bool LoadNamesFromContainer( 
-            ExpandoObject container, 
+            ExpandoObject? container, 
             out List<string>? result, 
-            bool containerCanBeNull = false,
-            [CallerMemberName] string callerName = "" )
+            bool containerCanBeNull = false )
         {
             if( container == null )
             {
@@ -138,7 +101,7 @@ namespace J4JSoftware.Roslyn
                 if( containerCanBeNull )
                     return true;
 
-                Logger.Error($"Undefined {nameof(container)} (called from {GetCallerPath( callerName )})"  );
+                Logger.Error<string>( "Undefined {0}", nameof(container) );
 
                 return false;
             }
@@ -157,22 +120,11 @@ namespace J4JSoftware.Roslyn
             ProjectAssetsContext context,
             out TProp result,
             bool caseSensitive = false, 
-            bool optional = false,
-            [CallerMemberName] string callerName = "" )
+            bool optional = false )
         {
-            if( container == null )
+            if( string.IsNullOrEmpty( propName ) )
             {
-                Logger.Error(
-                    $"Undefined {nameof(container)} (called from {GetCallerPath( callerName )})" );
-                result = default!;
-
-                return false;
-            }
-
-            if( String.IsNullOrEmpty( propName ) )
-            {
-                Logger.Error(
-                    $"Undefined/empty {nameof(propName)} (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}" );
+                Logger.Error<string>( "Undefined/empty {0}", nameof(propName) );
                 result = default!;
 
                 return false;
@@ -203,8 +155,11 @@ namespace J4JSoftware.Roslyn
 
                     default:
                         // multiple case-insensitive matches; case insensitive doesn't work
-                        Logger.Error(
-                            $"Multiple matching property names in {nameof(ExpandoObject)} for property name '{propName}' (called from {GetCallerPath( callerName )})" );
+                        Logger.Error<string, string>(
+                            "Multiple matching property names in {0} for property name '{1}'", 
+                            nameof(ExpandoObject),
+                            propName );
+
                         break;
                 }
             }
@@ -213,8 +168,7 @@ namespace J4JSoftware.Roslyn
             {
                 result = default!;
 
-                var mesg =
-                    $"{nameof(container)} doesn't contain a {propName} property (called from {GetCallerPath( callerName )}){GetPropertyPath( container, context )}";
+                var mesg = $"{nameof(container)} doesn't contain a {propName} property";
 
                 // it's okay if optional properties don't exist
                 if( optional )
@@ -236,40 +190,11 @@ namespace J4JSoftware.Roslyn
                 return true;
             }
 
-            Logger.Error(
-                $"The {propName} property is not a {typeof(TProp).Name} (called from {GetCallerPath( callerName )})" );
+            Logger.Error<string, string>( "The {0} property is not a {1}", propName, typeof(TProp).Name );
 
             result = default!;
 
             return false;
-        }
-
-        protected string GetCallerPath( string callerName, [CallerMemberName] string immediateCaller = "" )
-        {
-            return $"{this.GetType().Name}::{callerName}::{immediateCaller}";
-        }
-
-        protected string GetPropertyPath<TContainer>( TContainer toFind, ProjectAssetsContext context )
-        {
-            StringBuilder sb = new StringBuilder();
-            var propertyStack = new Stack<string>();
-
-            if( TraverseContainerTree<TContainer>( toFind, context.RootContainer, propertyStack ) )
-            {
-                while( propertyStack.Count > 0 )
-                {
-                    if( sb.Length > 0 ) sb.Insert( 0, "->" );
-                    sb.Insert( 0, propertyStack.Pop() );
-                }
-            }
-
-            if( sb.Length > 0 )
-            {
-                sb.Insert( 0, " [" );
-                sb.Append( "]" );
-            }
-
-            return sb.ToString();
         }
 
         protected bool TraverseContainerTree<TContainer>( TContainer toFind, ExpandoObject curExpando, Stack<string> propertyStack )

@@ -11,7 +11,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectAssets : ProjectAssetsBase
+    public class ProjectAssets : ConfigurationBase
     {
         private class ProjectAssetsAssemblyLoadContext : AssemblyLoadContext
         {
@@ -39,12 +39,12 @@ namespace J4JSoftware.Roslyn
             )
             : base(logger)
         {
-            _paConverter = paConverter ?? throw new NullReferenceException( nameof( paConverter ) );
-            _tgtCreator = tgtCreator ?? throw new NullReferenceException( nameof( tgtCreator ) );
-            _pkgLibCreator = pkgLibCreator ?? throw new NullReferenceException( nameof(pkgLibCreator) );
-            _projLibCreator = projLibCreator ?? throw new NullReferenceException( nameof(projLibCreator) );
-            _pfdgCreator = pfdgCreator ?? throw new NullReferenceException( nameof(pfdgCreator) );
-            _projCreator = projCreator ?? throw new NullReferenceException( nameof(projCreator) );
+            _paConverter = paConverter;
+            _tgtCreator = tgtCreator;
+            _pkgLibCreator = pkgLibCreator;
+            _projLibCreator = projLibCreator;
+            _pfdgCreator = pfdgCreator;
+            _projCreator = projCreator;
         }
 
         public int Version { get; private set; }
@@ -57,18 +57,18 @@ namespace J4JSoftware.Roslyn
         public string ProjectFilePath => Project?.Restore?.ProjectPath ?? string.Empty;
         public ProjectLibrary? ProjectLibrary { get; private set; }
 
-        public bool InitializeFromProjectFile( string projectFilePath, [CallerMemberName] string callerName = "" )
+        public bool InitializeFromProjectFile( string projectFilePath )
         {
-            if( String.IsNullOrEmpty( projectFilePath ) )
+            if( string.IsNullOrEmpty( projectFilePath ) )
             {
-                Logger.Error($"Undefined or empty {nameof(projectFilePath)} (called from {GetCallerPath(callerName)})");
+                Logger.Error<string>( "Undefined or empty {0}", nameof(projectFilePath) );
 
                 return false;
             }
 
             if( !File.Exists( projectFilePath ) )
             {
-                Logger.Error( $"File '{projectFilePath}' doesn't exist (called from {GetCallerPath( callerName )})" );
+                Logger.Error<string>( "File '{projectFilePath}' doesn't exist", projectFilePath );
                 
                 return false;
             }
@@ -76,7 +76,7 @@ namespace J4JSoftware.Roslyn
             var projectFolder = Path.GetDirectoryName( projectFilePath );
             if( String.IsNullOrEmpty( projectFolder ) )
             {
-                Logger.Error( $"File '{projectFilePath}' doesn't have a directory (called from {GetCallerPath( callerName )})" );
+                Logger.Error<string>( "File '{projectFilePath}' doesn't have a directory", projectFilePath);
 
                 return false;
             }
@@ -91,7 +91,10 @@ namespace J4JSoftware.Roslyn
             switch( projectAssetsFiles.Length )
             {
                 case 0:
-                    Logger.Error( $"Couldn't find project.assets.json file within the project directory '{projectFolder}'" );
+                    Logger.Error<string>(
+                        "Couldn't find project.assets.json file within the project directory '{projectFolder}'",
+                        projectFolder );
+
                     return false;
 
                 case 1:
@@ -99,7 +102,10 @@ namespace J4JSoftware.Roslyn
                     break;
 
                 default:
-                    Logger.Error( $"Found multiple project.assets.json files within the project directory '{projectFolder}'" );
+                    Logger.Error<string>(
+                        "Found multiple project.assets.json files within the project directory '{projectFolder}'",
+                        projectFolder );
+
                     return false;
             }
 
@@ -110,14 +116,14 @@ namespace J4JSoftware.Roslyn
         {
             if( String.IsNullOrEmpty( projectAssetsPath ) )
             {
-                Logger.Error( $"Empty or undefined {projectAssetsPath}" );
+                Logger.Error<string>( "Empty or undefined {0}", nameof(projectAssetsPath) );
 
                 return false;
             }
 
             if( !File.Exists( projectAssetsPath ) )
             {
-                Logger.Error( $"File '{projectAssetsPath}' not accessible" );
+                Logger.Error<string>( "File '{projectAssetsPath}' not accessible", projectAssetsPath );
 
                 return false;
             }
@@ -207,13 +213,6 @@ namespace J4JSoftware.Roslyn
         {
             result = null;
 
-            //if( tgtFramework == null )
-            //{
-            //    Logger.Error( $"Undefined {nameof(tgtFramework)}" );
-
-            //    return false;
-            //}
-
             // add the basic/core libraries
             switch( tgtFramework.Framework )
             {
@@ -227,39 +226,17 @@ namespace J4JSoftware.Roslyn
                     return false;
 
                 case CSharpFramework.NetStandard:
-                    result = new CompilationReferences();
-
-                    result.Add( new NamedReference( "netstandard" ) { IsVirtual = true } );
-                    //result.Add( new NamedMetadata( "System.Linq" ) );
-                    //result.Add( new NamedMetadata( "System.Private.CoreLib" ) );
-                    //result.Add( new NamedMetadata( "System.Private.Uri" ) );
-                    //result.Add( new NamedMetadata( "System.Runtime.Extensions" ) );
+                    result = new CompilationReferences
+                    {
+                        new NamedReference("netstandard") { IsVirtual = true }
+                    };
 
                     return true;
             }
 
-            //foreach( var libInfo in Libraries.Where(lib=>lib is PackageLibrary  ) )
-            //{
-            //    // first try loading library by name
-            //    if( TryAddMetadataReference( libInfo.Assembly, result ) )
-            //        continue;
-
-            //    // if that fails, try loading by absolute path
-            //    var absPath = libInfo.GetAbsolutePath( PackageFolders, tgtFramework );
-
-            //    if( String.IsNullOrEmpty( absPath ) )
-            //        continue;
-
-            //    if( !TryAddMetadataReference( absPath, result, isPath: true ) )
-            //    {
-            //        //okay = false;
-            //        Logger.Warning( $"Couldn't load assembly '{absPath}'" );
-            //    }
-            //}
-
-            //return okay;
-
-            Logger.Error( $"Unsupported {nameof(CSharpFramework)} '{tgtFramework.Framework}'" );
+            Logger.Error<string, CSharpFramework>( "Unsupported {0} '{1}'", 
+                nameof(CSharpFramework),
+                tgtFramework.Framework );
 
             return false;
         }
@@ -270,7 +247,7 @@ namespace J4JSoftware.Roslyn
 
             if( ProjectLibrary == null )
             {
-                Logger.Error($"Undefined {nameof(ProjectLibrary)}");
+                Logger.Error<string>( "Undefined {0}", nameof(ProjectLibrary) );
 
                 return false;
             }
@@ -294,7 +271,7 @@ namespace J4JSoftware.Roslyn
 
             if( libDict == null )
             {
-                Logger.Error( $"Undefined {nameof(libDict)}" );
+                Logger.Error<string>( "Undefined {0}", nameof(libDict) );
 
                 return false;
             }
@@ -312,7 +289,9 @@ namespace J4JSoftware.Roslyn
                     {
                         if( !result.TryAdd( kvp.Key, kvp.Value ) )
                         {
-                            Logger.Error($"Couldn't add {kvp.Key} to new {nameof(ExpandoObject)} in {nameof(FilterLibraries)}");
+                            Logger.Error<string, string, string>( "Couldn't add {0} to new {1} in {2}", 
+                                kvp.Key,
+                                nameof(ExpandoObject), nameof(FilterLibraries) );
 
                             allOKay = false;
                         }
@@ -323,40 +302,6 @@ namespace J4JSoftware.Roslyn
             if( !allOKay ) result = null;
 
             return allOKay;
-        }
-
-        private bool TryAddMetadataReference( 
-            string libInfo, 
-            List<Microsoft.CodeAnalysis.MetadataReference> references, 
-            bool isPath = false,
-            [CallerMemberName] string callerName = "" )
-        {
-            if( String.IsNullOrEmpty(libInfo) )
-            {
-                Logger.Error($"Empty or undefined {nameof(libInfo)} (called from {GetCallerPath(callerName)})");
-
-                return false;
-            }
-
-            try
-            {
-                Assembly assembly;
-
-                if( isPath ) assembly = Assembly.LoadFile( libInfo );
-                else assembly = Assembly.Load( libInfo );
-
-                var mdRef = Microsoft.CodeAnalysis.MetadataReference.CreateFromFile( assembly.Location );
-                references.Add( mdRef );
-            }
-            catch
-            {
-                Logger.Information(
-                    $"Couldn't add assembly '{libInfo}' (called from {GetCallerPath( callerName )})" );
-
-                return false;
-            }
-
-            return true;
         }
     }
 }

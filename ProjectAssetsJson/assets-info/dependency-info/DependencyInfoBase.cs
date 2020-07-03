@@ -3,7 +3,7 @@
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependencyInfoBase : ProjectAssetsBase
+    public class DependencyInfoBase : ConfigurationBase
     {
         protected DependencyInfoBase( IJ4JLogger logger )
             : base( logger )

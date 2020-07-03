@@ -3,7 +3,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectReference : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
+    public class ProjectReference : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
     {
         public ProjectReference( IJ4JLogger logger ) 
             : base( logger )

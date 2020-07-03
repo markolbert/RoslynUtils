@@ -9,7 +9,7 @@ namespace J4JSoftware.Roslyn
         public ExpandoObject RootContainer { get; set; } = new ExpandoObject();
 
         public string? ProjectDirectory =>
-            String.IsNullOrEmpty( ProjectPath ) ? null : Path.GetDirectoryName( ProjectPath );
+            string.IsNullOrEmpty( ProjectPath ) ? null : Path.GetDirectoryName( ProjectPath );
 
         public string ProjectPath { get; set; } = string.Empty;
         public string ProjectAssetsJsonPath { get; set; } = string.Empty;

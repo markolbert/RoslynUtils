@@ -18,8 +18,8 @@ namespace J4JSoftware.Roslyn
         )
             : base( logger )
         {
-            _depListCreator = depListCreator ?? throw new NullReferenceException( nameof(depListCreator) );
-            _fwlCreator = fwlCreator ?? throw new NullReferenceException( nameof(fwlCreator) );
+            _depListCreator = depListCreator;
+            _fwlCreator = fwlCreator;
         }
 
         public List<DependencyList> Dependencies { get; } = new List<DependencyList>();

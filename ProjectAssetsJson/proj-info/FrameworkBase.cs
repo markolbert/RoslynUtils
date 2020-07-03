@@ -4,7 +4,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class FrameworkBase : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
+    public class FrameworkBase : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
     {
         protected FrameworkBase( IJ4JLogger logger ) 
             : base( logger )

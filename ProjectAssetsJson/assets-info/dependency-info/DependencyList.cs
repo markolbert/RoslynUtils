@@ -26,7 +26,7 @@ namespace J4JSoftware.Roslyn
 
             if( !Enum.TryParse<ReferenceType>( tgtTypeText, true, out var tgtType ) )
             {
-                Logger.Error($"Couldn't parse '{tgtTypeText}' to a {nameof(ReferenceType)}");
+                Logger.Error<string, string>( "Couldn't parse '{0}' to a {1}", tgtTypeText, nameof(ReferenceType) );
 
                 return false;
             }

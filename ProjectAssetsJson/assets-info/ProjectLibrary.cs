@@ -170,14 +170,14 @@ namespace J4JSoftware.Roslyn
                     OutputType = projType;
                 else
                 {
-                    Logger.Error( $"Couldn't parse OutputType from project file" );
+                    Logger.Error( "Couldn't parse OutputType from project file" );
                     return false;
                 }
             }
 
             if( !InitializeTargetFrameworks() )
             {
-                Logger.Error( $"Failed to initialize target framework(s) from project file" );
+                Logger.Error( "Failed to initialize target framework(s) from project file" );
                 return false;
             }
 

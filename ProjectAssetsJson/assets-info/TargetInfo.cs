@@ -6,7 +6,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TargetInfo : ProjectAssetsBase, IInitializeFromNamed<ExpandoObject>
+    public class TargetInfo : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
     {
         private readonly Func<ReferenceInfo> _refCreator;
 
@@ -16,7 +16,7 @@ namespace J4JSoftware.Roslyn
         )
             : base( logger )
         {
-            _refCreator = refCreator ?? throw new NullReferenceException( nameof(refCreator) );
+            _refCreator = refCreator;
         }
 
         public CSharpFramework Target { get; set; }
@@ -51,7 +51,7 @@ namespace J4JSoftware.Roslyn
                 }
                 else
                 {
-                    Logger.Error( $"{kvp.Key} property is not a {nameof( ExpandoObject )}" );
+                    Logger.Error<string, string>( "{0} property is not a {1}", kvp.Key, nameof(ExpandoObject) );
 
                     retVal = false;
                 }

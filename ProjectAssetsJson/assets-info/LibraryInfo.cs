@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn
         public bool IsVirtual => DllPath != null && DllPath == "_._";
     }
 
-    public class LibraryInfo : ProjectAssetsBase, ILibraryInfo
+    public class LibraryInfo : ConfigurationBase, ILibraryInfo
     {
         protected LibraryInfo(
             ReferenceType refType,
@@ -44,15 +44,17 @@ namespace J4JSoftware.Roslyn
 
             if( !Enum.TryParse<ReferenceType>( libTypeText, true, out var libType ) )
             {
-                Logger.Error(
-                    $"Property 'type' ('{libTypeText}') isn't parseable to a {nameof( ReferenceType )}" );
+                Logger.Error<string, string>(
+                    "Property 'type' ('{0}') isn't parseable to a {1}", libTypeText, nameof(ReferenceType) );
 
                 return false;
             }
 
             if( libType != Type )
             {
-                Logger.Error($"Expected a {Type} library, encountered a {libType} instead");
+                Logger.Error<ReferenceType, ReferenceType>( "Expected a {0} library, encountered a {1} instead", 
+                    Type,
+                    libType );
 
                 return false;
             }
@@ -70,18 +72,6 @@ namespace J4JSoftware.Roslyn
         public virtual bool GetAbsolutePath( IEnumerable<string> repositoryPaths, TargetFramework tgtFramework, out PackageAbsolutePath? result )
         {
             result = null;
-
-            //if( repositoryPaths == null )
-            //{
-            //    Logger.Error( $"Undefined {nameof(repositoryPaths)}" );
-            //    return false;
-            //}
-
-            //if( tgtFramework == null )
-            //{
-            //    Logger.Error( $"Undefined {nameof(tgtFramework)}" );
-            //    return false;
-            //}
 
             foreach( var repositoryPath in repositoryPaths )
             {
