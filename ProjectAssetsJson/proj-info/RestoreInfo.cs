@@ -30,18 +30,18 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( container, context ) )
                 return false;
 
-            var okay = GetProperty<string>( container, "projectStyle", context, out var styleText );
-            okay &= GetProperty<string>( container, "projectUniqueName", context, out var uniqueName );
-            okay &= GetProperty<string>( container, "projectName", context, out var projName );
-            okay &= GetProperty<string>( container, "projectPath", context, out var path );
-            okay &= GetProperty<string>( container, "packagesPath", context, out var pkgPath, optional : true );
-            okay &= GetProperty<string>( container, "outputPath", context, out var outPath );
-            okay &= GetProperty<List<string>>( container, "fallbackFolders", context, out var fallbackList,
+            var okay = container.GetProperty<string>( "projectStyle", out var styleText );
+            okay &= container.GetProperty<string>( "projectUniqueName", out var uniqueName );
+            okay &= container.GetProperty<string>( "projectName", out var projName );
+            okay &= container.GetProperty<string>( "projectPath", out var path );
+            okay &= container.GetProperty<string>( "packagesPath", out var pkgPath, optional : true );
+            okay &= container.GetProperty<string>( "outputPath", out var outPath );
+            okay &= container.GetProperty<List<string>>( "fallbackFolders", out var fallbackList,
                 optional : true );
-            okay &= GetProperty<List<string>>( container, "configFilePaths", context, out var configPaths,
+            okay &= container.GetProperty<List<string>>( "configFilePaths", out var configPaths,
                 optional : true );
-            okay &= GetProperty<List<string>>( container, "originalTargetFrameworks", context, out var origFWText );
-            okay &= GetProperty<ExpandoObject>( container, "sources", context, out var srcContainer, optional : true );
+            okay &= container.GetProperty<List<string>>( "originalTargetFrameworks", out var origFWText );
+            okay &= container.GetProperty<ExpandoObject>( "sources", out var srcContainer,true );
 
             if( !okay ) return false;
 
@@ -58,7 +58,7 @@ namespace J4JSoftware.Roslyn
 
             var tgtFrameworks = origFWText.Select( t =>
                 {
-                    if( TargetFramework.CreateTargetFramework( t, out var retVal, Logger ) )
+                    if(TargetFramework.Create( t, TargetFrameworkTextStyle.Simple, out var retVal) )
                         return retVal;
 
                     origFWValid = false;
@@ -72,7 +72,7 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             List<string>? sources = null;
-            if( srcContainer != null && !LoadNamesFromContainer( srcContainer, out sources ) )
+            if( srcContainer != null && !srcContainer.LoadNamesFromContainer( out sources ) )
                 return false;
 
             ProjectStyle = style;

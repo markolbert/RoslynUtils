@@ -34,21 +34,21 @@ namespace J4JSoftware.Roslyn
             if( !base.Initialize( rawName, container, context ) )
                 return false;
 
-            if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework( rawName, out var tgtFramework, Logger ) )
+            if( !Roslyn.TargetFramework.Create( rawName, TargetFrameworkTextStyle.Simple, out var tgtFramework ) )
                 return false;
 
-            var okay = GetProperty<ExpandoObject>( container, "dependencies", context, out var depContainer );
-            okay &= GetProperty<List<string>>( container, "imports", context, out var importTexts );
-            okay &= GetProperty<ExpandoObject>( container, "frameworkReferences", context, out var fwContainer );
-            okay &= GetProperty<bool>( container, "assetTargetFallback", context, out var fallback );
-            okay &= GetProperty<bool>( container, "warn", context, out var warn );
-            okay &= GetProperty<string>( container, "runtimeIdentifierGraphPath", context, out var rtGraph );
+            var okay = container.GetProperty<ExpandoObject>( "dependencies", out var depContainer );
+            okay &= container.GetProperty<List<string>>( "imports", out var importTexts );
+            okay &= container.GetProperty<ExpandoObject>( "frameworkReferences", out var fwContainer );
+            okay &= container.GetProperty<bool>( "assetTargetFallback", out var fallback );
+            okay &= container.GetProperty<bool>( "warn", out var warn );
+            okay &= container.GetProperty<string>( "runtimeIdentifierGraphPath", out var rtGraph );
 
             if( !okay ) return false;
 
-            okay = LoadFromContainer<DependencyList, ExpandoObject>( depContainer, _depListCreator, context,
+            okay = depContainer.LoadFromContainer<DependencyList, ExpandoObject>( _depListCreator, context,
                 out var depList );
-            okay &= LoadFromContainer<FrameworkLibraryReference, ExpandoObject>( fwContainer, _fwlCreator, context,
+            okay &= fwContainer.LoadFromContainer<FrameworkLibraryReference, ExpandoObject>( _fwlCreator, context,
                 out var fwList );
 
             if( !okay ) return false;
@@ -57,7 +57,7 @@ namespace J4JSoftware.Roslyn
 
             var imports = importTexts.Select( it =>
                 {
-                    if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework( it, out var retVal, Logger ) )
+                    if( !Roslyn.TargetFramework.Create( it, TargetFrameworkTextStyle.Simple, out var retVal) )
                     {
                         importsValid = false;
 
@@ -71,7 +71,7 @@ namespace J4JSoftware.Roslyn
             if( !importsValid )
                 return false;
 
-            TargetFramework = tgtFramework.Framework;
+            TargetFramework = tgtFramework!.Framework;
             TargetVersion = tgtFramework.Version;
 
             Dependencies.Clear();

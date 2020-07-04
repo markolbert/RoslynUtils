@@ -25,19 +25,21 @@ namespace J4JSoftware.Roslyn
             if( !base.Initialize( rawName, container, context ) )
                 return false;
 
-            if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework(rawName, out var tgtFramework, Logger ) )
+            if( !Roslyn.TargetFramework.Create(rawName, TargetFrameworkTextStyle.Simple, out var tgtFramework) )
                 return false;
 
-            if( !GetProperty<ExpandoObject>( container, "projectReferences", context, out var refContainer, optional: true ) )
+            if( !container.GetProperty<ExpandoObject>( "projectReferences", out var refContainer, optional: true ) )
                 return false;
 
-            LoadFromContainer<ProjectReference, ExpandoObject>( refContainer, _refCreator, context, out var refList, containerCanBeNull: true );
+            refContainer.LoadFromContainer<ProjectReference, ExpandoObject>( _refCreator, context, out var refList, containerCanBeNull: true );
 
-            TargetFramework = tgtFramework.Framework;
+            TargetFramework = tgtFramework!.Framework;
             TargetVersion = tgtFramework.Version;
 
             ProjectReferences.Clear();
-            ProjectReferences.AddRange(refList!);
+
+            if( refList != null )
+                ProjectReferences.AddRange(refList);
 
             return true;
         }

@@ -8,6 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Text.Json;
 using J4JSoftware.Logging;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
@@ -36,8 +38,8 @@ namespace J4JSoftware.Roslyn
             Func<ProjectFileDependencyGroup> pfdgCreator,
             Func<ProjectInfo> projCreator,
             IJ4JLogger logger
-            )
-            : base(logger)
+        )
+            : base( logger )
         {
             _paConverter = paConverter;
             _tgtCreator = tgtCreator;
@@ -49,9 +51,13 @@ namespace J4JSoftware.Roslyn
 
         public int Version { get; private set; }
         public string ProjectFile { get; private set; } = string.Empty;
+        public string Name => Path.GetFileNameWithoutExtension( ProjectFile ) ?? string.Empty;
         public List<TargetInfo> Targets { get; } = new List<TargetInfo>();
         public List<ILibraryInfo> Libraries { get; } = new List<ILibraryInfo>();
-        public List<ProjectFileDependencyGroup> ProjectFileDependencyGroups { get; } = new List<ProjectFileDependencyGroup>();
+
+        public List<ProjectFileDependencyGroup> ProjectFileDependencyGroups { get; } =
+            new List<ProjectFileDependencyGroup>();
+
         public List<string> PackageFolders { get; } = new List<string>();
         public ProjectInfo? Project { get; private set; }
         public string ProjectFilePath => Project?.Restore?.ProjectPath ?? string.Empty;
@@ -69,14 +75,14 @@ namespace J4JSoftware.Roslyn
             if( !File.Exists( projectFilePath ) )
             {
                 Logger.Error<string>( "File '{projectFilePath}' doesn't exist", projectFilePath );
-                
+
                 return false;
             }
 
             var projectFolder = Path.GetDirectoryName( projectFilePath );
             if( String.IsNullOrEmpty( projectFolder ) )
             {
-                Logger.Error<string>( "File '{projectFilePath}' doesn't have a directory", projectFilePath);
+                Logger.Error<string>( "File '{projectFilePath}' doesn't have a directory", projectFilePath );
 
                 return false;
             }
@@ -151,13 +157,12 @@ namespace J4JSoftware.Roslyn
                 RootContainer = container
             };
 
-            var okay = GetProperty<ExpandoObject>( container, "targets", context, out var tgtDict );
-            okay &= GetProperty<ExpandoObject>( container, "libraries", context, out var libDict );
-            okay &= GetProperty<ExpandoObject>( container, "projectFileDependencyGroups", context,
-                out var projFileDepDict );
-            okay &= GetProperty<ExpandoObject>( container, "packageFolders", context, out var pkgDict );
-            okay &= GetProperty<ExpandoObject>( container, "project", context, out var projDict );
-            okay &= GetProperty<int>( container, "version", context, out var version );
+            var okay = container.GetProperty<ExpandoObject>( "targets", out var tgtDict );
+            okay &= container.GetProperty<ExpandoObject>( "libraries", out var libDict );
+            okay &= container.GetProperty<ExpandoObject>( "projectFileDependencyGroups", out var projFileDepDict );
+            okay &= container.GetProperty<ExpandoObject>( "packageFolders", out var pkgDict );
+            okay &= container.GetProperty<ExpandoObject>( "project", out var projDict );
+            okay &= container.GetProperty<int>( "version", out var version );
             if( !okay ) return false;
 
             // separate the libraries into package libraries and project libraries so we can process
@@ -168,16 +173,16 @@ namespace J4JSoftware.Roslyn
             if( !FilterLibraries( libDict, ReferenceType.Project, context, out var projLibDict ) )
                 return false;
 
-            var project = _projCreator();
-
-            okay = LoadFromContainer<TargetInfo, ExpandoObject>( tgtDict, _tgtCreator, context, out var tgtList );
-            okay &= LoadFromContainer<PackageLibrary, ExpandoObject>( pkgLibDict!, _pkgLibCreator, context,
+            okay = tgtDict.LoadFromContainer<TargetInfo, ExpandoObject>( _tgtCreator, context, out var tgtList );
+            okay &= pkgLibDict!.LoadFromContainer<PackageLibrary, ExpandoObject>( _pkgLibCreator, context,
                 out var pkgLibList );
-            okay &= LoadFromContainer<ProjectLibrary, ExpandoObject>( projLibDict!, _projLibCreator, context,
+            okay &= projLibDict!.LoadFromContainer<ProjectLibrary, ExpandoObject>( _projLibCreator, context,
                 out var projLibList );
-            okay &= LoadFromContainer<ProjectFileDependencyGroup, List<string>>( projFileDepDict, _pfdgCreator, context,
+            okay &= projFileDepDict.LoadFromContainer<ProjectFileDependencyGroup, List<string>>( _pfdgCreator, context,
                 out var pfdgList );
-            okay &= LoadNamesFromContainer( pkgDict, out var pkgList );
+            okay &= pkgDict.LoadNamesFromContainer( out var pkgList );
+
+            var project = _projCreator();
             okay &= project.Initialize( projDict, context );
 
             if( !okay ) return false;
@@ -190,19 +195,19 @@ namespace J4JSoftware.Roslyn
             Version = version;
 
             Targets.Clear();
-            Targets.AddRange(tgtList!);
+            Targets.AddRange( tgtList! );
 
             Libraries.Clear();
             Libraries.AddRange( pkgLibList! );
             Libraries.AddRange( projLibList! );
 
             ProjectFileDependencyGroups.Clear();
-            ProjectFileDependencyGroups.AddRange(pfdgList!);
+            ProjectFileDependencyGroups.AddRange( pfdgList! );
 
             Project = project;
 
             PackageFolders.Clear();
-            PackageFolders.AddRange(pkgList!);
+            PackageFolders.AddRange( pkgList! );
 
             ProjectLibrary = projLib;
 
@@ -228,13 +233,13 @@ namespace J4JSoftware.Roslyn
                 case CSharpFramework.NetStandard:
                     result = new CompilationReferences
                     {
-                        new NamedReference("netstandard") { IsVirtual = true }
+                        new NamedReference( "netstandard" ) { IsVirtual = true }
                     };
 
                     return true;
             }
 
-            Logger.Error<string, CSharpFramework>( "Unsupported {0} '{1}'", 
+            Logger.Error<string, CSharpFramework>( "Unsupported {0} '{1}'",
                 nameof(CSharpFramework),
                 tgtFramework.Framework );
 
@@ -257,7 +262,7 @@ namespace J4JSoftware.Roslyn
             foreach( var libInfo in Libraries.Where( lib => lib.Type == ReferenceType.Project )
                 .Cast<ProjectLibrary>() )
             {
-                srcFiles.AddRange(libInfo.SourceFiles);
+                srcFiles.AddRange( libInfo.SourceFiles );
             }
 
             srcFiles = srcFiles.Distinct( StringComparer.OrdinalIgnoreCase ).ToList();
@@ -265,7 +270,8 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool FilterLibraries( ExpandoObject libDict, ReferenceType refType, ProjectAssetsContext context, out ExpandoObject? result )
+        private bool FilterLibraries( ExpandoObject libDict, ReferenceType refType, ProjectAssetsContext context,
+            out ExpandoObject? result )
         {
             result = null;
 
@@ -283,13 +289,13 @@ namespace J4JSoftware.Roslyn
             {
                 if( kvp.Value is ExpandoObject child )
                 {
-                    if( GetProperty<string>( child, "type", context, out var typeText )
+                    if( child.GetProperty<string>( "type", out var typeText )
                         && Enum.TryParse<ReferenceType>( typeText, true, out var childRefType )
                         && childRefType == refType )
                     {
                         if( !result.TryAdd( kvp.Key, kvp.Value ) )
                         {
-                            Logger.Error<string, string, string>( "Couldn't add {0} to new {1} in {2}", 
+                            Logger.Error<string, string, string>( "Couldn't add {0} to new {1} in {2}",
                                 kvp.Key,
                                 nameof(ExpandoObject), nameof(FilterLibraries) );
 

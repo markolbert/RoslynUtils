@@ -1,65 +1,100 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using J4JSoftware.Logging;
+using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
     public class TargetFramework : VersionedText, IEquatable<TargetFramework>
     {
-        public static bool CreateTargetFramework( string text, out TargetFramework result, IJ4JLogger? logger )
+        public static bool Create(string text, TargetFrameworkTextStyle style, out TargetFramework? result)
         {
-            result = new TargetFramework();
+            result = null;
 
-            return result.Initialize( text, logger );
-        }
+            var (fwName, fwVersion ) = style switch
+            {
+                TargetFrameworkTextStyle.ExplicitVersion => ParseExplicit( text ),
+                TargetFrameworkTextStyle.Simple => ParseSimple( text ),
+                _ => throw new ArgumentOutOfRangeException( nameof(style), style, null )
+            };
 
-        private bool _isApp = false;
-
-        public CSharpFramework Framework { get; protected set; }
-
-        public bool IsApp
-        {
-            get => Framework == CSharpFramework.NetCoreApp || _isApp;
-            set => _isApp = value;
-        }
-
-        public override bool Initialize( string text, IJ4JLogger? logger )
-        {
-            if( !base.Initialize( text, logger ) )
+            if (!Enum.TryParse(typeof(CSharpFramework), fwName, true, out var framework))
                 return false;
 
-            if( Enum.TryParse<CSharpFramework>( TextComponent, true, out var framework ) )
-            {
-                Framework = framework;
-
-                return true;
-            }
-
-            // some versioned framework names come in an extended format. so check for that before failing
-            var pattern = @"\.(\D*),Version=v";
-            var matches = Regex.Match( TextComponent, pattern );
-
-            if( !matches.Success || matches.Groups.Count < 2 )
-            {
-                LastError = $"Couldn't parse framework name '{TextComponent}' to a {nameof( CSharpFramework )}";
-                logger?.Error( LastError );
-
+            if (!SemanticVersion.TryParse(fwVersion, out var version))
                 return false;
-            }
 
-            if( !Enum.TryParse<CSharpFramework>( matches.Groups[1].Value, true, out var framework2 ) )
+            result = new TargetFramework
             {
-                LastError = $"Couldn't parse framework name '{matches.Groups[ 1 ].Value}' to a {nameof( CSharpFramework )}";
-                logger?.Error( LastError );
+                TextComponent = fwName,
+                Framework = (CSharpFramework)framework!
+            };
 
-                return false;
+            // adjust the SemanticVersion for net stuff, which doesn't use periods
+            if (result.Framework == CSharpFramework.Net || result.Framework == CSharpFramework.NetFramework)
+            {
+                if (version.Major < 10)
+                    result.Version = new SemanticVersion(version.Major, 0, 0);
+                else
+                {
+                    if (version.Major < 100)
+                        result.Version = new SemanticVersion(version.Major / 10, version.Major % 10, 0);
+                    else
+                        result.Version = new SemanticVersion(
+                            version.Major / 100,
+                            (version.Major % 100) / 10,
+                            (version.Major % 100) % 10
+                        );
+                }
             }
-
-            Framework = framework2;
+            else result.Version = version;
 
             return true;
         }
+
+        private static (string fwName, string fwVersion) ParseSimple( string text )
+        {
+            var textEnd = -1;
+
+            foreach (var curChar in text)
+            {
+                textEnd++;
+
+                if (Char.IsDigit(curChar))
+                    break;
+            }
+
+            // append a trailing patch of 0 if none supplied
+            var fwVersion = text.Substring( textEnd );
+            fwVersion = fwVersion.Count( c => c == '.' ) < 2 ? $"{fwVersion}.0" : fwVersion;
+
+            return ( text.Substring( 0, textEnd ), fwVersion );
+        }
+
+        private static (string fwName, string fwVersion) ParseExplicit( string text )
+        {
+            var parts = text.Split(",Version=v", StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts == null || parts.Length != 2)
+                return (string.Empty, string.Empty);
+
+            // strip off the leading period
+            var fwName = parts[ 0 ].Substring( 1 );
+
+            // append a trailing patch of 0 if none supplied
+            var fwVersion = parts[ 1 ].Count( c => c == '.' ) < 2 ? $"{parts[ 1 ]}.0" : parts[ 1 ];
+
+            return ( fwName, fwVersion );
+        }
+
+        protected TargetFramework()
+        {
+        }
+
+        public CSharpFramework Framework { get; private set; }
 
         public override string ToString()
         {
@@ -67,9 +102,17 @@ namespace J4JSoftware.Roslyn
 
             sb.Append( Framework );
 
-            if( Framework == CSharpFramework.Net )
+            if( Framework == CSharpFramework.Net || Framework == CSharpFramework.NetFramework )
+            {
                 sb.Append( Version.Major );
-            else sb.Append( $"{Version.Major}.{Version.Minor}" );
+                if( Version.Minor > 0 ) sb.Append( Version.Minor );
+                if( Version.Patch > 0 ) sb.Append( Version.Patch );
+            }
+            else
+            {
+                sb.Append( $"{Version.Major}.{Version.Minor}" );
+                if( Version.Patch > 0 ) sb.Append( $".{Version.Patch}" );
+            }
 
             return sb.ToString();
         }
@@ -92,12 +135,12 @@ namespace J4JSoftware.Roslyn
                 return false;
             if( ReferenceEquals( this, other ) )
                 return true;
-            return Framework == other.Framework && IsApp == other.IsApp && Equals( Version, other.Version );
+            return Framework == other.Framework && Equals( Version, other.Version );
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine( (int) Framework, IsApp, Version );
+            return HashCode.Combine( (int) Framework, Version );
         }
 
         public static bool operator ==( TargetFramework? left, TargetFramework? right )

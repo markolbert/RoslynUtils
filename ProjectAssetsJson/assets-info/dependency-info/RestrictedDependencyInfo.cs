@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !VersionedText.TryParseSemanticVersion( parts[ 2 ], out var version, Logger ) )
+            if( !Versioning.GetSemanticVersion( parts[ 2 ], out var version ) )
                 return false;
 
             Assembly = parts[ 0 ];

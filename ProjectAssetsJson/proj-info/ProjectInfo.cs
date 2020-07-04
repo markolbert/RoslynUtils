@@ -40,26 +40,26 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( container, context ) )
                 return false;
 
-            var okay = GetProperty<string>( container, "version", context, out var versionText );
-            okay &= GetProperty<ExpandoObject>( container, "restore", context, out var restoreContainer );
-            okay &= GetProperty<ExpandoObject>( container, "frameworks", context, out var frameContainer );
-            okay &= GetProperty<ExpandoObject>( container, "warningProperties", context, out var warnContainer,
+            var okay = container.GetProperty<string>( "version", out var versionText );
+            okay &= container.GetProperty<ExpandoObject>( "restore", out var restoreContainer );
+            okay &= container.GetProperty<ExpandoObject>( "frameworks", out var frameContainer );
+            okay &= container.GetProperty<ExpandoObject>( "warningProperties", out var warnContainer,
                 optional : true );
 
             if( !okay ) return false;
 
-            if( !VersionedText.TryParseSemanticVersion( versionText, out var version, Logger ) )
+            if( !Versioning.GetSemanticVersion( versionText, out var version) )
                 return false;
 
             var restore = _restoreCreator();
             if( !restore.Initialize( restoreContainer, context ) )
                 return false;
 
-            if( !LoadFromContainer<FrameworkReferences, ExpandoObject>( frameContainer, _fwCreator, context,
+            if( !frameContainer.LoadFromContainer<FrameworkReferences, ExpandoObject>( _fwCreator, context,
                 out var fwList ) )
                 return false;
 
-            LoadFromContainer<WarningProperty, List<string>>( warnContainer, _wpCreator, context, out var warnList,
+            warnContainer.LoadFromContainer<WarningProperty, List<string>>( _wpCreator, context, out var warnList,
                 containerCanBeNull : true );
 
             Version = version!;
@@ -69,7 +69,9 @@ namespace J4JSoftware.Roslyn
             Frameworks.AddRange(fwList!);
 
             WarningProperties.Clear();
-            WarningProperties.AddRange(warnList!);
+
+            if( warnList != null )
+                WarningProperties.AddRange(warnList);
 
             return true;
         }

@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "privateAssets", context, out var privateAssets ) )
+            if( !container.GetProperty<string>( "privateAssets", out var privateAssets ) )
                 return false;
 
             LibraryName = rawName;

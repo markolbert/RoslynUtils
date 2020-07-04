@@ -8,13 +8,6 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class PackageAbsolutePath
-    {
-        public TargetFramework? TargetFramework { get; set; }
-        public string DllPath { get; set; } = string.Empty;
-        public bool IsVirtual => DllPath != null && DllPath == "_._";
-    }
-
     public class LibraryInfo : ConfigurationBase, ILibraryInfo
     {
         protected LibraryInfo(
@@ -36,10 +29,10 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !VersionedText.CreateVersionedText( rawName, out var verText, Logger ) )
+            if( !VersionedText.Create( rawName, out var verText ) )
                 return false;
 
-            if( !GetProperty<string>( container, "type", context, out var libTypeText ) )
+            if( !container.GetProperty<string>( "type", out var libTypeText ) )
                 return false;
 
             if( !Enum.TryParse<ReferenceType>( libTypeText, true, out var libType ) )
@@ -59,10 +52,10 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !GetProperty<string>( container, "path", context, out var path ) )
+            if( !container.GetProperty<string>( "path", out var path ) )
                 return false;
 
-            Assembly = verText.TextComponent;
+            Assembly = verText!.TextComponent;
             Version = verText.Version;
             Path = path;
 
@@ -88,15 +81,15 @@ namespace J4JSoftware.Roslyn
 
                 var fwDirectories = Directory.GetDirectories( pkgDir, tgtFramework.Framework + "*" )
                     .Where( dir =>
-                        VersionedText.CreateVersionedText( System.IO.Path.GetFileName( dir ), out var result, Logger ) )
+                        TargetFramework.Create(System.IO.Path.GetFileName( dir ), TargetFrameworkTextStyle.Simple, out var _ ) )
                     .Select( dir =>
                     {
-                        VersionedText.CreateVersionedText( System.IO.Path.GetFileName( dir ), out var verText, Logger );
+                        TargetFramework.Create( System.IO.Path.GetFileName( dir ), TargetFrameworkTextStyle.Simple, out var tFramework );
 
                         return new
                         {
                             path = dir,
-                            version = verText.Version
+                            version = tFramework!.Version
                         };
                     } )
                     .OrderByDescending( x => x.version )

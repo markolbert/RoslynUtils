@@ -28,10 +28,10 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !TargetFramework.CreateTargetFramework( rawName, out var tgtFramework, Logger ) )
+            if( !TargetFramework.Create( rawName, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFramework) )
                 return false;
 
-            Target = tgtFramework.Framework;
+            Target = tgtFramework!.Framework;
             Version = tgtFramework.Version;
 
             Packages.Clear();

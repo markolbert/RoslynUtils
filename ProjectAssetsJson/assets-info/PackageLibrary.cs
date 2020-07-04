@@ -23,9 +23,9 @@ namespace J4JSoftware.Roslyn
             if( !base.Initialize( rawName, container, context ) )
                 return false;
 
-            var okay = GetProperty<string>( container, "SHA512", context, out var sha512 );
-            okay &= GetProperty<string>( container, "path", context, out var path );
-            okay &= GetProperty<List<string>>( container, "files", context, out var files );
+            var okay = container.GetProperty<string>( "SHA512", out var sha512 );
+            okay &= container.GetProperty<string>( "path", out var path );
+            okay &= container.GetProperty<List<string>>( "files", out var files );
 
             if( !okay ) return false;
 

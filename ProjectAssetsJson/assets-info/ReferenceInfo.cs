@@ -31,10 +31,10 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !VersionedText.CreateVersionedText(rawName, out var verText, Logger) )
+            if( !VersionedText.Create(rawName, out var verText) )
                 return false;
 
-            Assembly = verText.TextComponent;
+            Assembly = verText!.TextComponent;
             Version = verText.Version;
             Dependencies.Clear();
 
@@ -62,7 +62,7 @@ namespace J4JSoftware.Roslyn
             {
                 if( kvp.Value is string versionText )
                 {
-                    if( VersionedText.TryParseSemanticVersion( versionText, out var version, Logger ) )
+                    if( Versioning.GetSemanticVersion( versionText, out var version ) )
                     {
                         var newItem = _diCreator();
 

@@ -34,10 +34,10 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !J4JSoftware.Roslyn.TargetFramework.CreateTargetFramework(rawName, out var tgtFramework, Logger ) )
+            if( !Roslyn.TargetFramework.Create(rawName, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFramework ) )
                 return false;
 
-            TargetFramework = tgtFramework.Framework;
+            TargetFramework = tgtFramework!.Framework;
             TargetVersion = tgtFramework.Version;
             Dependencies.Clear();
 

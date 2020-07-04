@@ -118,7 +118,7 @@ namespace J4JSoftware.Roslyn
             if( !base.Initialize( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "msbuildProject", context, out var rawPath ) )
+            if( !container.GetProperty<string>( "msbuildProject", out var rawPath ) )
                 return false;
 
             var projPath = System.IO.Path.GetFullPath( System.IO.Path.Combine( context.ProjectDirectory!, rawPath ) );
@@ -198,12 +198,10 @@ namespace J4JSoftware.Roslyn
                 foreach( var curFW in fwStrings )
                 {
                     //TODO: need to figure out how to determine if it's an app
-                    var newTF = new TargetFramework();
-
-                    if( !newTF.Initialize( curFW, Logger ) )
+                    if( !TargetFramework.Create( curFW, TargetFrameworkTextStyle.Simple, out var newTF ) )
                         return false;
 
-                    TargetFrameworks.Add( newTF );
+                    TargetFrameworks.Add( newTF! );
                 }
 
                 return true;

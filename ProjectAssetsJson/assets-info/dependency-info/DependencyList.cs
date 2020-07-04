@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "target", context, out var tgtTypeText ) )
+            if( !container.GetProperty<string>( "target", out var tgtTypeText ) )
                 return false;
 
             if( !Enum.TryParse<ReferenceType>( tgtTypeText, true, out var tgtType ) )
@@ -47,7 +47,7 @@ namespace J4JSoftware.Roslyn
 
             foreach( var versionText in versionTexts )
             {
-                if( VersionedText.TryParseSemanticVersion( versionText, out var version, Logger ) )
+                if( Versioning.GetSemanticVersion( versionText, out var version ) )
                     Versions.Add( version! );
                 else retVal = false;
             }

@@ -47,11 +47,6 @@ namespace J4JSoftware.Roslyn
             _exceptions.Clear();
             Reference = null;
 
-            // no point in trying to load a virtual assembly (i.e., one whose filename is _._)
-            // by file path...
-            //if( IsVirtual )
-            //    return false;
-
             // if loading by name didn't work, next try loading from the file path, if one exists
             if( NamePaths.ContainsKey( CompilationReferenceType.FileSystem )
                 && LoadFromFilePath( context ) )

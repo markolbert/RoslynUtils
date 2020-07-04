@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
             if( !ValidateInitializationArguments( rawName, container, context ) )
                 return false;
 
-            if( !GetProperty<string>( container, "projectPath", context, out var path ) )
+            if( !container.GetProperty<string>( "projectPath", out var path ) )
                 return false;
 
             ProjectName = rawName;

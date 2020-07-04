@@ -1,0 +1,18 @@
+{
+  "targets": {
+    ".NETCoreApp,Version=v3.1": {
+      "Humanizer.Core/2.2.0": {
+        "type": "package",
+        "dependencies": {
+          "NETStandard.Library": "1.6.1"
+        },
+        "compile": {
+          "lib/netstandard1.0/_._": {}
+        },
+        "runtime": {
+          "lib/netstandard1.0/Humanizer.dll": {}
+        }
+      }
+    }
+  }
+}
