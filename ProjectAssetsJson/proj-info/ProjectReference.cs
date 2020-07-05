@@ -1,30 +1,23 @@
-﻿using System.Dynamic;
+﻿using System;
+using System.Dynamic;
 using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectReference : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
+    public class ProjectReference : ConfigurationBase
     {
-        public ProjectReference( IJ4JLogger logger ) 
-            : base( logger )
+        public ProjectReference( 
+            string text,
+            ExpandoObject refInfo,
+            Func<IJ4JLogger> loggerFactory 
+            ) 
+            : base( loggerFactory )
         {
+            ProjectName = text;
+            ProjectPath = GetProperty<string>( refInfo, "projectPath" );
         }
 
-        public string ProjectName { get; set; } = string.Empty;
-        public string ProjectPath { get; set; } = string.Empty;
-
-        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !ValidateInitializationArguments( rawName, container, context ) )
-                return false;
-
-            if( !container.GetProperty<string>( "projectPath", out var path ) )
-                return false;
-
-            ProjectName = rawName;
-            ProjectPath = path;
-
-            return true;
-        }
+        public string ProjectName { get; }
+        public string ProjectPath { get; }
     }
 }

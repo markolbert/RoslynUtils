@@ -6,58 +6,40 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TargetInfo : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
+    public class TargetInfo : ConfigurationBase
     {
-        private readonly Func<ReferenceInfo> _refCreator;
+        private readonly TargetFramework _tgtFW;
 
-        public TargetInfo(
-            Func<ReferenceInfo> refCreator,
-            IJ4JLogger logger
-        )
-            : base( logger )
+#pragma warning disable 8618
+        public TargetInfo( 
+#pragma warning restore 8618
+            string text, 
+            ExpandoObject tgtInfoCollection, 
+            Func<IJ4JLogger> loggerFactory )
+            : base( loggerFactory )
         {
-            _refCreator = refCreator;
+            if( TargetFramework.Create( text, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFW ) )
+                _tgtFW = tgtFW!;
+            else LogAndThrow( $"Couldn't create a {nameof(TargetFramework)}", text, typeof(ExpandoObject) );
+
+            CreatePackageList( tgtInfoCollection );
         }
 
-        public CSharpFramework Target { get; set; }
-        public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );
-        public List<ReferenceInfo> Packages { get; } = new List<ReferenceInfo>();
-
-        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
+        private void CreatePackageList( ExpandoObject tgtInfoCollection )
         {
-            if( !ValidateInitializationArguments( rawName, container, context ) )
-                return false;
-
-            if( !TargetFramework.Create( rawName, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFramework) )
-                return false;
-
-            Target = tgtFramework!.Framework;
-            Version = tgtFramework.Version;
-
             Packages.Clear();
 
-            var retVal = true;
-
-            foreach( var kvp in container )
+            foreach (var kvp in tgtInfoCollection )
             {
-                var newItem = _refCreator();
-
-                if( kvp.Value is ExpandoObject childContainer )
-                {
-                    if( newItem.Initialize( kvp.Key, childContainer, context ) )
-                        Packages.Add( newItem );
-                    else
-                        retVal = false;
-                }
+                if( kvp.Value is ExpandoObject tgtContainer )
+                    Packages.Add( new ReferenceInfo( kvp.Key, tgtContainer, LoggerFactory ) );
                 else
-                {
-                    Logger.Error<string, string>( "{0} property is not a {1}", kvp.Key, nameof(ExpandoObject) );
-
-                    retVal = false;
-                }
+                    LogAndThrow($"Missing property", kvp.Key, typeof(ExpandoObject) );
             }
-
-            return retVal;
         }
+
+        public CSharpFramework Target => _tgtFW.Framework;
+        public SemanticVersion Version => _tgtFW.Version;
+        public List<ReferenceInfo> Packages { get; } = new List<ReferenceInfo>();
     }
 }

@@ -7,41 +7,27 @@ namespace J4JSoftware.Roslyn
 {
     public class FrameworkReferences : FrameworkBase
     {
-        private readonly Func<ProjectReference> _refCreator;
-
         public FrameworkReferences( 
-            Func<ProjectReference> refCreator,
-            IJ4JLogger logger
+            string text,
+            ExpandoObject fwInfo,
+            Func<IJ4JLogger> loggerFactory
             ) 
-            : base( logger )
+            : base( text, loggerFactory )
         {
-            _refCreator = refCreator;
+            CreateProjectReferences( GetProperty<ExpandoObject>( fwInfo, "projectReferences", optional : true ) );
+        }
+
+        private void CreateProjectReferences( ExpandoObject refInfo )
+        {
+            foreach( var kvp in refInfo )
+            {
+                if( kvp.Value is ExpandoObject detail )
+                    ProjectReferences.Add( new ProjectReference( kvp.Key, detail, LoggerFactory ) );
+                else
+                    LogAndThrow( "Project reference item is not an ExpandoObject", kvp.Key, typeof(ExpandoObject) );
+            }
         }
 
         public List<ProjectReference> ProjectReferences { get; } = new List<ProjectReference>();
-
-        public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !base.Initialize( rawName, container, context ) )
-                return false;
-
-            if( !Roslyn.TargetFramework.Create(rawName, TargetFrameworkTextStyle.Simple, out var tgtFramework) )
-                return false;
-
-            if( !container.GetProperty<ExpandoObject>( "projectReferences", out var refContainer, optional: true ) )
-                return false;
-
-            refContainer.LoadFromContainer<ProjectReference, ExpandoObject>( _refCreator, context, out var refList, containerCanBeNull: true );
-
-            TargetFramework = tgtFramework!.Framework;
-            TargetVersion = tgtFramework.Version;
-
-            ProjectReferences.Clear();
-
-            if( refList != null )
-                ProjectReferences.AddRange(refList);
-
-            return true;
-        }
     }
 }

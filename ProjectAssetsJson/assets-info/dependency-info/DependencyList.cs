@@ -1,58 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependencyList : DependencyInfoBase, IInitializeFromNamed<ExpandoObject>
+    public class DependencyList : DependencyInfoBase
     {
-        public DependencyList( IJ4JLogger logger ) 
-            : base( logger )
+        public DependencyList(
+            string text,
+            ExpandoObject depListInfo,
+            Func<IJ4JLogger> loggerFactory ) 
+            : base( text, loggerFactory )
         {
-        }
+            TargetType = GetEnum<ReferenceType>( depListInfo, "target" );
 
-        public ReferenceType TargetType { get; set; }
-        public List<SemanticVersion> Versions { get; } = new List<SemanticVersion>();
-
-        public virtual bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !ValidateInitializationArguments( rawName, container, context ) )
-                return false;
-
-            if( !container.GetProperty<string>( "target", out var tgtTypeText ) )
-                return false;
-
-            if( !Enum.TryParse<ReferenceType>( tgtTypeText, true, out var tgtType ) )
-            {
-                Logger.Error<string, string>( "Couldn't parse '{0}' to a {1}", tgtTypeText, nameof(ReferenceType) );
-
-                return false;
-            }
-
-            Assembly = rawName;
-            TargetType = tgtType;
+            var versionsText = GetProperty<string>(depListInfo,"version");
 
             // parse into individual version strings
-            rawName = rawName.Replace( "[", "" )
-                .Replace( ")", "" )
-                .Replace( " ", "" );
+            versionsText = versionsText.Replace("[", "")
+                .Replace(")", "")
+                .Replace(" ", "");
 
-            var versionTexts = rawName.Split( ',', StringSplitOptions.RemoveEmptyEntries );
+            var parts = versionsText.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-            Versions.Clear();
-
-            var retVal = true;
-
-            foreach( var versionText in versionTexts )
+            foreach (var verText in parts)
             {
-                if( Versioning.GetSemanticVersion( versionText, out var version ) )
+                if( Versioning.GetSemanticVersion( verText, out var version ) )
                     Versions.Add( version! );
-                else retVal = false;
+                else throw new ArgumentException( $"Couldn't parse '{verText}' into a {typeof(SemanticVersion)}" );
             }
-
-            return retVal;
         }
+
+        public ReferenceType TargetType { get; }
+        public List<SemanticVersion> Versions { get; } = new List<SemanticVersion>();
     }
 }

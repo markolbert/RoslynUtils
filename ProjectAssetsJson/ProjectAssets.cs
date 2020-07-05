@@ -10,6 +10,7 @@ using System.Text.Json;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
@@ -24,33 +25,21 @@ namespace J4JSoftware.Roslyn
         }
 
         private readonly JsonProjectAssetsConverter _paConverter;
-        private readonly Func<TargetInfo> _tgtCreator;
-        private readonly Func<PackageLibrary> _pkgLibCreator;
-        private readonly Func<ProjectLibrary> _projLibCreator;
-        private readonly Func<ProjectFileDependencyGroup> _pfdgCreator;
-        private readonly Func<ProjectInfo> _projCreator;
 
         public ProjectAssets(
             JsonProjectAssetsConverter paConverter,
-            Func<TargetInfo> tgtCreator,
-            Func<PackageLibrary> pkgLibCreator,
-            Func<ProjectLibrary> projLibCreator,
-            Func<ProjectFileDependencyGroup> pfdgCreator,
-            Func<ProjectInfo> projCreator,
-            IJ4JLogger logger
+            Func<IJ4JLogger> loggerFactory
         )
-            : base( logger )
+            : base( loggerFactory )
         {
             _paConverter = paConverter;
-            _tgtCreator = tgtCreator;
-            _pkgLibCreator = pkgLibCreator;
-            _projLibCreator = projLibCreator;
-            _pfdgCreator = pfdgCreator;
-            _projCreator = projCreator;
         }
+
+        public bool IsValid { get; internal set; }
 
         public int Version { get; private set; }
         public string ProjectFile { get; private set; } = string.Empty;
+        public string ProjectDirectory => Path.GetDirectoryName( ProjectFile ) ?? string.Empty;
         public string Name => Path.GetFileNameWithoutExtension( ProjectFile ) ?? string.Empty;
         public List<TargetInfo> Targets { get; } = new List<TargetInfo>();
         public List<ILibraryInfo> Libraries { get; } = new List<ILibraryInfo>();
@@ -137,11 +126,26 @@ namespace J4JSoftware.Roslyn
             var opt = new JsonSerializerOptions();
             opt.Converters.Add( _paConverter );
 
-            ExpandoObject container;
+            IsValid = true;
 
             try
             {
-                container = JsonSerializer.Deserialize<ExpandoObject>( File.ReadAllText( projectAssetsPath ), opt );
+                var configuration =
+                    JsonSerializer.Deserialize<ExpandoObject>( File.ReadAllText( projectAssetsPath ), opt );
+
+                Version = GetProperty<int>( configuration, "version" );
+                
+                Project = new ProjectInfo( 
+                    "project", 
+                    GetProperty<ExpandoObject>( configuration, "project" ),
+                    LoggerFactory );
+
+                ProjectLibrary = new ProjectLibrary( projFilePath, LoggerFactory );
+
+                CreateTargets( configuration );
+                CreateLibraries( configuration );
+                CreateProjectFileDependencyGroups( configuration );
+                CreatePackageFolders( configuration );
             }
             catch( Exception e )
             {
@@ -150,68 +154,88 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var context = new ProjectAssetsContext
-            {
-                ProjectAssetsJsonPath = projectAssetsPath,
-                ProjectPath = projFilePath,
-                RootContainer = container
-            };
+            return IsValid;
+        }
 
-            var okay = container.GetProperty<ExpandoObject>( "targets", out var tgtDict );
-            okay &= container.GetProperty<ExpandoObject>( "libraries", out var libDict );
-            okay &= container.GetProperty<ExpandoObject>( "projectFileDependencyGroups", out var projFileDepDict );
-            okay &= container.GetProperty<ExpandoObject>( "packageFolders", out var pkgDict );
-            okay &= container.GetProperty<ExpandoObject>( "project", out var projDict );
-            okay &= container.GetProperty<int>( "version", out var version );
-            if( !okay ) return false;
-
-            // separate the libraries into package libraries and project libraries so we can process
-            // them separately
-            if( !FilterLibraries( libDict, ReferenceType.Package, context, out var pkgLibDict ) )
-                return false;
-
-            if( !FilterLibraries( libDict, ReferenceType.Project, context, out var projLibDict ) )
-                return false;
-
-            okay = tgtDict.LoadFromContainer<TargetInfo, ExpandoObject>( _tgtCreator, context, out var tgtList );
-            okay &= pkgLibDict!.LoadFromContainer<PackageLibrary, ExpandoObject>( _pkgLibCreator, context,
-                out var pkgLibList );
-            okay &= projLibDict!.LoadFromContainer<ProjectLibrary, ExpandoObject>( _projLibCreator, context,
-                out var projLibList );
-            okay &= projFileDepDict.LoadFromContainer<ProjectFileDependencyGroup, List<string>>( _pfdgCreator, context,
-                out var pfdgList );
-            okay &= pkgDict.LoadNamesFromContainer( out var pkgList );
-
-            var project = _projCreator();
-            okay &= project.Initialize( projDict, context );
-
-            if( !okay ) return false;
-
-            var projLib = _projLibCreator();
-
-            if( !projLib.InitializeFromProjectFile( projFilePath ) )
-                return false;
-
-            Version = version;
-
+        private void CreateTargets( ExpandoObject configuration )
+        {
             Targets.Clear();
-            Targets.AddRange( tgtList! );
 
+            foreach( var kvp in GetProperty<ExpandoObject>( configuration, "targets" ) )
+            {
+                if( kvp.Value is ExpandoObject container )
+                    Targets.Add( new TargetInfo( kvp.Key, container, LoggerFactory ) );
+                else
+                {
+                    IsValid = false;
+                    LogAndThrow( $"Couldn't create a {typeof(TargetInfo)} object", kvp.Key, typeof(ExpandoObject) );
+                }
+            }
+        }
+
+        private void CreateLibraries( ExpandoObject configuration )
+        {
             Libraries.Clear();
-            Libraries.AddRange( pkgLibList! );
-            Libraries.AddRange( projLibList! );
 
+            foreach (var kvp in GetProperty<ExpandoObject>(configuration,"libraries"))
+            {
+                if( kvp.Value is ExpandoObject container )
+                {
+                    var refType = GetEnum<ReferenceType>( container,"type" );
+
+                    switch ( refType )
+                    {
+                        case ReferenceType.Package:
+                            Libraries.Add( new PackageLibrary( kvp.Key, container, LoggerFactory ) );
+                            break;
+
+                        case ReferenceType.Project:
+                            Libraries.Add( new ProjectLibrary( kvp.Key, container, ProjectDirectory, LoggerFactory ) );
+                            break;
+
+                        default:
+                            LogAndThrow( $"Unsupported value '{refType}' for {typeof(ReferenceType)}" );
+                            break;
+                    }
+                }
+                else
+                {
+                    IsValid = false;
+
+                    LogAndThrow( 
+                        $"Couldn't create a PackageLibrary or ProjectLibrary", 
+                        kvp.Key,
+                        typeof(ExpandoObject) );
+                }
+            }
+        }
+
+        private void CreateProjectFileDependencyGroups( ExpandoObject configuration )
+        {
             ProjectFileDependencyGroups.Clear();
-            ProjectFileDependencyGroups.AddRange( pfdgList! );
 
-            Project = project;
+            foreach (var kvp in GetProperty<ExpandoObject>(configuration,"projectFileDependencyGroups"))
+            {
+                if (kvp.Value is List<string> container)
+                    ProjectFileDependencyGroups.Add(new ProjectFileDependencyGroup(kvp.Key, container, LoggerFactory));
+                else
+                {
+                    IsValid = false;
 
+                    LogAndThrow( 
+                        $"Couldn't create a {typeof(ProjectFileDependencyGroup)}", 
+                        kvp.Key,
+                        typeof(List<string>) );
+                }
+            }
+        }
+
+        private void CreatePackageFolders( ExpandoObject configuration )
+        {
             PackageFolders.Clear();
-            PackageFolders.AddRange( pkgList! );
 
-            ProjectLibrary = projLib;
-
-            return true;
+            var asDict = (IDictionary<string, object>) GetProperty<ExpandoObject>( configuration,"packageFolders" );
+            PackageFolders.AddRange( asDict.Keys );
         }
 
         public bool GetLibraryPaths( TargetFramework tgtFramework, out CompilationReferences? result )
@@ -268,46 +292,6 @@ namespace J4JSoftware.Roslyn
             srcFiles = srcFiles.Distinct( StringComparer.OrdinalIgnoreCase ).ToList();
 
             return true;
-        }
-
-        private bool FilterLibraries( ExpandoObject libDict, ReferenceType refType, ProjectAssetsContext context,
-            out ExpandoObject? result )
-        {
-            result = null;
-
-            if( libDict == null )
-            {
-                Logger.Error<string>( "Undefined {0}", nameof(libDict) );
-
-                return false;
-            }
-
-            result = new ExpandoObject();
-            var allOKay = true;
-
-            foreach( var kvp in libDict )
-            {
-                if( kvp.Value is ExpandoObject child )
-                {
-                    if( child.GetProperty<string>( "type", out var typeText )
-                        && Enum.TryParse<ReferenceType>( typeText, true, out var childRefType )
-                        && childRefType == refType )
-                    {
-                        if( !result.TryAdd( kvp.Key, kvp.Value ) )
-                        {
-                            Logger.Error<string, string, string>( "Couldn't add {0} to new {1} in {2}",
-                                kvp.Key,
-                                nameof(ExpandoObject), nameof(FilterLibraries) );
-
-                            allOKay = false;
-                        }
-                    }
-                }
-            }
-
-            if( !allOKay ) result = null;
-
-            return allOKay;
         }
     }
 }

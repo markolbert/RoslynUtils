@@ -1,30 +1,23 @@
-﻿using System.Dynamic;
+﻿using System;
+using System.Dynamic;
 using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class FrameworkLibraryReference : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
+    public class FrameworkLibraryReference : ConfigurationBase
     {
-        public FrameworkLibraryReference( IJ4JLogger logger ) 
-            : base( logger )
+        public FrameworkLibraryReference( 
+            string text,
+            ExpandoObject fwlrInfo,
+            Func<IJ4JLogger> loggerFactory
+            ) 
+            : base( loggerFactory )
         {
+            LibraryName = text;
+            PrivateAssets = GetProperty<string>( fwlrInfo, "privateAssets" );
         }
 
-        public string LibraryName { get; set; } = string.Empty;
-        public string PrivateAssets { get; set; } = string.Empty;
-
-        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !ValidateInitializationArguments( rawName, container, context ) )
-                return false;
-
-            if( !container.GetProperty<string>( "privateAssets", out var privateAssets ) )
-                return false;
-
-            LibraryName = rawName;
-            PrivateAssets = privateAssets;
-
-            return true;
-        }
+        public string LibraryName { get; }
+        public string PrivateAssets { get; }
     }
 }

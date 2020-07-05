@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
 using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
@@ -9,37 +10,24 @@ namespace J4JSoftware.Roslyn
     public class PackageLibrary : LibraryInfo
     {
         public PackageLibrary(
-            IJ4JLogger logger
+            string text,
+            ExpandoObject libInfo,
+            Func<IJ4JLogger> loggerFactory
         )
-            : base( ReferenceType.Package, logger )
+            : base( text, loggerFactory, ReferenceType.Package )
         {
+            SHA512 = GetProperty<string>( libInfo, "SHA512" );
+            Path = GetProperty<string>( libInfo, "path" );
+            Files = GetProperty<List<string>>( libInfo, "path" );
         }
 
-        public string SHA512 { get; private set; } = string.Empty;
-        public List<string> Files { get; } = new List<string>();
-
-        public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !base.Initialize( rawName, container, context ) )
-                return false;
-
-            var okay = container.GetProperty<string>( "SHA512", out var sha512 );
-            okay &= container.GetProperty<string>( "path", out var path );
-            okay &= container.GetProperty<List<string>>( "files", out var files );
-
-            if( !okay ) return false;
-
-            SHA512 = sha512;
-
-            Files.Clear();
-            Files.AddRange( files );
-
-            return true;
-        }
+        public string SHA512 { get; }
+        public string Path { get; }
+        public List<string> Files { get; }
 
         public CompilationReference GetLoadedReference( List<string> pkgFolders, TargetFramework tgtFramework )
         {
-            if( GetAbsolutePath( pkgFolders, tgtFramework, out var absPathResult ) )
+            if( GetAbsolutePath( Path, pkgFolders, tgtFramework, out var absPathResult ) )
                 return new NamedPathReference( Assembly, absPathResult!.DllPath )
                 {
                     IsVirtual = absPathResult.IsVirtual

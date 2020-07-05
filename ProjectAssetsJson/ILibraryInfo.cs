@@ -4,12 +4,13 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ILibraryInfo : IInitializeFromNamed<ExpandoObject>
+    public interface ILibraryInfo
     {
         string Assembly { get; }
         SemanticVersion Version { get; }
         ReferenceType Type { get; }
-        string Path { get; }
-        bool GetAbsolutePath( IEnumerable<string> repositoryPaths, TargetFramework tgtFramework, out PackageAbsolutePath? result );
+
+        bool GetAbsolutePath( string path, IEnumerable<string> repositoryPaths, TargetFramework tgtFramework,
+            out PackageAbsolutePath? result );
     }
 }

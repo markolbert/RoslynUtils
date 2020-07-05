@@ -11,28 +11,49 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public enum OutputType
-    {
-        Library,
-        Exe,
-        Module,
-        WinExe
-    }
-
     public class ProjectLibrary : LibraryInfo
     {
         public ProjectLibrary(
-            IJ4JLogger logger
+            string text,
+            ExpandoObject libInfo,
+            string projDir,
+            Func<IJ4JLogger> loggerFactory
         )
-            : base( ReferenceType.Project, logger )
+            : base( text, loggerFactory, ReferenceType.Project )
         {
+            // not sure if this is always correct, but I believe the only references to other
+            // projects that show up in the project.assets.json file are libraries, not executables
+            // or modules.
+            OutputType = OutputType.Library;
+
+            var path = Path.GetFullPath( Path.Combine( projDir, GetProperty<string>( libInfo, "msbuildProject" ) ) );
+
+            if( !IsFileSupported( path ) )
+                throw new ArgumentException($"File '{path}' is not supported");
+
+            ProjectFilePath = path;
+            ParseProjectFile();
         }
 
-        public string ProjectFilePath { get; private set; } = string.Empty;
-        public string ProjectDirectory => System.IO.Path.GetDirectoryName( ProjectFilePath ) ?? string.Empty;
+        public ProjectLibrary(
+            string projFilePath,
+            Func<IJ4JLogger> loggerFactory
+        )
+            : base( Path.GetFileNameWithoutExtension( projFilePath ), loggerFactory, ReferenceType.Project )
+        {
+            if (!IsFileSupported(projFilePath))
+                throw new ArgumentException($"File '{projFilePath}' is not supported");
+
+            ProjectFilePath = projFilePath;
+            ParseProjectFile();
+        }
+
+        // this will always be a full path
+        public string ProjectFilePath { get; }
+        public string ProjectDirectory => Path.GetDirectoryName( ProjectFilePath ) ?? string.Empty;
         
         public List<TargetFramework> TargetFrameworks { get; } = new List<TargetFramework>();
-        public OutputType OutputType { get; private set; } = OutputType.Library;
+        public OutputType OutputType { get; private set; }
 
         public OutputKind OutputKind => OutputType switch
         {
@@ -113,39 +134,11 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !base.Initialize( rawName, container, context ) )
-                return false;
-
-            if( !container.GetProperty<string>( "msbuildProject", out var rawPath ) )
-                return false;
-
-            var projPath = System.IO.Path.GetFullPath( System.IO.Path.Combine( context.ProjectDirectory!, rawPath ) );
-
-            if( !IsFileSupported( projPath ) )
-                return false;
-
-            ProjectFilePath = projPath;
-
-            return ParseProjectFile();
-        }
-
-        public bool InitializeFromProjectFile( string projFilePath )
-        {
-            if( !IsFileSupported( projFilePath ) )
-                return false;
-
-            ProjectFilePath = projFilePath;
-
-            return ParseProjectFile();
-        }
-
-        protected bool ParseProjectFile()
+        private bool ParseProjectFile()
         {
             TargetFrameworks.Clear();
 
-            XDocument? projDoc = CreateProjectDocument( ProjectFilePath );
+            XDocument? projDoc = CreateProjectDocument();
             if( projDoc == null )
                 return false;
 
@@ -188,7 +181,7 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected bool InitializeTargetFrameworks()
+        private bool InitializeTargetFrameworks()
         {
             bool add_frameworks( IEnumerable<string> fwStrings )
             {
@@ -222,28 +215,15 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected XDocument? CreateProjectDocument( string projectFilePath )
+        private XDocument? CreateProjectDocument()
         {
             XDocument? retVal = null;
-
-            if( !IsFileSupported( projectFilePath ) )
-                return null;
-
-            var projDir = System.IO.Path.GetDirectoryName( projectFilePath );
-
-            if( projDir == null )
-            {
-                Logger.Error<string>( "Could not find project directory for project '{projectFilePath}'",
-                    projectFilePath );
-
-                return null;
-            }
 
             try
             {
                 // this convoluted approach is needed because XDocument.Parse() does not 
                 // properly handle the invisible UTF hint codes in files
-                using var fs = File.OpenText( projectFilePath );
+                using var fs = File.OpenText( ProjectFilePath );
                 using var reader = new XmlTextReader( fs );
 
                 retVal = XDocument.Load( reader );
@@ -252,7 +232,7 @@ namespace J4JSoftware.Roslyn
             {
                 Logger.Error<string, string>(
                     "Could not parse project file '{0}', exception was: {1}",
-                    projectFilePath,
+                    ProjectFilePath,
                     e.Message );
 
                 return null;
@@ -261,7 +241,7 @@ namespace J4JSoftware.Roslyn
             if( retVal.Root != null )
                 return retVal;
 
-            Logger.Error<string>( "Undefined root node in project file '{projectFilePath}'", projectFilePath );
+            Logger.Error<string>( "Undefined root node in project file '{projectFilePath}'", ProjectFilePath );
 
             return null;
         }

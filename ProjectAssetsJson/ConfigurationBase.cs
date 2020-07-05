@@ -3,224 +3,163 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
+using NuGet.Versioning;
 using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
     public class ConfigurationBase
     {
-        protected ConfigurationBase( IJ4JLogger logger )
+        private IJ4JLogger? _logger;
+
+        protected ConfigurationBase( Func<IJ4JLogger> loggerFactory )
         {
-            Logger = logger;
-            Logger.SetLoggedType( this.GetType() );
+            LoggerFactory = loggerFactory;
         }
 
-        protected IJ4JLogger Logger { get; }
+        protected Func<IJ4JLogger> LoggerFactory { get; }
 
-        protected virtual bool ValidateInitializationArguments<TContainer>( 
-            string rawName, 
-            TContainer container,
-            ProjectAssetsContext context,
-            [CallerMemberName] string callerName = "" )
+        protected IJ4JLogger Logger
         {
-            if( !string.IsNullOrEmpty( rawName ) ) 
-                return true;
+            get
+            {
+                if( _logger != null ) 
+                    return _logger;
 
-            Logger.Error<string>( "Undefined or empty {rawName}", rawName );
+                _logger = LoggerFactory();
+                _logger.SetLoggedType( this.GetType() );
 
-            return false;
-
+                return _logger;
+            }
         }
 
-        protected virtual bool ValidateInitializationArguments<TContainer>(
-            TContainer container,
-            ProjectAssetsContext context ) => true;
+        protected TProp GetProperty<TProp>(
+            ExpandoObject container,
+            string propName,
+            bool caseSensitive = false,
+            bool optional = false)
+        {
+            if (string.IsNullOrEmpty(propName))
+                return default!;
 
-        //protected bool LoadFromContainer<TItem, TContainer>( 
-        //    ExpandoObject? container, 
-        //    Func<TItem> itemCreator,
-        //    ProjectAssetsContext context,
-        //    out List<TItem>? result,
-        //    bool containerCanBeNull = false )
-        //    where TItem : IInitializeFromNamed<TContainer>
-        //{
-        //    if( container == null )
-        //    {
-        //        result = null;
+            var asDict = (IDictionary<string, object>)container;
 
-        //        if( containerCanBeNull )
-        //            return true;
+            // ExpandoObject keys are always case sensitive...so if we want a case insensitive match we have to 
+            // go a bit convoluted...
+            bool hasKey = false;
 
-        //        Logger.Error<string>( "Undefined {0}", nameof(container) );
+            if (caseSensitive) hasKey = asDict.ContainsKey(propName);
+            else
+            {
+                // case insensitive matches
+                switch (asDict.Keys.Count(k => k.Equals(propName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    case 0:
+                        // no match; key not found so default value of hasKey is okay
+                        break;
 
-        //        return false;
-        //    }
+                    case 1:
+                        // replace the case-insensitive property name with the correctly-cased value
+                        propName = asDict.Keys.First(k => k.Equals(propName, StringComparison.OrdinalIgnoreCase));
+                        hasKey = true;
 
-        //    result = new List<TItem>();
-        //    var isOkay = true;
+                        break;
 
-        //    foreach( var kvp in container )
-        //    {
-        //        if( kvp.Value is TContainer childContainer )
-        //        {
-        //            var newItem = itemCreator();
+                    default:
+                        // multiple case-insensitive matches; case insensitive doesn't work
+                        break;
+                }
+            }
 
-        //            if( newItem.Initialize( kvp.Key, childContainer, context ) )
-        //                result.Add( newItem );
-        //            else
-        //                isOkay = false;
-        //        }
-        //        else
-        //        {
-        //            // empty json arrays are always List<object>...which likely won't be the type of
-        //            // list defined by TContainer. so check for that case
-        //            if( kvp.Value is List<object> objArray && ( objArray.Count <= 0 ) ) continue;
+            // it's okay if optional properties don't exist
+            if (!hasKey && optional)
+                return default!;
 
-        //            Logger.Error<string, string>( "{0} property is not a {1}", kvp.Key, nameof(ExpandoObject) );
+            if (asDict[propName] is TProp retVal)
+                return retVal;
 
-        //            isOkay = false;
-        //        }
-        //    }
+            LogAndThrow( $"Could not find property", propName, typeof(ExpandoObject) );
 
-        //    // wipe out collection if something went wrong
-        //    if( !isOkay ) result = null;
+            // we'll never get here but need to keep the compiler happy...
+            return default!;
+        }
 
-        //    return isOkay;
-        //}
+        protected TEnum GetEnum<TEnum>(
+            ExpandoObject container,
+            string propName,
+            bool caseSensitive = false,
+            bool optional = false)
+        {
+            if (!typeof(Enum).IsEnum)
+                throw new ArgumentException($"{typeof(TEnum)} is not an enum type");
 
-        //protected bool LoadNamesFromContainer( 
-        //    ExpandoObject? container, 
-        //    out List<string>? result, 
-        //    bool containerCanBeNull = false )
-        //{
-        //    if( container == null )
-        //    {
-        //        result = null;
+            var text = GetProperty<string>(container, propName, caseSensitive, optional);
 
-        //        if( containerCanBeNull )
-        //            return true;
+            if (!Enum.TryParse(typeof(TEnum), text, true, out var retVal))
+                return (TEnum)retVal!;
 
-        //        Logger.Error<string>( "Undefined {0}", nameof(container) );
+            LogAndThrow( $"Couldn't an instance of {typeof(TEnum)}", propName, typeof(ExpandoObject) );
 
-        //        return false;
-        //    }
+            // we'll never get here but need to keep the compiler happy...
+            return default!;
+        }
 
-        //    var asDict = (IDictionary<string, object>) container;
 
-        //    result = asDict.Select( kvp => kvp.Key )
-        //        .ToList();
+        protected TEnum GetEnum<TEnum>( string text )
+        {
+            if (!Enum.TryParse(typeof(TEnum), text, true, out var retVal))
+                return (TEnum)retVal!;
 
-        //    return true;
-        //}
+            LogAndThrow( $"Couldn't parse {text} to an instance of {typeof(TEnum)}" );
 
-        //protected bool GetProperty<TProp>( 
-        //    ExpandoObject container, 
-        //    string propName, 
-        //    out TProp result,
-        //    bool caseSensitive = false, 
-        //    bool optional = false )
-        //{
-        //    if( string.IsNullOrEmpty( propName ) )
-        //    {
-        //        Logger.Error<string>( "Undefined/empty {0}", nameof(propName) );
-        //        result = default!;
+            // we'll never get here but need to keep the compiler happy...
+            return default!;
+        }
 
-        //        return false;
-        //    }
+        protected SemanticVersion GetSemanticVersion(
+            ExpandoObject container,
+            string propName,
+            bool caseSensitive = false,
+            bool optional = false)
+        {
+            var text = GetProperty<string>(container, propName, caseSensitive, optional);
 
-        //    var asDict = (IDictionary<string, object>) container;
+            if (Versioning.GetSemanticVersion(text, out var version))
+                return version!;
 
-        //    // ExpandoObject keys are always case sensitive...so if we want a case insensitive match we have to 
-        //    // go a bit convoluted...
-        //    bool hasKey = false;
+            LogAndThrow($"Couldn't parse '{version}' to a {typeof(SemanticVersion)}");
 
-        //    if( caseSensitive ) hasKey = asDict.ContainsKey( propName );
-        //    else
-        //    {
-        //        // case insensitive matches
-        //        switch( asDict.Keys.Count( k => k.Equals( propName, StringComparison.OrdinalIgnoreCase ) ) )
-        //        {
-        //            case 0:
-        //                // no match; key not found so default value of hasKey is okay
-        //                break;
+            // we'll never get here but need to keep the compiler happy...
+            return new SemanticVersion( 0, 0, 0 );
+        }
 
-        //            case 1:
-        //                // replace the case-insensitive property name with the correctly-cased value
-        //                propName = asDict.Keys.First( k => k.Equals( propName, StringComparison.OrdinalIgnoreCase ) );
-        //                hasKey = true;
+        protected SemanticVersion GetSemanticVersion( string text )
+        {
+            if (Versioning.GetSemanticVersion(text, out var version))
+                return version!;
 
-        //                break;
+            LogAndThrow($"Couldn't parse '{version}' to a {typeof(SemanticVersion)}");
 
-        //            default:
-        //                // multiple case-insensitive matches; case insensitive doesn't work
-        //                Logger.Error<string, string>(
-        //                    "Multiple matching property names in {0} for property name '{1}'", 
-        //                    nameof(ExpandoObject),
-        //                    propName );
+            // we'll never get here but need to keep the compiler happy...
+            return new SemanticVersion(0, 0, 0);
+        }
 
-        //                break;
-        //        }
-        //    }
+        protected void LogAndThrow( 
+            string message, 
+            string? textElement = null, 
+            Type? containerType = null,
+            [ CallerMemberName ] string callerName = "" )
+        {
+            var genType = typeof(ProjectAssetsException<>).MakeGenericType( this.GetType() );
 
-        //    if( !hasKey )
-        //    {
-        //        result = default!;
+#pragma warning disable 8601
+            var toThrow = (Exception) Activator.CreateInstance( genType,
+                new object[] { message, callerName, textElement, containerType } )!;
+#pragma warning restore 8601
 
-        //        var mesg = $"{nameof(container)} doesn't contain a {propName} property";
+            Logger.Error( toThrow.ToString() );
 
-        //        // it's okay if optional properties don't exist
-        //        if( optional )
-        //        {
-        //            Logger.Information( mesg );
-
-        //            return true;
-        //        }
-
-        //        Logger.Error( mesg );
-
-        //        return false;
-        //    }
-
-        //    if( asDict[ propName ] is TProp retVal )
-        //    {
-        //        result = retVal;
-
-        //        return true;
-        //    }
-
-        //    Logger.Error<string, string>( "The {0} property is not a {1}", propName, typeof(TProp).Name );
-
-        //    result = default!;
-
-        //    return false;
-        //}
-
-        //protected bool TraverseContainerTree<TContainer>( TContainer toFind, ExpandoObject curExpando, Stack<string> propertyStack )
-        //{
-        //    var asDict = (IDictionary<string, object>) curExpando;
-
-        //    foreach( var kvp in asDict )
-        //    {
-        //        switch( kvp.Value )
-        //        {
-        //            case TContainer container when Object.Equals( container, toFind ):
-        //                propertyStack.Push( kvp.Key );
-        //                return true;
-
-        //            case ExpandoObject expando:
-        //                propertyStack.Push(kvp.Key);
-
-        //                if( TraverseContainerTree<TContainer>( toFind, expando, propertyStack ))
-        //                    return true;
-
-        //                break;
-        //        }
-        //    }
-
-        //    propertyStack.Pop();
-
-        //    return false;
-        //}
+            throw toThrow;
+        }
     }
 }

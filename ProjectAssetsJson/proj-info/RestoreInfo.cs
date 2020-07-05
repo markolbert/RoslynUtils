@@ -1,101 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using J4JSoftware.Logging;
+using Microsoft.VisualBasic;
 
 namespace J4JSoftware.Roslyn
 {
     public class RestoreInfo : ConfigurationBase
     {
-        public RestoreInfo( IJ4JLogger logger )
-            : base( logger )
+        public RestoreInfo( 
+            string text,
+            ExpandoObject restoreInfo,
+            Func<IJ4JLogger> loggerFactory )
+            : base( loggerFactory )
         {
-        }
+            ProjectUniqueName = GetProperty<string>(restoreInfo, "projectUniqueName" );
+            ProjectName = GetProperty<string>(restoreInfo, "projectName");
+            ProjectPath = GetProperty<string>(restoreInfo, "projectPath");
+            PackagesPath = GetProperty<string>(restoreInfo, "packagesPath", optional : true );
+            OutputPath = GetProperty<string>(restoreInfo, "outputPath");
+            ProjectStyle = GetEnum<ProjectStyle>(restoreInfo, "projectStyle" );
+            FallbackFolders = GetProperty<List<string>>( restoreInfo,"fallbackFolders", optional : true );
+            ConfigurationFilePaths = GetProperty<List<string>>(restoreInfo,"configFilePaths", optional: true);
 
-        public string ProjectUniqueName { get; set; } = string.Empty;
-        public string ProjectName { get; set; } = string.Empty;
-        public string ProjectPath { get; set; } = string.Empty;
-        public string PackagesPath { get; set; } = string.Empty;
-        public string OutputPath { get; set; } = string.Empty;
-        public ProjectStyle? ProjectStyle { get; private set; }
-        public List<string> FallbackFolders { get; } = new List<string>();
-        public List<string> ConfigurationFilePaths { get; } = new List<string>();
-        public List<TargetFramework> OriginalTargetFrameworks { get; } = new List<TargetFramework>();
-        public List<string> Sources { get; } = new List<string>();
-        public List<object> Frameworks { get; } = new List<object>();
-
-        public bool Initialize( ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !ValidateInitializationArguments( container, context ) )
-                return false;
-
-            var okay = container.GetProperty<string>( "projectStyle", out var styleText );
-            okay &= container.GetProperty<string>( "projectUniqueName", out var uniqueName );
-            okay &= container.GetProperty<string>( "projectName", out var projName );
-            okay &= container.GetProperty<string>( "projectPath", out var path );
-            okay &= container.GetProperty<string>( "packagesPath", out var pkgPath, optional : true );
-            okay &= container.GetProperty<string>( "outputPath", out var outPath );
-            okay &= container.GetProperty<List<string>>( "fallbackFolders", out var fallbackList,
-                optional : true );
-            okay &= container.GetProperty<List<string>>( "configFilePaths", out var configPaths,
-                optional : true );
-            okay &= container.GetProperty<List<string>>( "originalTargetFrameworks", out var origFWText );
-            okay &= container.GetProperty<ExpandoObject>( "sources", out var srcContainer,true );
-
-            if( !okay ) return false;
-
-            if( !Enum.TryParse<ProjectStyle>( styleText, true, out var style ) )
-            {
-                Logger.Error<string, string>( "Couldn't parse projectStyle text '{0}' as a {1}", 
-                    styleText,
-                    nameof(ProjectStyle) );
-
-                return false;
-            }
-
-            var origFWValid = true;
-
-            var tgtFrameworks = origFWText.Select( t =>
+            var origFWText = GetProperty<List<string>>( restoreInfo,"originalTargetFrameworks" );
+            OriginalTargetFrameworks = origFWText.Select( t =>
                 {
-                    if(TargetFramework.Create( t, TargetFrameworkTextStyle.Simple, out var retVal) )
-                        return retVal;
+                    if( !TargetFramework.Create( t, TargetFrameworkTextStyle.Simple, out var tgtFW ) )
+                        throw new InvalidEnumArgumentException(
+                            $"Couldn't parse '{t}' to a {typeof(TargetFramework)}" );
 
-                    origFWValid = false;
-
-                    return null;
-
+                    return tgtFW!;
                 } )
                 .ToList();
 
-            if( !origFWValid )
-                return false;
-
-            List<string>? sources = null;
-            if( srcContainer != null && !srcContainer.LoadNamesFromContainer( out sources ) )
-                return false;
-
-            ProjectStyle = style;
-            ProjectUniqueName = uniqueName;
-            ProjectName = projName;
-            ProjectPath = path;
-            PackagesPath = pkgPath;
-
-            OriginalTargetFrameworks.Clear();
-            OriginalTargetFrameworks.AddRange( tgtFrameworks! );
-
-            OutputPath = outPath;
-
-            FallbackFolders.Clear();
-            FallbackFolders.AddRange(fallbackList);
-
-            ConfigurationFilePaths.Clear();
-            ConfigurationFilePaths.AddRange(configPaths);
-
-            Sources.Clear();
-            Sources.AddRange(sources!);
-
-            return true;
+            Sources = GetProperty<List<string>>(restoreInfo,"sources", optional: true);
         }
+
+        public string ProjectUniqueName { get; }
+        public string ProjectName { get; }
+        public string ProjectPath { get; }
+        public string PackagesPath { get; }
+        public string OutputPath { get; }
+        public ProjectStyle ProjectStyle { get; }
+        public List<string> FallbackFolders { get; }
+        public List<string> ConfigurationFilePaths { get; }
+        public List<TargetFramework> OriginalTargetFrameworks { get; }
+        public List<string> Sources { get; }
     }
 }

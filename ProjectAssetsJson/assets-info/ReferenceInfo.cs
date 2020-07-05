@@ -1,81 +1,66 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ReferenceInfo : ConfigurationBase, IInitializeFromNamed<ExpandoObject>
+    public class ReferenceInfo : ConfigurationBase
     {
-        private readonly Func<DependencyInfo> _diCreator;
+        public const string DependencyKey = "dependencies";
 
+#pragma warning disable 8618
         public ReferenceInfo(
-            Func<DependencyInfo> diCreator,
-            IJ4JLogger logger
+#pragma warning restore 8618
+            string text,
+            ExpandoObject tgtInfo,
+            Func<IJ4JLogger> loggerFactory
         )
-            : base( logger )
+            : base( loggerFactory )
         {
-            _diCreator = diCreator;
+            if( VersionedText.Create( text, out var verText ) )
+            {
+                Assembly = verText!.TextComponent;
+                Version = verText.Version;
+            }
+            else LogAndThrow( $"Couldn't create a {nameof(VersionedText)}", text, typeof(ExpandoObject) );
+
+            Type = GetEnum<ReferenceType>( tgtInfo, "type" );
+
+            CreateDependencies(tgtInfo);
         }
 
-        public string Assembly { get; set; } = string.Empty;
-        public SemanticVersion Version { get; set; } = new SemanticVersion( 0, 0, 0 );
-        public ReferenceType Type { get; set; }
-        public List<string> Compile { get; } = new List<string>();
-        public List<string> Runtime { get; } = new List<string>();
-        public List<DependencyInfo> Dependencies { get; } = new List<DependencyInfo>();
-
-        public bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
+        private void CreateDependencies( ExpandoObject tgtInfo )
         {
-            if( !ValidateInitializationArguments( rawName, container, context ) )
-                return false;
-
-            if( !VersionedText.Create(rawName, out var verText) )
-                return false;
-
-            Assembly = verText!.TextComponent;
-            Version = verText.Version;
             Dependencies.Clear();
 
-            var asDict = (IDictionary<string, object>) container;
-
             // dependencies are optional
-            if( !asDict.ContainsKey( "dependencies" ) )
-                return true;
+            var tgtDict = (IDictionary<string, object>) tgtInfo;
+            if( !tgtDict.ContainsKey( DependencyKey ) )
+                return;
 
-            var depDict = asDict[ "dependencies" ] as ExpandoObject;
-
-            if( depDict == null )
+            //...but they must be present in the form of an ExpandoObject
+            if( tgtDict[ DependencyKey ] is ExpandoObject depContainer )
             {
-                Logger.Error<string, string>(
-                    "{0} does not have a 'dependencies' property which is an {1}", 
-                    nameof(container),
-                    nameof(ExpandoObject) );
-
-                return false;
-            }
-
-            var retVal = true;
-
-            foreach( var kvp in depDict )
-            {
-                if( kvp.Value is string versionText )
+                foreach( var kvp in depContainer )
                 {
-                    if( Versioning.GetSemanticVersion( versionText, out var version ) )
-                    {
-                        var newItem = _diCreator();
-
-                        newItem.Assembly = kvp.Key;
-                        newItem.Version = version!;
-
-                        Dependencies.Add( newItem );
-                    }
-                    else retVal = false;
+                    if( kvp.Value is string versionText )
+                        Dependencies.Add(
+                            new DependencyInfo( kvp.Key, GetSemanticVersion( versionText ),
+                                LoggerFactory ) );
+                    else LogAndThrow( $"'{kvp.Value}' is not a version string" );
                 }
             }
-
-            return retVal;
+            else LogAndThrow( $"'{DependencyKey}' clause for assembly {Assembly} is not an ExpandoObject" );
         }
+
+        public string Assembly { get; }
+        public SemanticVersion Version { get; }
+        public ReferenceType Type { get; }
+        public List<string> Compile { get; } = new List<string>();
+        public List<string> Runtime { get; } = new List<string>(); 
+        public List<DependencyInfo> Dependencies { get; } = new List<DependencyInfo>();
     }
 }

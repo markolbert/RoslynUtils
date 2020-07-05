@@ -1,58 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Dynamic;
 using J4JSoftware.Logging;
+using Microsoft.CodeAnalysis.Diagnostics;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectFileDependencyGroup : ConfigurationBase, IInitializeFromNamed<List<string>>
+    public class ProjectFileDependencyGroup : ConfigurationBase
     {
-        private readonly Func<RestrictedDependencyInfo> _depCreator;
+        private readonly TargetFramework _tgtFw;
 
+#pragma warning disable 8618
         public ProjectFileDependencyGroup(
-            Func<RestrictedDependencyInfo> depCreator,
-            IJ4JLogger logger
+#pragma warning restore 8618
+            string text,
+            List<string> depGroupInfo,
+            Func<IJ4JLogger> loggerFactory
         )
-            : base( logger )
+            : base( loggerFactory )
         {
-            _depCreator = depCreator;
+            if( Roslyn.TargetFramework.Create( text, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFW ) )
+                _tgtFw = tgtFW!;
+            else LogAndThrow( $"Couldn't create a {typeof(TargetFramework)}", text );
+
+            CreateDependencies( depGroupInfo );
         }
 
-        public CSharpFramework TargetFramework { get; set; }
-        public SemanticVersion TargetVersion { get; set; } = new SemanticVersion( 0, 0, 0 );
+        private void CreateDependencies( List<string> depGroupInfo )
+        {
+            foreach( var depInfo in depGroupInfo )
+            {
+                var parts = depInfo.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                if (parts.Length != 3)
+                    LogAndThrow("Couldn't parse assembly constraint", depInfo);
+
+                var version = GetSemanticVersion( parts[ 2 ] );
+
+                var constraint = parts[1] switch
+                {
+                    "==" => VersionConstraint.EqualTo,
+                    "<=" => VersionConstraint.Maximum,
+                    ">=" => VersionConstraint.Minimum,
+                    ">" => VersionConstraint.GreaterThan,
+                    "<" => VersionConstraint.LessThan,
+                    _ => VersionConstraint.Undefined
+                };
+
+                Dependencies.Add( new RestrictedDependencyInfo( parts[ 0 ], version, constraint, LoggerFactory ) );
+            }
+        }
+
+        public CSharpFramework TargetFramework => _tgtFw.Framework;
+        public SemanticVersion TargetVersion => _tgtFw.Version;
         public List<RestrictedDependencyInfo> Dependencies { get; } = new List<RestrictedDependencyInfo>();
-
-        public bool Initialize( string rawName, List<string> container, ProjectAssetsContext context )
-        {
-            if( !ValidateInitializationArguments( rawName, container, context ) )
-                return false;
-
-            if( string.IsNullOrEmpty( rawName ) )
-            {
-                Logger.Error<string>( "Undefined or empty {0}", nameof(rawName) );
-
-                return false;
-            }
-
-            if( !Roslyn.TargetFramework.Create(rawName, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFramework ) )
-                return false;
-
-            TargetFramework = tgtFramework!.Framework;
-            TargetVersion = tgtFramework.Version;
-            Dependencies.Clear();
-
-            var retVal = true;
-
-            foreach( var entry in container )
-            {
-                var newItem = _depCreator();
-
-                if( newItem.Initialize( entry ) )
-                    Dependencies.Add( newItem );
-                else retVal = false;
-            }
-
-            return retVal;
-        }
     }
 }

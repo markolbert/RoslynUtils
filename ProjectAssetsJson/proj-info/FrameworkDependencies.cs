@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using J4JSoftware.Logging;
@@ -8,87 +9,56 @@ namespace J4JSoftware.Roslyn
 {
     public class FrameworkDependencies : FrameworkBase
     {
-        private readonly Func<DependencyList> _depListCreator;
-        private readonly Func<FrameworkLibraryReference> _fwlCreator;
-
         public FrameworkDependencies(
-            Func<DependencyList> depListCreator,
-            Func<FrameworkLibraryReference> fwlCreator,
-            IJ4JLogger logger
+            string text,
+            ExpandoObject fwDepInfo,
+            Func<IJ4JLogger> loggerFactory
         )
-            : base( logger )
+            : base( text, loggerFactory )
         {
-            _depListCreator = depListCreator;
-            _fwlCreator = fwlCreator;
-        }
+            AssetTargetFallback = GetProperty<bool>( fwDepInfo, "assetTargetFallback" );
+            Warn = GetProperty<bool>( fwDepInfo, "warn" );
+            RuntimeIdentifierGraphPath = GetProperty<string>( fwDepInfo, "runtimeIdentifierGraphPath" );
 
-        public List<DependencyList> Dependencies { get; } = new List<DependencyList>();
-        public List<TargetFramework> Imports { get; } = new List<TargetFramework>();
-        public bool AssetTargetFallback { get; set; }
-        public bool Warn { get; set; }
-        public List<FrameworkLibraryReference> FrameworkLibraryReferences { get; } = new List<FrameworkLibraryReference>();
-        public string RuntimeIdentifierGraphPath { get; set; } = string.Empty;
-
-        public override bool Initialize( string rawName, ExpandoObject container, ProjectAssetsContext context )
-        {
-            if( !base.Initialize( rawName, container, context ) )
-                return false;
-
-            if( !Roslyn.TargetFramework.Create( rawName, TargetFrameworkTextStyle.Simple, out var tgtFramework ) )
-                return false;
-
-            var okay = container.GetProperty<ExpandoObject>( "dependencies", out var depContainer );
-            okay &= container.GetProperty<List<string>>( "imports", out var importTexts );
-            okay &= container.GetProperty<ExpandoObject>( "frameworkReferences", out var fwContainer );
-            okay &= container.GetProperty<bool>( "assetTargetFallback", out var fallback );
-            okay &= container.GetProperty<bool>( "warn", out var warn );
-            okay &= container.GetProperty<string>( "runtimeIdentifierGraphPath", out var rtGraph );
-
-            if( !okay ) return false;
-
-            okay = depContainer.LoadFromContainer<DependencyList, ExpandoObject>( _depListCreator, context,
-                out var depList );
-            okay &= fwContainer.LoadFromContainer<FrameworkLibraryReference, ExpandoObject>( _fwlCreator, context,
-                out var fwList );
-
-            if( !okay ) return false;
-
-            var importsValid = true;
-
-            var imports = importTexts.Select( it =>
+            var importTF = GetProperty<List<string>>( fwDepInfo, "imports" );
+            Imports = importTF.Select( t =>
                 {
-                    if( !Roslyn.TargetFramework.Create( it, TargetFrameworkTextStyle.Simple, out var retVal) )
-                    {
-                        importsValid = false;
+                    if( !Roslyn.TargetFramework.Create( t, TargetFrameworkTextStyle.Simple, out var tgtFW ) )
+                        throw new ArgumentException( $"Couldn't parse {t} to a {typeof(TargetFramework)}" );
 
-                        return null;
-                    }
-
-                    return retVal;
+                    return tgtFW!;
                 } )
                 .ToList();
 
-            if( !importsValid )
-                return false;
-
-            TargetFramework = tgtFramework!.Framework;
-            TargetVersion = tgtFramework.Version;
-
-            Dependencies.Clear();
-            Dependencies.AddRange(depList!);
-
-            Imports.Clear();
-            Imports.AddRange(imports!);
-
-            AssetTargetFallback = fallback;
-            Warn = warn;
-
-            FrameworkLibraryReferences.Clear();
-            FrameworkLibraryReferences.AddRange(fwList!);
-
-            RuntimeIdentifierGraphPath = rtGraph;
-
-            return true;
+            CreateDependencies( GetProperty<ExpandoObject>( fwDepInfo, "dependencies" ) );
+            CreateFrameworkLibraryReferences( GetProperty<ExpandoObject>( fwDepInfo, "frameworkReferences" ) );
         }
+
+        private void CreateDependencies( ExpandoObject depInfoColl )
+        {
+            foreach( var kvp in depInfoColl )
+            {
+                if( kvp.Value is ExpandoObject depInfo )
+                    Dependencies.Add( new DependencyList( kvp.Key, depInfo, LoggerFactory ) );
+                else LogAndThrow( $"Couldn't create a {typeof(DependencyList)}", kvp.Key, typeof(ExpandoObject) );
+            }
+        }
+
+        private void CreateFrameworkLibraryReferences( ExpandoObject fwlrInfo )
+        {
+            foreach (var kvp in fwlrInfo)
+            {
+                if (kvp.Value is ExpandoObject fwlr)
+                    FrameworkLibraryReferences.Add(new FrameworkLibraryReference(kvp.Key, fwlr, LoggerFactory));
+                else LogAndThrow($"Couldn't create a {typeof(FrameworkLibraryReference)}", kvp.Key, typeof(ExpandoObject));
+            }
+        }
+
+        public List<DependencyList> Dependencies { get; } = new List<DependencyList>();
+        public List<TargetFramework> Imports { get; }
+        public bool AssetTargetFallback { get; }
+        public bool Warn { get; }
+        public List<FrameworkLibraryReference> FrameworkLibraryReferences { get; } = new List<FrameworkLibraryReference>();
+        public string RuntimeIdentifierGraphPath { get; }
     }
 }
