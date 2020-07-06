@@ -1,53 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
+using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectAssetsException<T> : Exception
-        where T : class
+    public class ProjectAssetsException : Exception
     {
-        private readonly string? _textElement;
-        private readonly Type? _containerType;
-        private readonly string _methodName;
+        public static ProjectAssetsException CreateAndLog(
+            string message,
+            Type callingType,
+            IJ4JLogger logger,
+            [ CallerMemberName ] string callingMethod = "" )
+        {
+            var retVal = new ProjectAssetsException(message, callingType, callingMethod);
 
-        public ProjectAssetsException(string message, string methodName, string? textElement = null, Type? containerType = null)
+            logger.Error( retVal.ToString() );
+
+            return retVal;
+        }
+
+        public ProjectAssetsException(string message, Type callingType, string callingMethod)
             : base(message)
         {
-            _methodName = methodName;
-            _textElement = textElement;
-            _containerType = containerType;
+            CallingMethod = callingMethod;
+            CallingType = callingType;
         }
+
+        public Type CallingType { get; }
+        public string CallingMethod { get; }
+        public string? TextElement { get; set; }
+        public Type? ContainerType { get; set; }
 
         public override string ToString()
         {
             var sb = new StringBuilder(Message);
 
             sb.Append( "In " );
-            sb.Append( _methodName.Equals( ".ctor", StringComparison.OrdinalIgnoreCase )
-                ? $"the constructor for {typeof(T)}: "
-                : $"{typeof(T)}:{_methodName}():" );
+            sb.Append( CallingMethod.Equals( ".ctor", StringComparison.OrdinalIgnoreCase )
+                ? $"the constructor for {CallingType.Name}: "
+                : $"{CallingType.Name}:{CallingMethod}():" );
             sb.Append( Message );
 
-            if( !string.IsNullOrEmpty( _textElement ) )
+            if( !string.IsNullOrEmpty( TextElement ) )
             {
                 if( sb.Length > 0 )
                     sb.Append( " [" );
 
-                sb.Append( $"TextElement was '{_textElement}'" );
+                sb.Append( $"TextElement was '{TextElement}'" );
             }
 
-            if (_containerType != null )
+            if (ContainerType != null )
             {
                 if( sb.Length > 0 )
-                    sb.Append( string.IsNullOrEmpty( _textElement ) ? " [" : ", " );
+                    sb.Append( string.IsNullOrEmpty( TextElement ) ? " [" : ", " );
 
-                sb.Append($"ContainerType was '{_containerType}']");
+                sb.Append($"ContainerType was '{ContainerType}']");
             }
             else
             {
-                if( !string.IsNullOrEmpty( _textElement ) )
+                if( !string.IsNullOrEmpty( TextElement ) )
                     sb.Append( "]" );
             }
 

@@ -24,7 +24,10 @@ namespace J4JSoftware.Roslyn
                 if( kvp.Value is ExpandoObject detail )
                     ProjectReferences.Add( new ProjectReference( kvp.Key, detail, LoggerFactory ) );
                 else
-                    LogAndThrow( "Project reference item is not an ExpandoObject", kvp.Key, typeof(ExpandoObject) );
+                    throw ProjectAssetsException.CreateAndLog(
+                        "Project reference item is not an ExpandoObject",
+                        this.GetType(),
+                        Logger );
             }
         }
 

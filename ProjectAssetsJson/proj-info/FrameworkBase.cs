@@ -17,9 +17,7 @@ namespace J4JSoftware.Roslyn
             ) 
             : base( loggerFactory )
         {
-            if( Roslyn.TargetFramework.Create( text, TargetFrameworkTextStyle.Simple, out var tgtFW ) )
-                _tgtFW = tgtFW!;
-            else LogAndThrow( $"Couldn't a {typeof(TargetFramework)}", text );
+            _tgtFW = GetTargetFramework( text, TargetFrameworkTextStyle.Simple );
         }
 
         public CSharpFramework TargetFramework => _tgtFW.Framework;

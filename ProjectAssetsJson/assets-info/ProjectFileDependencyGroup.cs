@@ -23,7 +23,11 @@ namespace J4JSoftware.Roslyn
         {
             if( Roslyn.TargetFramework.Create( text, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFW ) )
                 _tgtFw = tgtFW!;
-            else LogAndThrow( $"Couldn't create a {typeof(TargetFramework)}", text );
+            else
+                throw ProjectAssetsException.CreateAndLog(
+                    $"Couldn't create a {typeof( TargetFramework )} from property '{text}'",
+                    this.GetType(),
+                    Logger );
 
             CreateDependencies( depGroupInfo );
         }
@@ -35,7 +39,10 @@ namespace J4JSoftware.Roslyn
                 var parts = depInfo.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
                 if (parts.Length != 3)
-                    LogAndThrow("Couldn't parse assembly constraint", depInfo);
+                    throw ProjectAssetsException.CreateAndLog(
+                        "Couldn't parse assembly constraint",
+                        this.GetType(),
+                        Logger);
 
                 var version = GetSemanticVersion( parts[ 2 ] );
 

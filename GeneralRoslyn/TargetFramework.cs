@@ -10,9 +10,9 @@ namespace J4JSoftware.Roslyn
 {
     public class TargetFramework : VersionedText, IEquatable<TargetFramework>
     {
-        public static bool Create(string text, TargetFrameworkTextStyle style, out TargetFramework? result)
+        public static bool Create(string text, TargetFrameworkTextStyle style, out TargetFramework result)
         {
-            result = null;
+            result = default!;
 
             var (fwName, fwVersion ) = style switch
             {

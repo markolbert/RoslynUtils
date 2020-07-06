@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
 
             foreach (var verText in parts)
             {
-                if( Versioning.GetSemanticVersion( verText, out var version ) )
+                if( verText.ToSemanticVersion( out var version ) )
                     Versions.Add( version! );
                 else throw new ArgumentException( $"Couldn't parse '{verText}' into a {typeof(SemanticVersion)}" );
             }

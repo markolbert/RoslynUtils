@@ -40,7 +40,11 @@ namespace J4JSoftware.Roslyn
             {
                 if( kvp.Value is ExpandoObject depInfo )
                     Dependencies.Add( new DependencyList( kvp.Key, depInfo, LoggerFactory ) );
-                else LogAndThrow( $"Couldn't create a {typeof(DependencyList)}", kvp.Key, typeof(ExpandoObject) );
+                else
+                    throw ProjectAssetsException.CreateAndLog(
+                        $"Couldn't create a {typeof( DependencyList )} from property '{kvp.Key}'",
+                        this.GetType(),
+                        Logger );
             }
         }
 
@@ -50,7 +54,11 @@ namespace J4JSoftware.Roslyn
             {
                 if (kvp.Value is ExpandoObject fwlr)
                     FrameworkLibraryReferences.Add(new FrameworkLibraryReference(kvp.Key, fwlr, LoggerFactory));
-                else LogAndThrow($"Couldn't create a {typeof(FrameworkLibraryReference)}", kvp.Key, typeof(ExpandoObject));
+                else
+                    throw ProjectAssetsException.CreateAndLog(
+                        $"Couldn't create a {typeof(FrameworkLibraryReference)} from property '{kvp.Key}'",
+                        this.GetType(),
+                        Logger);
             }
         }
 

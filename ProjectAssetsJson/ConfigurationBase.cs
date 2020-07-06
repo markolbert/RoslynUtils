@@ -37,127 +37,107 @@ namespace J4JSoftware.Roslyn
             ExpandoObject container,
             string propName,
             bool caseSensitive = false,
-            bool optional = false)
+            bool optional = false,
+            [CallerMemberName] string callerName = "" )
         {
-            if (string.IsNullOrEmpty(propName))
-                return default!;
+            if( container.GetProperty<TProp>( propName, out var result, caseSensitive, optional ) )
+                return result;
 
-            var asDict = (IDictionary<string, object>)container;
+            var toThrow = new ProjectAssetsException( 
+                $"Couldn't get {typeof(TProp)} property '{propName}'", 
+                this.GetType(), 
+                callerName );
 
-            // ExpandoObject keys are always case sensitive...so if we want a case insensitive match we have to 
-            // go a bit convoluted...
-            bool hasKey = false;
+            Logger.Error( toThrow.ToString() );
 
-            if (caseSensitive) hasKey = asDict.ContainsKey(propName);
-            else
-            {
-                // case insensitive matches
-                switch (asDict.Keys.Count(k => k.Equals(propName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    case 0:
-                        // no match; key not found so default value of hasKey is okay
-                        break;
-
-                    case 1:
-                        // replace the case-insensitive property name with the correctly-cased value
-                        propName = asDict.Keys.First(k => k.Equals(propName, StringComparison.OrdinalIgnoreCase));
-                        hasKey = true;
-
-                        break;
-
-                    default:
-                        // multiple case-insensitive matches; case insensitive doesn't work
-                        break;
-                }
-            }
-
-            // it's okay if optional properties don't exist
-            if (!hasKey && optional)
-                return default!;
-
-            if (asDict[propName] is TProp retVal)
-                return retVal;
-
-            LogAndThrow( $"Could not find property", propName, typeof(ExpandoObject) );
-
-            // we'll never get here but need to keep the compiler happy...
-            return default!;
+            throw toThrow;
         }
 
         protected TEnum GetEnum<TEnum>(
             ExpandoObject container,
             string propName,
             bool caseSensitive = false,
-            bool optional = false)
+            bool optional = false,
+            [CallerMemberName] string callerName = "")
         {
-            if (!typeof(TEnum).IsEnum)
-                throw new ArgumentException($"{typeof(TEnum)} is not an enum type");
+            if( container.GetEnum<TEnum>( propName, out var retVal, caseSensitive, optional ) )
+                return retVal;
 
-            var text = GetProperty<string>(container, propName, caseSensitive, optional);
+            var toThrow = new ProjectAssetsException(
+                $"Couldn't get {typeof(TEnum)} property '{propName}'",
+                this.GetType(),
+                callerName);
 
-            if (Enum.TryParse(typeof(TEnum), text, true, out var retVal))
-                return (TEnum)retVal!;
+            Logger.Error(toThrow.ToString());
 
-            LogAndThrow( $"Couldn't create an instance of {typeof(TEnum)}", propName, typeof(ExpandoObject) );
-
-            // we'll never get here but need to keep the compiler happy...
-            return default!;
+            throw toThrow;
         }
 
-
-        protected TEnum GetEnum<TEnum>( string text )
+        protected TEnum GetEnum<TEnum>( string text, [CallerMemberName] string callerName = "" )
         {
-            if (Enum.TryParse(typeof(TEnum), text, true, out var retVal))
-                return (TEnum)retVal!;
+            if( text.ToEnum<TEnum>( out var retVal ) )
+                return retVal;
 
-            LogAndThrow( $"Couldn't parse {text} to an instance of {typeof(TEnum)}" );
+            var toThrow = new ProjectAssetsException(
+                $"Couldn't create {typeof(TEnum)} from '{text}'",
+                this.GetType(),
+                callerName);
 
-            // we'll never get here but need to keep the compiler happy...
-            return default!;
+            Logger.Error(toThrow.ToString());
+
+            throw toThrow;
         }
 
         protected SemanticVersion GetSemanticVersion(
             ExpandoObject container,
             string propName,
             bool caseSensitive = false,
-            bool optional = false)
+            bool optional = false,
+            [CallerMemberName] string callerName = "")
         {
-            var text = GetProperty<string>(container, propName, caseSensitive, optional);
+            if ( container.GetSemanticVersion( propName, out var retVal, caseSensitive, optional ) )
+                return retVal;
 
-            if (Versioning.GetSemanticVersion(text, out var version))
-                return version!;
+            var toThrow = new ProjectAssetsException(
+                $"Couldn't get {typeof(SemanticVersion)} property '{propName}'",
+                this.GetType(),
+                callerName);
 
-            LogAndThrow($"Couldn't parse '{version}' to a {typeof(SemanticVersion)}");
+            Logger.Error(toThrow.ToString());
 
-            // we'll never get here but need to keep the compiler happy...
-            return new SemanticVersion( 0, 0, 0 );
+            throw toThrow;
         }
 
-        protected SemanticVersion GetSemanticVersion( string text )
+        protected SemanticVersion GetSemanticVersion( string text, [CallerMemberName] string callerName = "")
         {
-            if (Versioning.GetSemanticVersion(text, out var version))
-                return version!;
+            if( text.ToSemanticVersion( out var retVal ) )
+                return retVal;
+            
+            var toThrow = new ProjectAssetsException(
+                $"Couldn't create {typeof(SemanticVersion)} from '{text}'",
+                this.GetType(),
+                callerName);
 
-            LogAndThrow($"Couldn't parse '{version}' to a {typeof(SemanticVersion)}");
+            Logger.Error(toThrow.ToString());
 
-            // we'll never get here but need to keep the compiler happy...
-            return new SemanticVersion(0, 0, 0);
+            throw toThrow;
         }
 
-        protected void LogAndThrow( 
-            string message, 
-            string? textElement = null, 
-            Type? containerType = null,
+        protected TargetFramework GetTargetFramework(
+            string text,
+            TargetFrameworkTextStyle style,
             [ CallerMemberName ] string callerName = "" )
         {
-            var genType = typeof(ProjectAssetsException<>).MakeGenericType( this.GetType() );
+            if (TargetFramework.Create(text, style, out var retVal))
+                return retVal;
 
-#pragma warning disable 8601
-            var toThrow = (Exception) Activator.CreateInstance( genType,
-                new object[] { message, callerName, textElement, containerType } )!;
-#pragma warning restore 8601
 
-            Logger.Error( toThrow.ToString() );
+            var toThrow = new ProjectAssetsException(
+                $"Couldn't create {typeof(TargetFramework)} from '{text}'",
+                this.GetType(),
+                callerName);
+
+            Logger.Error(toThrow.ToString());
 
             throw toThrow;
         }

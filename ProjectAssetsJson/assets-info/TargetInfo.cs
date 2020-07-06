@@ -20,7 +20,11 @@ namespace J4JSoftware.Roslyn
         {
             if( TargetFramework.Create( text, TargetFrameworkTextStyle.ExplicitVersion, out var tgtFW ) )
                 _tgtFW = tgtFW!;
-            else LogAndThrow( $"Couldn't create a {nameof(TargetFramework)}", text, typeof(ExpandoObject) );
+            else
+                throw ProjectAssetsException.CreateAndLog(
+                    $"Couldn't create a {nameof( TargetFramework )} from property '{text}'",
+                    this.GetType(),
+                    Logger );
 
             CreatePackageList( tgtInfoCollection );
         }
@@ -34,7 +38,10 @@ namespace J4JSoftware.Roslyn
                 if( kvp.Value is ExpandoObject tgtContainer )
                     Packages.Add( new ReferenceInfo( kvp.Key, tgtContainer, LoggerFactory ) );
                 else
-                    LogAndThrow($"Missing property", kvp.Key, typeof(ExpandoObject) );
+                    throw ProjectAssetsException.CreateAndLog(
+                        $"Missing property '{kvp.Key}'",
+                        this.GetType(),
+                        Logger);
             }
         }
 

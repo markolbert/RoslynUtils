@@ -166,10 +166,10 @@ namespace J4JSoftware.Roslyn
                 if( kvp.Value is ExpandoObject container )
                     Targets.Add( new TargetInfo( kvp.Key, container, LoggerFactory ) );
                 else
-                {
-                    IsValid = false;
-                    LogAndThrow( $"Couldn't create a {typeof(TargetInfo)} object", kvp.Key, typeof(ExpandoObject) );
-                }
+                    throw ProjectAssetsException.CreateAndLog(
+                        $"Couldn't create a {typeof(TargetInfo)} from property '{kvp.Key}'",
+                        this.GetType(),
+                        Logger);
             }
         }
 
@@ -194,19 +194,17 @@ namespace J4JSoftware.Roslyn
                             break;
 
                         default:
-                            LogAndThrow( $"Unsupported value '{refType}' for {typeof(ReferenceType)}" );
-                            break;
+                            throw ProjectAssetsException.CreateAndLog(
+                                $"Unsupported value '{refType}' for {typeof(ReferenceType)}",
+                                this.GetType(),
+                                Logger);
                     }
                 }
                 else
-                {
-                    IsValid = false;
-
-                    LogAndThrow( 
-                        $"Couldn't create a PackageLibrary or ProjectLibrary", 
-                        kvp.Key,
-                        typeof(ExpandoObject) );
-                }
+                    throw ProjectAssetsException.CreateAndLog(
+                        "Couldn't create a PackageLibrary or ProjectLibrary",
+                        this.GetType(),
+                        Logger);
             }
         }
 
@@ -219,14 +217,10 @@ namespace J4JSoftware.Roslyn
                 if (kvp.Value is List<string> container)
                     ProjectFileDependencyGroups.Add(new ProjectFileDependencyGroup(kvp.Key, container, LoggerFactory));
                 else
-                {
-                    IsValid = false;
-
-                    LogAndThrow( 
-                        $"Couldn't create a {typeof(ProjectFileDependencyGroup)}", 
-                        kvp.Key,
-                        typeof(List<string>) );
-                }
+                    throw ProjectAssetsException.CreateAndLog(
+                        $"Couldn't create a {typeof(ProjectFileDependencyGroup)} from property '{kvp.Key}'",
+                        this.GetType(),
+                        Logger);
             }
         }
 

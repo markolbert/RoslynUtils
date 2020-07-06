@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Dynamic;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
+using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
@@ -25,7 +26,11 @@ namespace J4JSoftware.Roslyn
                 Assembly = verText!.TextComponent;
                 Version = verText.Version;
             }
-            else LogAndThrow( $"Couldn't create a {nameof(VersionedText)}", text, typeof(ExpandoObject) );
+            else
+                throw ProjectAssetsException.CreateAndLog(
+                    $"Couldn't create a {nameof( VersionedText )}",
+                    this.GetType(),
+                    Logger );
 
             Type = GetEnum<ReferenceType>( tgtInfo, "type" );
 
@@ -50,10 +55,18 @@ namespace J4JSoftware.Roslyn
                         Dependencies.Add(
                             new DependencyInfo( kvp.Key, GetSemanticVersion( versionText ),
                                 LoggerFactory ) );
-                    else LogAndThrow( $"'{kvp.Value}' is not a version string" );
+                    else
+                        throw ProjectAssetsException.CreateAndLog(
+                            $"'{kvp.Value}' is not a version string",
+                            this.GetType(),
+                            Logger );
                 }
             }
-            else LogAndThrow( $"'{DependencyKey}' clause for assembly {Assembly} is not an ExpandoObject" );
+            else
+                throw ProjectAssetsException.CreateAndLog(
+                    $"'{DependencyKey}' clause for assembly {Assembly} is not an ExpandoObject",
+                    this.GetType(),
+                    Logger );
         }
 
         public string Assembly { get; }

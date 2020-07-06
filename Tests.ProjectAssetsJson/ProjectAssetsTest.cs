@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class ProjectAssetsTest
+    public class ProjectAssetsTest : ConfigurationBase
     {
         private readonly JsonSerializerOptions _converterOptions;
         private readonly Func<IJ4JLogger> _loggerFactory;
@@ -92,22 +92,6 @@ namespace Tests.ProjectAssetsJson
 
             // we'll never get here but need to keep the compiler happy...
             return default!;
-        }
-
-        private void LogAndThrow(
-            string message,
-            string? textElement = null,
-            Type? containerType = null,
-            [CallerMemberName] string callerName = "")
-        {
-            var genType = typeof(ProjectAssetsException<>).MakeGenericType(this.GetType());
-
-#pragma warning disable 8601
-            var toThrow = (Exception)Activator.CreateInstance(genType,
-                new object[] { message, callerName, textElement, containerType })!;
-#pragma warning restore 8601
-
-            throw toThrow!;
         }
 
         [Theory]
