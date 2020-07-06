@@ -85,8 +85,8 @@ namespace J4JSoftware.Roslyn
             {
                 var pkgAssembly = new RequiredAssembly { AssemblyName = libInfo.Assembly };
 
-                if( libInfo.GetAbsolutePath( projAssets.PackageFolders, tgtFramework, out var absPathResult ) )
-                    pkgAssembly.AssemblyPath = absPathResult!.DllPath;
+                //if( libInfo.GetAbsolutePath( projAssets.PackageFolders, tgtFramework, out var absPathResult ) )
+                //    pkgAssembly.AssemblyPath = absPathResult!.DllPath;
 
                 assemblies.Add( pkgAssembly );
             }

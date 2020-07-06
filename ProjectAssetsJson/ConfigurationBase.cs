@@ -90,15 +90,15 @@ namespace J4JSoftware.Roslyn
             bool caseSensitive = false,
             bool optional = false)
         {
-            if (!typeof(Enum).IsEnum)
+            if (!typeof(TEnum).IsEnum)
                 throw new ArgumentException($"{typeof(TEnum)} is not an enum type");
 
             var text = GetProperty<string>(container, propName, caseSensitive, optional);
 
-            if (!Enum.TryParse(typeof(TEnum), text, true, out var retVal))
+            if (Enum.TryParse(typeof(TEnum), text, true, out var retVal))
                 return (TEnum)retVal!;
 
-            LogAndThrow( $"Couldn't an instance of {typeof(TEnum)}", propName, typeof(ExpandoObject) );
+            LogAndThrow( $"Couldn't create an instance of {typeof(TEnum)}", propName, typeof(ExpandoObject) );
 
             // we'll never get here but need to keep the compiler happy...
             return default!;
@@ -107,7 +107,7 @@ namespace J4JSoftware.Roslyn
 
         protected TEnum GetEnum<TEnum>( string text )
         {
-            if (!Enum.TryParse(typeof(TEnum), text, true, out var retVal))
+            if (Enum.TryParse(typeof(TEnum), text, true, out var retVal))
                 return (TEnum)retVal!;
 
             LogAndThrow( $"Couldn't parse {text} to an instance of {typeof(TEnum)}" );
