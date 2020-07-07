@@ -27,10 +27,10 @@ namespace J4JSoftware.Roslyn.Testing
             builder.RegisterType<ReferenceInfo>()
                 .AsSelf();
 
-            builder.RegisterType<DependencyInfo>()
+            builder.RegisterType<TargetDependency>()
                 .AsSelf();
 
-            builder.RegisterType<RestrictedDependencyInfo>()
+            builder.RegisterType<ProjectFileDependencyGroupDependency>()
                 .AsSelf();
 
             builder.RegisterType<LibraryInfo>()
@@ -45,14 +45,14 @@ namespace J4JSoftware.Roslyn.Testing
             builder.RegisterType<RestoreInfo>()
                 .AsSelf();
 
-            builder.RegisterType<FrameworkReferences>()
+            builder.RegisterType<ProjectFramework>()
                 .AsSelf();
 
             builder.RegisterType<WarningProperty>()
                 .AsSelf();
 
-            builder.RegisterType<ProjectReference>()
-                .AsSelf();
+            //builder.RegisterType<ProjectReference>()
+            //    .AsSelf();
 
             builder.RegisterType<JsonProjectAssetsConverter>()
                 .AsSelf();

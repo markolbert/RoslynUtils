@@ -56,12 +56,12 @@ namespace J4JSoftware.Roslyn
                     _ => VersionConstraint.Undefined
                 };
 
-                Dependencies.Add( new RestrictedDependencyInfo( parts[ 0 ], version, constraint, LoggerFactory ) );
+                Dependencies.Add( new ProjectFileDependencyGroupDependency( parts[ 0 ], version, constraint, LoggerFactory ) );
             }
         }
 
         public CSharpFramework TargetFramework => _tgtFw.Framework;
         public SemanticVersion TargetVersion => _tgtFw.Version;
-        public List<RestrictedDependencyInfo> Dependencies { get; } = new List<RestrictedDependencyInfo>();
+        public List<ProjectFileDependencyGroupDependency> Dependencies { get; } = new List<ProjectFileDependencyGroupDependency>();
     }
 }

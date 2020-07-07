@@ -14,7 +14,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="assets-info\LibraryCreatorFactory.cs" />
+    <Compile Remove="dependency-info\**" />
+    <EmbeddedResource Remove="dependency-info\**" />
+    <None Remove="dependency-info\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DependencyInfoBase.cs" />
+    <Compile Remove="IInitializeFromNamed.cs" />
+    <Compile Remove="project-info\FrameworkBase.cs" />
+    <Compile Remove="project-info\FrameworkDependencies.cs" />
+    <Compile Remove="ProjectAssetsContext.cs" />
   </ItemGroup>
 
   <ItemGroup>

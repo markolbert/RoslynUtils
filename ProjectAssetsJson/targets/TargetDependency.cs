@@ -4,18 +4,20 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependencyInfo : DependencyInfoBase
+    public class TargetDependency : ProjectAssetsBase
     {
-        public DependencyInfo(
-            string assembly, 
+        public TargetDependency(
+            string text, 
             SemanticVersion version,
             Func<IJ4JLogger> loggerFactory 
             )
-            : base(assembly, loggerFactory)
+            : base(loggerFactory)
         {
+            Assembly = text;
             Version = version;
         }
 
+        public string Assembly { get; }
         public SemanticVersion Version { get; }
     }
 }

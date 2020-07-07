@@ -4,17 +4,19 @@ using System.ComponentModel;
 using System.Dynamic;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
+using Serilog.Parsing;
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependencyList : DependencyInfoBase
+    public class DependencyList : ProjectAssetsBase
     {
         public DependencyList(
             string text,
             ExpandoObject depListInfo,
             Func<IJ4JLogger> loggerFactory ) 
-            : base( text, loggerFactory )
+            : base( loggerFactory )
         {
+            Assembly = text;
             TargetType = GetEnum<ReferenceType>( depListInfo, "target" );
 
             var versionsText = GetProperty<string>(depListInfo,"version");
@@ -34,6 +36,7 @@ namespace J4JSoftware.Roslyn
             }
         }
 
+        public string Assembly { get; }
         public ReferenceType TargetType { get; }
         public List<SemanticVersion> Versions { get; } = new List<SemanticVersion>();
     }

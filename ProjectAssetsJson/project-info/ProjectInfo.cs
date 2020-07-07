@@ -27,17 +27,16 @@ namespace J4JSoftware.Roslyn
             foreach( var kvp in fwCollection )
             {
                 if( kvp.Value is ExpandoObject fwInfo )
-                    Frameworks.Add(new FrameworkReferences(kvp.Key, fwInfo, LoggerFactory)  );
+                    ProjectFrameworks.Add(new ProjectFramework(kvp.Key, fwInfo, LoggerFactory)  );
             }
         }
 
+        public bool IsNetCoreApplication =>
+            ProjectFrameworks?.All(fw => fw.TargetFramework == CSharpFramework.NetCoreApp) ?? false;
+
         public SemanticVersion Version { get; }
         public RestoreInfo Restore { get; }
-
-        public bool IsNetCoreApplication =>
-            Frameworks?.All( fw => fw.TargetFramework == CSharpFramework.NetCoreApp ) ?? false;
-
-        public List<FrameworkReferences> Frameworks { get; } = new List<FrameworkReferences>();
+        public List<ProjectFramework> ProjectFrameworks { get; } = new List<ProjectFramework>();
         public List<WarningProperty> WarningProperties { get; } = new List<WarningProperty>();
     }
 }

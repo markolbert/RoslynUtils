@@ -42,6 +42,36 @@ namespace J4JSoftware.Roslyn
                     optional: true );
 
             Sources = asDict.Keys.ToList();
+
+            CreateRestoreFrameworks( GetProperty<ExpandoObject>( restoreInfo, "frameworks" ) );
+        }
+
+        private void CreateRestoreFrameworks( ExpandoObject rfContainer )
+        {
+            foreach( var kvp in rfContainer )
+            {
+                if( kvp.Value is ExpandoObject childContainer )
+                    Frameworks.Add( new RestoreFramework( kvp.Key, childContainer, LoggerFactory ) );
+                else
+                    throw ProjectAssetsException.CreateAndLog(
+                        "Restore framework item is not an ExpandoObject",
+                        this.GetType(),
+                        Logger);
+            }
+        }
+
+        private void CreateWarningProperties(ExpandoObject warnings )
+        {
+            foreach (var kvp in warnings)
+            {
+                if (kvp.Value is List<string> childContainer)
+                    WarningProperties.Add(new WarningProperty(kvp.Key, childContainer, LoggerFactory));
+                else
+                    throw ProjectAssetsException.CreateAndLog(
+                        "Warning property item is not a List<string>",
+                        this.GetType(),
+                        Logger);
+            }
         }
 
         public string ProjectUniqueName { get; }
@@ -54,5 +84,7 @@ namespace J4JSoftware.Roslyn
         public List<string> ConfigurationFilePaths { get; }
         public List<TargetFramework> OriginalTargetFrameworks { get; }
         public List<string> Sources { get; }
+        public List<RestoreFramework> Frameworks { get; } = new List<RestoreFramework>();
+        public List<WarningProperty> WarningProperties { get; } = new List<WarningProperty>();
     }
 }

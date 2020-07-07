@@ -4,19 +4,23 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class RestrictedDependencyInfo : DependencyInfo
+    public class ProjectFileDependencyGroupDependency : ProjectAssetsBase
     {
-        public RestrictedDependencyInfo(
+        public ProjectFileDependencyGroupDependency(
             string assembly, 
             SemanticVersion version, 
             VersionConstraint constraint,
             Func<IJ4JLogger> loggerFactory 
             )
-            : base( assembly, version, loggerFactory )
+            : base( loggerFactory )
         {
+            Assembly = assembly;
+            Version = version;
             Constraint = constraint;
         }
 
+        public string Assembly { get; }
+        public SemanticVersion Version { get; }
         public VersionConstraint Constraint { get; set; }
 
         public bool MeetsConstraint( SemanticVersion toCheck )

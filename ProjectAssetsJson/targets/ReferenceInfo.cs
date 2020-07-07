@@ -53,7 +53,7 @@ namespace J4JSoftware.Roslyn
                 {
                     if( kvp.Value is string versionText )
                         Dependencies.Add(
-                            new DependencyInfo( kvp.Key, GetSemanticVersion( versionText ),
+                            new TargetDependency( kvp.Key, GetSemanticVersion( versionText ),
                                 LoggerFactory ) );
                     else
                         throw ProjectAssetsException.CreateAndLog(
@@ -74,6 +74,6 @@ namespace J4JSoftware.Roslyn
         public ReferenceType Type { get; }
         public List<string> Compile { get; } = new List<string>();
         public List<string> Runtime { get; } = new List<string>(); 
-        public List<DependencyInfo> Dependencies { get; } = new List<DependencyInfo>();
+        public List<TargetDependency> Dependencies { get; } = new List<TargetDependency>();
     }
 }
