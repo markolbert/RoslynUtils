@@ -8,7 +8,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class LibraryInfo : ConfigurationBase, ILibraryInfo
+    public class LibraryInfo : ProjectAssetsBase, ILibraryInfo
     {
         protected LibraryInfo(
             string text,

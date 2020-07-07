@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
         {
             SHA512 = GetProperty<string>( libInfo, "SHA512" );
             Path = GetProperty<string>( libInfo, "path" );
-            Files = GetProperty<List<string>>( libInfo, "path" );
+            Files = GetProperty<List<string>>( libInfo, "files" );
         }
 
         public string SHA512 { get; }

@@ -8,11 +8,11 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ConfigurationBase
+    public class ProjectAssetsBase
     {
         private IJ4JLogger? _logger;
 
-        protected ConfigurationBase( Func<IJ4JLogger> loggerFactory )
+        protected ProjectAssetsBase( Func<IJ4JLogger> loggerFactory )
         {
             LoggerFactory = loggerFactory;
         }

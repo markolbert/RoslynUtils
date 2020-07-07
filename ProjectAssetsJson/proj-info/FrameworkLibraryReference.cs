@@ -4,7 +4,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class FrameworkLibraryReference : ConfigurationBase
+    public class FrameworkLibraryReference : ProjectAssetsBase
     {
         public FrameworkLibraryReference( 
             string text,

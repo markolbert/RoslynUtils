@@ -8,7 +8,7 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ReferenceInfo : ConfigurationBase
+    public class ReferenceInfo : ProjectAssetsBase
     {
         public const string DependencyKey = "dependencies";
 

@@ -6,7 +6,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TargetInfo : ConfigurationBase
+    public class TargetInfo : ProjectAssetsBase
     {
         private readonly TargetFramework _tgtFW;
 

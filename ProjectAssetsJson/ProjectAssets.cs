@@ -14,7 +14,7 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectAssets : ConfigurationBase
+    public class ProjectAssets : ProjectAssetsBase
     {
         private class ProjectAssetsAssemblyLoadContext : AssemblyLoadContext
         {

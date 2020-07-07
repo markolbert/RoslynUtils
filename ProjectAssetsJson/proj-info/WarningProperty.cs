@@ -4,7 +4,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class WarningProperty : ConfigurationBase
+    public class WarningProperty : ProjectAssetsBase
     {
         public WarningProperty( 
             string text,

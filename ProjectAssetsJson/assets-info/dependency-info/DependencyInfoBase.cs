@@ -4,7 +4,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependencyInfoBase : ConfigurationBase
+    public class DependencyInfoBase : ProjectAssetsBase
     {
         protected DependencyInfoBase(
             string assembly,

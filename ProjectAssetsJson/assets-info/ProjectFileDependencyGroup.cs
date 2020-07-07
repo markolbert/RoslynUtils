@@ -8,7 +8,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectFileDependencyGroup : ConfigurationBase
+    public class ProjectFileDependencyGroup : ProjectAssetsBase
     {
         private readonly TargetFramework _tgtFw;
 

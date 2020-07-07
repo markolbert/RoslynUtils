@@ -8,7 +8,7 @@ using Microsoft.VisualBasic;
 
 namespace J4JSoftware.Roslyn
 {
-    public class RestoreInfo : ConfigurationBase
+    public class RestoreInfo : ProjectAssetsBase
     {
         public RestoreInfo( 
             string text,

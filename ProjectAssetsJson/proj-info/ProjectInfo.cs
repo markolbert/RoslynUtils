@@ -7,7 +7,7 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectInfo : ConfigurationBase
+    public class ProjectInfo : ProjectAssetsBase
     {
         public ProjectInfo( 
             string text,
