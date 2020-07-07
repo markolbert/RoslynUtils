@@ -36,7 +36,12 @@ namespace J4JSoftware.Roslyn
                 } )
                 .ToList();
 
-            Sources = GetProperty<List<string>>(restoreInfo,"sources", optional: true);
+            var asDict = (IDictionary<string, object>) GetProperty<ExpandoObject>(
+                    restoreInfo, 
+                    "sources", 
+                    optional: true );
+
+            Sources = asDict.Keys.ToList();
         }
 
         public string ProjectUniqueName { get; }

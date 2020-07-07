@@ -1,0 +1,12 @@
+{
+  "projectFileDependencyGroups": {
+    ".NETCoreApp,Version=v3.1": [
+      "J4JSoftware.Logging >= 2.5.1",
+      "J4JSoftware.Roslyn.General >= 1.0.0",
+      "Microsoft.CodeAnalysis >= 3.6.0",
+      "NuGet.Versioning >= 5.6.0",
+      "System.Runtime.Loader >= 4.3.0",
+      "System.Text.Json >= 4.7.2"
+    ]
+  }
+}
