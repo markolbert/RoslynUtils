@@ -22,6 +22,7 @@
   <ItemGroup>
     <Compile Remove="DependencyInfoBase.cs" />
     <Compile Remove="IInitializeFromNamed.cs" />
+    <Compile Remove="libraries\LibraryInfo.cs" />
     <Compile Remove="project-info\FrameworkBase.cs" />
     <Compile Remove="project-info\FrameworkDependencies.cs" />
     <Compile Remove="ProjectAssetsContext.cs" />

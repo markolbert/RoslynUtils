@@ -28,9 +28,12 @@ namespace Tests.ProjectAssetsJson
                 ServiceProvider.Instance.GetRequiredService<JsonProjectAssetsConverter>() );
         }
 
+        protected string GetFullPath( string path ) =>
+            Path.Combine( Environment.CurrentDirectory, "json-snippets", path );
+
         protected string ReadJsonFile( string jsonFile )
         {
-            var filePath = Path.Combine(Environment.CurrentDirectory, "json-snippets", jsonFile);
+            var filePath = GetFullPath( jsonFile );
 
             return File.Exists( filePath ) ? File.ReadAllText( filePath ) : string.Empty;
         }

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using J4JSoftware.Logging;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
@@ -67,11 +64,7 @@ namespace J4JSoftware.Roslyn
                     break;
             }
 
-            // append a trailing patch of 0 if none supplied
-            var fwVersion = text.Substring( textEnd );
-            fwVersion = fwVersion.Count( c => c == '.' ) < 2 ? $"{fwVersion}.0" : fwVersion;
-
-            return ( text.Substring( 0, textEnd ), fwVersion );
+            return ( text.Substring( 0, textEnd ), FixUpVersion( text.Substring( textEnd ) ) );
         }
 
         private static (string fwName, string fwVersion) ParseExplicit( string text )
@@ -84,13 +77,24 @@ namespace J4JSoftware.Roslyn
             // strip off the leading period
             var fwName = parts[ 0 ].Substring( 1 );
 
-            // append a trailing patch of 0 if none supplied
-            var fwVersion = parts[ 1 ].Count( c => c == '.' ) < 2 ? $"{parts[ 1 ]}.0" : parts[ 1 ];
-
-            return ( fwName, fwVersion );
+            return ( fwName, FixUpVersion(parts[1]) );
         }
 
-        protected TargetFramework()
+        private static string FixUpVersion( string rawVersion )
+        {
+            var numLevels = rawVersion.Count(c => c == '.');
+
+            var retVal = new StringBuilder(rawVersion);
+
+            for (var idx = 0; idx < 2 - numLevels; idx++)
+            {
+                retVal.Append(".0");
+            }
+
+            return retVal.ToString();
+        }
+
+        private TargetFramework()
         {
         }
 

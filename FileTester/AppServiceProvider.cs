@@ -33,8 +33,8 @@ namespace J4JSoftware.Roslyn.Testing
             builder.RegisterType<ProjectFileDependencyGroupDependency>()
                 .AsSelf();
 
-            builder.RegisterType<LibraryInfo>()
-                .AsSelf();
+            //builder.RegisterType<LibraryInfo>()
+            //    .AsSelf();
 
             builder.RegisterType<ProjectFileDependencyGroup>()
                 .AsSelf();

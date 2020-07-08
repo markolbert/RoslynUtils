@@ -49,7 +49,6 @@ namespace J4JSoftware.Roslyn
 
         public List<string> PackageFolders { get; } = new List<string>();
         public ProjectInfo? Project { get; private set; }
-        public string ProjectFilePath => Project?.Restore?.ProjectPath ?? string.Empty;
         public ProjectLibrary? ProjectLibrary { get; private set; }
 
         public bool InitializeFromProjectFile( string projectFilePath )
@@ -115,6 +114,8 @@ namespace J4JSoftware.Roslyn
 
                 return false;
             }
+
+            ProjectFile = projFilePath;
 
             if( !File.Exists( projectAssetsPath ) )
             {

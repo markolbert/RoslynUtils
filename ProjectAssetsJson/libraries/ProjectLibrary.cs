@@ -8,45 +8,57 @@ using System.Xml;
 using System.Xml.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using NuGet.Versioning;
+using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectLibrary : LibraryInfo
+    public class ProjectLibrary : ProjectAssetsBase, ILibraryInfo
     {
+#pragma warning disable 8618
         public ProjectLibrary(
+#pragma warning restore 8618
             string text,
             ExpandoObject libInfo,
             string projDir,
             Func<IJ4JLogger> loggerFactory
         )
-            : base( text, loggerFactory, ReferenceType.Project )
+            : base( loggerFactory )
         {
-            // not sure if this is always correct, but I believe the only references to other
-            // projects that show up in the project.assets.json file are libraries, not executables
-            // or modules.
-            OutputType = OutputType.Library;
+            if (!VersionedText.Create(text, out var verText))
+                throw new ArgumentException($"Couldn't parse '{text}' into {typeof(VersionedText)}");
+
+            Assembly = verText!.TextComponent;
+            Version = verText.Version;
+            Type = ReferenceType.Project;
 
             var path = Path.GetFullPath( Path.Combine( projDir, GetProperty<string>( libInfo, "msbuildProject" ) ) );
-
-            if( !IsFileSupported( path ) )
-                throw new ArgumentException($"File '{path}' is not supported");
+            ValidateProjectFile( path );
 
             ProjectFilePath = path;
             ParseProjectFile();
         }
 
+#pragma warning disable 8618
         public ProjectLibrary(
+#pragma warning restore 8618
             string projFilePath,
             Func<IJ4JLogger> loggerFactory
         )
-            : base( Path.GetFileNameWithoutExtension( projFilePath ), loggerFactory, ReferenceType.Project )
+            : base( loggerFactory )
         {
-            if (!IsFileSupported(projFilePath))
-                throw new ArgumentException($"File '{projFilePath}' is not supported");
+            Assembly = Path.GetFileNameWithoutExtension( projFilePath );
+            Type = ReferenceType.Project;
+
+            ValidateProjectFile( projFilePath );
 
             ProjectFilePath = projFilePath;
             ParseProjectFile();
         }
+
+        public string Assembly { get; }
+        public SemanticVersion Version { get; private set; }
+        public ReferenceType Type { get; }
 
         // this will always be a full path
         public string ProjectFilePath { get; }
@@ -65,7 +77,7 @@ namespace J4JSoftware.Roslyn
         };
 
         public XDocument? Document { get; private set; }
-        public XElement? ProjectElement { get; private set; }
+        public XElement ProjectElement { get; private set; }
 
         public string? AssemblyName => ProjectElement?.Descendants( "AssemblyName" ).FirstOrDefault()?.Value;
         public string? RootNamespace => ProjectElement?.Descendants( "RootNamespace" ).FirstOrDefault()?.Value;
@@ -88,10 +100,7 @@ namespace J4JSoftware.Roslyn
             {
                 var text = ProjectElement?.Descendants( "AssemblyVersion" ).FirstOrDefault()?.Value ?? "";
 
-                if( !System.Version.TryParse( text, out var parsed ) )
-                    return new System.Version();
-
-                return parsed;
+                return !System.Version.TryParse( text, out var parsed ) ? new System.Version() : parsed;
             }
         }
 
@@ -101,123 +110,75 @@ namespace J4JSoftware.Roslyn
             {
                 var text = ProjectElement?.Descendants( "FileVersion" ).FirstOrDefault()?.Value ?? "";
 
-                if( !System.Version.TryParse(text, out var parsed) )
-                    return new System.Version();
-
-                return parsed;
+                return !System.Version.TryParse(text, out var parsed) ? new System.Version() : parsed;
             }
         }
 
-        public bool IsFileSupported( string projectFilePath )
+        private void ValidateProjectFile( string projectFilePath )
         {
             if( String.IsNullOrEmpty( projectFilePath ) )
-            {
-                Logger.Error( "Undefined project file path" );
-                return false;
-            }
+                throw ProjectAssetsException.CreateAndLog( "Undefined project file path", this.GetType(), Logger );
 
             if( !File.Exists( projectFilePath ) )
-            {
-                Logger.Error<string>( "Project file '{projectFilePath}' doesn't exist", projectFilePath );
-                return false;
-            }
+                throw ProjectAssetsException.CreateAndLog( 
+                    $"Project file '{projectFilePath}' doesn't exist",
+                    this.GetType(), 
+                    Logger );
 
             var ext = System.IO.Path.GetExtension( projectFilePath );
 
             if( !ext.Equals( ".csproj", StringComparison.OrdinalIgnoreCase ) )
-            {
-                Logger.Error<string>( "Unsupported project file type '{ext}'", ext );
-                return false;
-            }
-
-            Logger.Verbose<string>( "Validated project file '{projectFilePath}'", projectFilePath );
-            return true;
+                ProjectAssetsException.CreateAndLog( $"Unsupported project file type '{ext}'", this.GetType(), Logger );
         }
 
-        private bool ParseProjectFile()
+        private void ParseProjectFile()
         {
             TargetFrameworks.Clear();
 
-            XDocument? projDoc = CreateProjectDocument();
-            if( projDoc == null )
-                return false;
+            XDocument projDoc = CreateProjectDocument();
 
-            ProjectElement = projDoc.Root?.DescendantsAndSelf()
+            var projElem = projDoc.Root!.DescendantsAndSelf()
                 .FirstOrDefault( e => e.Name == "AssemblyName" )
                 ?.Parent;
 
-            if( ProjectElement == null )
-            {
-                Logger.Error<string>( "'{0}' has no primary ProjectGroup ", ProjectFilePath );
-                return false;
-            }
+            ProjectElement = projElem
+                             ?? throw ProjectAssetsException.CreateAndLog(
+                                 $"Project '{ProjectFilePath}' has no primary project group",
+                                 this.GetType(),
+                                 Logger );
 
             Document = projDoc;
 
             // determine if project produces an executable
-            var typeText = ProjectElement.Descendants( "OutputType" ).FirstOrDefault()?.Value;
+            var typeText = ProjectElement.Descendants( "OutputType" ).FirstOrDefault()?.Value ?? string.Empty;
+            OutputType = GetEnum<OutputType>( typeText );
 
-            if( !string.IsNullOrEmpty( typeText ) )
-            {
-                if( Enum.TryParse<OutputType>( typeText, true, out var projType ) )
-                    OutputType = projType;
-                else
-                {
-                    Logger.Error( "Couldn't parse OutputType from project file" );
-                    return false;
-                }
-            }
-
-            if( !InitializeTargetFrameworks() )
-            {
-                Logger.Error( "Failed to initialize target framework(s) from project file" );
-                return false;
-            }
+            InitializeTargetFrameworks();
 
             SourceFiles.Clear();
             SourceFiles.AddRange( Directory.GetFiles( ProjectDirectory, $"*.cs" ).ToList()
                 .Where( f => !ExcludedFiles.Any( x => f.Equals( x, StringComparison.OrdinalIgnoreCase ) ) ) );
-
-            return true;
         }
 
-        private bool InitializeTargetFrameworks()
+        private void InitializeTargetFrameworks()
         {
-            bool add_frameworks( IEnumerable<string> fwStrings )
-            {
-                if( fwStrings == null )
-                    return false;
-
-                foreach( var curFW in fwStrings )
-                {
-                    //TODO: need to figure out how to determine if it's an app
-                    if( !TargetFramework.Create( curFW, TargetFrameworkTextStyle.Simple, out var newTF ) )
-                        return false;
-
-                    TargetFrameworks.Add( newTF! );
-                }
-
-                return true;
-            }
-
             TargetFrameworks.Clear();
 
-            var singleFramework = ProjectElement?.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
+            var singleFramework = ProjectElement.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
 
-            if( singleFramework != null )
-                return add_frameworks( new[] { singleFramework } );
-
-            if( !add_frameworks( ProjectElement?
-                .Descendants( "TargetFrameworks" ).FirstOrDefault()?.Value
-                .Split( ';' )! ) )
-                return false;
-
-            return true;
+            if( string.IsNullOrEmpty( singleFramework ) )
+                foreach (var tfwText in ProjectElement.Descendants("TargetFrameworks").FirstOrDefault()?.Value
+                    .Split(';') ?? Enumerable.Empty<string>())
+                {
+                    TargetFrameworks.Add(GetTargetFramework(tfwText, TargetFrameworkTextStyle.Simple));
+                }
+            else
+                TargetFrameworks.Add(GetTargetFramework(singleFramework, TargetFrameworkTextStyle.Simple));
         }
 
-        private XDocument? CreateProjectDocument()
+        private XDocument CreateProjectDocument()
         {
-            XDocument? retVal = null;
+            XDocument retVal = default!;
 
             try
             {
@@ -230,21 +191,19 @@ namespace J4JSoftware.Roslyn
             }
             catch( Exception e )
             {
-                Logger.Error<string, string>(
-                    "Could not parse project file '{0}', exception was: {1}",
-                    ProjectFilePath,
-                    e.Message );
-
-                return null;
+                throw ProjectAssetsException.CreateAndLog(
+                    $"Could not parse project file '{ProjectFilePath}', exception was: {e.Message}", 
+                    this.GetType(),
+                    Logger );
             }
 
-            if( retVal.Root != null )
-                return retVal;
+            if( retVal.Root == null )
+                throw ProjectAssetsException.CreateAndLog(
+                    $"Undefined root node in project file '{ProjectFilePath}'",
+                    this.GetType(),
+                    Logger);
 
-            Logger.Error<string>( "Undefined root node in project file '{projectFilePath}'", ProjectFilePath );
-
-            return null;
+            return retVal;
         }
-
     }
 }
