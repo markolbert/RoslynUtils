@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text;
+using Buildalyzer;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,31 +13,51 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn
 {
-    public class CompilationResult
+    public class ProjectModelCompilationOptions
     {
-        public CompilationResult( SyntaxNode syntax, SemanticModel model )
+        private int _warningLevel = 4;
+
+        public ProjectModelCompilationOptions()
         {
-            Syntax = syntax;
-            Model = model;
+            Suppress = new List<string>( new string[] { "CS1701", "CS1702" } );
         }
 
-        public SyntaxNode Syntax { get; }
-        public SemanticModel Model { get; }
+        public int WarningLevel
+        {
+            get => _warningLevel;
+            set => _warningLevel = value < 0 ? 4 : value;
+        }
+
+        public List<string> Suppress { get; }
+        public string? CompilationName { get; set; }
+        public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Release;
+        public ReportDiagnostic DiagnosticLevel { get; set; } = ReportDiagnostic.Error;
+
+        public Dictionary<string, ReportDiagnostic> GetSuppressedDiagnostics() =>
+            Suppress.ToDictionary( s => s, s => ReportDiagnostic.Suppress );
     }
 
     public class ProjectModel
     {
-        private readonly AssemblyLoadContext _loadContext;
         private readonly IJ4JLogger _logger;
+        private readonly Func<IJ4JLogger> _loggerFactory;
+        private readonly ProjectAssets _projAssets;
 
         private bool _nonCompOkay = true;
 
-        public ProjectModel( AssemblyLoadContext loadContext, IJ4JLogger logger )
+        public ProjectModel( 
+            ProjectAssets projAssets,
+            Func<IJ4JLogger> loggerFactory 
+            )
         {
-            _loadContext = loadContext;
+            _projAssets = projAssets;
 
-            _logger = logger;
-            _logger.SetLoggedType( this.GetType() );
+            _loggerFactory = loggerFactory;
+
+            _logger = loggerFactory();
+            _logger.SetLoggedType(this.GetType());
+
+            ExternalAssemblies = new RequiredAssemblies( loggerFactory );
         }
 
         public bool IsValid => _nonCompOkay && !HasCompilationErrors;
@@ -47,17 +70,13 @@ namespace J4JSoftware.Roslyn
 
         public bool HasCompilationErrors => HasCompilationProblems( DiagnosticSeverity.Error );
 
-        public bool Compile( ProjectAssets projAssets, TargetFramework tgtFramework,
-            List<RequiredAssembly>? externalAssemblies = null )
+        public RequiredAssemblies ExternalAssemblies { get; }
+
+        public bool Compile( ProjectAssets projAssets, TargetFramework tgtFramework )
         {
-            _nonCompOkay = false;
-
-            if( projAssets.ProjectLibrary == null )
+            if( !projAssets.IsValid )
             {
-                _logger.Error<string, string>( "{0} undefined in {1}",
-                    nameof(projAssets.ProjectLibrary),
-                    nameof(projAssets) );
-
+                _logger.Error<string>( "{0} is not validly configured", nameof(projAssets) );
                 return false;
             }
 
@@ -71,42 +90,35 @@ namespace J4JSoftware.Roslyn
             Diagnostics.Clear();
 
             // build the identification/location information for the list of assemblies we'll be using
-            var assemblies = externalAssemblies == null ? new List<RequiredAssembly>() : externalAssemblies.ToList();
+            var reqdAssemblies = ExternalAssemblies.Clone();
 
-            // add the ones defined for netstandard
-            if( tgtFramework.Framework == CSharpFramework.NetStandard )
-                assemblies.Add( new RequiredAssembly { AssemblyName = "netstandard" } );
+            // add certain universal assemblies
+            reqdAssemblies.Add(name: "System.Runtime");
 
-            // finally, add the assemblies defined in the project file
-            foreach( var libInfo in projAssets.Libraries.Where( lib => lib is PackageLibrary )
-                .Cast<PackageLibrary>() )
+            // add the ones defined for our target framework
+            switch ( tgtFramework.Framework )
             {
-                var pkgAssembly = new RequiredAssembly { AssemblyName = libInfo.Assembly };
+                case CSharpFramework.NetStandard:
+                    //reqdAssemblies.Add( name : "netstandard" );
+                    reqdAssemblies.Add(name: "System.Private.CoreLib");
+                    break;
 
-                //if( libInfo.GetAbsolutePath( projAssets.PackageFolders, tgtFramework, out var absPathResult ) )
-                //    pkgAssembly.AssemblyPath = absPathResult!.DllPath;
-
-                assemblies.Add( pkgAssembly );
+                case CSharpFramework.NetCoreApp:
+                    reqdAssemblies.Add(name: "System.Private.CoreLib");
+                    break;
             }
 
-            // now create the MetadataReferences for the assemblies
-            var references = new List<MetadataReference>();
-
-            foreach( var reqdAssembly in assemblies )
+            // finally, add the assemblies defined in the project file
+            foreach ( var libInfo in projAssets.Libraries.Where( lib => lib is PackageLibrary )
+                .Cast<PackageLibrary>() )
             {
-                // start by trying to load the assembly by name since the framework is much
-                // cleverer than me at finding assemblies...
-                if( !string.IsNullOrEmpty( reqdAssembly.AssemblyName )
-                    && LoadFromAssemblyName( reqdAssembly.AssemblyName!, out var mdRef ) )
+                if( !projAssets.Repositories.ResolvePackagePath( libInfo.Path, tgtFramework, out var pkgAbsPath ) )
                 {
-                    references.Add( mdRef! );
-                    continue;
+                    _logger.Error<string>( "Couldn't resolve path to nuget package '{0}'", libInfo.Path );
+                    return false;
                 }
 
-                // if loading by name didn't work, next try loading from the file path, if one exists
-                if( !string.IsNullOrEmpty( reqdAssembly.AssemblyPath )
-                    && LoadFromFilePath( reqdAssembly.AssemblyPath, out var mdRef2 ) )
-                    references.Add( mdRef2! );
+                reqdAssemblies.Add( libInfo.Assembly, pkgAbsPath!.DllPath );
             }
 
             // create the syntax trees by parsing the source code files
@@ -116,7 +128,7 @@ namespace J4JSoftware.Roslyn
             {
                 try
                 {
-                    var tree = CSharpSyntaxTree.ParseText( srcFile );
+                    var tree = CSharpSyntaxTree.ParseText( File.ReadAllText(srcFile) );
                     trees.Add( tree );
                 }
                 catch( Exception e )
@@ -133,12 +145,16 @@ namespace J4JSoftware.Roslyn
             // compile the project
             var options = new CSharpCompilationOptions( outputKind : projAssets.ProjectLibrary.OutputKind );
 
+            options.WithNullableContextOptions( projAssets.ProjectLibrary.NullableContextOptions );
+
             CSharpCompilation compilation;
+
+            _nonCompOkay = false;
 
             try
             {
                 compilation = CSharpCompilation.Create( projAssets.Name, options : options )
-                    .AddReferences( references )
+                    .AddReferences( reqdAssemblies.GetMetadataReferences() )
                     .AddSyntaxTrees( trees );
             }
             catch( Exception e )
@@ -194,45 +210,124 @@ namespace J4JSoftware.Roslyn
             return IsValid;
         }
 
-        private bool LoadFromAssemblyName(string aName, out MetadataReference? result)
+        public bool Compile( string csProjFile, ProjectModelCompilationOptions? pmOptions = null )
         {
-            result = null;
+            pmOptions ??= new ProjectModelCompilationOptions();
 
-            try
+            CompilationResults.Clear();
+            Diagnostics.Clear();
+
+            if( !_projAssets.InitializeFromProjectFile( csProjFile ) )
             {
-                var assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(aName));
+                _logger.Error<string, string>( "Failed to initialize {0} from '{1}'", nameof(ProjectAssets),
+                    csProjFile );
+                return false;
+            }
 
-                if (assembly == null)
+            pmOptions.CompilationName ??= Path.GetFileNameWithoutExtension( csProjFile );
+
+            var analyzerMgr = new AnalyzerManager();
+            var projAnalyzer = analyzerMgr.GetProject( csProjFile );
+            var buildResults = projAnalyzer.Build();
+
+            if( !buildResults.OverallSuccess )
+            {
+                _logger.Error( "Project analysis failed" );
+                return false;
+            }
+
+            var projResults = buildResults.Results.First();
+
+            // create the syntax trees by parsing the source code files
+            var trees = new List<SyntaxTree>();
+
+            foreach( var srcFile in projResults.SourceFiles )
+            {
+                try
+                {
+                    var tree = CSharpSyntaxTree.ParseText( File.ReadAllText( srcFile ) );
+                    trees.Add( tree );
+                }
+                catch( Exception e )
+                {
+                    _logger.Error<string, string>(
+                        "Failed to parse file '{0}' (Exception was {1})",
+                        srcFile,
+                        e.Message );
+
                     return false;
-
-                result = Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(assembly.Location);
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e.Message);
-                return false;
+                }
             }
 
-            return true;
-        }
+            // compile the project
+            var options = new CSharpCompilationOptions( outputKind : _projAssets.ProjectLibrary.OutputKind )
+                .WithNullableContextOptions( _projAssets.ProjectLibrary.NullableContextOptions )
+                .WithWarningLevel( pmOptions.WarningLevel )
+                .WithOptimizationLevel( pmOptions.OptimizationLevel )
+                .WithSpecificDiagnosticOptions( pmOptions.GetSuppressedDiagnostics() )
+                .WithGeneralDiagnosticOption( pmOptions.DiagnosticLevel );
 
-        private bool LoadFromFilePath(string path, out MetadataReference? result)
-        {
-            result = null;
+            CSharpCompilation compilation;
+
+            _nonCompOkay = false;
 
             try
             {
-                var assembly = _loadContext.LoadFromAssemblyPath(path);
-
-                result = Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(assembly.Location);
+                compilation = CSharpCompilation.Create( pmOptions.CompilationName, options : options )
+                    .AddReferences( projResults.References.Select( r => MetadataReference.CreateFromFile( r ) ) )
+                    .AddSyntaxTrees( trees );
             }
-            catch (Exception e)
+            catch( Exception e )
             {
-                _logger.Error(e.Message);
+                _logger.Error<string, string>(
+                    "Failed to compile project '{0}' (Exception was {1})",
+                    pmOptions.CompilationName,
+                    e.Message );
+
                 return false;
             }
 
-            return true;
+            // create the syntax/semantic info we'll be searching
+            foreach( var tree in trees )
+            {
+                if( !tree.TryGetRoot( out var root ) )
+                {
+                    CompilationResults.Clear();
+
+                    _logger.Error<string, string>(
+                        "Failed to get {0} for project {1}",
+                        nameof(CompilationUnitSyntax),
+                        pmOptions.CompilationName );
+
+                    return false;
+                }
+
+                try
+                {
+                    CompilationResults.Add( new CompilationResult(
+                        root,
+                        compilation.GetSemanticModel( tree ) )
+                    );
+                }
+                catch( Exception e )
+                {
+                    CompilationResults.Clear();
+
+                    _logger.Error<string, string, string>(
+                        "Failed to get {0} for project {1} (Exception was {2})",
+                        nameof(SemanticModel),
+                        pmOptions.CompilationName,
+                        e.Message );
+
+                    return false;
+                }
+            }
+
+            _nonCompOkay = true;
+
+            Diagnostics.AddRange( compilation.GetDiagnostics() );
+
+            return IsValid;
         }
     }
 }

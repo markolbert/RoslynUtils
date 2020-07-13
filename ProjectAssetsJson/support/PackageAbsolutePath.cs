@@ -2,8 +2,16 @@
 {
     public class PackageAbsolutePath
     {
-        public TargetFramework? TargetFramework { get; set; }
-        public string DllPath { get; set; } = string.Empty;
-        public bool IsVirtual => DllPath != null && DllPath == "_._";
+        public PackageAbsolutePath(
+            TargetFramework targetFW,
+            string dllPath )
+        {
+            TargetFramework = targetFW;
+            DllPath = dllPath;
+        }
+        public TargetFramework TargetFramework { get; }
+        public string DllPath { get; }
+
+        public bool IsVirtual => DllPath == "_._";
     }
 }

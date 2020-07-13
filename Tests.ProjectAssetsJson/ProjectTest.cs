@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class ProjectTest : TestBase
+    public class ProjectTest : ProjectAssetsTestBase
     {
         [Theory]
         [InlineData("project.json", 1, ProjectStyle.PackageReference)]

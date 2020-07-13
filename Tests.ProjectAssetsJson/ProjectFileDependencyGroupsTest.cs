@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class ProjectFileDependencyGroupsTest : TestBase
+    public class ProjectFileDependencyGroupsTest : ProjectAssetsTestBase
     {
         [Theory]
         [InlineData("project-file-dependency.json", 1)]

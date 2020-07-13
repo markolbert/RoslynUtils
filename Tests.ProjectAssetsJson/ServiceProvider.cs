@@ -32,47 +32,17 @@ namespace Tests.ProjectAssetsJson
             builder.RegisterType<TypedListCreator>()
                 .AsImplementedInterfaces();
 
-            //builder.RegisterType<PackageLibrary>()
-            //    .AsSelf();
-
-            //builder.RegisterType<ProjectLibrary>()
-            //    .AsSelf();
-
-            //builder.RegisterType<TargetInfo>()
-            //    .AsSelf();
-
-            //builder.RegisterType<ProjectInfo>()
-            //    .AsSelf();
-
-            //builder.RegisterType<ReferenceInfo>()
-            //    .AsSelf();
-
-            //builder.RegisterType<ProjectReference>()
-            //    .AsSelf();
-
-            //builder.RegisterType<DependencyInfo>()
-            //    .AsSelf();
-
-            //builder.RegisterType<RestrictedDependencyInfo>()
-            //    .AsSelf();
-
-            //builder.RegisterType<RestoreInfo>()
-            //    .AsSelf();
-
-            //builder.RegisterType<FrameworkReferences>()
-            //    .AsSelf();
-
-            //builder.RegisterType<WarningProperty>()
-            //    .AsSelf();
-
-            //builder.RegisterType<ProjectFileDependencyGroup>()
-            //    .AsSelf();
-
             builder.RegisterType<JsonProjectAssetsConverter>()
                 .AsSelf();
 
-            //builder.RegisterType<ProjectAssets>()
-            //    .AsSelf();
+            builder.RegisterType<ProjectAssets>()
+                .AsSelf();
+
+            builder.RegisterType<ProjectModel>()
+                .AsSelf();
+
+            builder.RegisterType<RequiredAssemblies>()
+                .AsSelf();
 
             Instance = new AutofacServiceProvider( builder.Build() );
         }

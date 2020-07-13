@@ -25,8 +25,8 @@ namespace J4JSoftware.Roslyn
         )
             : base( loggerFactory )
         {
-            if (!VersionedText.Create(text, out var verText))
-                throw new ArgumentException($"Couldn't parse '{text}' into {typeof(VersionedText)}");
+            if( !VersionedText.Create( text, out var verText ) )
+                throw new ArgumentException( $"Couldn't parse '{text}' into {typeof(VersionedText)}" );
 
             Assembly = verText!.TextComponent;
             Version = verText.Version;
@@ -63,7 +63,7 @@ namespace J4JSoftware.Roslyn
         // this will always be a full path
         public string ProjectFilePath { get; }
         public string ProjectDirectory => Path.GetDirectoryName( ProjectFilePath ) ?? string.Empty;
-        
+
         public List<TargetFramework> TargetFrameworks { get; } = new List<TargetFramework>();
         public OutputType OutputType { get; private set; }
 
@@ -85,6 +85,19 @@ namespace J4JSoftware.Roslyn
         public string? Company => ProjectElement?.Descendants( "Company" ).FirstOrDefault()?.Value;
         public string? Description => ProjectElement?.Descendants( "Description" ).FirstOrDefault()?.Value;
         public string? Copyright => ProjectElement?.Descendants( "Copyright" ).FirstOrDefault()?.Value;
+
+        public NullableContextOptions NullableContextOptions
+        {
+            get
+            {
+                var text = ProjectElement?.Descendants( "Nullable" ).FirstOrDefault()?.Value;
+
+                if( Enum.TryParse( typeof(NullableContextOptions), text, true, out var retVal ) )
+                    return (NullableContextOptions) retVal!;
+
+                return NullableContextOptions.Disable;
+            }
+        }
 
         public List<string> ExcludedFiles => Document?.Root?.Descendants()
                                                  .Where( e => e.Name == "Compile" && e.Attribute( "Remove" ) != null )
@@ -155,9 +168,14 @@ namespace J4JSoftware.Roslyn
 
             InitializeTargetFrameworks();
 
+            var objDir = Path.Combine( ProjectDirectory, "obj" );
+
             SourceFiles.Clear();
-            SourceFiles.AddRange( Directory.GetFiles( ProjectDirectory, $"*.cs" ).ToList()
-                .Where( f => !ExcludedFiles.Any( x => f.Equals( x, StringComparison.OrdinalIgnoreCase ) ) ) );
+         
+            SourceFiles.AddRange( Directory.GetFiles( ProjectDirectory, $"*.cs", SearchOption.AllDirectories ).ToList()
+                .Where( f =>
+                    f.IndexOf( objDir, StringComparison.OrdinalIgnoreCase ) == -1 &&
+                    !ExcludedFiles.Any( x => f.Equals( x, StringComparison.OrdinalIgnoreCase ) ) ) );
         }
 
         private void InitializeTargetFrameworks()

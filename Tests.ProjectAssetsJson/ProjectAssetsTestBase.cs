@@ -16,11 +16,11 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class TestBase : ProjectAssetsBase
+    public class ProjectAssetsTestBase : ProjectAssetsBase
     {
         private readonly JsonSerializerOptions _converterOptions;
 
-        protected TestBase()
+        protected ProjectAssetsTestBase()
             : base( ServiceProvider.Instance.GetRequiredService<Func<IJ4JLogger>>() )
         {
             _converterOptions = new JsonSerializerOptions();

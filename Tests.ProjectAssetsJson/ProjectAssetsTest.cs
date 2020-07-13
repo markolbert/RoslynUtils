@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class ProjectAssetsTest : TestBase
+    public class ProjectAssetsTest : ProjectAssetsTestBase
     {
         [Theory]
         [InlineData(

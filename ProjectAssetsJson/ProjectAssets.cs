@@ -3,30 +3,18 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Loader;
 using System.Text.Json;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
     public class ProjectAssets : ProjectAssetsBase
     {
-        private class ProjectAssetsAssemblyLoadContext : AssemblyLoadContext
-        {
-            protected override Assembly? Load( AssemblyName assemblyName )
-            {
-                return null;
-            }
-        }
-
         private readonly JsonProjectAssetsConverter _paConverter;
 
+#pragma warning disable 8618
         public ProjectAssets(
+#pragma warning restore 8618
             JsonProjectAssetsConverter paConverter,
             Func<IJ4JLogger> loggerFactory
         )
@@ -47,9 +35,9 @@ namespace J4JSoftware.Roslyn
         public List<ProjectFileDependencyGroup> ProjectFileDependencyGroups { get; } =
             new List<ProjectFileDependencyGroup>();
 
-        public List<string> PackageFolders { get; } = new List<string>();
-        public ProjectInfo? Project { get; private set; }
-        public ProjectLibrary? ProjectLibrary { get; private set; }
+        public NugetRepositories Repositories { get; private set; }
+        public ProjectInfo Project { get; private set; }
+        public ProjectLibrary ProjectLibrary { get; private set; }
 
         public bool InitializeFromProjectFile( string projectFilePath )
         {
@@ -68,7 +56,7 @@ namespace J4JSoftware.Roslyn
             }
 
             var projectFolder = Path.GetDirectoryName( projectFilePath );
-            if( String.IsNullOrEmpty( projectFolder ) )
+            if( string.IsNullOrEmpty( projectFolder ) )
             {
                 Logger.Error<string>( "File '{projectFilePath}' doesn't have a directory", projectFilePath );
 
@@ -146,7 +134,10 @@ namespace J4JSoftware.Roslyn
                 CreateTargets( configuration );
                 CreateLibraries( configuration );
                 CreateProjectFileDependencyGroups( configuration );
-                CreatePackageFolders( configuration );
+
+                Repositories = new NugetRepositories( 
+                    GetProperty<ExpandoObject>( configuration, "packageFolders" ),
+                    LoggerFactory );
             }
             catch( Exception e )
             {
@@ -225,14 +216,6 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        private void CreatePackageFolders( ExpandoObject configuration )
-        {
-            PackageFolders.Clear();
-
-            var asDict = (IDictionary<string, object>) GetProperty<ExpandoObject>( configuration,"packageFolders" );
-            PackageFolders.AddRange( asDict.Keys );
-        }
-
         public bool GetLibraryPaths( TargetFramework tgtFramework, out CompilationReferences? result )
         {
             result = null;
@@ -265,26 +248,25 @@ namespace J4JSoftware.Roslyn
             return false;
         }
 
-        public bool GetSourceFiles( out List<string>? srcFiles )
+        public bool GetSourceFiles( out List<string>? result )
         {
-            srcFiles = null;
+            result = null;
 
-            if( ProjectLibrary == null )
+            if( !IsValid )
             {
-                Logger.Error<string>( "Undefined {0}", nameof(ProjectLibrary) );
-
+                Logger.Error<string>( "{0} is not validly configured", nameof(ProjectAssets) );
                 return false;
             }
 
-            srcFiles = ProjectLibrary.SourceFiles;
+            result = ProjectLibrary.SourceFiles;
 
             foreach( var libInfo in Libraries.Where( lib => lib.Type == ReferenceType.Project )
                 .Cast<ProjectLibrary>() )
             {
-                srcFiles.AddRange( libInfo.SourceFiles );
+                result.AddRange( libInfo.SourceFiles );
             }
 
-            srcFiles = srcFiles.Distinct( StringComparer.OrdinalIgnoreCase ).ToList();
+            result = result.Distinct( StringComparer.OrdinalIgnoreCase ).ToList();
 
             return true;
         }

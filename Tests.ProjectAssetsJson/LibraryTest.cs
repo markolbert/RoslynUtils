@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class LibraryTest : TestBase
+    public class LibraryTest : ProjectAssetsTestBase
     {
         [Theory]
         [InlineData("library-single.json", "C:\\Programming\\RoslynUtils\\ProjectAssetsJson")]

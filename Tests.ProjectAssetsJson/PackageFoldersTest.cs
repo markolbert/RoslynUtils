@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class PackageFoldersTest : TestBase
+    public class PackageFoldersTest : ProjectAssetsTestBase
     {
         [Theory]
         [InlineData("package-folders.json")]

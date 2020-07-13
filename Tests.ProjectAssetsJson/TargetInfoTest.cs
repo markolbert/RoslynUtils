@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Tests.ProjectAssetsJson
 {
-    public class TargetInfoTest : TestBase
+    public class TargetInfoTest : ProjectAssetsTestBase
     {
         [Theory]
         [InlineData("targets-one-package.json")]
