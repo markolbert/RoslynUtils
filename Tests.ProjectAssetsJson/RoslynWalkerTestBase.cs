@@ -31,36 +31,34 @@ namespace Tests.ProjectAssetsJson
         {
             TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
 
-            var projAssets = ServiceProvider.Instance.GetRequiredService<ProjectAssets>();
-            projAssets.InitializeFromProjectFile( projFilePath ).Should().BeTrue();
+            var projModels = ServiceProvider.Instance.GetRequiredService<ProjectModels>();
 
-            var projModel = new ProjectModel( projAssets, _jsonConverter, _loggerFactory() );
+            projModels.AddProject( projFilePath ).Should().BeTrue();
 
-            var result = projModel.Compile();
+            projModels.Compile( tgtFW ).Should().BeTrue();
 
-            if( !result )
-            {
-                foreach( var diagnostic in projModel.Diagnostics )
-                {
-                    if( diagnostic.Location.SourceTree == null )
-                    {
-                        System.Diagnostics.Debug.WriteLine(
-                            $"[{diagnostic.Severity}({diagnostic.Id})] No source information available" );
-                        continue;
-                    }
+            //if( !result )
+            //{
+            //    foreach( var diagnostic in projModel.Diagnostics )
+            //    {
+            //        if( diagnostic.Location.SourceTree == null )
+            //        {
+            //            System.Diagnostics.Debug.WriteLine(
+            //                $"[{diagnostic.Severity}({diagnostic.Id})] No source information available" );
+            //            continue;
+            //        }
 
-                    var errorLines = diagnostic.Location.GetLineSpan();
-                    var sourceText = diagnostic.Location.SourceTree!.GetText();
+            //        var errorLines = diagnostic.Location.GetLineSpan();
+            //        var sourceText = diagnostic.Location.SourceTree!.GetText();
 
-                    for( var lineNum = errorLines.StartLinePosition.Line; lineNum <= errorLines.EndLinePosition.Line; lineNum++ )
-                    {
-                        System.Diagnostics.Debug.WriteLine(
-                            $"[{diagnostic.Severity}({diagnostic.Id})] {diagnostic.GetMessage()} {sourceText.Lines[ lineNum ]}" );
-                    }
-                }
-            }
+            //        for( var lineNum = errorLines.StartLinePosition.Line; lineNum <= errorLines.EndLinePosition.Line; lineNum++ )
+            //        {
+            //            System.Diagnostics.Debug.WriteLine(
+            //                $"[{diagnostic.Severity}({diagnostic.Id})] {diagnostic.GetMessage()} {sourceText.Lines[ lineNum ]}" );
+            //        }
+            //    }
+            //}
 
-            result.Should().BeTrue();
         }
     }
 }

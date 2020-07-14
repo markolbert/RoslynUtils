@@ -35,13 +35,7 @@ namespace Tests.ProjectAssetsJson
             builder.RegisterType<JsonProjectAssetsConverter>()
                 .AsSelf();
 
-            builder.RegisterType<ProjectAssets>()
-                .AsSelf();
-
-            builder.RegisterType<ProjectModel>()
-                .AsSelf();
-
-            builder.RegisterType<RequiredAssemblies>()
+            builder.RegisterType<ProjectModels>()
                 .AsSelf();
 
             Instance = new AutofacServiceProvider( builder.Build() );

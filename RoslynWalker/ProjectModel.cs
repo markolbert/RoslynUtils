@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,125 +14,6 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectModels : IEnumerable<ProjectModel>
-    {
-        private readonly Func<IJ4JLogger> _loggerFactory;
-        private readonly IJ4JLogger _logger;
-        private readonly JsonProjectAssetsConverter _projAssetsConv;
-
-        public ProjectModels(
-            JsonProjectAssetsConverter projAssetsConv,
-            Func<IJ4JLogger> loggerFactory
-        )
-        {
-            _projAssetsConv = projAssetsConv;
-
-            _loggerFactory = loggerFactory;
-
-            _logger = loggerFactory();
-            _logger.SetLoggedType(this.GetType());
-        }
-
-        public bool IsValid => TargetFramework != null
-                               && Models.Count > 0 
-                               && Models.All( m => m.IsValid );
-
-        public ProjectModelCompilationOptions ProjectModelCompilationOptions { get; private set; } =
-            new ProjectModelCompilationOptions();
-
-        public TargetFramework? TargetFramework { get; private set; }
-        public List<ProjectModel> Models { get; } = new List<ProjectModel>();
-
-        public bool AddProject( string csProjFile )
-        {
-            var projAsset = new ProjectAssets( _projAssetsConv, _loggerFactory );
-
-            if( !projAsset.InitializeFromProjectFile( csProjFile ) )
-            {
-                _logger.Error<string, string>( "Couldn't initialize {0} from '{1}'", 
-                    nameof(ProjectAssets),
-                    csProjFile );
-
-                return false;
-            }
-
-            Models.Add( new ProjectModel( projAsset, _projAssetsConv, _loggerFactory() ) );
-
-            return true;
-        }
-
-        public bool AddSolution(string csSolFile)
-        {
-            return true;
-        }
-
-        public bool Compile( TargetFramework? tgtFW = null, ProjectModelCompilationOptions? pmOptions = null )
-        {
-            if (pmOptions != null)
-                ProjectModelCompilationOptions = pmOptions;
-
-            TargetFramework = tgtFW;
-
-            foreach( var model in Models )
-            {
-                model.IsCompiled = false;
-            }
-
-            foreach ( var model in Models )
-            {
-                // if tgtFW is undefined, set it based on the first model being processed
-                if( TargetFramework == null )
-                {
-                    if (model.ProjectAssets.ProjectLibrary.TargetFrameworks.Count > 1)
-                    {
-                        _logger.Error<string>("'{0}' supports multiple target frameworks but no desired one was specified",
-                            model.ProjectAssets.ProjectFile);
-                        return false;
-                    }
-
-                    TargetFramework ??= model.ProjectAssets.ProjectLibrary.TargetFrameworks.FirstOrDefault();
-
-                    if( TargetFramework == null )
-                    {
-                        _logger.Error<string>( "'{0}' does not define a target framework and none was specified",
-                            model.ProjectAssets.ProjectFile );
-                        return false;
-                    }
-                }
-
-                if (!model.ProjectAssets.Targets.Any(t => t.Target == TargetFramework.Framework && t.Version >= TargetFramework.Version))
-                {
-                    _logger.Error<string, TargetFramework>("Project '{0}' does not target a framework >= {1}",
-                        model.ProjectAssets.ProjectFile,
-                        TargetFramework);
-                    return false;
-                }
-
-                if( model.Compile( TargetFramework, pmOptions ) ) 
-                    continue;
-                
-                _logger.Error<string>( "'{0}' failed to compile", model.ProjectAssets.ProjectFile );
-                
-                return false;
-            }
-
-            return true;
-        }
-
-        public IEnumerator<ProjectModel> GetEnumerator()
-        {
-            foreach( var retVal in Models )
-            {
-                yield return retVal;
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-    }
-
     public class ProjectModel
     {
         private readonly IJ4JLogger _logger;
@@ -173,7 +53,7 @@ namespace J4JSoftware.Roslyn
 
         public bool HasCompilationErrors => HasCompilationProblems( DiagnosticSeverity.Error );
 
-        public bool Analyze( string csProjFile, TargetFramework? tgtFW = null )
+        public bool Analyze( string csProjFile )
         {
             IsAnalyzed = false;
             TargetFrameworks.Clear();
@@ -185,7 +65,7 @@ namespace J4JSoftware.Roslyn
             }
 
             var analyzerMgr = new AnalyzerManager();
-            var projAnalyzer = analyzerMgr.GetProject(ProjectFile);
+            var projAnalyzer = analyzerMgr.GetProject( csProjFile );
             AnalyzerResults = projAnalyzer.Build();
 
             if (!AnalyzerResults.OverallSuccess)
@@ -216,6 +96,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
+            ProjectFile = csProjFile;
             IsAnalyzed = true;
 
             return true;
@@ -243,17 +124,23 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            IAnalyzerResult? projResults = AnalyzerResults!.Results
-                .FirstOrDefault( r =>
+            var temp = AnalyzerResults!.Results
+                .Select( r =>
                 {
-                    if( TargetFramework.Create( r.TargetFramework!, 
-                        TargetFrameworkTextStyle.Simple,
-                        out var supportedFW ) )
-                    {
-                        return supportedFW.Framework == tgtFW.Framework
-                            && supp
-                    }
-                } );
+                    if( TargetFramework.Create( r.TargetFramework, TargetFrameworkTextStyle.Simple, out var result ) )
+                        return new
+                        {
+                            TargetFramework = result,
+                            Result = r
+                        };
+
+                    throw new ArgumentException( $"Couldn't create {nameof(TargetFramework)} from '{r}'" );
+                } )
+                .Where( x => x.TargetFramework.Framework == tgtFW.Framework )
+                .OrderBy( x => x.TargetFramework.Version )
+                .FirstOrDefault( x => x.TargetFramework.Version >= tgtFW.Version );
+
+            var projResults = temp.Result;
 
             if( projResults == null )
             {
@@ -318,18 +205,18 @@ namespace J4JSoftware.Roslyn
             }
 
             // compile the project
-            var options = new CSharpCompilationOptions(outputKind: outputKind)
-                .WithNullableContextOptions(nullableContext)
-                .WithWarningLevel(warningLevel)
-                .WithOptimizationLevel(optimizeLevel)
-                .WithSpecificDiagnosticOptions(noWarnings)
-                .WithPlatform(platform);
+            var options = new CSharpCompilationOptions(outputKind: OutputKind)
+                .WithNullableContextOptions(NullableContextOptions)
+                .WithWarningLevel(WarningLevel)
+                .WithOptimizationLevel(OptimizationLevel)
+                .WithSpecificDiagnosticOptions(IgnoredWarnings)
+                .WithPlatform(Platform);
 
             CSharpCompilation compilation;
 
             try
             {
-                compilation = CSharpCompilation.Create(projName, options: options)
+                compilation = CSharpCompilation.Create(ProjectName, options: options)
                     .AddReferences(projResults.References.Select(r => MetadataReference.CreateFromFile(r)))
                     .AddSyntaxTrees(trees);
             }
@@ -337,7 +224,7 @@ namespace J4JSoftware.Roslyn
             {
                 _logger.Error<string, string>(
                     "Failed to compile project '{0}' (Exception was {1})",
-                    projName,
+                    ProjectName,
                     e.Message);
 
                 return false;
@@ -353,7 +240,7 @@ namespace J4JSoftware.Roslyn
                     _logger.Error<string, string>(
                         "Failed to get {0} for project {1}",
                         nameof(CompilationUnitSyntax),
-                        projName);
+                        ProjectName);
 
                     return false;
                 }
@@ -372,7 +259,7 @@ namespace J4JSoftware.Roslyn
                     _logger.Error<string, string, string>(
                         "Failed to get {0} for project {1} (Exception was {2})",
                         nameof(SemanticModel),
-                        projName,
+                        ProjectName,
                         e.Message);
 
                     return false;
