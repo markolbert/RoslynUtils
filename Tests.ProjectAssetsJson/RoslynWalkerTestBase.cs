@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using FluentAssertions;
+using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,15 +16,27 @@ namespace Tests.ProjectAssetsJson
 {
     public class RoslynWalkerTestBase
     {
+        private readonly JsonProjectAssetsConverter _jsonConverter;
+        private readonly Func<IJ4JLogger> _loggerFactory;
+
+        public RoslynWalkerTestBase()
+        {
+            _jsonConverter = ServiceProvider.Instance.GetRequiredService<JsonProjectAssetsConverter>();
+            _loggerFactory = ServiceProvider.Instance.GetRequiredService<Func<IJ4JLogger>>();
+        }
+
         [ Theory ]
         [ InlineData( "C:\\Programming\\J4JLogging\\J4JLogging\\J4JLogging.csproj", "netstandard2.1" ) ]
         public void Test( string projFilePath, string tgtFWText )
         {
             TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
 
-            var projModel = ServiceProvider.Instance.GetRequiredService<ProjectModel>();
+            var projAssets = ServiceProvider.Instance.GetRequiredService<ProjectAssets>();
+            projAssets.InitializeFromProjectFile( projFilePath ).Should().BeTrue();
 
-            var result = projModel.Compile( projFilePath );
+            var projModel = new ProjectModel( projAssets, _jsonConverter, _loggerFactory() );
+
+            var result = projModel.Compile();
 
             if( !result )
             {
