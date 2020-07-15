@@ -27,6 +27,7 @@ namespace Tests.ProjectAssetsJson
 
         [ Theory ]
         [ InlineData( "C:\\Programming\\J4JLogging\\J4JLogging\\J4JLogging.csproj", "netstandard2.1" ) ]
+        [ InlineData( "C:\\Programming\\J4JLogging\\ConsoleChannel\\ConsoleChannel.csproj", "netstandard2.1" ) ]
         public void Test( string projFilePath, string tgtFWText )
         {
             TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();

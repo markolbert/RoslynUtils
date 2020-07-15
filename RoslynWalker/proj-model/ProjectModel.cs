@@ -31,22 +31,22 @@ namespace J4JSoftware.Roslyn
         }
 
         public IAnalyzerResults? AnalyzerResults { get; private set; }
-        public string ProjectFile { get; private set; }
-        public string ProjectName { get; private set; }
-        public OutputKind OutputKind { get; private set; }
-        public NullableContextOptions NullableContextOptions { get; private set; }
-        public int WarningLevel { get; private set; }
-        public OptimizationLevel OptimizationLevel { get; private set; }
-        public Dictionary<string, ReportDiagnostic> IgnoredWarnings { get; private set; }
-        public Platform Platform { get; private set; }
+        public string? ProjectFile { get; private set; }
+        public string? ProjectName { get; private set; }
+        public OutputKind OutputKind { get; private set; } = OutputKind.DynamicallyLinkedLibrary;
+        public NullableContextOptions NullableContextOptions { get; private set; } = NullableContextOptions.Disable;
+        public int WarningLevel { get; private set; } = 4;
+        public OptimizationLevel OptimizationLevel { get; private set; } = OptimizationLevel.Release;
+        public Dictionary<string, ReportDiagnostic>? IgnoredWarnings { get; private set; }
+        public Platform Platform { get; private set; } = Platform.AnyCpu;
 
         public bool IsAnalyzed { get; private set; }
-        public bool IsCompiled { get; private set; }
+        public bool IsCompiled { get; internal set; }
         public bool IsValid => IsAnalyzed && IsCompiled && !HasCompilationErrors;
         public List<TargetFramework> TargetFrameworks { get; } = new List<TargetFramework>();
-        public List<CompilationResult> CompilationResults { get; } = new List<CompilationResult>();
+        public CompilationResults? CompilationResults { get; private set; }
         
-        public List<Diagnostic> Diagnostics { get; } = new List<Diagnostic>();
+        public List<Diagnostic>? Diagnostics { get; private set; }
 
         public bool HasCompilationProblems( DiagnosticSeverity severity ) =>
             Diagnostics.Any( d => d.Severity == severity );
@@ -70,7 +70,7 @@ namespace J4JSoftware.Roslyn
 
             if (!AnalyzerResults.OverallSuccess)
             {
-                _logger.Error<string>("Project analysis failed for '{0}'", ProjectFile);
+                _logger.Error<string>("Project analysis failed for '{0}'", csProjFile);
                 return false;
             }
 
@@ -104,8 +104,8 @@ namespace J4JSoftware.Roslyn
 
         public bool Compile( TargetFramework tgtFW )
         {
-            CompilationResults.Clear();
-            Diagnostics.Clear();
+            CompilationResults = null;
+            Diagnostics = null;
             IsCompiled = false;
 
             if ( !IsAnalyzed )
@@ -118,7 +118,7 @@ namespace J4JSoftware.Roslyn
             {
                 _logger.Error<string, CSharpFramework, SemanticVersion>(
                     "Project '{0}' does not target a {1} framework with a version >= {2}",
-                    ProjectName,
+                    ProjectName!,
                     tgtFW.Framework,
                     tgtFW.Version );
                 return false;
@@ -145,11 +145,12 @@ namespace J4JSoftware.Roslyn
             if( projResults == null )
             {
                 _logger.Error<string, TargetFramework>( "Could not find a configuration for project {0} targeting {1}",
-                    ProjectName, 
+                    ProjectName!, 
                     tgtFW );
                 return false;
             }
 
+            // retrieve various properties we need to do the compilation
             try
             {
                 ProjectName = GetMSBuildProperty<string>(projResults, "ProjectName");
@@ -231,44 +232,17 @@ namespace J4JSoftware.Roslyn
             }
 
             // create the syntax/semantic info we'll be searching
-            foreach (var tree in trees)
+            if( !CompilationResults.Create( compilation, out var compResults, out var error ) )
             {
-                if (!tree.TryGetRoot(out var root))
-                {
-                    CompilationResults.Clear();
-
-                    _logger.Error<string, string>(
-                        "Failed to get {0} for project {1}",
-                        nameof(CompilationUnitSyntax),
-                        ProjectName);
-
-                    return false;
-                }
-
-                try
-                {
-                    CompilationResults.Add(new CompilationResult(
-                        root,
-                        compilation.GetSemanticModel(tree))
-                    );
-                }
-                catch (Exception e)
-                {
-                    CompilationResults.Clear();
-
-                    _logger.Error<string, string, string>(
-                        "Failed to get {0} for project {1} (Exception was {2})",
-                        nameof(SemanticModel),
-                        ProjectName,
-                        e.Message);
-
-                    return false;
-                }
+                _logger.Error(error!);
+                return false;
             }
+
+            CompilationResults = compResults;
 
             IsCompiled = true;
 
-            Diagnostics.AddRange(compilation.GetDiagnostics());
+            Diagnostics = compilation.GetDiagnostics().ToList();
 
             return IsValid;
         }

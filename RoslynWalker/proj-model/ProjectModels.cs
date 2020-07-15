@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using J4JSoftware.Logging;
+using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
@@ -13,6 +14,8 @@ namespace J4JSoftware.Roslyn
         private readonly Func<IJ4JLogger> _loggerFactory;
         private readonly IJ4JLogger _logger;
         private readonly JsonProjectAssetsConverter _projAssetsConv;
+
+        private TargetFramework? _tgtFW;
 
         public ProjectModels(
             JsonProjectAssetsConverter projAssetsConv,
@@ -27,35 +30,32 @@ namespace J4JSoftware.Roslyn
             _logger.SetLoggedType(this.GetType());
         }
 
-        public bool IsValid => TargetFramework != null
-                               && Models.Count > 0 
-                               && Models.All( m => m.IsValid );
+        public bool IsValid => Projects.Count > 0 
+                               && Projects.All( m => m.IsValid );
 
-        public ProjectModelCompilationOptions ProjectModelCompilationOptions { get; private set; } =
-            new ProjectModelCompilationOptions();
+        public TargetFramework? TargetFramework
+        {
+            get => _tgtFW;
 
-        public TargetFramework? TargetFramework { get; private set; }
-        public List<ProjectModel> Models { get; } = new List<ProjectModel>();
+            set
+            {
+                _tgtFW = value;
+
+                // reset models so they'll be recompiled
+                Projects.ForEach( pm => pm.IsCompiled = false );
+            }
+        }
+
+        public List<ProjectModel> Projects { get; } = new List<ProjectModel>();
 
         public bool AddProject( string csProjFile )
         {
-            var projAsset = new ProjectAssets( _projAssetsConv, _loggerFactory );
-
-            if( !projAsset.InitializeFromProjectFile( csProjFile ) )
-            {
-                _logger.Error<string, string>( "Couldn't initialize {0} from '{1}'",
-                    nameof(ProjectAssets),
-                    csProjFile );
-
-                return false;
-            }
-
             var newModel = new ProjectModel( _projAssetsConv, _loggerFactory() );
 
             if( !newModel.Analyze( csProjFile ) )
                 return false;
 
-            Models.Add( newModel );
+            Projects.Add( newModel );
 
             return true;
         }
@@ -172,22 +172,64 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        public bool Compile( TargetFramework tgtFW, bool recompile = false )
+        public bool Compile( bool forceRecompile = false )
         {
+            if( TargetFramework == null )
+            {
+                _logger.Error<string>( "{0} is undefined", nameof(TargetFramework) );
+                return false;
+            }
+
             var allOkay = true;
 
-            foreach( var model in Models )
+            foreach( var model in Projects )
             {
-                if( !model.IsCompiled || recompile )
-                    allOkay &= model.Compile( tgtFW );
+                if( !model.IsCompiled || forceRecompile )
+                    allOkay &= model.Compile( TargetFramework );
             }
 
             return allOkay;
         }
 
+        public List<TargetFramework> GetTargetFrameworks() =>
+            Projects.SelectMany( pm => pm.TargetFrameworks ).Distinct().ToList();
+
+
+        public bool GetCompilationResults( out List<CompilationResults>? result )
+        {
+            result = null;
+
+            if( TargetFramework == null )
+            {
+                _logger.Error<string>("{0} is undefined", nameof(TargetFramework));
+                return false;
+            }
+
+            var rawResult = new List<CompilationResults>();
+            var retVal = true;
+
+            foreach( var pm in Projects )
+            {
+                if( !pm.IsCompiled )
+                    pm.Compile( TargetFramework );
+
+                if( pm.IsValid )
+                    rawResult.Add(pm.CompilationResults! );
+                else
+                {
+                    _logger.Error<Type>( "Project {0} did not compile correctly", typeof(ProjectModel) );
+                    retVal = false;
+                }
+            }
+
+            result = rawResult;
+
+            return retVal;
+        }
+
         public IEnumerator<ProjectModel> GetEnumerator()
         {
-            foreach( var retVal in Models )
+            foreach( var retVal in Projects )
             {
                 yield return retVal;
             }
