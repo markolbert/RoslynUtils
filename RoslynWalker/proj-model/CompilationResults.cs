@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -8,12 +9,17 @@ namespace J4JSoftware.Roslyn
 {
     public class CompilationResults : IEnumerable<CompilationResult>
     {
-        public static bool Create( CSharpCompilation compilation, out CompilationResults? result, out string? error )
+        public static bool Create( ProjectModel projModel, CSharpCompilation compilation, out CompilationResults? result, out string? error )
         {
             result = null;
             error = null;
 
-            var retVal = new CompilationResults( compilation.Assembly );
+            var retVal = new CompilationResults
+            {
+                AssemblySymbol = compilation.Assembly,
+                ProjectModel = projModel
+            };
+
 
             foreach( var tree in compilation.SyntaxTrees )
             {
@@ -43,12 +49,15 @@ namespace J4JSoftware.Roslyn
 
         private readonly List<CompilationResult> _results = new List<CompilationResult>();
 
-        private CompilationResults( IAssemblySymbol symbol )
+#pragma warning disable 8618
+        private CompilationResults()
+#pragma warning restore 8618
         {
-            AssemblySymbol = symbol;
         }
 
-        public IAssemblySymbol AssemblySymbol { get; }
+        public IAssemblySymbol AssemblySymbol { get; private set; }
+        public ProjectModel ProjectModel { get; private set; }
+        public ReadOnlyCollection<CompilationResult> Results => _results.AsReadOnly();
 
         public IEnumerator<CompilationResult> GetEnumerator()
         {

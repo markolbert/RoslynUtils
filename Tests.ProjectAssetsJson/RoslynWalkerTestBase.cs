@@ -28,38 +28,74 @@ namespace Tests.ProjectAssetsJson
         [ Theory ]
         [ InlineData( "C:\\Programming\\J4JLogging\\J4JLogging\\J4JLogging.csproj", "netstandard2.1" ) ]
         [ InlineData( "C:\\Programming\\J4JLogging\\ConsoleChannel\\ConsoleChannel.csproj", "netstandard2.1" ) ]
-        public void Test( string projFilePath, string tgtFWText )
+        public void CompilationTest( string projFilePath, string tgtFWText )
         {
             TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
 
             var projModels = ServiceProvider.Instance.GetRequiredService<ProjectModels>();
 
+            projModels.TargetFramework = tgtFW;
             projModels.AddProject( projFilePath ).Should().BeTrue();
 
-            projModels.Compile( tgtFW ).Should().BeTrue();
+            var result = projModels.Compile();
 
-            //if( !result )
-            //{
-            //    foreach( var diagnostic in projModel.Diagnostics )
-            //    {
-            //        if( diagnostic.Location.SourceTree == null )
-            //        {
-            //            System.Diagnostics.Debug.WriteLine(
-            //                $"[{diagnostic.Severity}({diagnostic.Id})] No source information available" );
-            //            continue;
-            //        }
+            if( !result )
+                DisplayDiagnostics( projModels );
 
-            //        var errorLines = diagnostic.Location.GetLineSpan();
-            //        var sourceText = diagnostic.Location.SourceTree!.GetText();
+            result.Should().BeTrue();
+        }
 
-            //        for( var lineNum = errorLines.StartLinePosition.Line; lineNum <= errorLines.EndLinePosition.Line; lineNum++ )
-            //        {
-            //            System.Diagnostics.Debug.WriteLine(
-            //                $"[{diagnostic.Severity}({diagnostic.Id})] {diagnostic.GetMessage()} {sourceText.Lines[ lineNum ]}" );
-            //        }
-            //    }
-            //}
+        [ Theory ]
+        [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj",
+            "netstandard2.1" ) ]
+        public void WalkerTest( string projFilePath, string tgtFWText )
+        {
+            TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
 
+            var projModels = ServiceProvider.Instance.GetRequiredService<ProjectModels>();
+
+            projModels.TargetFramework = tgtFW;
+            projModels.AddProject( projFilePath ).Should().BeTrue();
+
+            var result = projModels.Compile();
+
+            if( !result )
+                DisplayDiagnostics( projModels );
+
+            result.Should().BeTrue();
+
+            projModels.GetCompilationResults( out var compResults ).Should().BeTrue();
+
+            var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
+
+            walkers.Traverse( compResults! ).Should().BeTrue();
+        }
+
+        private void DisplayDiagnostics( ProjectModels projModels )
+        {
+            foreach( var projModel in projModels )
+            {
+                foreach( var diagnostic in projModel.Diagnostics! )
+                {
+                    if( diagnostic.Location.SourceTree == null )
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"{projModel.ProjectName} [{diagnostic.Severity}({diagnostic.Id})] No source information available" );
+                        continue;
+                    }
+
+                    var errorLines = diagnostic.Location.GetLineSpan();
+                    var sourceText = diagnostic.Location.SourceTree!.GetText();
+
+                    for( var lineNum = errorLines.StartLinePosition.Line;
+                        lineNum <= errorLines.EndLinePosition.Line;
+                        lineNum++ )
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"{projModel.ProjectName} [{diagnostic.Severity}({diagnostic.Id})] {diagnostic.GetMessage()} {sourceText.Lines[ lineNum ]}" );
+                    }
+                }
+            }
         }
     }
 }

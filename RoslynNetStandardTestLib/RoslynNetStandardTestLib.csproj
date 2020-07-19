@@ -5,4 +5,8 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\..\J4JLogging\ConsoleChannel\ConsoleChannel.csproj" />
+	</ItemGroup>
+
 </Project>

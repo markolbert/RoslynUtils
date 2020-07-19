@@ -1,13 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace RoslynNetStandardTestLib
 {
-    // added to test SharpDoc
     [AttributeUsage( validOn: AttributeTargets.Class | AttributeTargets.Interface, Inherited = false, AllowMultiple = true )]
     public class DummyAttribute : Attribute
     {
 #pragma warning disable 67
-        // ReSharper disable once EventNeverSubscribedTo.Global
         public event EventHandler<int> Ralph;
 #pragma warning restore 67
         

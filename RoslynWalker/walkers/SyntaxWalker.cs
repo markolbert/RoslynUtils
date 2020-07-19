@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SemanticWalker<TTarget> : ISemanticWalker
+    public abstract class SyntaxWalker<TTarget> : ISyntaxWalker<TTarget>
         where TTarget : class, ISymbol
     {
-        private readonly ISymbolSink? _symbolSink;
+        private readonly ISymbolSink _symbolSink;
+        private readonly List<IAssemblySymbol> _modelAssemblies = new List<IAssemblySymbol>();
 
-        protected SemanticWalker(
+        protected SyntaxWalker(
             IEnumerable<ISymbolSink> symbolSinks,
-            IDefaultSymbolSink? defaultSymbolSink,
+            IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger
         )
         {
@@ -33,16 +33,21 @@ namespace J4JSoftware.Roslyn
 
         public Type SymbolType { get; }
 
-        public List<IAssemblySymbol> ModelAssemblies { get; } = new List<IAssemblySymbol>();
+        public ReadOnlyCollection<IAssemblySymbol> ModelAssemblies => _modelAssemblies.AsReadOnly();
 
         protected List<SyntaxNode> VisitedNodes { get; } = new List<SyntaxNode>();
+        protected List<TTarget> ProcessedSymbols { get; } = new List<TTarget>();
 
-        public bool Traverse( List<CompilationResults> compResults, Action<TTarget> symbolProcessor )
+        public virtual bool Traverse( List<CompilationResults> compResults )
         {
-            ModelAssemblies.Clear();
-            ModelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
+            _modelAssemblies.Clear();
+            _modelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
+
+            ProcessedSymbols.Clear();
 
             VisitedNodes.Clear();
+
+            _symbolSink.InitializeSink();
 
             foreach( var compResult in compResults.SelectMany(cr=>cr) )
             {
@@ -61,21 +66,30 @@ namespace J4JSoftware.Roslyn
             VisitedNodes.Add( node );
 
             if( ProcessNode( node, context, out var symbol ) )
-                _symbolSink?.OutputSymbol( symbol! );
-
-            foreach( var childNode in GetTraversableChildren( node ) )
             {
-                TraverseInternal(childNode, context);
+                _symbolSink?.OutputSymbol(symbol!);
+
+                // keep track of the symbols we've processed
+                if ( !ProcessedSymbols.Any( ps => SymbolEqualityComparer.Default.Equals(ps, symbol)) )
+                    ProcessedSymbols.Add( symbol! );
+            }
+
+            if( !GetTraversableChildren( node, out var children ) ) 
+                return;
+
+            foreach( var childNode in children! )
+            {
+                TraverseInternal( childNode, context );
             }
         }
 
         protected abstract bool ProcessNode( SyntaxNode node, CompilationResult context, out TTarget? result );
-        protected abstract List<SyntaxNode> GetTraversableChildren( SyntaxNode node );
+        protected abstract bool GetTraversableChildren( SyntaxNode node, out List<SyntaxNode>? result );
 
         protected bool AssemblyInScope( IAssemblySymbol toCheck ) 
             => ModelAssemblies.Any( ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
 
-        public bool Equals( ISemanticWalker? other )
+        public bool Equals( ISyntaxWalker? other )
         {
             if( other == null )
                 return false;

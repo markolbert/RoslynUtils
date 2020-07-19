@@ -1,64 +1,159 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn.walkers
 {
-    public class AssemblyWalker : SemanticWalker<IAssemblySymbol>
+    public class AssemblyWalker : SyntaxWalker<IAssemblySymbol>
     {
-        private static readonly List<SyntaxKind> _childKinds = new List<SyntaxKind>();
+        private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
         static AssemblyWalker()
         {
-            _childKinds.Add( SyntaxKind.NamespaceKeyword );
-            _childKinds.Add( SyntaxKind.TypeKeyword );
-            _childKinds.Add( SyntaxKind.MethodKeyword );
-            _childKinds.Add( SyntaxKind.ParamKeyword );
-            _childKinds.Add( SyntaxKind.ParamsKeyword );
-            _childKinds.Add( SyntaxKind.FieldKeyword );
-            _childKinds.Add( SyntaxKind.TypeParameter );
+            _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
+            _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
         }
 
-        public AssemblyWalker( ISymbolSink symbolSink, IJ4JLogger logger ) 
-            : base( symbolSink, logger )
+        private readonly IInScopeAssemblyProcessor _inScopeProcessor;
+        private readonly Func<IJ4JLogger> _loggerFactory;
+
+        public AssemblyWalker( 
+            IEnumerable<ISymbolSink> symbolSinks, 
+            IInScopeAssemblyProcessor inScopeProcessor,
+            IDefaultSymbolSink defaultSymbolSink,
+            Func<IJ4JLogger> loggerFactory 
+            ) 
+            : base( symbolSinks, defaultSymbolSink, loggerFactory() )
         {
+            _inScopeProcessor = inScopeProcessor;
+            _loggerFactory = loggerFactory;
+        }
+
+        // override the Traverse() method to synchronize the project file based metadata
+        // for assemblies that are within the scope of the documentation
+        public override bool Traverse( List<CompilationResults> compResults )
+        {
+            if( !base.Traverse( compResults ) )
+                return false;
+
+            return _inScopeProcessor
+            var allOkay = true;
+
+            foreach( var compResult in compResults )
+            {
+                var projLib = new ProjectLibrary( compResult.ProjectModel.ProjectFile!, _loggerFactory );
+
+                allOkay &= _inScopeProcessor.Synchronize( projLib );
+            }
+
+            return allOkay;
         }
 
         protected override bool ProcessNode( SyntaxNode node, CompilationResult context, out IAssemblySymbol? result )
         {
             result = null;
 
-            // if the SyntaxNode is referring to an assembly within our scope, process it
-            if( node.IsKind( SyntaxKind.AssemblyKeyword ) )
-            {
-                if( !context.GetSymbol<IAssemblySymbol>( node, out var retVal ) )
-                    return false;
+            // certain node types don't lead to places we need to process
+            if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
+                return false;
 
-                result = retVal!;
-            }
-            else
+            // SyntaxKind.CompilationUnit appears to represent the assembly level...but you can't
+            // retrieve its ISymbol from the node
+            if( node.IsKind( SyntaxKind.CompilationUnit ) )
             {
-                // for all other SyntaxNodes get its ISymbol and see if it's contained in an 
-                // assembly outside our scope, in which case process it
-                if( context.GetSymbol<ISymbol>( node, out var otherSymbol ) )
-                {
-                    if( !AssemblyInScope( otherSymbol!.ContainingAssembly ) )
-                        result = otherSymbol.ContainingAssembly;
-                }
+                Logger.Information<string, SyntaxKind>( "{0}: found {1}", 
+                    context.Container.ProjectModel.ProjectName!,
+                    SyntaxKind.CompilationUnit );
+
+                result = context.Container.AssemblySymbol;
+
+                return true;
             }
+
+            if( !context.GetSymbol<ISymbol>( node, out var otherSymbol ) )
+            {
+                Logger.Verbose<string, SyntaxKind>( "{0}: no ISymbol found for node of kind {1}",
+                    context.Container.ProjectModel.ProjectName!,
+                    node.Kind() );
+
+                return false;
+            }
+
+            var otherAssembly = otherSymbol!.ContainingAssembly;
+
+            if( otherAssembly == null )
+            {
+                Logger.Verbose<string>( "Symbol {0} isn't contained in an Assembly", otherSymbol.ToDisplayString() );
+
+                return false;
+            }
+
+            if( AssemblyInScope( otherAssembly ) )
+            {
+                Logger.Verbose<string>("Assembly for symbol {0} is in scope", otherSymbol.ToDisplayString());
+
+                return false;
+            }
+
+            if( ProcessedSymbols.Any( ps => SymbolEqualityComparer.Default.Equals( ps, otherAssembly ) ) )
+            {
+                Logger.Verbose<IAssemblySymbol, string>("Assembly '{0}' for symbol {1} was already processed",
+                    otherAssembly,
+                    otherSymbol.ToDisplayString());
+
+                return false;
+            }
+
+            result = otherAssembly;
+
+            Logger.Information<string, string>( "{0}: found new out-of-scope assembly {1}",
+                context.Container.ProjectModel.ProjectName!,
+                otherAssembly.ToDisplayString() );
 
             return result != null;
         }
 
-        protected override List<SyntaxNode> GetTraversableChildren( SyntaxNode node )
+        protected override bool GetTraversableChildren( SyntaxNode node, out List<SyntaxNode>? result )
         {
+            result = null;
+
             // we're interested in traversing almost everything that's within scope
-            return node.ChildNodes().ToList();
+            // except for node types that we know don't lead any place interesting
+            if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
+                return false;
+
+            //switch( node )
+            //{
+            //    // some TypeOfExpressionSyntax nodes don't have child nodes containing Type information
+            //    // -- which we want -- but they all have a Type property
+            //    case TypeOfExpressionSyntax toeNode:
+            //        result = new List<SyntaxNode>();
+            //        result.Add( toeNode.Type );
+
+            //        break;
+
+            //    default:
+            //        result = node.ChildNodes()
+            //            .Where( n => _ignoredNodeKinds.All( i => i != n.Kind() ) )
+            //            .ToList();
+
+            //        break;
+            //}
+
+            result = node.ChildNodes()
+                .Where(n => _ignoredNodeKinds.All(i => i != n.Kind()))
+                .ToList();
+
+            return true;
         }
     }
 }

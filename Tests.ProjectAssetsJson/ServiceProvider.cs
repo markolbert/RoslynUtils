@@ -3,6 +3,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Roslyn.walkers;
 using Serilog.Events;
 
 namespace Tests.ProjectAssetsJson
@@ -37,6 +38,15 @@ namespace Tests.ProjectAssetsJson
 
             builder.RegisterType<ProjectModels>()
                 .AsSelf();
+
+            builder.RegisterType<SyntaxWalkers>()
+                .AsSelf();
+
+            builder.RegisterType<AssemblyWalker>()
+                .AsImplementedInterfaces();
+
+            builder.RegisterType<DefaultSymbolSink>()
+                .AsImplementedInterfaces();
 
             Instance = new AutofacServiceProvider( builder.Build() );
         }

@@ -9,13 +9,16 @@ namespace J4JSoftware.Roslyn
     {
         private readonly IJ4JLogger _logger;
 
-        protected DefaultSymbolSink( IJ4JLogger logger )
+        public DefaultSymbolSink( IJ4JLogger logger )
         {
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
         }
 
         public bool SupportsSymbol( Type symbolType ) => typeof(ISymbol).IsAssignableFrom( symbolType );
+
+        public bool InitializeSink() => true;
+        public bool FinalizeSink() => true;
 
         public bool OutputSymbol( ISymbol symbol )
         {

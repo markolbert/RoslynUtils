@@ -232,7 +232,7 @@ namespace J4JSoftware.Roslyn
             }
 
             // create the syntax/semantic info we'll be searching
-            if( !CompilationResults.Create( compilation, out var compResults, out var error ) )
+            if( !CompilationResults.Create( this, compilation, out var compResults, out var error ) )
             {
                 _logger.Error(error!);
                 return false;

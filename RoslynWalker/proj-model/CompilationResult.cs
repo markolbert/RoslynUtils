@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
@@ -9,15 +10,15 @@ namespace J4JSoftware.Roslyn
         public CompilationResult(
             SyntaxNode rootNode,
             SemanticModel model,
-            CompilationResults context
+            CompilationResults container
         )
         {
             RootSyntaxNode = rootNode;
             Model = model;
-            Context = context;
+            Container = container;
         }
 
-        public CompilationResults Context { get; }
+        public CompilationResults Container { get; }
         public SyntaxNode RootSyntaxNode { get; }
         public SemanticModel Model { get; }
 
@@ -27,11 +28,12 @@ namespace J4JSoftware.Roslyn
             result = null;
 
             var symbolInfo = Model.GetSymbolInfo( node );
+            var rawSymbol = symbolInfo.Symbol ?? Model.GetDeclaredSymbol( node );
 
-            if( symbolInfo.Symbol == null )
+            if( rawSymbol == null )
                 return false;
 
-            if( symbolInfo.Symbol is TSymbol retVal )
+            if( rawSymbol is TSymbol retVal )
             {
                 result = retVal;
                 return true;
