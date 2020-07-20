@@ -13,10 +13,10 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectLibrary : ProjectAssetsBase, ILibraryInfo
+    public class DependentProjectLibrary : ProjectAssetsBase, IProjectLibrary
     {
 #pragma warning disable 8618
-        public ProjectLibrary(
+        public DependentProjectLibrary(
 #pragma warning restore 8618
             string text,
             ExpandoObject libInfo,
@@ -36,23 +36,6 @@ namespace J4JSoftware.Roslyn
             ValidateProjectFile( path );
 
             ProjectFilePath = path;
-            ParseProjectFile();
-        }
-
-#pragma warning disable 8618
-        public ProjectLibrary(
-#pragma warning restore 8618
-            string projFilePath,
-            Func<IJ4JLogger> loggerFactory
-        )
-            : base( loggerFactory )
-        {
-            Assembly = Path.GetFileNameWithoutExtension( projFilePath );
-            Type = ReferenceType.Project;
-
-            ValidateProjectFile( projFilePath );
-
-            ProjectFilePath = projFilePath;
             ParseProjectFile();
         }
 

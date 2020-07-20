@@ -40,32 +40,39 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public bool Finalize() => true;
+        public bool Cleanup() => true;
 
-        public bool Synchronize( List<string> projFiles )
+        public bool Synchronize( List<InScopeProjectLibrary> libraries )
         {
             var allOkay = true;
 
-            foreach( var projFile in projFiles )
+            foreach( var library in libraries )
             {
-                var projLib = new ProjectLibrary( projFile, _loggerFactory );
-
                 var dbAssembly = _dbContext.Assemblies
                     .Include(a => a.InScopeInfo)
-                    .FirstOrDefault(a => a.Name == projLib.AssemblyName);
+                    .FirstOrDefault(a => a.Name == library.AssemblyName);
 
                 if (dbAssembly == null)
                 {
-                    _logger.Error<string>("Couldn't find entry in database for Assembly '{0}'", projLib.AssemblyName!);
+                    _logger.Error<string>("Couldn't find entry in database for Assembly '{0}'", library.AssemblyName!);
+                    allOkay = false;
+
                     continue;
                 }
 
                 dbAssembly.InScopeInfo ??= new InScopeAssemblyInfo();
 
-                dbAssembly.InScopeInfo.TargetFrameworksText = projLib.TargetFrameworks.ToString();
+                dbAssembly.InScopeInfo.TargetFrameworksText = library.TargetFrameworksText;
+                dbAssembly.InScopeInfo.Authors = library.Authors;
+                dbAssembly.InScopeInfo.Company = library.Company;
+                dbAssembly.InScopeInfo.Copyright = library.Copyright;
+                dbAssembly.InScopeInfo.Description = library.Description;
+                dbAssembly.InScopeInfo.FileVersion = library.FileVersion;
+                dbAssembly.InScopeInfo.PackageVersion = library.PackageVersion;
+                dbAssembly.InScopeInfo.RootNamespace = library.RootNamespace;
             }
 
-
+            _dbContext.SaveChanges();
 
             return allOkay;
         }

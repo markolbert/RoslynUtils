@@ -37,16 +37,5 @@ namespace J4JSoftware.Roslyn
         public string SHA512 { get; }
         public string Path { get; }
         public List<string> Files { get; }
-
-        //public CompilationReference GetLoadedReference( List<string> pkgFolders, TargetFramework tgtFramework )
-        //{
-        //    if( GetAbsolutePath( Path, pkgFolders, tgtFramework, out var absPathResult ) )
-        //        return new NamedPathReference( Assembly, absPathResult!.DllPath )
-        //        {
-        //            IsVirtual = absPathResult.IsVirtual
-        //        };
-
-        //    return new NamedReference( Assembly );
-        //}
     }
 }

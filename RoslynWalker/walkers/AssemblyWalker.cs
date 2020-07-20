@@ -45,17 +45,19 @@ namespace J4JSoftware.Roslyn.walkers
             if( !base.Traverse( compResults ) )
                 return false;
 
-            return _inScopeProcessor
-            var allOkay = true;
+            if( !_inScopeProcessor.Initialize() )
+                return false;
 
-            foreach( var compResult in compResults )
-            {
-                var projLib = new ProjectLibrary( compResult.ProjectModel.ProjectFile!, _loggerFactory );
+            var inScopeLibs = compResults
+                .Select( cr => new InScopeProjectLibrary( 
+                    cr.ProjectModel.ProjectFile!, 
+                    _loggerFactory ) )
+                .ToList();
 
-                allOkay &= _inScopeProcessor.Synchronize( projLib );
-            }
+            if( !_inScopeProcessor.Synchronize( inScopeLibs) )
+                return false;
 
-            return allOkay;
+            return _inScopeProcessor.Cleanup();
         }
 
         protected override bool ProcessNode( SyntaxNode node, CompilationResult context, out IAssemblySymbol? result )

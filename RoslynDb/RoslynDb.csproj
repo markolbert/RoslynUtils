@@ -27,7 +27,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\EFCoreUtilities\EFCoreUtilities\EFCoreUtilities.csproj" />
 		<ProjectReference Include="..\GeneralRoslyn\GeneralRoslyn.csproj" />
-		<ProjectReference Include="..\ProjectAssetsJson\ProjectAssetsJson.csproj" />
 	</ItemGroup>
 
 </Project>
