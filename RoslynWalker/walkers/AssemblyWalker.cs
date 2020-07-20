@@ -49,7 +49,7 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
 
             var inScopeLibs = compResults
-                .Select( cr => new InScopeProjectLibrary( 
+                .Select( cr => new ProjectLibrary( 
                     cr.ProjectModel.ProjectFile!, 
                     _loggerFactory ) )
                 .ToList();

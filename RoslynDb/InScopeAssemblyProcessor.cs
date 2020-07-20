@@ -42,7 +42,7 @@ namespace J4JSoftware.Roslyn
 
         public bool Cleanup() => true;
 
-        public bool Synchronize( List<InScopeProjectLibrary> libraries )
+        public bool Synchronize( List<ProjectLibrary> libraries )
         {
             var allOkay = true;
 

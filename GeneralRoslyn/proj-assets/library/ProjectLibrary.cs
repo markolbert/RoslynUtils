@@ -13,42 +13,56 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
-    public class DependentProjectLibrary : ProjectAssetsBase, IProjectLibrary
+    public class ProjectLibrary : ProjectAssetsBase, ILibraryInfo
     {
-#pragma warning disable 8618
-        public DependentProjectLibrary(
-#pragma warning restore 8618
+        public ProjectLibrary(
+            string projFilePath,
+            Func<IJ4JLogger> loggerFactory
+        )
+            : base(loggerFactory)
+        {
+            Assembly = Path.GetFileNameWithoutExtension(projFilePath);
+            Type = ReferenceType.Project;
+
+            ValidateProjectFile(projFilePath);
+
+            ProjectFilePath = projFilePath;
+            ParseProjectFile();
+        }
+
+        public ProjectLibrary(
             string text,
             ExpandoObject libInfo,
             string projDir,
             Func<IJ4JLogger> loggerFactory
         )
-            : base( loggerFactory )
+            : base(loggerFactory)
         {
-            if( !VersionedText.Create( text, out var verText ) )
-                throw new ArgumentException( $"Couldn't parse '{text}' into {typeof(VersionedText)}" );
+            if (!VersionedText.Create(text, out var verText))
+                throw new ArgumentException($"Couldn't parse '{text}' into {typeof(VersionedText)}");
 
             Assembly = verText!.TextComponent;
             Version = verText.Version;
             Type = ReferenceType.Project;
 
-            var path = Path.GetFullPath( Path.Combine( projDir, GetProperty<string>( libInfo, "msbuildProject" ) ) );
-            ValidateProjectFile( path );
+            var path = Path.GetFullPath(Path.Combine(projDir, GetProperty<string>(libInfo, "msbuildProject")));
+            ValidateProjectFile(path);
 
             ProjectFilePath = path;
             ParseProjectFile();
         }
 
-        public string Assembly { get; }
-        public SemanticVersion Version { get; private set; }
-        public ReferenceType Type { get; }
+        public string Assembly { get; protected set; } = string.Empty;
+        public SemanticVersion Version { get; protected set; } = new SemanticVersion(0,0,0);
+        public ReferenceType Type { get; protected set; } = ReferenceType.Project;
 
         // this will always be a full path
-        public string ProjectFilePath { get; }
+        public string ProjectFilePath { get; protected set; } = string.Empty;
         public string ProjectDirectory => Path.GetDirectoryName( ProjectFilePath ) ?? string.Empty;
 
+        public string TargetFrameworksText { get; private set; } = string.Empty;
         public List<TargetFramework> TargetFrameworks { get; } = new List<TargetFramework>();
-        public OutputType OutputType { get; private set; }
+        public OutputType OutputType { get; private set; } = OutputType.Library;
 
         public OutputKind OutputKind => OutputType switch
         {
@@ -60,14 +74,14 @@ namespace J4JSoftware.Roslyn
         };
 
         public XDocument? Document { get; private set; }
-        public XElement ProjectElement { get; private set; }
+        public XElement? ProjectElement { get; private set; }
 
-        public string? AssemblyName => ProjectElement?.Descendants( "AssemblyName" ).FirstOrDefault()?.Value;
-        public string? RootNamespace => ProjectElement?.Descendants( "RootNamespace" ).FirstOrDefault()?.Value;
-        public string? Authors => ProjectElement?.Descendants( "Authors" ).FirstOrDefault()?.Value;
-        public string? Company => ProjectElement?.Descendants( "Company" ).FirstOrDefault()?.Value;
-        public string? Description => ProjectElement?.Descendants( "Description" ).FirstOrDefault()?.Value;
-        public string? Copyright => ProjectElement?.Descendants( "Copyright" ).FirstOrDefault()?.Value;
+        public string AssemblyName => ProjectElement?.Descendants( "AssemblyName" ).FirstOrDefault()?.Value ?? string.Empty;
+        public string RootNamespace => ProjectElement?.Descendants( "RootNamespace" ).FirstOrDefault()?.Value ?? string.Empty;
+        public string Authors => ProjectElement?.Descendants( "Authors" ).FirstOrDefault()?.Value ?? string.Empty;
+        public string Company => ProjectElement?.Descendants( "Company" ).FirstOrDefault()?.Value ?? string.Empty;
+        public string Description => ProjectElement?.Descendants( "Description" ).FirstOrDefault()?.Value ?? string.Empty;
+        public string Copyright => ProjectElement?.Descendants( "Copyright" ).FirstOrDefault()?.Value ?? string.Empty;
 
         public NullableContextOptions NullableContextOptions
         {
@@ -94,7 +108,7 @@ namespace J4JSoftware.Roslyn
         {
             get
             {
-                var text = ProjectElement?.Descendants( "AssemblyVersion" ).FirstOrDefault()?.Value ?? "";
+                var text = ProjectElement?.Descendants( "AssemblyVersion" ).FirstOrDefault()?.Value ?? string.Empty;
 
                 return !System.Version.TryParse( text, out var parsed ) ? new System.Version() : parsed;
             }
@@ -104,13 +118,25 @@ namespace J4JSoftware.Roslyn
         {
             get
             {
-                var text = ProjectElement?.Descendants( "FileVersion" ).FirstOrDefault()?.Value ?? "";
+                var text = ProjectElement?.Descendants( "FileVersion" ).FirstOrDefault()?.Value ?? string.Empty;
 
                 return !System.Version.TryParse(text, out var parsed) ? new System.Version() : parsed;
             }
         }
 
-        private void ValidateProjectFile( string projectFilePath )
+        public SemanticVersion PackageVersion
+        {
+            get
+            {
+                var text = ProjectElement?.Descendants( "PackageVersion" ).FirstOrDefault()?.Value ?? string.Empty;
+
+                return !SemanticVersion.TryParse( text, out var parsed )
+                    ? new SemanticVersion( 0, 0, 0 )
+                    : parsed;
+            }
+        }
+
+        protected void ValidateProjectFile( string projectFilePath )
         {
             if( String.IsNullOrEmpty( projectFilePath ) )
                 throw ProjectAssetsException.CreateAndLog( "Undefined project file path", this.GetType(), Logger );
@@ -127,7 +153,7 @@ namespace J4JSoftware.Roslyn
                 ProjectAssetsException.CreateAndLog( $"Unsupported project file type '{ext}'", this.GetType(), Logger );
         }
 
-        private void ParseProjectFile()
+        protected void ParseProjectFile()
         {
             TargetFrameworks.Clear();
 
@@ -168,13 +194,20 @@ namespace J4JSoftware.Roslyn
             var singleFramework = ProjectElement.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
 
             if( string.IsNullOrEmpty( singleFramework ) )
-                foreach (var tfwText in ProjectElement.Descendants("TargetFrameworks").FirstOrDefault()?.Value
-                    .Split(';') ?? Enumerable.Empty<string>())
+            {
+                TargetFrameworksText = ProjectElement.Descendants( "TargetFrameworks" ).First().Value;
+
+                foreach (var tfwText in TargetFrameworksText.Split(';') ?? Enumerable.Empty<string>())
                 {
                     TargetFrameworks.Add(GetTargetFramework(tfwText, TargetFrameworkTextStyle.Simple));
                 }
+            }
             else
+            {
+                TargetFrameworksText = singleFramework;
+
                 TargetFrameworks.Add(GetTargetFramework(singleFramework, TargetFrameworkTextStyle.Simple));
+            }
         }
 
         private XDocument CreateProjectDocument()

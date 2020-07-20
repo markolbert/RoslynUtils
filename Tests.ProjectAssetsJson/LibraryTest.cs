@@ -46,7 +46,7 @@ namespace Tests.ProjectAssetsJson
                         break;
 
                     case ReferenceType.Project:
-                        libs.Add(new DependentProjectLibrary(kvp.Key, libContainer, projDir, LoggerFactory));
+                        libs.Add(new ProjectLibrary(kvp.Key, libContainer, projDir, LoggerFactory));
                         break;
 
                     default:

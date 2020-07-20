@@ -37,7 +37,7 @@ namespace J4JSoftware.Roslyn
 
         public NugetRepositories Repositories { get; private set; }
         public ProjectInfo Project { get; private set; }
-        public InScopeProjectLibrary InScopeProjectLibrary { get; private set; }
+        public ProjectLibrary ProjectLibrary { get; private set; }
 
         public bool InitializeFromProjectFile( string projectFilePath )
         {
@@ -129,7 +129,7 @@ namespace J4JSoftware.Roslyn
                     GetProperty<ExpandoObject>( configuration, "project" ),
                     LoggerFactory );
 
-                InScopeProjectLibrary = new InScopeProjectLibrary( projFilePath, LoggerFactory );
+                ProjectLibrary = new ProjectLibrary( projFilePath, LoggerFactory );
 
                 CreateTargets( configuration );
                 CreateLibraries( configuration );
@@ -182,7 +182,7 @@ namespace J4JSoftware.Roslyn
                             break;
 
                         case ReferenceType.Project:
-                            Libraries.Add( new DependentProjectLibrary( kvp.Key, container, ProjectDirectory, LoggerFactory ) );
+                            Libraries.Add( new ProjectLibrary( kvp.Key, container, ProjectDirectory, LoggerFactory ) );
                             break;
 
                         default:
@@ -258,10 +258,10 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            result = InScopeProjectLibrary.SourceFiles;
+            result = ProjectLibrary.SourceFiles;
 
             foreach( var libInfo in Libraries.Where( lib => lib.Type == ReferenceType.Project )
-                .Cast<DependentProjectLibrary>() )
+                .Cast<ProjectLibrary>() )
             {
                 result.AddRange( libInfo.SourceFiles );
             }
