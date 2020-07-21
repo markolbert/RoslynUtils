@@ -29,6 +29,7 @@
 		<ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
 		<ProjectReference Include="..\GeneralRoslyn\GeneralRoslyn.csproj" />
 		<ProjectReference Include="..\ProjectAssetsJson\ProjectAssetsJson.csproj" />
+		<ProjectReference Include="..\RoslynDb\RoslynDb.csproj" />
 		<ProjectReference Include="..\RoslynWalker\RoslynWalker.csproj" />
 	</ItemGroup>
 

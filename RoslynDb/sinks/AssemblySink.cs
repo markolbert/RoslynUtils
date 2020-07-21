@@ -56,8 +56,7 @@ namespace J4JSoftware.Roslyn.sinks
         {
             var symbolName = SymbolName.ToAssemblyBasedName( symbol );
 
-            var dbAssembly = DbContext.Assemblies.FirstOrDefault( a =>
-                a.FullyQualifiedName.Equals( symbolName, StringComparison.OrdinalIgnoreCase ) );
+            var dbAssembly = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
 
             bool isNew = dbAssembly == null;
 

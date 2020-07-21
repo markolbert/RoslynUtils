@@ -50,6 +50,7 @@ namespace Tests.ProjectAssetsJson
             "netstandard2.1" ) ]
         public void WalkerTest( string projFilePath, string tgtFWText )
         {
+            var curDir = Environment.CurrentDirectory;
             TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
 
             var projModels = ServiceProvider.Instance.GetRequiredService<ProjectModels>();

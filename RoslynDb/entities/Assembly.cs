@@ -38,6 +38,9 @@ namespace J4JSoftware.Roslyn
 
             builder.Property( x => x.FullyQualifiedName )
                 .IsRequired();
+
+            builder.HasOne( x => x.InScopeInfo )
+                .WithOne( x => x.Assembly );
         }
     }
 }

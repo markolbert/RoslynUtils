@@ -3,7 +3,9 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Roslyn.sinks;
 using J4JSoftware.Roslyn.walkers;
+using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
 
 namespace Tests.ProjectAssetsJson
@@ -46,6 +48,22 @@ namespace Tests.ProjectAssetsJson
                 .AsImplementedInterfaces();
 
             builder.RegisterType<DefaultSymbolSink>()
+                .AsImplementedInterfaces();
+
+            builder.RegisterType<SymbolName>()
+                .AsImplementedInterfaces();
+
+            builder.RegisterType<AssemblySink>()
+                .AsImplementedInterfaces();
+
+            builder.RegisterType<InScopeAssemblyProcessor>()
+                .As<IInScopeAssemblyProcessor>();
+
+            builder.RegisterType<RoslynDbContext>()
+                //.OnActivated( x => x.Instance.Database.Migrate() )
+                .AsSelf();
+
+            builder.RegisterType<RoslynDbContextFactoryConfiguration>()
                 .AsImplementedInterfaces();
 
             Instance = new AutofacServiceProvider( builder.Build() );

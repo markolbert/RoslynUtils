@@ -92,11 +92,6 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure(EntityTypeBuilder<InScopeAssemblyInfo> builder)
         {
-            builder.HasOne<Assembly>( x => x.Assembly )
-                .WithOne( y => y.InScopeInfo! )
-                .HasPrincipalKey<InScopeAssemblyInfo>( x => x.AssemblyID )
-                .HasForeignKey<Assembly>( x => x.ID );
-
             builder.Ignore(x => x.FileVersion);
             builder.Ignore(x => x.PackageVersion);
             builder.Ignore(x => x.TargetFrameworks);
