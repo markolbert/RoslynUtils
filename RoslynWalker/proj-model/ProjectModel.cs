@@ -17,14 +17,14 @@ namespace J4JSoftware.Roslyn
     public class ProjectModel
     {
         private readonly IJ4JLogger _logger;
-        private readonly JsonProjectAssetsConverter _projAssetsConv;
+        private readonly ProjectModels _container;
 
         public ProjectModel(
-            JsonProjectAssetsConverter projAssetsConv,
+            ProjectModels container,
             IJ4JLogger logger
         )
         {
-            _projAssetsConv = projAssetsConv;
+            _container = container;
 
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );

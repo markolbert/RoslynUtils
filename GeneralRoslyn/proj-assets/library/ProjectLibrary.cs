@@ -191,7 +191,7 @@ namespace J4JSoftware.Roslyn
         {
             TargetFrameworks.Clear();
 
-            var singleFramework = ProjectElement.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
+            var singleFramework = ProjectElement!.Descendants( "TargetFramework" ).FirstOrDefault()?.Value;
 
             if( string.IsNullOrEmpty( singleFramework ) )
             {

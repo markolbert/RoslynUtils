@@ -1,4 +1,3 @@
-using System.Dynamic;
 using FluentAssertions;
 using J4JSoftware.Roslyn;
 using Microsoft.Extensions.DependencyInjection;

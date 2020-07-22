@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Buildalyzer;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -33,6 +34,8 @@ namespace J4JSoftware.Roslyn
         public bool IsValid => Projects.Count > 0 
                                && Projects.All( m => m.IsValid );
 
+        public AnalyzerManager Manager { get; } = new AnalyzerManager();
+
         public TargetFramework? TargetFramework
         {
             get => _tgtFW;
@@ -50,7 +53,7 @@ namespace J4JSoftware.Roslyn
 
         public bool AddProject( string csProjFile )
         {
-            var newModel = new ProjectModel( _projAssetsConv, _loggerFactory() );
+            var newModel = new ProjectModel( this, _loggerFactory() );
 
             if( !newModel.Analyze( csProjFile ) )
                 return false;

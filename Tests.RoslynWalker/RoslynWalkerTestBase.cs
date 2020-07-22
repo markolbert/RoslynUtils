@@ -1,18 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Linq;
 using FluentAssertions;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
-using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
-using NuGet.Versioning;
 using Xunit;
 
-namespace Tests.ProjectAssetsJson
+namespace Tests.RoslynWalker
 {
     public class RoslynWalkerTestBase
     {
@@ -76,7 +71,7 @@ namespace Tests.ProjectAssetsJson
         {
             foreach( var projModel in projModels )
             {
-                foreach( var diagnostic in projModel.Diagnostics! )
+                foreach( var diagnostic in projModel.Diagnostics ?? Enumerable.Empty<Diagnostic>() )
                 {
                     if( diagnostic.Location.SourceTree == null )
                     {
