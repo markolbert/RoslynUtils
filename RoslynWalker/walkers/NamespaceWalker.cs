@@ -45,33 +45,38 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            var nsSymbol = symbol!.ContainingNamespace;
+            // first check if the symbol is itself an INamespaceSymbol
+            if( symbol is INamespaceSymbol nsSymbol )
+            {
+                if (!SymbolIsUnProcessed(nsSymbol))
+                    return false;
 
-            if( nsSymbol == null )
+                result = nsSymbol;
+
+                return true;
+            }
+
+            // otherwise, evaluate the symbol's containing namespace
+            var containingSymbol = symbol!.ContainingNamespace;
+
+            if(containingSymbol == null )
             {
                 Logger.Verbose<string>( "Symbol {0} isn't contained in an Namespace", symbol.ToDisplayString() );
 
                 return false;
             }
 
-            if( nsSymbol.ContainingAssembly == null )
+            if(containingSymbol.ContainingAssembly == null )
             {
                 Logger.Verbose<string>( "Namespace {0} isn't contained in an Assembly", symbol.ToDisplayString() );
 
                 return false;
             }
 
-            if( AssemblyInScope( nsSymbol.ContainingAssembly ) )
-            {
-                Logger.Verbose<string>( "Assembly for Namespace {0} is in scope", symbol.ToDisplayString() );
-
-                return false;
-            }
-
-            if( !SymbolIsUnProcessed( nsSymbol ) )
+            if( !SymbolIsUnProcessed(containingSymbol) )
                 return false;
 
-            result = nsSymbol;
+            result = containingSymbol;
 
             return true;
         }

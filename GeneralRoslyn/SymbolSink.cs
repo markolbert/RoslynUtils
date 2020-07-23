@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn
 
         public abstract bool OutputSymbol( TSymbol symbol );
 
-        public virtual bool SupportsSymbol( Type symbolType ) => typeof(ISymbol).IsAssignableFrom( symbolType );
+        public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol).IsAssignableFrom( symbolType );
 
         public virtual bool InitializeSink() => true;
 
