@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     public abstract class SymbolSink<TSymbol> : ISymbolSink<TSymbol>
-        where TSymbol : class, ISymbol
+        where TSymbol : ISymbol
     {
         protected SymbolSink( IJ4JLogger logger )
         {
@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn
 
         public abstract bool OutputSymbol( TSymbol symbol );
 
-        public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol).IsAssignableFrom( symbolType );
+        public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol) == symbolType;
 
         public virtual bool InitializeSink() => true;
 

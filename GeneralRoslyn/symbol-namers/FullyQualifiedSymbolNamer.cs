@@ -9,6 +9,7 @@ namespace J4JSoftware.Roslyn
             : base( SymbolNamers.DefaultFormat, logger )
         {
             AddSupportedType<IAssemblySymbol>();
+            AddSupportedType<INamespaceSymbol>();
             AddSupportedType<INamedTypeSymbol>();
         }
     }

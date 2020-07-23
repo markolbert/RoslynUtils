@@ -27,7 +27,6 @@ namespace J4JSoftware.Roslyn
             foreach (var walker in walkers)
             {
                 nodes.Add(walker);
-                var predecessorType = walker.GetType();
 
                 foreach (var depAttr in walker.GetType()
                     .GetCustomAttributes<PredecessorWalkerAttribute>())

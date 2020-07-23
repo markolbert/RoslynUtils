@@ -12,7 +12,7 @@ namespace J4JSoftware.Roslyn
     }
 
     public interface ISymbolSink<in TSymbol> : ISymbolSink
-        where TSymbol : class, ISymbol
+        where TSymbol : ISymbol
     {
         bool OutputSymbol( TSymbol symbol );
     }

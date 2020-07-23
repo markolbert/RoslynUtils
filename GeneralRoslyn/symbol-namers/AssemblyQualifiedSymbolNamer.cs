@@ -8,7 +8,6 @@ namespace J4JSoftware.Roslyn
         public AssemblyQualifiedSymbolNamer( IJ4JLogger logger )
             : base( SymbolDisplayFormat.MinimallyQualifiedFormat, logger )
         {
-            AddSupportedType<INamespaceSymbol>();
         }
     }
 }
