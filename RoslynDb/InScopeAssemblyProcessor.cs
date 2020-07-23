@@ -42,11 +42,11 @@ namespace J4JSoftware.Roslyn
 
         public bool Cleanup() => true;
 
-        public bool Synchronize( List<ProjectLibrary> libraries )
+        public bool Synchronize( List<CompiledProject> projects )
         {
             var allOkay = true;
 
-            foreach( var library in libraries )
+            foreach( var library in projects )
             {
                 var dbAssembly = _dbContext.Assemblies
                     .Include(a => a.InScopeInfo)
@@ -67,8 +67,8 @@ namespace J4JSoftware.Roslyn
                 dbAssembly.InScopeInfo.Company = library.Company;
                 dbAssembly.InScopeInfo.Copyright = library.Copyright;
                 dbAssembly.InScopeInfo.Description = library.Description;
-                dbAssembly.InScopeInfo.FileVersion = library.FileVersion;
-                dbAssembly.InScopeInfo.PackageVersion = library.PackageVersion;
+                dbAssembly.InScopeInfo.FileVersionText = library.FileVersionText;
+                dbAssembly.InScopeInfo.PackageVersionText = library.PackageVersionText;
                 dbAssembly.InScopeInfo.RootNamespace = library.RootNamespace;
             }
 

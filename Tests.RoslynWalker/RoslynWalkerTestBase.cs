@@ -11,87 +11,35 @@ namespace Tests.RoslynWalker
 {
     public class RoslynWalkerTestBase
     {
-        private readonly JsonProjectAssetsConverter _jsonConverter;
-        private readonly Func<IJ4JLogger> _loggerFactory;
-
-        public RoslynWalkerTestBase()
+        [ Theory ]
+        [ InlineData( "C:\\Programming\\J4JLogging\\J4JLogging\\J4JLogging.csproj" ) ]
+        [ InlineData( "C:\\Programming\\J4JLogging\\ConsoleChannel\\ConsoleChannel.csproj" ) ]
+        public async void CompilationTest( string projFilePath )
         {
-            _jsonConverter = ServiceProvider.Instance.GetRequiredService<JsonProjectAssetsConverter>();
-            _loggerFactory = ServiceProvider.Instance.GetRequiredService<Func<IJ4JLogger>>();
+            var ws = ServiceProvider.Instance.GetRequiredService<DocumentationWorkspace>();
+
+            ws.AddProject( projFilePath ).Should().BeTrue();
+
+            var result = await ws.Compile();
+            result.Should().NotBeNull();
         }
 
         [ Theory ]
-        [ InlineData( "C:\\Programming\\J4JLogging\\J4JLogging\\J4JLogging.csproj", "netstandard2.1" ) ]
-        [ InlineData( "C:\\Programming\\J4JLogging\\ConsoleChannel\\ConsoleChannel.csproj", "netstandard2.1" ) ]
-        public void CompilationTest( string projFilePath, string tgtFWText )
+        [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj") ]
+        public async void WalkerTest( string projFilePath )
         {
-            TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
+            var ws = ServiceProvider.Instance.GetRequiredService<DocumentationWorkspace>();
 
-            var projModels = ServiceProvider.Instance.GetRequiredService<ProjectModels>();
+            ws.AddProject( projFilePath ).Should().BeTrue();
 
-            projModels.TargetFramework = tgtFW;
-            projModels.AddProject( projFilePath ).Should().BeTrue();
+            var result = await ws.Compile();
+            result.Should().NotBeNull();
 
-            var result = projModels.Compile();
-
-            if( !result )
-                DisplayDiagnostics( projModels );
-
-            result.Should().BeTrue();
-        }
-
-        [ Theory ]
-        [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj",
-            "netstandard2.1" ) ]
-        public void WalkerTest( string projFilePath, string tgtFWText )
-        {
-            var curDir = Environment.CurrentDirectory;
-            TargetFramework.Create( tgtFWText, TargetFrameworkTextStyle.Simple, out var tgtFW ).Should().BeTrue();
-
-            var projModels = ServiceProvider.Instance.GetRequiredService<ProjectModels>();
-
-            projModels.TargetFramework = tgtFW;
-            projModels.AddProject( projFilePath ).Should().BeTrue();
-
-            var result = projModels.Compile();
-
-            if( !result )
-                DisplayDiagnostics( projModels );
-
-            result.Should().BeTrue();
-
-            projModels.GetCompilationResults( out var compResults ).Should().BeTrue();
+            result!.Count.Should().BeGreaterThan( 0 );
 
             var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
 
-            walkers.Traverse( compResults! ).Should().BeTrue();
-        }
-
-        private void DisplayDiagnostics( ProjectModels projModels )
-        {
-            foreach( var projModel in projModels )
-            {
-                foreach( var diagnostic in projModel.Diagnostics ?? Enumerable.Empty<Diagnostic>() )
-                {
-                    if( diagnostic.Location.SourceTree == null )
-                    {
-                        System.Diagnostics.Debug.WriteLine(
-                            $"{projModel.ProjectName} [{diagnostic.Severity}({diagnostic.Id})] No source information available" );
-                        continue;
-                    }
-
-                    var errorLines = diagnostic.Location.GetLineSpan();
-                    var sourceText = diagnostic.Location.SourceTree!.GetText();
-
-                    for( var lineNum = errorLines.StartLinePosition.Line;
-                        lineNum <= errorLines.EndLinePosition.Line;
-                        lineNum++ )
-                    {
-                        System.Diagnostics.Debug.WriteLine(
-                            $"{projModel.ProjectName} [{diagnostic.Severity}({diagnostic.Id})] {diagnostic.GetMessage()} {sourceText.Lines[ lineNum ]}" );
-                    }
-                }
-            }
+            walkers.Traverse( result ).Should().BeTrue();
         }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -13,7 +10,7 @@ namespace J4JSoftware.Roslyn
         Type SymbolType { get; }
         ReadOnlyCollection<IAssemblySymbol> ModelAssemblies { get; }
 
-        bool Traverse( List<CompilationResults> compResults );
+        bool Traverse( List<CompiledProject> compResults );
     }
 
     public interface ISyntaxWalker<TTarget> : ISyntaxWalker

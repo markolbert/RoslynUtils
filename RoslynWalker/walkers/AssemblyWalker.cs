@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn.walkers
 {
@@ -24,23 +17,22 @@ namespace J4JSoftware.Roslyn.walkers
         }
 
         private readonly IInScopeAssemblyProcessor _inScopeProcessor;
-        private readonly Func<IJ4JLogger> _loggerFactory;
 
         public AssemblyWalker( 
-            IEnumerable<ISymbolSink> symbolSinks, 
+            IEnumerable<ISymbolSink> symbolSinks,
+            SymbolNamers symbolNamers,
             IInScopeAssemblyProcessor inScopeProcessor,
             IDefaultSymbolSink defaultSymbolSink,
-            Func<IJ4JLogger> loggerFactory 
+            IJ4JLogger logger 
             ) 
-            : base( symbolSinks, defaultSymbolSink, loggerFactory() )
+            : base( symbolSinks, defaultSymbolSink, symbolNamers, logger )
         {
             _inScopeProcessor = inScopeProcessor;
-            _loggerFactory = loggerFactory;
         }
 
         // override the Traverse() method to synchronize the project file based metadata
         // for assemblies that are within the scope of the documentation
-        public override bool Traverse( List<CompilationResults> compResults )
+        public override bool Traverse( List<CompiledProject> compResults )
         {
             if( !base.Traverse( compResults ) )
                 return false;
@@ -48,19 +40,13 @@ namespace J4JSoftware.Roslyn.walkers
             if( !_inScopeProcessor.Initialize() )
                 return false;
 
-            var inScopeLibs = compResults
-                .Select( cr => new ProjectLibrary( 
-                    cr.ProjectModel.ProjectFile!, 
-                    _loggerFactory ) )
-                .ToList();
-
-            if( !_inScopeProcessor.Synchronize( inScopeLibs) )
+            if( !_inScopeProcessor.Synchronize( compResults ) )
                 return false;
 
             return _inScopeProcessor.Cleanup();
         }
 
-        protected override bool ProcessNode( SyntaxNode node, CompilationResult context, out IAssemblySymbol? result )
+        protected override bool ShouldSinkNodeSymbol( SyntaxNode node, CompiledFile context, out IAssemblySymbol? result )
         {
             result = null;
 
@@ -73,8 +59,11 @@ namespace J4JSoftware.Roslyn.walkers
             if( node.IsKind( SyntaxKind.CompilationUnit ) )
             {
                 Logger.Information<string, SyntaxKind>( "{0}: found {1}", 
-                    context.Container.ProjectModel.ProjectName!,
+                    context.Container.AssemblyName,
                     SyntaxKind.CompilationUnit );
+
+                if( !SymbolIsUnProcessed( context.Container.AssemblySymbol ) ) 
+                    return false;
 
                 result = context.Container.AssemblySymbol;
 
@@ -84,7 +73,7 @@ namespace J4JSoftware.Roslyn.walkers
             if( !context.GetSymbol<ISymbol>( node, out var otherSymbol ) )
             {
                 Logger.Verbose<string, SyntaxKind>( "{0}: no ISymbol found for node of kind {1}",
-                    context.Container.ProjectModel.ProjectName!,
+                    context.Container.AssemblyName,
                     node.Kind() );
 
                 return false;
@@ -106,25 +95,15 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            if( ProcessedSymbols.Any( ps => SymbolEqualityComparer.Default.Equals( ps, otherAssembly ) ) )
-            {
-                Logger.Verbose<IAssemblySymbol, string>("Assembly '{0}' for symbol {1} was already processed",
-                    otherAssembly,
-                    otherSymbol.ToDisplayString());
-
+            if( !SymbolIsUnProcessed( otherAssembly ) ) 
                 return false;
-            }
 
             result = otherAssembly;
 
-            Logger.Information<string, string>( "{0}: found new out-of-scope assembly {1}",
-                context.Container.ProjectModel.ProjectName!,
-                otherAssembly.ToDisplayString() );
-
-            return result != null;
+            return true;
         }
 
-        protected override bool GetTraversableChildren( SyntaxNode node, out List<SyntaxNode>? result )
+        protected override bool GetChildNodesToVisit( SyntaxNode node, out List<SyntaxNode>? result )
         {
             result = null;
 
@@ -132,24 +111,6 @@ namespace J4JSoftware.Roslyn.walkers
             // except for node types that we know don't lead any place interesting
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
-
-            //switch( node )
-            //{
-            //    // some TypeOfExpressionSyntax nodes don't have child nodes containing Type information
-            //    // -- which we want -- but they all have a Type property
-            //    case TypeOfExpressionSyntax toeNode:
-            //        result = new List<SyntaxNode>();
-            //        result.Add( toeNode.Type );
-
-            //        break;
-
-            //    default:
-            //        result = node.ChildNodes()
-            //            .Where( n => _ignoredNodeKinds.All( i => i != n.Kind() ) )
-            //            .ToList();
-
-            //        break;
-            //}
 
             result = node.ChildNodes()
                 .Where(n => _ignoredNodeKinds.All(i => i != n.Kind()))

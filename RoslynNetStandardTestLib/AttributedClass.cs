@@ -1,6 +1,6 @@
 ﻿using J4JSoftware.Logging;
 
-namespace RoslynNetStandardTestLib
+namespace J4JSoftware.Roslyn.Tests
 {
     [ DummyType( typeof(string) ) ]
     [ DummyType( typeof(ConsoleChannel) ) ]

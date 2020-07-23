@@ -1,66 +1,52 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Buildalyzer;
+using Buildalyzer.Workspaces;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ProjectModels : IEnumerable<ProjectModel>
+    public class DocumentationWorkspace
     {
         private readonly Func<IJ4JLogger> _loggerFactory;
+        private readonly AnalyzerManager _manager = new AnalyzerManager();
+        private readonly Dictionary<string, IAnalyzerResults> _buildResults = new Dictionary<string, IAnalyzerResults>();
         private readonly IJ4JLogger _logger;
-        private readonly JsonProjectAssetsConverter _projAssetsConv;
 
-        private TargetFramework? _tgtFW;
-
-        public ProjectModels(
-            JsonProjectAssetsConverter projAssetsConv,
+        public DocumentationWorkspace(
             Func<IJ4JLogger> loggerFactory
         )
         {
-            _projAssetsConv = projAssetsConv;
-
             _loggerFactory = loggerFactory;
 
             _logger = loggerFactory();
             _logger.SetLoggedType(this.GetType());
         }
 
-        public bool IsValid => Projects.Count > 0 
-                               && Projects.All( m => m.IsValid );
-
-        public AnalyzerManager Manager { get; } = new AnalyzerManager();
-
-        public TargetFramework? TargetFramework
-        {
-            get => _tgtFW;
-
-            set
-            {
-                _tgtFW = value;
-
-                // reset models so they'll be recompiled
-                Projects.ForEach( pm => pm.IsCompiled = false );
-            }
-        }
-
-        public List<ProjectModel> Projects { get; } = new List<ProjectModel>();
-
         public bool AddProject( string csProjFile )
         {
-            var newModel = new ProjectModel( this, _loggerFactory() );
+            var projAnalyzer = _manager.GetProject( csProjFile );
 
-            if( !newModel.Analyze( csProjFile ) )
-                return false;
+            var results = projAnalyzer.Build();
 
-            Projects.Add( newModel );
+            if( results.OverallSuccess )
+            {
+                if( _buildResults.ContainsKey( csProjFile ) )
+                    _buildResults[ csProjFile ] = results;
+                else _buildResults.Add( csProjFile, results );
 
-            return true;
+                return true;
+            }
+            
+            _logger.Error<string>( "Project analysis failed for '{0}'", csProjFile );
+            
+            return false;
         }
 
         public bool AddProjects(IEnumerable<string> csProjFiles)
@@ -175,72 +161,44 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        public bool Compile( bool forceRecompile = false )
+        public async Task<List<CompiledProject>?> Compile()
         {
-            if( TargetFramework == null )
+            var ws = _manager.GetWorkspace();
+
+            if( ws.CurrentSolution == null )
             {
-                _logger.Error<string>( "{0} is undefined", nameof(TargetFramework) );
-                return false;
+                _logger.Error<string>( "{0} is undefined in the workspace", nameof(ws.CurrentSolution) );
+                return null;
             }
 
-            var allOkay = true;
+            var retVal = new List<CompiledProject>();
 
-            foreach( var model in Projects )
+            foreach( var projectID in ws.CurrentSolution.GetProjectDependencyGraph().GetTopologicallySortedProjects() )
             {
-                if( !model.IsCompiled || forceRecompile )
-                    allOkay &= model.Compile( TargetFramework );
-            }
+                var project = ws.CurrentSolution.GetProject( projectID );
 
-            return allOkay;
-        }
-
-        public List<TargetFramework> GetTargetFrameworks() =>
-            Projects.SelectMany( pm => pm.TargetFrameworks ).Distinct().ToList();
-
-
-        public bool GetCompilationResults( out List<CompilationResults>? result )
-        {
-            result = null;
-
-            if( TargetFramework == null )
-            {
-                _logger.Error<string>("{0} is undefined", nameof(TargetFramework));
-                return false;
-            }
-
-            var rawResult = new List<CompilationResults>();
-            var retVal = true;
-
-            foreach( var pm in Projects )
-            {
-                if( !pm.IsCompiled )
-                    pm.Compile( TargetFramework );
-
-                if( pm.IsValid )
-                    rawResult.Add(pm.CompilationResults! );
-                else
+                if( project == null )
                 {
-                    _logger.Error<Type>( "Project {0} did not compile correctly", typeof(ProjectModel) );
-                    retVal = false;
+                    _logger.Error<ProjectId>( "Could not retrieve project with ID '{0}' from solution", projectID );
+                    continue;
                 }
-            }
 
-            result = rawResult;
+                var compilation = await project.GetCompilationAsync() as CSharpCompilation;
+
+                if( compilation == null )
+                {
+                    _logger.Error<string>("Could not compile project '{0}' from solution", project.Name);
+                    continue;
+                }
+
+                var buildResults = project.FilePath != null && _buildResults.ContainsKey( project.FilePath )
+                    ? _buildResults[ project.FilePath ]
+                    : null;
+
+                retVal.Add( new CompiledProject( buildResults, project, compilation ) );
+            }
 
             return retVal;
-        }
-
-        public IEnumerator<ProjectModel> GetEnumerator()
-        {
-            foreach( var retVal in Projects )
-            {
-                yield return retVal;
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

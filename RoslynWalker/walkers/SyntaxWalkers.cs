@@ -32,7 +32,7 @@ namespace J4JSoftware.Roslyn
                 foreach (var depAttr in walker.GetType()
                     .GetCustomAttributes<PredecessorWalkerAttribute>())
                 {
-                    var predecessorWalker = walkers.FirstOrDefault( w => w.GetType() == predecessorType );
+                    var predecessorWalker = walkers.FirstOrDefault( w => w.GetType() == depAttr.WalkerType );
 
                     if ( predecessorWalker == null )
                         throw new ArgumentOutOfRangeException(
@@ -51,7 +51,7 @@ namespace J4JSoftware.Roslyn
                     typeof(PredecessorWalkerAttribute) );
         }
 
-        public bool Traverse( List<CompilationResults> compResults )
+        public bool Traverse( List<CompiledProject> compResults )
         {
             var allOkay = true;
 

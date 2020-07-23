@@ -5,12 +5,12 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
-    public class CompilationResult
+    public class CompiledFile
     {
-        public CompilationResult(
+        public CompiledFile(
             SyntaxNode rootNode,
             SemanticModel model,
-            CompilationResults container
+            CompiledProject container
         )
         {
             RootSyntaxNode = rootNode;
@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
             Container = container;
         }
 
-        public CompilationResults Container { get; }
+        public CompiledProject Container { get; }
         public SyntaxNode RootSyntaxNode { get; }
         public SemanticModel Model { get; }
 

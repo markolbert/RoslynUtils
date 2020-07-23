@@ -8,33 +8,15 @@ using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 
-namespace J4JSoftware.Roslyn.sinks
+namespace J4JSoftware.Roslyn.Sinks
 {
-    public abstract class RoslynDbSink<TSymbol> : SymbolSink<TSymbol>
-        where TSymbol : class, ISymbol
-    {
-        protected RoslynDbSink(
-            RoslynDbContext dbContext,
-            ISymbolName symbolName,
-            IJ4JLogger logger
-        )
-            : base( logger )
-        {
-            DbContext = dbContext;
-            SymbolName = symbolName;
-        }
-
-        protected RoslynDbContext DbContext { get; }
-        protected ISymbolName SymbolName { get; }
-    }
-
     public class AssemblySink : RoslynDbSink<IAssemblySymbol>
     {
         public AssemblySink(
             RoslynDbContext dbContext,
-            ISymbolName symbolName,
+            SymbolNamers symbolNamers,
             IJ4JLogger logger )
-            : base( dbContext, symbolName, logger )
+            : base( dbContext, symbolNamers, logger )
         {
         }
 
@@ -54,7 +36,7 @@ namespace J4JSoftware.Roslyn.sinks
 
         public override bool OutputSymbol( IAssemblySymbol symbol )
         {
-            var symbolName = SymbolName.ToAssemblyBasedName( symbol );
+            var symbolName = SymbolNamers.GetSymbolName( symbol );
 
             var dbAssembly = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
 
@@ -65,7 +47,7 @@ namespace J4JSoftware.Roslyn.sinks
             if( isNew )
                 DbContext.Assemblies.Add( dbAssembly );
 
-            dbAssembly.Name = SymbolName.ToShortName( symbol );
+            dbAssembly.Name = SymbolNamers.GetSimpleName( symbol );
             dbAssembly.DotNetVersion = symbol.Identity.Version;
 
             DbContext.SaveChanges();

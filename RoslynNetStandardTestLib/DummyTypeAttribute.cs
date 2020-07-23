@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RoslynNetStandardTestLib
+namespace J4JSoftware.Roslyn.Tests
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class DummyTypeAttribute : Attribute

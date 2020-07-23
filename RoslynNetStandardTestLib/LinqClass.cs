@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace RoslynNetStandardTestLib
+namespace J4JSoftware.Roslyn.Tests
 {
     public class LinqClass
     {

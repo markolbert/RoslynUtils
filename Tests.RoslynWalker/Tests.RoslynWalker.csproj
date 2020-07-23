@@ -32,4 +32,10 @@
 		<ProjectReference Include="..\RoslynWalker\RoslynWalker.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="CSharpMetaData.db">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>

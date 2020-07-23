@@ -160,7 +160,7 @@ namespace J4JSoftware.Roslyn
             XDocument projDoc = CreateProjectDocument();
 
             var projElem = projDoc.Root!.DescendantsAndSelf()
-                .FirstOrDefault( e => e.Name == "AssemblyName" )
+                .FirstOrDefault( e => e.Name == "TargetFramework" || e.Name == "TargetFrameworks" )
                 ?.Parent;
 
             ProjectElement = projElem

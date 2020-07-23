@@ -1,7 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
 
-namespace RoslynNetStandardTestLib
+namespace J4JSoftware.Roslyn.Tests
 {
     [AttributeUsage( validOn: AttributeTargets.Class | AttributeTargets.Interface, Inherited = false, AllowMultiple = true )]
     public class DummyAttribute : Attribute

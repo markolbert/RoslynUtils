@@ -1,7 +1,6 @@
 ﻿using System;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn
 {

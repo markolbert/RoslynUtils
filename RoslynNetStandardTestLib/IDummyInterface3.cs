@@ -1,4 +1,4 @@
-﻿namespace RoslynNetStandardTestLib
+﻿namespace J4JSoftware.Roslyn.Tests
 {
     public interface IDummyInterface3<in T>
         where T : DummyAttribute
