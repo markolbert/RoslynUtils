@@ -14,14 +14,17 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public AssemblySink(
             RoslynDbContext dbContext,
-            SymbolNamers symbolNamers,
+            ISymbolName symbolName,
             IJ4JLogger logger )
-            : base( dbContext, symbolNamers, logger )
+            : base( dbContext, symbolName, logger )
         {
         }
 
         public override bool InitializeSink()
         {
+            if( !base.InitializeSink() )
+                return false;
+
             // mark all the existing assemblies as unsynchronized since we're starting
             // the synchonrization process
             foreach( var assembly in DbContext.Assemblies )
@@ -34,25 +37,29 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        public override bool OutputSymbol( IAssemblySymbol symbol )
+        protected override (OutputResult status, string symbolName) OutputSymbolInternal( IAssemblySymbol symbol )
         {
-            var symbolName = SymbolNamers.GetSymbolName( symbol );
+            var (status, symbolName) = base.OutputSymbolInternal( symbol );
 
-            var dbAssembly = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
+            if( status != OutputResult.Succeeded )
+                return ( status, symbolName );
 
-            bool isNew = dbAssembly == null;
+            var dbSymbol = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
 
-            dbAssembly ??= new Assembly { FullyQualifiedName = symbolName };
+            bool isNew = dbSymbol == null;
+
+            dbSymbol ??= new Assembly { FullyQualifiedName = symbolName };
 
             if( isNew )
-                DbContext.Assemblies.Add( dbAssembly );
+                DbContext.Assemblies.Add( dbSymbol );
 
-            dbAssembly.Name = SymbolNamers.GetSimpleName( symbol );
-            dbAssembly.DotNetVersion = symbol.Identity.Version;
+            dbSymbol.Synchronized = true;
+            dbSymbol.Name = symbol.Name;
+            dbSymbol.DotNetVersion = symbol.Identity.Version;
 
             DbContext.SaveChanges();
 
-            return true;
+            return ( status, symbolName );
         }
     }
 }

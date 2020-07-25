@@ -8,16 +8,14 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         protected RoslynDbSink(
             RoslynDbContext dbContext,
-            SymbolNamers symbolNamers,
+            ISymbolName symbolName,
             IJ4JLogger logger
         )
-            : base( logger )
+            : base( symbolName, logger )
         {
             DbContext = dbContext;
-            SymbolNamers = symbolNamers;
         }
 
         protected RoslynDbContext DbContext { get; }
-        protected SymbolNamers SymbolNamers { get; }
     }
 }

@@ -12,8 +12,8 @@ namespace J4JSoftware.Roslyn
         public string Name { get; set; } = null!;
         public string FullyQualifiedName { get; set; } = null!;
 
-        public List<AssemblyNamespace> AssemblyNamespaces { get; set; } = null!;
-        //public List<NamedType> Types { get; set; } = null!;
+        public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
+        public List<NamedType>? Types { get; set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>
@@ -25,10 +25,10 @@ namespace J4JSoftware.Roslyn
                 .HasForeignKey( x => x.NamespaceID )
                 .HasPrincipalKey( x => x.ID );
 
-            //builder.HasMany( x => x.Types )
-            //    .WithOne( x => x.Namespace )
-            //    .HasForeignKey( x => x.NamespaceId )
-            //    .HasPrincipalKey( x => x.ID );
+            builder.HasMany(x => x.Types)
+                .WithOne(x => x.Namespace)
+                .HasForeignKey(x => x.NamespaceId)
+                .HasPrincipalKey(x => x.ID);
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

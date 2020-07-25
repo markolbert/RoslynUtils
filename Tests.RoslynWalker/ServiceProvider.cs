@@ -52,13 +52,8 @@ namespace Tests.RoslynWalker
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
 
-            builder.RegisterAssemblyTypes( typeof(ISymbolNamer).Assembly )
-                .Where( t => typeof(SymbolNamer).IsAssignableFrom( t )
-                && t.GetConstructors().Length > 0)
-                .AsImplementedInterfaces();
-
-            builder.RegisterType<SymbolNamers>()
-                .AsSelf();
+            builder.RegisterType<SymbolName>()
+                .As<ISymbolName>();
 
             builder.RegisterType<InScopeAssemblyProcessor>()
                 .As<IInScopeAssemblyProcessor>();

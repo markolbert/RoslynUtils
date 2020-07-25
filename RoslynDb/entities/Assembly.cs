@@ -26,6 +26,9 @@ namespace J4JSoftware.Roslyn
         }
 
         public InScopeAssemblyInfo? InScopeInfo { get; set; }
+
+        public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
+        public List<NamedType>? Types { get; set; }
     }
 
     internal class AssemblyConfigurator : EntityConfigurator<Assembly>
@@ -33,6 +36,11 @@ namespace J4JSoftware.Roslyn
         protected override void Configure( EntityTypeBuilder<Assembly> builder )
         {
             builder.Ignore( x => x.DotNetVersion );
+
+            builder.HasMany(x => x.AssemblyNamespaces)
+                .WithOne(x => x.Assembly)
+                .HasForeignKey(x => x.AssemblyID)
+                .HasPrincipalKey(x => x.ID);
 
             builder.HasAlternateKey( x => x.FullyQualifiedName );
 

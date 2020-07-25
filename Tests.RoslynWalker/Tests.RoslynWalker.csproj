@@ -34,7 +34,7 @@
 
 	<ItemGroup>
 	  <None Update="CSharpMetaData.db">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
 

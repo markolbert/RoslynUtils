@@ -39,7 +39,7 @@ namespace Tests.RoslynWalker
 
             var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
 
-            walkers.Traverse( result ).Should().BeTrue();
+            walkers.Process( result ).Should().BeTrue();
         }
     }
 }

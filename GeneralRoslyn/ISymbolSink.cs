@@ -8,13 +8,13 @@ namespace J4JSoftware.Roslyn
         bool SupportsSymbol( Type symbolType );
         bool InitializeSink();
         bool FinalizeSink();
-        bool OutputSymbol(ISymbol symbol);
+        bool OutputSymbol(ISymbol symbol );
     }
 
     public interface ISymbolSink<in TSymbol> : ISymbolSink
         where TSymbol : ISymbol
     {
-        bool OutputSymbol( TSymbol symbol );
+        bool OutputSymbol( TSymbol symbol);
     }
 
     public interface IDefaultSymbolSink : ISymbolSink

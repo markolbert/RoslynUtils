@@ -7,25 +7,24 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SyntaxWalker<TTarget> : ISyntaxWalker<TTarget>
+    public abstract class SyntaxWalker<TTarget> : ISyntaxWalker
         where TTarget : class, ISymbol
     {
         private readonly ISymbolSink _symbolSink;
         private readonly List<IAssemblySymbol> _modelAssemblies = new List<IAssemblySymbol>();
         private readonly List<SyntaxNode> _visitedNodes = new List<SyntaxNode>();
-        private readonly List<string> _procSymbolNames = new List<string>();
 
         protected SyntaxWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             IDefaultSymbolSink defaultSymbolSink,
-            SymbolNamers symbolNamers,
+            ISymbolName symbolName,
             IJ4JLogger logger
         )
         {
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
 
-            SymbolNamers = symbolNamers;
+            SymbolName = symbolName;
             SymbolType = typeof(TTarget);
 
             var sink = symbolSinks.FirstOrDefault( s => s.SupportsSymbol( SymbolType ) && !( s is IDefaultSymbolSink ) );
@@ -34,29 +33,28 @@ namespace J4JSoftware.Roslyn
         }
 
         protected IJ4JLogger Logger { get; }
+        protected ISymbolName SymbolName { get; }
 
         public Type SymbolType { get; }
 
         public ReadOnlyCollection<IAssemblySymbol> ModelAssemblies => _modelAssemblies.AsReadOnly();
 
-        protected SymbolNamers SymbolNamers { get; }
-
-        public virtual bool Traverse( List<CompiledProject> compResults )
+        public virtual bool Process( List<CompiledProject> compResults )
         {
             _modelAssemblies.Clear();
             _modelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
 
             _visitedNodes.Clear();
-            _procSymbolNames.Clear();
 
-            _symbolSink.InitializeSink();
+            if( !_symbolSink.InitializeSink() )
+                return false;
 
             foreach( var compResult in compResults.SelectMany(cr=>cr) )
             {
                 TraverseInternal( compResult.RootSyntaxNode, compResult );
             }
 
-            return true;
+            return _symbolSink.FinalizeSink();
         }
 
         protected void TraverseInternal( SyntaxNode node, CompiledFile context )
@@ -67,7 +65,9 @@ namespace J4JSoftware.Roslyn
 
             _visitedNodes.Add( node );
 
-            if( ShouldSinkNodeSymbol( node, context, out var symbol ) )
+            // we make no attempt to keep track of whether a symbol has already been processed.
+            // that's the responsibility of the sink
+            if( NodeReferencesSymbol( node, context, out var symbol ) )
                 _symbolSink?.OutputSymbol( symbol! );
 
             if( !GetChildNodesToVisit( node, out var children ) )
@@ -79,26 +79,22 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        protected abstract bool ShouldSinkNodeSymbol( SyntaxNode node, CompiledFile context, out TTarget? result );
+        protected abstract bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out TTarget? result );
         protected abstract bool GetChildNodesToVisit( SyntaxNode node, out List<SyntaxNode>? result );
 
         protected bool AssemblyInScope( IAssemblySymbol toCheck ) 
             => ModelAssemblies.Any( ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
 
-        protected virtual bool SymbolIsUnProcessed(TTarget symbol)
+        bool IRoslynProcessor.Process( object inputData )
         {
-            var otherName = SymbolNamers.GetSymbolName( symbol );
+            if( inputData is List<CompiledProject> castData )
+                return Process( castData );
 
-            if (_procSymbolNames.Any(psn => psn.Equals(otherName, StringComparison.OrdinalIgnoreCase)))
-            {
-                Logger.Verbose<Type, TTarget>("{0} '{1}' was already processed", typeof(TTarget), symbol);
+            Logger.Error<Type, Type>( "Input data is a {0} but must be a {1}", 
+                inputData.GetType(),
+                typeof(List<CompiledProject>) );
 
-                return false;
-            }
-
-            _procSymbolNames.Add(otherName);
-
-            return true;
+            return false;
         }
 
         public bool Equals( ISyntaxWalker? other )

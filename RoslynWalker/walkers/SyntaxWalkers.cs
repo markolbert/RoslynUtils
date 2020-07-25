@@ -11,52 +11,56 @@ namespace J4JSoftware.Roslyn
         private readonly IJ4JLogger _logger;
         private readonly List<ISyntaxWalker> _walkers;
 
-        public SyntaxWalkers( 
+        public SyntaxWalkers(
             IEnumerable<ISyntaxWalker> syntaxWalkers,
-            IJ4JLogger logger 
+            IJ4JLogger logger
         )
         {
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
 
-            var nodes = new HashSet<ISyntaxWalker>();
-            var edges = new HashSet<(ISyntaxWalker start, ISyntaxWalker)>();
+            //var walkers = syntaxWalkers!.ToList();
 
-            var walkers = syntaxWalkers.ToList();
+            //_walkers = TopologicalSorter.CreateSequence( walkers, w =>
+            //{
+            //    var retVal = new List<ISyntaxWalker>();
 
-            foreach (var walker in walkers)
-            {
-                nodes.Add(walker);
+            //    foreach( var depAttr in w.GetType()
+            //        .GetCustomAttributes<RoslynProcessorAttribute>() )
+            //    {
+            //        var predecessorWalker = walkers.FirstOrDefault( w => w.GetType() == depAttr.PredecessorType );
 
-                foreach (var depAttr in walker.GetType()
-                    .GetCustomAttributes<PredecessorWalkerAttribute>())
-                {
-                    var predecessorWalker = walkers.FirstOrDefault( w => w.GetType() == depAttr.WalkerType );
+            //        if( predecessorWalker == null )
+            //            throw new ArgumentOutOfRangeException(
+            //                $"Could not find Type {depAttr.PredecessorType.Name} updater in provided collection" );
 
-                    if ( predecessorWalker == null )
-                        throw new ArgumentOutOfRangeException(
-                            $"Could not find Type {depAttr.WalkerType.Name} updater in provided {nameof(syntaxWalkers)} collection");
+            //        retVal.Add( predecessorWalker );
+            //    }
 
-                    edges.Add( ( walker, predecessorWalker ) );
-                }
-            }
+            //    return retVal;
+            //} ) ?? new List<ISyntaxWalker>();
 
-            _walkers = TopologicalSorter.Sort(nodes, edges).ToList();
+            //if (_walkers.Count == 0)
+            //    _logger.Error<Type, Type>(
+            //        "Couldn't determine {0} sequence. Check your {1} attributes", 
+            //        typeof(ISyntaxWalker),
+            //        typeof(RoslynProcessorAttribute) );
 
-            if (_walkers.Count == 0)
-                _logger.Error<Type, Type>(
-                    "Couldn't determine {0} sequence. Check your {1} attributes", 
-                    typeof(ISyntaxWalker),
-                    typeof(PredecessorWalkerAttribute) );
+            var error = TopologicalSorter.CreateSequence( syntaxWalkers, out var walkers );
+
+            if( error != null )
+                _logger.Error( error );
+
+            _walkers = walkers ?? new List<ISyntaxWalker>();
         }
 
-        public bool Traverse( List<CompiledProject> compResults )
+        public bool Process( List<CompiledProject> compResults )
         {
             var allOkay = true;
 
             foreach( var walker in _walkers )
             {
-                allOkay &= walker.Traverse( compResults );
+                allOkay &= walker.Process( compResults );
             }
 
             return allOkay;

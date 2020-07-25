@@ -6,18 +6,21 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn.walkers
 {
-    [ RoslynProcessor( typeof(AssemblyWalker) ) ]
-    public class NamespaceWalker : SyntaxWalker<INamespaceSymbol>
+    [ RoslynProcessor( typeof(NamespaceWalker) ) ]
+    public class TypeWalker : SyntaxWalker<ITypeSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
-        static NamespaceWalker()
+        static TypeWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
+            _ignoredNodeKinds.Add( SyntaxKind.TypeParameter );
+            _ignoredNodeKinds.Add( SyntaxKind.TypeParameterConstraintClause );
+            _ignoredNodeKinds.Add( SyntaxKind.ParameterList );
         }
 
-        public NamespaceWalker(
+        public TypeWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             ISymbolName symbolName,
             IDefaultSymbolSink defaultSymbolSink,
@@ -27,8 +30,9 @@ namespace J4JSoftware.Roslyn.walkers
         {
         }
 
-        protected override bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context,
-            out INamespaceSymbol? result )
+        protected override bool NodeReferencesSymbol( SyntaxNode node, 
+            CompiledFile context,
+            out ITypeSymbol? result )
         {
             result = null;
 
@@ -36,7 +40,7 @@ namespace J4JSoftware.Roslyn.walkers
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            if( !context.GetSymbol<ISymbol>( node, out var symbol ) )
+            if( !context.GetSymbol<ITypeSymbol>( node, out var typeSymbol ) )
             {
                 Logger.Verbose<string, SyntaxKind>( "{0}: no ISymbol found for node of kind {1}",
                     context.Container.AssemblyName,
@@ -45,31 +49,7 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            // first check if the symbol is itself an INamespaceSymbol
-            if( symbol is INamespaceSymbol nsSymbol )
-            {
-                result = nsSymbol;
-                return true;
-            }
-
-            // otherwise, evaluate the symbol's containing namespace
-            var containingSymbol = symbol!.ContainingNamespace;
-
-            if(containingSymbol == null )
-            {
-                Logger.Verbose<string>( "Symbol {0} isn't contained in an Namespace", symbol.ToDisplayString() );
-
-                return false;
-            }
-
-            if(containingSymbol.ContainingAssembly == null )
-            {
-                Logger.Verbose<string>( "Namespace {0} isn't contained in an Assembly", symbol.ToDisplayString() );
-
-                return false;
-            }
-
-            result = containingSymbol;
+            result = typeSymbol;
 
             return true;
         }

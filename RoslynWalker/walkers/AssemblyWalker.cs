@@ -20,21 +20,21 @@ namespace J4JSoftware.Roslyn.walkers
 
         public AssemblyWalker( 
             IEnumerable<ISymbolSink> symbolSinks,
-            SymbolNamers symbolNamers,
+            ISymbolName symbolName,
             IInScopeAssemblyProcessor inScopeProcessor,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger 
             ) 
-            : base( symbolSinks, defaultSymbolSink, symbolNamers, logger )
+            : base( symbolSinks, defaultSymbolSink, symbolName, logger )
         {
             _inScopeProcessor = inScopeProcessor;
         }
 
         // override the Traverse() method to synchronize the project file based metadata
         // for assemblies that are within the scope of the documentation
-        public override bool Traverse( List<CompiledProject> compResults )
+        public override bool Process( List<CompiledProject> compResults )
         {
-            if( !base.Traverse( compResults ) )
+            if( !base.Process( compResults ) )
                 return false;
 
             if( !_inScopeProcessor.Initialize() )
@@ -46,7 +46,7 @@ namespace J4JSoftware.Roslyn.walkers
             return _inScopeProcessor.Cleanup();
         }
 
-        protected override bool ShouldSinkNodeSymbol( SyntaxNode node, CompiledFile context, out IAssemblySymbol? result )
+        protected override bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out IAssemblySymbol? result )
         {
             result = null;
 
@@ -61,9 +61,6 @@ namespace J4JSoftware.Roslyn.walkers
                 Logger.Information<string, SyntaxKind>( "{0}: found {1}", 
                     context.Container.AssemblyName,
                     SyntaxKind.CompilationUnit );
-
-                if( !SymbolIsUnProcessed( context.Container.AssemblySymbol ) ) 
-                    return false;
 
                 result = context.Container.AssemblySymbol;
 
@@ -94,9 +91,6 @@ namespace J4JSoftware.Roslyn.walkers
 
                 return false;
             }
-
-            if( !SymbolIsUnProcessed( otherAssembly ) ) 
-                return false;
 
             result = otherAssembly;
 

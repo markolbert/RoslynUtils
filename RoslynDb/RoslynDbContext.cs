@@ -23,6 +23,7 @@ namespace J4JSoftware.Roslyn
         public DbSet<Assembly> Assemblies { get; set; }
         public DbSet<InScopeAssemblyInfo> InScopeInfo { get; set; }
         public DbSet<Namespace> Namespaces { get; set; }
+        public DbSet<NamedType> NamedTypes { get; set; }
 
         // linking (many-to-many) entities
         public DbSet<AssemblyNamespace> AssemblyNamespaces { get; set; }

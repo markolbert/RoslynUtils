@@ -8,24 +8,58 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SymbolSink<TSymbol> : ISymbolSink<TSymbol>
+    public class SymbolSink<TSymbol> : ISymbolSink<TSymbol>
         where TSymbol : ISymbol
     {
-        protected SymbolSink( IJ4JLogger logger )
+        protected enum OutputResult
         {
+            Succeeded,
+            Failed,
+            AlreadyProcessed
+        }
+
+        protected SymbolSink(
+            ISymbolName symbolName,
+            IJ4JLogger logger
+            )
+        {
+            SymbolName = symbolName;
+
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
         }
 
         protected IJ4JLogger Logger { get; }
+        protected ISymbolName SymbolName { get; }
+        protected List<string> ProcessedSymbolNames { get; } = new List<string>();
 
-        public abstract bool OutputSymbol( TSymbol symbol );
+        public bool OutputSymbol( TSymbol symbol ) =>
+            OutputSymbolInternal( symbol ).status switch
+            {
+                OutputResult.Failed => false,
+                _ => true
+            };
+
+        protected virtual (OutputResult status, string symbolName) OutputSymbolInternal( TSymbol symbol )
+        {
+            var symbolName = SymbolName.GetSymbolName( symbol );
+
+            if( ProcessedSymbolNames.Exists( pn => pn.Equals( symbolName, StringComparison.Ordinal ) ) )
+                return ( OutputResult.AlreadyProcessed, symbolName );
+
+            return ( OutputResult.Succeeded, symbolName );
+        }
 
         public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol) == symbolType;
 
-        public virtual bool InitializeSink() => true;
+        public virtual bool InitializeSink()
+        {
+            ProcessedSymbolNames.Clear();
 
-        public bool FinalizeSink() => true;
+            return true;
+        }
+
+        public virtual bool FinalizeSink() => true;
 
         bool ISymbolSink.OutputSymbol( ISymbol symbol )
         {

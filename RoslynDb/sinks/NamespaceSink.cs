@@ -14,9 +14,9 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public NamespaceSink(
             RoslynDbContext dbContext,
-            SymbolNamers symbolNamers,
+            ISymbolName symbolName,
             IJ4JLogger logger )
-            : base( dbContext, symbolNamers, logger )
+            : base( dbContext, symbolName, logger )
         {
         }
 
@@ -34,12 +34,16 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        public override bool OutputSymbol( INamespaceSymbol symbol )
+        protected override (OutputResult status, string symbolName) OutputSymbolInternal( INamespaceSymbol symbol )
         {
-            var symbolName = SymbolNamers.GetSymbolName( symbol );
-            var assemblyName = SymbolNamers.GetSymbolName( symbol.ContainingAssembly );
+            var (status, symbolName) = base.OutputSymbolInternal(symbol);
 
-            var dbNS = DbContext.Namespaces.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
+            if (status != OutputResult.Succeeded)
+                return (status, symbolName);
+
+            var assemblyName = SymbolName.GetSymbolName( symbol.ContainingAssembly );
+
+            var dbSymbol = DbContext.Namespaces.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
             var dbAssembly = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == assemblyName );
 
             if( dbAssembly == null )
@@ -48,30 +52,31 @@ namespace J4JSoftware.Roslyn.Sinks
                     assemblyName, 
                     symbolName );
 
-                return false;
+                return ( OutputResult.Failed, symbolName );
             }
 
-            bool isNew = dbNS == null;
+            bool isNew = dbSymbol == null;
 
-            dbNS ??= new Namespace() { FullyQualifiedName = symbolName };
+            dbSymbol ??= new Namespace() { FullyQualifiedName = symbolName };
 
             if( isNew )
             {
-                DbContext.Namespaces.Add( dbNS );
+                DbContext.Namespaces.Add( dbSymbol );
 
                 // need to add linking entries
                 DbContext.AssemblyNamespaces.Add( new AssemblyNamespace()
                 {
                     Assembly = dbAssembly,
-                    Namespace = dbNS
+                    Namespace = dbSymbol
                 } );
             }
 
-            dbNS.Name = SymbolNamers.GetSimpleName( symbol );
+            dbSymbol.Synchronized = true;
+            dbSymbol.Name = symbol.Name;
 
             DbContext.SaveChanges();
 
-            return true;
+            return (status, symbolName);
         }
     }
 }
