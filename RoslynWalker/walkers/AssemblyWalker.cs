@@ -85,7 +85,7 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            if( AssemblyInScope( otherAssembly ) )
+            if( InDocumentationScope( otherAssembly ) )
             {
                 Logger.Verbose<string>("Assembly for symbol {0} is in scope", otherSymbol.ToDisplayString());
 

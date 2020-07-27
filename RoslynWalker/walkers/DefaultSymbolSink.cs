@@ -16,10 +16,10 @@ namespace J4JSoftware.Roslyn
 
         public bool SupportsSymbol( Type symbolType ) => typeof(ISymbol).IsAssignableFrom( symbolType );
 
-        public bool InitializeSink() => true;
-        public bool FinalizeSink() => true;
+        public bool InitializeSink( ISyntaxWalker syntaxWalker ) => true;
+        public bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
 
-        public bool OutputSymbol( ISymbol symbol )
+        public bool OutputSymbol( ISyntaxWalker syntaxWalker, ISymbol symbol )
         {
             _logger.Information<string>("Processed a {0}", symbol.ToDisplayString());
 

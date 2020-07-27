@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class AssemblySink : RoslynDbSink<IAssemblySymbol>
+    public class AssemblySink : RoslynDbSink<IAssemblySymbol, Assembly>
     {
         public AssemblySink(
             RoslynDbContext dbContext,
@@ -20,9 +20,9 @@ namespace J4JSoftware.Roslyn.Sinks
         {
         }
 
-        public override bool InitializeSink()
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !base.InitializeSink() )
+            if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
             // mark all the existing assemblies as unsynchronized since we're starting
@@ -37,18 +37,35 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        protected override (OutputResult status, string symbolName) OutputSymbolInternal( IAssemblySymbol symbol )
+        public override bool TryGetSunkValue( IAssemblySymbol symbol, out Assembly? result )
         {
-            var (status, symbolName) = base.OutputSymbolInternal( symbol );
+            var symbolName = SymbolName.GetSymbolName( symbol );
+            
+            var retVal = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
 
-            if( status != OutputResult.Succeeded )
-                return ( status, symbolName );
+            if( retVal == null )
+            {
+                result = null;
+                return false;
+            }
 
-            var dbSymbol = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
+            result = retVal;
+
+            return true;
+        }
+
+        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, IAssemblySymbol symbol )
+        {
+            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+
+            if( retVal.AlreadyProcessed )
+                return retVal;
+
+            var dbSymbol = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == retVal.SymbolName );
 
             bool isNew = dbSymbol == null;
 
-            dbSymbol ??= new Assembly { FullyQualifiedName = symbolName };
+            dbSymbol ??= new Assembly { FullyQualifiedName = retVal.SymbolName };
 
             if( isNew )
                 DbContext.Assemblies.Add( dbSymbol );
@@ -59,7 +76,9 @@ namespace J4JSoftware.Roslyn.Sinks
 
             DbContext.SaveChanges();
 
-            return ( status, symbolName );
+            retVal.WasOutput = true;
+
+            return retVal;
         }
     }
 }

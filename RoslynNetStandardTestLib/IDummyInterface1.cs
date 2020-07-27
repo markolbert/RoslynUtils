@@ -3,5 +3,6 @@
     public interface IDummyInterface1
     {
         int Number { get; set; }
+        int[] ArrayOfNumbers { get; set; }
     }
 }

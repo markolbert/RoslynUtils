@@ -17,6 +17,7 @@ namespace J4JSoftware.Roslyn
         public string FullyQualifiedName { get; set; } = string.Empty;
         public Accessibility Accessibility { get; set; }
         public DeclarationModifier DeclarationModifier { get; set; }
+        public bool InDocumentationScope { get; set; }
 
         // the namespace to which this NamedType entity belongs
         public int NamespaceId { get; set; }

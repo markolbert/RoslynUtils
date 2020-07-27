@@ -10,17 +10,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class NamespaceSink : RoslynDbSink<INamespaceSymbol>
+    public class NamespaceSink : RoslynDbSink<INamespaceSymbol, Namespace>
     {
+        private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
+
         public NamespaceSink(
             RoslynDbContext dbContext,
+            ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
             ISymbolName symbolName,
             IJ4JLogger logger )
             : base( dbContext, symbolName, logger )
         {
+            _assemblySink = assemblySink;
         }
 
-        public override bool InitializeSink()
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
             // mark all the existing assemblies as unsynchronized since we're starting
             // the synchonrization process
@@ -34,30 +38,38 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        protected override (OutputResult status, string symbolName) OutputSymbolInternal( INamespaceSymbol symbol )
+        public override bool TryGetSunkValue(INamespaceSymbol symbol, out Namespace? result)
         {
-            var (status, symbolName) = base.OutputSymbolInternal(symbol);
+            var symbolName = SymbolName.GetSymbolName(symbol);
 
-            if (status != OutputResult.Succeeded)
-                return (status, symbolName);
+            var retVal = DbContext.Namespaces.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
 
-            var assemblyName = SymbolName.GetSymbolName( symbol.ContainingAssembly );
-
-            var dbSymbol = DbContext.Namespaces.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
-            var dbAssembly = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == assemblyName );
-
-            if( dbAssembly == null )
+            if (retVal == null)
             {
-                Logger.Error<string, string>( "Could not find Assembly entity '{0}' referenced by namespace '{1}'",
-                    assemblyName, 
-                    symbolName );
-
-                return ( OutputResult.Failed, symbolName );
+                result = null;
+                return false;
             }
+
+            result = retVal;
+
+            return true;
+        }
+
+        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, INamespaceSymbol symbol )
+        {
+            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+
+            if (retVal.AlreadyProcessed)
+                return retVal;
+
+            if( !_assemblySink.TryGetSunkValue( symbol.ContainingAssembly, out var dbAssembly ) )
+                return retVal;
+
+            var dbSymbol = DbContext.Namespaces.FirstOrDefault( a => a.FullyQualifiedName == retVal.SymbolName );
 
             bool isNew = dbSymbol == null;
 
-            dbSymbol ??= new Namespace() { FullyQualifiedName = symbolName };
+            dbSymbol ??= new Namespace() { FullyQualifiedName = retVal.SymbolName };
 
             if( isNew )
             {
@@ -66,7 +78,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 // need to add linking entries
                 DbContext.AssemblyNamespaces.Add( new AssemblyNamespace()
                 {
-                    Assembly = dbAssembly,
+                    AssemblyID = dbAssembly!.ID,
                     Namespace = dbSymbol
                 } );
             }
@@ -76,7 +88,9 @@ namespace J4JSoftware.Roslyn.Sinks
 
             DbContext.SaveChanges();
 
-            return (status, symbolName);
+            retVal.WasOutput = true;
+
+            return retVal;
         }
     }
 }

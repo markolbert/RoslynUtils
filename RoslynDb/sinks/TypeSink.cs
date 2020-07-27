@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.Logging;
@@ -10,19 +11,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeSink : RoslynDbSink<ITypeSymbol>
+    public class TypeSink : RoslynDbSink<ITypeSymbol, NamedType>
     {
+        private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
+        private readonly ISymbolSink<INamespaceSymbol, Namespace> _nsSink;
         private readonly List<ITypeProcessor> _processors;
-        private readonly ITypeProcessor _coreProcessor;
-        private readonly List<ITypeSymbol> _typeSymbols = new List<ITypeSymbol>();
+        private readonly Dictionary<string, ITypeSymbol> _typeSymbols = new Dictionary<string, ITypeSymbol>();
 
         public TypeSink(
             RoslynDbContext dbContext,
+            ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
+            ISymbolSink<INamespaceSymbol, Namespace> nsSink,
             ISymbolName symbolName,
             IEnumerable<ITypeProcessor> typeProcessors,
             IJ4JLogger logger )
             : base( dbContext, symbolName, logger )
         {
+            _assemblySink = assemblySink;
+            _nsSink = nsSink;
+
             var temp = typeProcessors.ToList();
 
             var error = TopologicalSorter.CreateSequence( temp, out var processors );
@@ -30,13 +37,10 @@ namespace J4JSoftware.Roslyn.Sinks
             if( error != null )
                 Logger.Error( error );
 
-            _coreProcessor = temp.FirstOrDefault(x => x.SupportedType == typeof(ITypeSymbol))
-                             ?? throw new NullReferenceException( $"Couldn't find {typeof(ITypeProcessor)} for {typeof(ITypeSymbol)}" );
-
             _processors = processors ?? new List<ITypeProcessor>();
         }
 
-        public override bool InitializeSink()
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
             // clear the collection of processed type symbols
             _typeSymbols.Clear();
@@ -53,66 +57,103 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        public override bool FinalizeSink()
+        public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !base.FinalizeSink() )
+            if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
             // we want to add all the parent types for each symbol's inheritance tree.
             // but to do that we first have to add all the relevant assemblies and namespaces
             var allOkay = true;
 
+            var typeList = _typeSymbols.Select( ts => ts.Value )
+                .ToList();
+
             foreach( var processor in _processors )
             {
-                allOkay &= processor.Process( _typeSymbols );
+                allOkay &= processor.Process( syntaxWalker, typeList );
+            }
+
+            // now we can add the parent types
+            foreach( var typeSymbol in typeList )
+            {
+                allOkay &= OutputSymbol( syntaxWalker, typeSymbol );
             }
 
             return allOkay;
         }
 
-        protected override (OutputResult status, string symbolName) OutputSymbolInternal(ITypeSymbol symbol )
+        public override bool TryGetSunkValue(ITypeSymbol symbol, out NamedType? result)
         {
-            var (status, symbolName) = base.OutputSymbolInternal(symbol);
+            var symbolName = SymbolName.GetSymbolName(symbol);
 
-            if (status != OutputResult.Succeeded)
-                return (status, symbolName);
+            var retVal = DbContext.NamedTypes.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
 
-            // output the symbol to the database
-            if( !ProcessSymbol( symbol, symbolName ) )
-                return ( OutputResult.Failed, symbolName );
+            if (retVal == null)
+            {
+                result = null;
+                return false;
+            }
 
-            // store the processed symbol so we can later walk up its inheritance tree
-            _typeSymbols.Add( symbol );
+            result = retVal;
 
-            return ( status, symbolName );
+            return true;
         }
 
-        private bool ProcessSymbol(  ITypeSymbol symbol, string symbolName )
+        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
         {
-            var dbSymbol = DbContext.NamedTypes.FirstOrDefault(nt => nt.FullyQualifiedName == symbolName);
+            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
 
-            var nsName = SymbolName.GetSymbolName(symbol.ContainingNamespace);
-            var dbNS = DbContext.Namespaces.FirstOrDefault(ns => ns.FullyQualifiedName == nsName);
-            if (dbNS == null)
+            if (retVal.AlreadyProcessed)
+                return retVal;
+
+            // output the symbol to the database
+            if( !ProcessSymbol( syntaxWalker, (ITypeSymbol) retVal.Symbol, retVal.SymbolName ) )
+                return retVal;
+
+            // store the processed symbol and all of its ancestor types if we haven't
+            // already processed it
+            if( !_typeSymbols.ContainsKey( retVal.SymbolName ) )
             {
-                Logger.Error<string, string>("Could not find Namespace entity '{0}' referenced by named type '{1}'",
-                    nsName,
-                    symbolName);
+                _typeSymbols.Add( retVal.SymbolName, (ITypeSymbol) retVal.Symbol );
 
-                return false;
+                AddAncestorTypes( symbol );
             }
 
-            var assemblyName = SymbolName.GetSymbolName(symbol.ContainingAssembly);
-            var dbAssembly = DbContext.Assemblies.FirstOrDefault(a => a.FullyQualifiedName == assemblyName);
-            if (dbAssembly == null)
-            {
-                Logger.Error<string, string>("Could not find Assembly entity '{0}' referenced by named type '{1}'",
-                    assemblyName,
-                    symbolName);
+            retVal.WasOutput = true;
 
-                return false;
+            return retVal;
+        }
+
+        private void AddAncestorTypes( ITypeSymbol symbol )
+        {
+            foreach( var interfaceSymbol in symbol.AllInterfaces )
+            {
+                var symbolName = SymbolName.GetSymbolName( interfaceSymbol );
+
+                if( _typeSymbols.ContainsKey( symbolName ) ) 
+                    continue;
+
+                _typeSymbols.Add(symbolName, interfaceSymbol  );
+
+                AddAncestorTypes(interfaceSymbol);
             }
 
+            var baseSymbol = symbol.BaseType;
+
+            while( baseSymbol != null )
+            {
+                var symbolInfo = new SymbolInfo( baseSymbol, SymbolName );
+
+                if( !_typeSymbols.ContainsKey( symbolInfo.SymbolName ) )
+                    _typeSymbols.Add( symbolInfo.SymbolName, (ITypeSymbol) symbolInfo.Symbol );
+
+                baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
+            }
+        }
+
+        private bool ProcessSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol, string symbolName )
+        {
             var nature = symbol switch
             {
                 INamedTypeSymbol ntSymbol => ntSymbol.TypeKind,
@@ -122,14 +163,35 @@ namespace J4JSoftware.Roslyn.Sinks
                 _ => TypeKind.Error
             };
 
-            if (nature == TypeKind.Error)
+            switch( nature )
             {
-                Logger.Error<string, string>("Unhandled or incorrect type error for named type '{1}'",
-                    assemblyName,
-                    symbolName);
+                case TypeKind.Array:
+                    symbol = ( (IArrayTypeSymbol) symbol ).ElementType;
+                    break;
 
-                return false;
+                case TypeKind.Error:
+                    Logger.Error<string>("Unhandled or incorrect type error for named type '{0}'",
+                        symbolName);
+
+                    return false;
+
+                case TypeKind.Dynamic:
+                case TypeKind.Pointer:
+                    Logger.Error<string, TypeKind>(
+                        "named type '{0}' is a {1} and not supported",
+                        symbolName, 
+                        nature);
+
+                    return false;
             }
+
+            if ( !_assemblySink.TryGetSunkValue( symbol.ContainingAssembly, out var dbAssembly ) )
+                return false;
+
+            if( !_nsSink.TryGetSunkValue( symbol.ContainingNamespace, out var dbNS ) )
+                return false;
+
+            var dbSymbol = DbContext.NamedTypes.FirstOrDefault(nt => nt.FullyQualifiedName == symbolName);
 
             bool isNew = dbSymbol == null;
 
@@ -140,11 +202,12 @@ namespace J4JSoftware.Roslyn.Sinks
 
             dbSymbol.Synchronized = true;
             dbSymbol.Name = symbol.Name;
-            dbSymbol.AssemblyID = dbAssembly.ID;
-            dbSymbol.NamespaceId = dbNS.ID;
+            dbSymbol.AssemblyID = dbAssembly!.ID;
+            dbSymbol.NamespaceId = dbNS!.ID;
             dbSymbol.Accessibility = symbol.DeclaredAccessibility;
             dbSymbol.DeclarationModifier = symbol.GetDeclarationModifier();
             dbSymbol.Nature = nature;
+            dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbol.ContainingAssembly );
 
             DbContext.SaveChanges();
 

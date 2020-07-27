@@ -8,16 +8,10 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class SymbolSink<TSymbol> : ISymbolSink<TSymbol>
+    public class SymbolSink<TSymbol, TSink> : ISymbolSink<TSymbol, TSink>
         where TSymbol : ISymbol
+        where TSink : class
     {
-        protected enum OutputResult
-        {
-            Succeeded,
-            Failed,
-            AlreadyProcessed
-        }
-
         protected SymbolSink(
             ISymbolName symbolName,
             IJ4JLogger logger
@@ -33,38 +27,42 @@ namespace J4JSoftware.Roslyn
         protected ISymbolName SymbolName { get; }
         protected List<string> ProcessedSymbolNames { get; } = new List<string>();
 
-        public bool OutputSymbol( TSymbol symbol ) =>
-            OutputSymbolInternal( symbol ).status switch
-            {
-                OutputResult.Failed => false,
-                _ => true
-            };
+        public bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) =>
+            OutputSymbolInternal( syntaxWalker, symbol ).WasOutput;
 
-        protected virtual (OutputResult status, string symbolName) OutputSymbolInternal( TSymbol symbol )
+        public virtual bool TryGetSunkValue( TSymbol symbol, out TSink? result )
         {
-            var symbolName = SymbolName.GetSymbolName( symbol );
+            result = null;
+            return false;
+        }
 
-            if( ProcessedSymbolNames.Exists( pn => pn.Equals( symbolName, StringComparison.Ordinal ) ) )
-                return ( OutputResult.AlreadyProcessed, symbolName );
+        protected virtual SymbolInfo OutputSymbolInternal( 
+            ISyntaxWalker syntaxWalker,
+            TSymbol symbol )
+        {
+            var retVal = new SymbolInfo( symbol, SymbolName );
 
-            return ( OutputResult.Succeeded, symbolName );
+            retVal.AlreadyProcessed =
+                ProcessedSymbolNames.Exists( pn => pn.Equals( retVal.SymbolName, StringComparison.Ordinal ) );
+
+            return retVal;
         }
 
         public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol) == symbolType;
 
-        public virtual bool InitializeSink()
+        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
             ProcessedSymbolNames.Clear();
 
             return true;
         }
 
-        public virtual bool FinalizeSink() => true;
+        public virtual bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
 
-        bool ISymbolSink.OutputSymbol( ISymbol symbol )
+        bool ISymbolSink.OutputSymbol( ISyntaxWalker syntaxWalker, ISymbol symbol )
         {
             if( symbol is TSymbol castSymbol )
-                return OutputSymbol( castSymbol );
+                return OutputSymbol( syntaxWalker, castSymbol );
 
             Logger.Error<string, Type>( "{0} is not a {1}", nameof(symbol), typeof(TSymbol) );
 

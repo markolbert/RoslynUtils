@@ -11,19 +11,16 @@ namespace J4JSoftware.Roslyn
     public class InScopeAssemblyProcessor : IInScopeAssemblyProcessor
     {
         private readonly RoslynDbContext _dbContext;
-        private readonly Func<IJ4JLogger> _loggerFactory;
         private readonly IJ4JLogger _logger;
 
         public InScopeAssemblyProcessor(
             RoslynDbContext dbContext,
-            Func<IJ4JLogger> loggerFactory
+            IJ4JLogger logger
         )
         {
             _dbContext = dbContext;
 
-            _loggerFactory = loggerFactory;
-
-            _logger = _loggerFactory();
+            _logger = logger;
             _logger.SetLoggedType( this.GetType() );
         }
 

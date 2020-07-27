@@ -20,12 +20,12 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
 
-        public abstract bool Process( TInput inputData );
+        public abstract bool Process( ISyntaxWalker syntaxWalker, TInput inputData );
 
-        bool IRoslynProcessor.Process( object inputData )
+        bool IRoslynProcessor.Process( ISyntaxWalker syntaxWalker, object inputData )
         {
             if( inputData is TInput castData )
-                return Process( castData );
+                return Process( syntaxWalker, castData );
 
             Logger.Error<Type, Type>( "Expected a {0} but got a {1}", typeof(TInput), inputData.GetType() );
 

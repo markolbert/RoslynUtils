@@ -37,7 +37,10 @@ namespace J4JSoftware.Roslyn
 
         public Type SymbolType { get; }
 
-        public ReadOnlyCollection<IAssemblySymbol> ModelAssemblies => _modelAssemblies.AsReadOnly();
+        public ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies => _modelAssemblies.AsReadOnly();
+
+        public bool InDocumentationScope(IAssemblySymbol toCheck)
+            => DocumentationAssemblies.Any(ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
 
         public virtual bool Process( List<CompiledProject> compResults )
         {
@@ -46,7 +49,7 @@ namespace J4JSoftware.Roslyn
 
             _visitedNodes.Clear();
 
-            if( !_symbolSink.InitializeSink() )
+            if( !_symbolSink.InitializeSink(this) )
                 return false;
 
             foreach( var compResult in compResults.SelectMany(cr=>cr) )
@@ -54,7 +57,7 @@ namespace J4JSoftware.Roslyn
                 TraverseInternal( compResult.RootSyntaxNode, compResult );
             }
 
-            return _symbolSink.FinalizeSink();
+            return _symbolSink.FinalizeSink(this);
         }
 
         protected void TraverseInternal( SyntaxNode node, CompiledFile context )
@@ -68,7 +71,7 @@ namespace J4JSoftware.Roslyn
             // we make no attempt to keep track of whether a symbol has already been processed.
             // that's the responsibility of the sink
             if( NodeReferencesSymbol( node, context, out var symbol ) )
-                _symbolSink?.OutputSymbol( symbol! );
+                _symbolSink?.OutputSymbol( this, symbol! );
 
             if( !GetChildNodesToVisit( node, out var children ) )
                 return;
@@ -81,21 +84,6 @@ namespace J4JSoftware.Roslyn
 
         protected abstract bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out TTarget? result );
         protected abstract bool GetChildNodesToVisit( SyntaxNode node, out List<SyntaxNode>? result );
-
-        protected bool AssemblyInScope( IAssemblySymbol toCheck ) 
-            => ModelAssemblies.Any( ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
-
-        bool IRoslynProcessor.Process( object inputData )
-        {
-            if( inputData is List<CompiledProject> castData )
-                return Process( castData );
-
-            Logger.Error<Type, Type>( "Input data is a {0} but must be a {1}", 
-                inputData.GetType(),
-                typeof(List<CompiledProject>) );
-
-            return false;
-        }
 
         public bool Equals( ISyntaxWalker? other )
         {
