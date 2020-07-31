@@ -10,18 +10,36 @@ namespace J4JSoftware.Roslyn
         {
             OriginalSymbol = symbol;
 
-            TypeKind = symbol switch
+            // these assignments get overridden in certain cases
+            Symbol = symbol;
+            SymbolName = symbolName.GetFullyQualifiedName( symbol );
+
+            switch ( symbol )
             {
-                INamedTypeSymbol ntSymbol => ntSymbol.TypeKind,
-                IArrayTypeSymbol arSymbol => TypeKind.Array,
-                IDynamicTypeSymbol dynSymbol => TypeKind.Dynamic,
-                IPointerTypeSymbol ptrSymbol => TypeKind.Pointer,
-                _ => TypeKind.Error
-            };
+                case INamedTypeSymbol ntSymbol:
+                    TypeKind = ntSymbol.TypeKind;
+                    break;
 
-            Symbol = TypeKind == TypeKind.Array ? ( (IArrayTypeSymbol) symbol ).ElementType : symbol;
+                case IArrayTypeSymbol arraySymbol:
+                    TypeKind = TypeKind.Array;
+                    Symbol = arraySymbol.ElementType;
+                    SymbolName = symbolName.GetFullyQualifiedName(Symbol);
+                    break;
 
-            SymbolName = symbolName.GetSymbolName( Symbol );
+                case IDynamicTypeSymbol dynSymbol:
+                    TypeKind = TypeKind.Dynamic;
+                    break;
+
+                case IPointerTypeSymbol ptrSymbol:
+                    TypeKind = TypeKind.Pointer;
+                    break;
+
+                case ITypeParameterSymbol typeParamSymbol:
+                    TypeKind = TypeKind.TypeParameter;
+                    Symbol = typeParamSymbol.DeclaringType ?? typeParamSymbol.DeclaringMethod!.ContainingType;
+                    Method = typeParamSymbol.DeclaringMethod;
+                    break;
+            }
         }
 
         public bool AlreadyProcessed { get; set; }
@@ -33,8 +51,9 @@ namespace J4JSoftware.Roslyn
         }
 
         public ISymbol OriginalSymbol { get; }
+        public IMethodSymbol? Method { get; }
         public ISymbol Symbol { get; }
         public string SymbolName { get; }
-        public TypeKind TypeKind { get; }
+        public TypeKind TypeKind { get; } = TypeKind.Error;
     }
 }

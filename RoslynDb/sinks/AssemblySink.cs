@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool TryGetSunkValue( IAssemblySymbol symbol, out Assembly? result )
         {
-            var symbolName = SymbolName.GetSymbolName( symbol );
+            var symbolName = SymbolName.GetFullyQualifiedName( symbol );
             
             var retVal = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
 

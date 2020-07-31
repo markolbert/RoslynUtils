@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeAssemblyProcessor))]
-    public class TypeNamespaceProcessor : BaseProcessor<INamespaceSymbol, List<ITypeSymbol>>, ITypeProcessor
+    public class TypeNamespaceProcessor : BaseProcessor<INamespaceSymbol, TypeProcessorContext>, ITypeProcessor
     {
         private readonly ISymbolSink<INamespaceSymbol, Namespace> _nsSink;
 
@@ -21,13 +21,13 @@ namespace J4JSoftware.Roslyn
             _nsSink = nsSink;
         }
 
-        public override bool Process( ISyntaxWalker syntaxWalker, List<ITypeSymbol> inputData )
+        public override bool Process( TypeProcessorContext context )
         {
             var allOkay = true;
 
-            foreach( var nsSymbol in inputData.Select( ts => ts.ContainingNamespace ) )
+            foreach( var nsSymbol in context.TypeSymbols.Select( ts => ts.ContainingNamespace ) )
             {
-                allOkay &= _nsSink.OutputSymbol( syntaxWalker, nsSymbol );
+                allOkay &= _nsSink.OutputSymbol( context.SyntaxWalker, nsSymbol );
             }
 
             return allOkay;

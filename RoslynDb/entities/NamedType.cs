@@ -35,6 +35,10 @@ namespace J4JSoftware.Roslyn
         // the list of NamedType entities derived from this NamedType entity
         public List<NamedType> ChildTypes { get; set; }
 
+        public List<TypeGenericParameter> TypeGenericParameters { get; set; }
+
+        public List<GenericTypeConstraint> GenericConstraints { get; set; }
+
         // the various components/children of this NamedType entity
         //public List<Method> Methods { get; set; } = null!;
         //public List<Property> Properties { get; set; } = null!;
@@ -44,8 +48,6 @@ namespace J4JSoftware.Roslyn
         //public List<Property> PropertyTypes { get; set; } = null!;
         //public List<Field> FieldTypes { get; set; } = null!;
         //public List<Event> EventTypes { get; set; } = null!;
-        //public List<GenericTypeParameter> GenericTypeParameters { get; set; } = null!;
-        //public List<NamedGenericTypeParameter> GenericConstrainingTypes { get; set; } = null!;
         //public List<Parameter> MethodParameters { get; set; } = null!;
     }
 

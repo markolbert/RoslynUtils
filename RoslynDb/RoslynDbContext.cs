@@ -24,9 +24,11 @@ namespace J4JSoftware.Roslyn
         public DbSet<InScopeAssemblyInfo> InScopeInfo { get; set; }
         public DbSet<Namespace> Namespaces { get; set; }
         public DbSet<NamedType> NamedTypes { get; set; }
+        public DbSet<GenericTypeConstraint> GenericConstraints { get; set; }
 
         // linking (many-to-many) entities
         public DbSet<AssemblyNamespace> AssemblyNamespaces { get; set; }
+        public DbSet<TypeGenericParameter> TypeGenericParameters { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

@@ -7,20 +7,20 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace J4JSoftware.Roslyn.walkers
 {
     [ RoslynProcessor( typeof(NamespaceWalker) ) ]
-    public class TypeWalker : SyntaxWalker<ITypeSymbol>
+    public class NamedTypeWalker : SyntaxWalker<INamedTypeSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
-        static TypeWalker()
+        static NamedTypeWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
-            _ignoredNodeKinds.Add( SyntaxKind.TypeParameter );
-            _ignoredNodeKinds.Add( SyntaxKind.TypeParameterConstraintClause );
-            _ignoredNodeKinds.Add( SyntaxKind.ParameterList );
+            //_ignoredNodeKinds.Add( SyntaxKind.TypeParameter );
+            //_ignoredNodeKinds.Add( SyntaxKind.TypeParameterConstraintClause );
+            //_ignoredNodeKinds.Add( SyntaxKind.ParameterList );
         }
 
-        public TypeWalker(
+        public NamedTypeWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             ISymbolName symbolName,
             IDefaultSymbolSink defaultSymbolSink,
@@ -32,7 +32,7 @@ namespace J4JSoftware.Roslyn.walkers
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, 
             CompiledFile context,
-            out ITypeSymbol? result )
+            out INamedTypeSymbol? result )
         {
             result = null;
 
@@ -40,9 +40,9 @@ namespace J4JSoftware.Roslyn.walkers
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            if( !context.GetSymbol<ITypeSymbol>( node, out var typeSymbol ) )
+            if( !context.GetSymbol<INamedTypeSymbol>( node, out var typeSymbol ) )
             {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no ISymbol found for node of kind {1}",
+                Logger.Verbose<string, SyntaxKind>( "{0}: no INamedTypeSymbol found for node of kind {1}",
                     context.Container.AssemblyName,
                     node.Kind() );
 

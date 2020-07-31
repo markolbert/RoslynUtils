@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.ComTypes;
@@ -11,14 +12,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeSink : RoslynDbSink<ITypeSymbol, NamedType>
+    public class NamedTypeSink : RoslynDbSink<INamedTypeSymbol, NamedType>
     {
         private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
         private readonly ISymbolSink<INamespaceSymbol, Namespace> _nsSink;
         private readonly List<ITypeProcessor> _processors;
-        private readonly Dictionary<string, ITypeSymbol> _typeSymbols = new Dictionary<string, ITypeSymbol>();
+        private readonly Dictionary<string, INamedTypeSymbol> _typeSymbols = new Dictionary<string, INamedTypeSymbol>();
 
-        public TypeSink(
+        public NamedTypeSink(
             RoslynDbContext dbContext,
             ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
             ISymbolSink<INamespaceSymbol, Namespace> nsSink,
@@ -66,12 +67,14 @@ namespace J4JSoftware.Roslyn.Sinks
             // but to do that we first have to add all the relevant assemblies and namespaces
             var allOkay = true;
 
-            var typeList = _typeSymbols.Select( ts => ts.Value )
+            var typeList = _typeSymbols.Select(ts => ts.Value)
                 .ToList();
+
+            var context = new TypeProcessorContext( syntaxWalker, typeList );
 
             foreach( var processor in _processors )
             {
-                allOkay &= processor.Process( syntaxWalker, typeList );
+                allOkay &= processor.Process( context );
             }
 
             // now we can add the parent types
@@ -83,9 +86,9 @@ namespace J4JSoftware.Roslyn.Sinks
             return allOkay;
         }
 
-        public override bool TryGetSunkValue(ITypeSymbol symbol, out NamedType? result)
+        public override bool TryGetSunkValue(INamedTypeSymbol symbol, out NamedType? result)
         {
-            var symbolName = SymbolName.GetSymbolName(symbol);
+            var symbolName = SymbolName.GetFullyQualifiedName(symbol);
 
             var retVal = DbContext.NamedTypes.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
 
@@ -100,7 +103,7 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
+        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, INamedTypeSymbol symbol )
         {
             var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
 
@@ -108,14 +111,14 @@ namespace J4JSoftware.Roslyn.Sinks
                 return retVal;
 
             // output the symbol to the database
-            if( !ProcessSymbol( syntaxWalker, (ITypeSymbol) retVal.Symbol, retVal.SymbolName ) )
+            if( !ProcessSymbol( syntaxWalker, retVal ) )
                 return retVal;
 
             // store the processed symbol and all of its ancestor types if we haven't
             // already processed it
             if( !_typeSymbols.ContainsKey( retVal.SymbolName ) )
             {
-                _typeSymbols.Add( retVal.SymbolName, (ITypeSymbol) retVal.Symbol );
+                _typeSymbols.Add( retVal.SymbolName, (INamedTypeSymbol) retVal.Symbol );
 
                 AddAncestorTypes( symbol );
             }
@@ -125,11 +128,11 @@ namespace J4JSoftware.Roslyn.Sinks
             return retVal;
         }
 
-        private void AddAncestorTypes( ITypeSymbol symbol )
+        private void AddAncestorTypes( INamedTypeSymbol symbol )
         {
             foreach( var interfaceSymbol in symbol.AllInterfaces )
             {
-                var symbolName = SymbolName.GetSymbolName( interfaceSymbol );
+                var symbolName = SymbolName.GetFullyQualifiedName( interfaceSymbol );
 
                 if( _typeSymbols.ContainsKey( symbolName ) ) 
                     continue;
@@ -146,32 +149,19 @@ namespace J4JSoftware.Roslyn.Sinks
                 var symbolInfo = new SymbolInfo( baseSymbol, SymbolName );
 
                 if( !_typeSymbols.ContainsKey( symbolInfo.SymbolName ) )
-                    _typeSymbols.Add( symbolInfo.SymbolName, (ITypeSymbol) symbolInfo.Symbol );
+                    _typeSymbols.Add( symbolInfo.SymbolName, (INamedTypeSymbol) symbolInfo.Symbol );
 
                 baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
             }
         }
 
-        private bool ProcessSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol, string symbolName )
+        private bool ProcessSymbol( ISyntaxWalker syntaxWalker, SymbolInfo symbolInfo )
         {
-            var nature = symbol switch
+            switch( symbolInfo.TypeKind )
             {
-                INamedTypeSymbol ntSymbol => ntSymbol.TypeKind,
-                IArrayTypeSymbol arSymbol => TypeKind.Array,
-                IDynamicTypeSymbol dynSymbol => TypeKind.Dynamic,
-                IPointerTypeSymbol ptrSymbol => TypeKind.Pointer,
-                _ => TypeKind.Error
-            };
-
-            switch( nature )
-            {
-                case TypeKind.Array:
-                    symbol = ( (IArrayTypeSymbol) symbol ).ElementType;
-                    break;
-
                 case TypeKind.Error:
                     Logger.Error<string>("Unhandled or incorrect type error for named type '{0}'",
-                        symbolName);
+                        symbolInfo.SymbolName);
 
                     return false;
 
@@ -179,35 +169,35 @@ namespace J4JSoftware.Roslyn.Sinks
                 case TypeKind.Pointer:
                     Logger.Error<string, TypeKind>(
                         "named type '{0}' is a {1} and not supported",
-                        symbolName, 
-                        nature);
+                        symbolInfo.SymbolName, 
+                        symbolInfo.TypeKind);
 
                     return false;
             }
 
-            if ( !_assemblySink.TryGetSunkValue( symbol.ContainingAssembly, out var dbAssembly ) )
+            if ( !_assemblySink.TryGetSunkValue( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
                 return false;
 
-            if( !_nsSink.TryGetSunkValue( symbol.ContainingNamespace, out var dbNS ) )
+            if( !_nsSink.TryGetSunkValue( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
                 return false;
 
-            var dbSymbol = DbContext.NamedTypes.FirstOrDefault(nt => nt.FullyQualifiedName == symbolName);
+            var dbSymbol = DbContext.NamedTypes.FirstOrDefault( nt => nt.FullyQualifiedName == symbolInfo.SymbolName );
 
             bool isNew = dbSymbol == null;
 
-            dbSymbol ??= new NamedType() { FullyQualifiedName = symbolName };
+            dbSymbol ??= new NamedType() { FullyQualifiedName = symbolInfo.SymbolName };
 
             if (isNew)
                 DbContext.NamedTypes.Add(dbSymbol);
 
             dbSymbol.Synchronized = true;
-            dbSymbol.Name = symbol.Name;
+            dbSymbol.Name = SymbolName.GetName(symbolInfo.OriginalSymbol);
             dbSymbol.AssemblyID = dbAssembly!.ID;
             dbSymbol.NamespaceId = dbNS!.ID;
-            dbSymbol.Accessibility = symbol.DeclaredAccessibility;
-            dbSymbol.DeclarationModifier = symbol.GetDeclarationModifier();
-            dbSymbol.Nature = nature;
-            dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbol.ContainingAssembly );
+            dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
+            dbSymbol.DeclarationModifier = symbolInfo.OriginalSymbol.GetDeclarationModifier();
+            dbSymbol.Nature = symbolInfo.TypeKind;
+            dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbolInfo.Symbol.ContainingAssembly );
 
             DbContext.SaveChanges();
 

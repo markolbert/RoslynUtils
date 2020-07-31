@@ -4,11 +4,11 @@ namespace J4JSoftware.Roslyn
 {
     public interface IRoslynProcessor
     {
-        bool Process( ISyntaxWalker syntaxWalker, object inputData );
+        bool Process( object inputData );
     }
 
     public interface IRoslynProcessor<in TInput> : IRoslynProcessor
     {
-        bool Process( ISyntaxWalker syntaxWalker, TInput inputData );
+        bool Process( TInput inputData );
     }
 }

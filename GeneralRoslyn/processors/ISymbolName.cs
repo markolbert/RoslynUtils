@@ -4,6 +4,7 @@ namespace J4JSoftware.Roslyn
 {
     public interface ISymbolName
     {
-        string GetSymbolName( ISymbol symbol );
+        string GetFullyQualifiedName( ISymbol symbol );
+        string GetName( ISymbol symbol );
     }
 }

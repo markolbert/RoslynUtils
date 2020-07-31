@@ -11,14 +11,14 @@ namespace J4JSoftware.Roslyn
                 throw new NullReferenceException( nameof(predecessorType) );
 
             PredecessorType = predecessorType;
-
-            //if( typeof(ISyntaxWalker).IsAssignableFrom( predecessorType ) )
-            //    PredecessorType = predecessorType;
-            //else
-            //    throw new InvalidCastException(
-            //        $"Type {predecessorType.Name} is not assignable to {nameof(ISyntaxWalker)}" );
         }
 
         public Type PredecessorType { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    public class RoslynSinkAttribute : Attribute
+    {
+
     }
 }

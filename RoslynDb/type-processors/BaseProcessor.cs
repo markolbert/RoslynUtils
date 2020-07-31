@@ -21,12 +21,12 @@ namespace J4JSoftware.Roslyn
 
         public Type SupportedType => typeof(TEntity);
 
-        public abstract bool Process( ISyntaxWalker syntaxWalker, TSource inputData );
+        public abstract bool Process( TSource inputData );
 
-        bool IRoslynProcessor.Process( ISyntaxWalker syntaxWalker, object inputData )
+        bool IRoslynProcessor.Process( object inputData )
         {
             if( inputData is TSource castData )
-                return Process( syntaxWalker, castData );
+                return Process( castData );
 
             Logger.Error<Type, Type>( "Needed a {0} but was given a {1}", typeof( TSource ), inputData.GetType() );
 
