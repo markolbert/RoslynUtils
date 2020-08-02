@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration( typeof( NamedTypeConfigurator ) )]
-    public class NamedType
+    [EntityConfiguration( typeof( TypeDefinitionConfigurator ) )]
+    public class TypeDefinition
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }
@@ -19,61 +19,33 @@ namespace J4JSoftware.Roslyn
         public DeclarationModifier DeclarationModifier { get; set; }
         public bool InDocumentationScope { get; set; }
 
-        // the namespace to which this NamedType entity belongs
+        // the namespace to which this TypeDefinition entity belongs
         public int NamespaceId { get; set; }
         public Namespace Namespace { get; set; }
 
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
 
-        // the interface NamedType entities that this NamedType entity implements
-        //public List<ImplementedInterface> ImplementedInterfaces { get; set; } = null!;
+        // list of generic parameters used by this type definition, if any
+        public List<TypeParameter> TypeParameters { get; set; }
 
-        public int? ParentTypeID { get; set; }
-        public NamedType? ParentNamedType { get; set; }
-
-        // the list of NamedType entities derived from this NamedType entity
-        public List<NamedType> ChildTypes { get; set; }
-
-        public List<TypeGenericParameter> TypeGenericParameters { get; set; }
-
-        public List<GenericTypeConstraint> GenericConstraints { get; set; }
-
-        // the various components/children of this NamedType entity
-        //public List<Method> Methods { get; set; } = null!;
-        //public List<Property> Properties { get; set; } = null!;
-        //public List<Event> Events { get; set; } = null!;
-        //public List<Field> Fields { get; set; } = null!;
-
-        //public List<Property> PropertyTypes { get; set; } = null!;
-        //public List<Field> FieldTypes { get; set; } = null!;
-        //public List<Event> EventTypes { get; set; } = null!;
-        //public List<Parameter> MethodParameters { get; set; } = null!;
+        // list of generic type constraints referencing this type definition, if any
+        public List<TypeConstraint> TypeConstraints { get; set; }
     }
 
-    internal class NamedTypeConfigurator : EntityConfigurator<NamedType>
+    internal class TypeDefinitionConfigurator : EntityConfigurator<TypeDefinition>
     {
-        protected override void Configure( EntityTypeBuilder<NamedType> builder )
+        protected override void Configure( EntityTypeBuilder<TypeDefinition> builder )
         {
             builder.HasOne( x => x.Namespace )
                 .WithMany( x => x.Types )
                 .HasForeignKey( x => x.NamespaceId )
                 .HasPrincipalKey( x => x.ID );
 
-            builder.HasOne( x => x.ParentNamedType )
-                .WithMany( x => x.ChildTypes )
-                .HasForeignKey( x => x.ParentTypeID )
-                .HasPrincipalKey( x => x.ID );
-
             builder.HasOne(x => x.Assembly)
                 .WithMany(x => x.Types)
                 .HasForeignKey(x => x.AssemblyID)
                 .HasPrincipalKey(x => x.ID);
-
-            //builder.HasMany( x => x.ImplementedInterfaces )
-            //    .WithOne( x => x.DeclaringType )
-            //    .HasForeignKey( x => x.DeclaringTypeID )
-            //    .HasPrincipalKey( x => x.ID );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

@@ -42,5 +42,19 @@ namespace J4JSoftware.Roslyn
 
             return retVal;
         }
+
+        public static GenericConstraint GetGenericConstraints(this ITypeParameterSymbol typeParamSymbol)
+        {
+            var retVal = GenericConstraint.None;
+            if (typeParamSymbol == null) return retVal;
+
+            if (typeParamSymbol.HasConstructorConstraint) retVal |= GenericConstraint.Constructor;
+            if (typeParamSymbol.HasNotNullConstraint) retVal |= GenericConstraint.NotNull;
+            if (typeParamSymbol.HasReferenceTypeConstraint) retVal |= GenericConstraint.Reference;
+            if (typeParamSymbol.HasUnmanagedTypeConstraint) retVal |= GenericConstraint.Unmanaged;
+            if (typeParamSymbol.HasValueTypeConstraint) retVal |= GenericConstraint.Value;
+
+            return retVal;
+        }
     }
 }

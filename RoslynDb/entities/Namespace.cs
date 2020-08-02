@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
         public string FullyQualifiedName { get; set; } = null!;
 
         public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
-        public List<NamedType>? Types { get; set; }
+        public List<TypeDefinition>? Types { get; set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>

@@ -7,11 +7,11 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace J4JSoftware.Roslyn.walkers
 {
     [ RoslynProcessor( typeof(NamespaceWalker) ) ]
-    public class NamedTypeWalker : SyntaxWalker<INamedTypeSymbol>
+    public class TypeDefinitionWalker : SyntaxWalker<INamedTypeSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
-        static NamedTypeWalker()
+        static TypeDefinitionWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn.walkers
             //_ignoredNodeKinds.Add( SyntaxKind.ParameterList );
         }
 
-        public NamedTypeWalker(
+        public TypeDefinitionWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             ISymbolName symbolName,
             IDefaultSymbolSink defaultSymbolSink,

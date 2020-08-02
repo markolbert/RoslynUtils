@@ -12,14 +12,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class NamedTypeSink : RoslynDbSink<INamedTypeSymbol, NamedType>
+    public class TypeDefinitionSink : RoslynDbSink<INamedTypeSymbol, TypeDefinition>
     {
         private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
         private readonly ISymbolSink<INamespaceSymbol, Namespace> _nsSink;
         private readonly List<ITypeProcessor> _processors;
         private readonly Dictionary<string, INamedTypeSymbol> _typeSymbols = new Dictionary<string, INamedTypeSymbol>();
 
-        public NamedTypeSink(
+        public TypeDefinitionSink(
             RoslynDbContext dbContext,
             ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
             ISymbolSink<INamespaceSymbol, Namespace> nsSink,
@@ -48,10 +48,17 @@ namespace J4JSoftware.Roslyn.Sinks
 
             // mark all the existing assemblies as unsynchronized since we're starting
             // the synchronization process
-            foreach( var ns in DbContext.NamedTypes )
-            {
-                ns.Synchronized = false;
-            }
+            DbContext.TypeDefinitions.ForEachAsync( td => td.Synchronized = false );
+            DbContext.TypeParameters.ForEachAsync( tp => tp.Synchronized = false );
+            //foreach( var td in DbContext.TypeDefinitions )
+            //{
+            //    td.Synchronized = false;
+            //}
+
+            //foreach( var tp in DbContext.TypeParameters )
+            //{
+            //    tp.Synchronized = false;
+            //}
 
             DbContext.SaveChanges();
 
@@ -77,20 +84,105 @@ namespace J4JSoftware.Roslyn.Sinks
                 allOkay &= processor.Process( context );
             }
 
-            // now we can add the parent types
+            // add the parent types
             foreach( var typeSymbol in typeList )
             {
                 allOkay &= OutputSymbol( syntaxWalker, typeSymbol );
             }
 
+            foreach( var generic in typeList.Where( td => td.IsGenericType ) )
+            {
+                allOkay &= ProcessGeneric( generic );
+            }
+
+            DbContext.SaveChanges();
+
             return allOkay;
         }
 
-        public override bool TryGetSunkValue(INamedTypeSymbol symbol, out NamedType? result)
+        private bool ProcessGeneric( INamedTypeSymbol generic )
+        {
+            var typeName = SymbolName.GetFullyQualifiedName( generic );
+
+            var typeDefDb = DbContext.TypeDefinitions.FirstOrDefault( td =>
+                td.FullyQualifiedName == typeName );
+
+            if( typeDefDb == null )
+            {
+                Logger.Error<string>( "Couldn't find type '{0}' in database", typeName );
+                return false;
+            }
+
+            var allOkay = true;
+
+            foreach( var tp in generic.TypeParameters )
+            {
+                var tpDb = ProcessTypeParameter( typeDefDb, tp );
+
+                foreach( var typeConstraint in tp.ConstraintTypes )
+                {
+                    allOkay &= ProcessTypeConstraint( tpDb, typeConstraint );
+                }
+            }
+
+            return allOkay;
+        }
+
+        private TypeParameter ProcessTypeParameter( TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol )
+        {
+            var retVal = DbContext.TypeParameters
+                .Include(x => x.TypeConstraints)
+                .FirstOrDefault(x => x.ParameterIndex == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID);
+
+            if (retVal == null)
+            {
+                retVal = new TypeParameter
+                {
+                    TypeDefinitionID = typeDefDb.ID,
+                    ParameterIndex = tpSymbol.Ordinal
+                };
+
+                DbContext.TypeParameters.Add(retVal);
+            }
+
+            retVal.Synchronized = true;
+            retVal.ParameterName = tpSymbol.Name;
+            retVal.Constraints = tpSymbol.GetGenericConstraints();
+
+            return retVal;
+        }
+
+        private bool ProcessTypeConstraint(TypeParameter tpDb, ITypeSymbol typeConstraint )
+        {
+            var constraintName = SymbolName.GetFullyQualifiedName(typeConstraint);
+
+            var constraintDb = DbContext.TypeDefinitions.FirstOrDefault(td =>
+                td.FullyQualifiedName == constraintName);
+
+            if (constraintDb == null)
+            {
+                Logger.Error<string>("Couldn't find generic constraining type '{0}'", constraintName);
+                return false;
+            }
+            else
+            {
+                if (tpDb.TypeConstraints == null 
+                    || tpDb.TypeConstraints.All(x => x.ConstrainingTypeID != constraintDb.ID))
+                    DbContext.TypeConstraints.Add(new TypeConstraint
+                    {
+                        ConstrainingTypeID = constraintDb.ID,
+                        TypeParameter = tpDb
+                    });
+            }
+
+            return true;
+        }
+
+        public override bool TryGetSunkValue(INamedTypeSymbol symbol, out TypeDefinition? result)
         {
             var symbolName = SymbolName.GetFullyQualifiedName(symbol);
 
-            var retVal = DbContext.NamedTypes.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
+            var retVal = DbContext.TypeDefinitions.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
 
             if (retVal == null)
             {
@@ -181,14 +273,14 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !_nsSink.TryGetSunkValue( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
                 return false;
 
-            var dbSymbol = DbContext.NamedTypes.FirstOrDefault( nt => nt.FullyQualifiedName == symbolInfo.SymbolName );
+            var dbSymbol = DbContext.TypeDefinitions.FirstOrDefault( nt => nt.FullyQualifiedName == symbolInfo.SymbolName );
 
             bool isNew = dbSymbol == null;
 
-            dbSymbol ??= new NamedType() { FullyQualifiedName = symbolInfo.SymbolName };
+            dbSymbol ??= new TypeDefinition() { FullyQualifiedName = symbolInfo.SymbolName };
 
             if (isNew)
-                DbContext.NamedTypes.Add(dbSymbol);
+                DbContext.TypeDefinitions.Add(dbSymbol);
 
             dbSymbol.Synchronized = true;
             dbSymbol.Name = SymbolName.GetName(symbolInfo.OriginalSymbol);

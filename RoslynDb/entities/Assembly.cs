@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
         public InScopeAssemblyInfo? InScopeInfo { get; set; }
 
         public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
-        public List<NamedType>? Types { get; set; }
+        public List<TypeDefinition>? Types { get; set; }
     }
 
     internal class AssemblyConfigurator : EntityConfigurator<Assembly>
