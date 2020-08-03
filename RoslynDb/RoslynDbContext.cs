@@ -29,6 +29,8 @@ namespace J4JSoftware.Roslyn
         public DbSet<AssemblyNamespace> AssemblyNamespaces { get; set; }
         public DbSet<TypeParameter> TypeParameters { get; set; }
         public DbSet<TypeConstraint> TypeConstraints { get; set; }
+        public DbSet<TypeImplementation> TypeImplementations { get; set; }
+        public DbSet<ClosedTypeParameter> GenericClosures { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

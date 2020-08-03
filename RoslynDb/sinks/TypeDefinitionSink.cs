@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
@@ -50,15 +51,8 @@ namespace J4JSoftware.Roslyn.Sinks
             // the synchronization process
             DbContext.TypeDefinitions.ForEachAsync( td => td.Synchronized = false );
             DbContext.TypeParameters.ForEachAsync( tp => tp.Synchronized = false );
-            //foreach( var td in DbContext.TypeDefinitions )
-            //{
-            //    td.Synchronized = false;
-            //}
-
-            //foreach( var tp in DbContext.TypeParameters )
-            //{
-            //    tp.Synchronized = false;
-            //}
+            DbContext.TypeImplementations.ForEachAsync(x => x.Synchronized = false);
+            DbContext.GenericClosures.ForEachAsync(x => x.Synchronized = false);
 
             DbContext.SaveChanges();
 
@@ -90,9 +84,16 @@ namespace J4JSoftware.Roslyn.Sinks
                 allOkay &= OutputSymbol( syntaxWalker, typeSymbol );
             }
 
+            // update information related to generic types
             foreach( var generic in typeList.Where( td => td.IsGenericType ) )
             {
                 allOkay &= ProcessGeneric( generic );
+            }
+
+            // include type implementation details
+            foreach( var typeSymbol in typeList )
+            {
+                allOkay &= ProcessImplementations( typeSymbol );
             }
 
             DbContext.SaveChanges();
@@ -100,97 +101,19 @@ namespace J4JSoftware.Roslyn.Sinks
             return allOkay;
         }
 
-        private bool ProcessGeneric( INamedTypeSymbol generic )
-        {
-            var typeName = SymbolName.GetFullyQualifiedName( generic );
-
-            var typeDefDb = DbContext.TypeDefinitions.FirstOrDefault( td =>
-                td.FullyQualifiedName == typeName );
-
-            if( typeDefDb == null )
-            {
-                Logger.Error<string>( "Couldn't find type '{0}' in database", typeName );
-                return false;
-            }
-
-            var allOkay = true;
-
-            foreach( var tp in generic.TypeParameters )
-            {
-                var tpDb = ProcessTypeParameter( typeDefDb, tp );
-
-                foreach( var typeConstraint in tp.ConstraintTypes )
-                {
-                    allOkay &= ProcessTypeConstraint( tpDb, typeConstraint );
-                }
-            }
-
-            return allOkay;
-        }
-
-        private TypeParameter ProcessTypeParameter( TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol )
-        {
-            var retVal = DbContext.TypeParameters
-                .Include(x => x.TypeConstraints)
-                .FirstOrDefault(x => x.ParameterIndex == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID);
-
-            if (retVal == null)
-            {
-                retVal = new TypeParameter
-                {
-                    TypeDefinitionID = typeDefDb.ID,
-                    ParameterIndex = tpSymbol.Ordinal
-                };
-
-                DbContext.TypeParameters.Add(retVal);
-            }
-
-            retVal.Synchronized = true;
-            retVal.ParameterName = tpSymbol.Name;
-            retVal.Constraints = tpSymbol.GetGenericConstraints();
-
-            return retVal;
-        }
-
-        private bool ProcessTypeConstraint(TypeParameter tpDb, ITypeSymbol typeConstraint )
-        {
-            var constraintName = SymbolName.GetFullyQualifiedName(typeConstraint);
-
-            var constraintDb = DbContext.TypeDefinitions.FirstOrDefault(td =>
-                td.FullyQualifiedName == constraintName);
-
-            if (constraintDb == null)
-            {
-                Logger.Error<string>("Couldn't find generic constraining type '{0}'", constraintName);
-                return false;
-            }
-            else
-            {
-                if (tpDb.TypeConstraints == null 
-                    || tpDb.TypeConstraints.All(x => x.ConstrainingTypeID != constraintDb.ID))
-                    DbContext.TypeConstraints.Add(new TypeConstraint
-                    {
-                        ConstrainingTypeID = constraintDb.ID,
-                        TypeParameter = tpDb
-                    });
-            }
-
-            return true;
-        }
-
         public override bool TryGetSunkValue(INamedTypeSymbol symbol, out TypeDefinition? result)
         {
+            result = null;
             var symbolName = SymbolName.GetFullyQualifiedName(symbol);
 
-            var retVal = DbContext.TypeDefinitions.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
+            result = DbContext.TypeDefinitions
+                .FirstOrDefault(a => a.FullyQualifiedName == symbolName);
 
-            if (retVal == null)
+            if (result == null)
             {
-                result = null;
+                Logger.Error<string>("Couldn't find TypeDefinition entity for {0}", symbolName);
                 return false;
             }
-
-            result = retVal;
 
             return true;
         }
@@ -222,29 +145,46 @@ namespace J4JSoftware.Roslyn.Sinks
 
         private void AddAncestorTypes( INamedTypeSymbol symbol )
         {
-            foreach( var interfaceSymbol in symbol.AllInterfaces )
-            {
-                var symbolName = SymbolName.GetFullyQualifiedName( interfaceSymbol );
+            StoreNamedTypeSymbol( symbol, out _ );
 
-                if( _typeSymbols.ContainsKey( symbolName ) ) 
+            foreach ( var interfaceSymbol in symbol.AllInterfaces )
+            {
+                if( !StoreNamedTypeSymbol(interfaceSymbol, out _))
                     continue;
 
-                _typeSymbols.Add(symbolName, interfaceSymbol  );
-
+                // add ancestors related to the interface symbol
                 AddAncestorTypes(interfaceSymbol);
+
+                // add ancestors related to closed generic types, if any, in
+                // the interface
+                foreach( var closingSymbol in interfaceSymbol.TypeArguments
+                    .Where( ta => ta is INamedTypeSymbol )
+                    .Cast<INamedTypeSymbol>() )
+                {
+                    AddAncestorTypes( closingSymbol );
+                }
             }
 
             var baseSymbol = symbol.BaseType;
 
             while( baseSymbol != null )
             {
-                var symbolInfo = new SymbolInfo( baseSymbol, SymbolName );
-
-                if( !_typeSymbols.ContainsKey( symbolInfo.SymbolName ) )
-                    _typeSymbols.Add( symbolInfo.SymbolName, (INamedTypeSymbol) symbolInfo.Symbol );
+                StoreNamedTypeSymbol( baseSymbol, out var symbolInfo );
 
                 baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
             }
+        }
+
+        private bool StoreNamedTypeSymbol(INamedTypeSymbol symbol, out SymbolInfo result)
+        {
+            result = new SymbolInfo(symbol, SymbolName);
+
+            if (_typeSymbols.ContainsKey(result.SymbolName))
+                return false;
+
+            _typeSymbols.Add(result.SymbolName, (INamedTypeSymbol)result.Symbol);
+
+            return true;
         }
 
         private bool ProcessSymbol( ISyntaxWalker syntaxWalker, SymbolInfo symbolInfo )
@@ -295,5 +235,150 @@ namespace J4JSoftware.Roslyn.Sinks
 
             return true;
         }
+
+        private bool ProcessGeneric( INamedTypeSymbol generic )
+        {
+            if( !TryGetSunkValue( generic, out var typeDefDb ) )
+                return false;
+
+            var allOkay = true;
+
+            foreach( var tp in generic.TypeParameters )
+            {
+                var tpDb = ProcessTypeParameter( typeDefDb!, tp );
+
+                foreach( var typeConstraint in tp.ConstraintTypes.Cast<INamedTypeSymbol>() )
+                {
+                    allOkay &= ProcessTypeConstraint( tpDb, typeConstraint );
+                }
+            }
+
+            return allOkay;
+        }
+
+        private TypeParameter ProcessTypeParameter(TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol)
+        {
+            var retVal = DbContext.TypeParameters
+                .FirstOrDefault(x => x.ParameterIndex == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID);
+
+            if (retVal == null)
+            {
+                retVal = new TypeParameter
+                {
+                    TypeDefinitionID = typeDefDb.ID,
+                    ParameterIndex = tpSymbol.Ordinal
+                };
+
+                DbContext.TypeParameters.Add(retVal);
+            }
+
+            retVal.Synchronized = true;
+            retVal.ParameterName = tpSymbol.Name;
+            retVal.Constraints = tpSymbol.GetGenericConstraints();
+
+            return retVal;
+        }
+
+        private bool ProcessTypeConstraint( TypeParameter tpDb, INamedTypeSymbol constraintSymbol )
+        {
+            if( !TryGetSunkValue( constraintSymbol, out var constraintDb ) )
+                return false;
+
+            if( DbContext.TypeConstraints
+                .Any( tc => tc.ConstrainingTypeID == constraintDb!.ID && tc.TypeParameterID == tpDb.ID ) )
+                return true;
+
+            DbContext.TypeConstraints.Add( new TypeConstraint
+            {
+                ConstrainingType = constraintDb!,
+                TypeParameter = tpDb
+            } );
+
+            return true;
+        }
+
+        private bool ProcessImplementations(INamedTypeSymbol typeSymbol)
+        {
+            if (!TryGetSunkValue(typeSymbol, out var typeDb))
+                return false;
+
+            // process base type if it's defined
+            if (typeSymbol.BaseType != null && !ProcessImplementation(typeDb!, typeSymbol.BaseType))
+                return false;
+
+            var allOkay = true;
+
+            foreach (var interfaceSymbol in typeSymbol.Interfaces)
+            {
+                allOkay &= ProcessImplementation(typeDb!, interfaceSymbol);
+            }
+
+            return allOkay;
+        }
+
+        private bool ProcessImplementation(TypeDefinition typeDb, INamedTypeSymbol implSymbol)
+        {
+            if (!TryGetSunkValue(implSymbol, out var implTypeDb))
+                return false;
+
+            var implDb = DbContext.TypeImplementations
+                .FirstOrDefault(ti => ti.TypeDefinitionID == typeDb!.ID && ti.ImplementedTypeID == implTypeDb!.ID);
+
+            if (implDb == null)
+            {
+                implDb = new TypeImplementation
+                {
+                    ImplementedTypeID = implTypeDb!.ID,
+                    TypeDefinitionID = typeDb!.ID
+                };
+
+                DbContext.TypeImplementations.Add(implDb);
+            }
+
+            implDb.Synchronized = true;
+
+            return ProcessTypeParameterClosures(implDb, implSymbol);
+        }
+
+        private bool ProcessTypeParameterClosures(TypeImplementation implDb, INamedTypeSymbol implSymbol)
+        {
+            var allOkay = true;
+
+            for (var idx = 0; idx < implSymbol.TypeArguments.Length; idx++)
+            {
+                if (!(implSymbol.TypeArguments[idx] is INamedTypeSymbol ntSymbol))
+                    continue;
+
+                if (!TryGetSunkValue(ntSymbol, out var closingTypeDb))
+                {
+                    Logger.Error<string>("Couldn't find TypeDefinition entity for closing type '{0}'", ntSymbol.Name);
+                    allOkay = false;
+
+                    continue;
+                }
+
+                var closureDb = implDb.ID != 0
+                    ? DbContext.GenericClosures
+                        .FirstOrDefault(gc => gc.ParameterIndex == idx && gc.TypeImplementationID == implDb.ID)
+                    : null;
+
+                if (closureDb == null)
+                {
+                    closureDb = new ClosedTypeParameter
+                    {
+                        ParameterIndex = idx,
+                        TypeImplementation = implDb
+                    };
+
+                    DbContext.GenericClosures.Add(closureDb);
+                }
+
+                closureDb.ClosingTypeID = closingTypeDb!.ID;
+                closureDb.Synchronized = true;
+            }
+
+            return allOkay;
+        }
+
     }
 }

@@ -31,6 +31,15 @@ namespace J4JSoftware.Roslyn
 
         // list of generic type constraints referencing this type definition, if any
         public List<TypeConstraint> TypeConstraints { get; set; }
+
+        // list of types implemented by this type
+        public List<TypeImplementation> ImplementedTypes { get; set; }
+
+        // list of type implementations referencing this type definition
+        public List<TypeImplementation> ImplementationReferences { get; set; }
+
+        // list of generic closures referencing this type definition
+        public List<ClosedTypeParameter> GenericClosures { get; set; }
     }
 
     internal class TypeDefinitionConfigurator : EntityConfigurator<TypeDefinition>
@@ -46,6 +55,11 @@ namespace J4JSoftware.Roslyn
                 .WithMany(x => x.Types)
                 .HasForeignKey(x => x.AssemblyID)
                 .HasPrincipalKey(x => x.ID);
+
+            builder.HasMany( x => x.ImplementedTypes )
+                .WithOne( x => x.TypeDefinition )
+                .HasForeignKey( x => x.TypeDefinitionID )
+                .HasPrincipalKey( x => x.ID );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 
