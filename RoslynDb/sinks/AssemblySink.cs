@@ -25,31 +25,8 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
-            // mark all the existing assemblies as unsynchronized since we're starting
-            // the synchonrization process
-            foreach( var assembly in DbContext.Assemblies )
-            {
-                assembly.Synchronized = false;
-            }
-
-            DbContext.SaveChanges();
-
-            return true;
-        }
-
-        public override bool TryGetSunkValue( IAssemblySymbol symbol, out Assembly? result )
-        {
-            var symbolName = SymbolName.GetFullyQualifiedName( symbol );
-            
-            var retVal = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == symbolName );
-
-            if( retVal == null )
-            {
-                result = null;
-                return false;
-            }
-
-            result = retVal;
+            MarkUnsynchronized<Assembly>();
+            SaveChanges();
 
             return true;
         }
@@ -61,20 +38,14 @@ namespace J4JSoftware.Roslyn.Sinks
             if( retVal.AlreadyProcessed )
                 return retVal;
 
-            var dbSymbol = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == retVal.SymbolName );
+            if( !GetByFullyQualifiedName( retVal.SymbolName, out var dbSymbol ) )
+                dbSymbol = AddEntity( retVal.SymbolName );
 
-            bool isNew = dbSymbol == null;
-
-            dbSymbol ??= new Assembly { FullyQualifiedName = retVal.SymbolName };
-
-            if( isNew )
-                DbContext.Assemblies.Add( dbSymbol );
-
-            dbSymbol.Synchronized = true;
+            dbSymbol!.Synchronized = true;
             dbSymbol.Name = symbol.Name;
             dbSymbol.DotNetVersion = symbol.Identity.Version;
 
-            DbContext.SaveChanges();
+            SaveChanges();
 
             retVal.WasOutput = true;
 

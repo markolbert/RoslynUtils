@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( NamespaceConfigurator ) )]
-    public class Namespace
+    public class Namespace : IFullyQualifiedName, ISynchronized
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }

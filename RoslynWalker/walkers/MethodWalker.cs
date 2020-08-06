@@ -6,21 +6,18 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn.walkers
 {
-    [ RoslynProcessor( typeof(NamespaceWalker) ) ]
-    public class TypeDefinitionWalker : SyntaxWalker<INamedTypeSymbol>
+    [ RoslynProcessor( typeof(TypeDefinitionWalker) ) ]
+    public class MethodWalker : SyntaxWalker<IMethodSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
-        static TypeDefinitionWalker()
+        static MethodWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
-            //_ignoredNodeKinds.Add( SyntaxKind.TypeParameter );
-            //_ignoredNodeKinds.Add( SyntaxKind.TypeParameterConstraintClause );
-            //_ignoredNodeKinds.Add( SyntaxKind.ParameterList );
         }
 
-        public TypeDefinitionWalker(
+        public MethodWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             ISymbolName symbolName,
             IDefaultSymbolSink defaultSymbolSink,
@@ -32,7 +29,7 @@ namespace J4JSoftware.Roslyn.walkers
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, 
             CompiledFile context,
-            out INamedTypeSymbol? result )
+            out IMethodSymbol? result )
         {
             result = null;
 
@@ -40,22 +37,9 @@ namespace J4JSoftware.Roslyn.walkers
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            // this oddball test is to ensure we capture System.Void types, which are the
-            // "return types" of >>all<< constructors but aren't represented by their own
-            // SyntaxNode. Consequently, unless the source code contains a method with a return
-            // type of void it's possible for System.Void to be overlooked, causing problems
-            // down the road.
-            if( node.Kind() == SyntaxKind.ConstructorDeclaration
-                && context.GetSymbol<IMethodSymbol>( node, out var methodSymbol )
-                && methodSymbol!.ReturnType is INamedTypeSymbol returnSymbol )
+            if( !context.GetSymbol<IMethodSymbol>( node, out var typeSymbol ) )
             {
-                result = returnSymbol;
-                return true;
-            }
-
-            if( !context.GetSymbol<INamedTypeSymbol>( node, out var typeSymbol ) )
-            {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no INamedTypeSymbol found for node of kind {1}",
+                Logger.Verbose<string, SyntaxKind>( "{0}: no IMethodSymbol found for node of kind {1}",
                     context.Container.AssemblyName,
                     node.Kind() );
 

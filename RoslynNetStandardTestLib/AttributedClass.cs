@@ -6,5 +6,8 @@ namespace J4JSoftware.Roslyn.Tests
     [ DummyType( typeof(ConsoleChannel) ) ]
     public class AttributedClass
     {
+        public void DoNothing()
+        {
+        }
     }
 }

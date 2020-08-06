@@ -1,9 +1,10 @@
 ﻿using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ClosedTypeParameter
+    public class ClosedTypeParameter : ISynchronized
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }

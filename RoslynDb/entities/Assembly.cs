@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(AssemblyConfigurator))]
-    public class Assembly
+    public class Assembly : IFullyQualifiedName, ISynchronized
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }

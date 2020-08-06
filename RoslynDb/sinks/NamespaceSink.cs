@@ -26,31 +26,8 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            // mark all the existing assemblies as unsynchronized since we're starting
-            // the synchonrization process
-            foreach( var ns in DbContext.Namespaces )
-            {
-                ns.Synchronized = false;
-            }
-
-            DbContext.SaveChanges();
-
-            return true;
-        }
-
-        public override bool TryGetSunkValue(INamespaceSymbol symbol, out Namespace? result)
-        {
-            var symbolName = SymbolName.GetFullyQualifiedName(symbol);
-
-            var retVal = DbContext.Namespaces.FirstOrDefault(a => a.FullyQualifiedName == symbolName);
-
-            if (retVal == null)
-            {
-                result = null;
-                return false;
-            }
-
-            result = retVal;
+            MarkUnsynchronized<Namespace>();
+            SaveChanges();
 
             return true;
         }
@@ -65,28 +42,29 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !_assemblySink.TryGetSunkValue( symbol.ContainingAssembly, out var dbAssembly ) )
                 return retVal;
 
-            var dbSymbol = DbContext.Namespaces.FirstOrDefault( a => a.FullyQualifiedName == retVal.SymbolName );
+            if( !GetByFullyQualifiedName( retVal.SymbolName, out var dbSymbol ) )
+                dbSymbol = AddEntity( retVal.SymbolName );
 
-            bool isNew = dbSymbol == null;
+            // create the link between this namespace entity and the assembly entity to which it belongs
+            var anDbSet = GetDbSet<AssemblyNamespace>();
 
-            dbSymbol ??= new Namespace() { FullyQualifiedName = retVal.SymbolName };
+            var anDb = anDbSet.FirstOrDefault( x => x.AssemblyID == dbAssembly!.ID && x.NamespaceID == dbSymbol!.ID );
 
-            if( isNew )
+            if( anDb == null )
             {
-                DbContext.Namespaces.Add( dbSymbol );
-
-                // need to add linking entries
-                DbContext.AssemblyNamespaces.Add( new AssemblyNamespace()
+                anDb = new AssemblyNamespace()
                 {
                     AssemblyID = dbAssembly!.ID,
-                    Namespace = dbSymbol
-                } );
+                    Namespace = dbSymbol!
+                };
+
+                anDbSet.Add( anDb );
             }
 
-            dbSymbol.Synchronized = true;
+            dbSymbol!.Synchronized = true;
             dbSymbol.Name = symbol.Name;
 
-            DbContext.SaveChanges();
+            SaveChanges();
 
             retVal.WasOutput = true;
 

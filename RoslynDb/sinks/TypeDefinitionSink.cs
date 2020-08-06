@@ -47,14 +47,12 @@ namespace J4JSoftware.Roslyn.Sinks
             // clear the collection of processed type symbols
             _typeSymbols.Clear();
 
-            // mark all the existing assemblies as unsynchronized since we're starting
-            // the synchronization process
-            DbContext.TypeDefinitions.ForEachAsync( td => td.Synchronized = false );
-            DbContext.TypeParameters.ForEachAsync( tp => tp.Synchronized = false );
-            DbContext.TypeImplementations.ForEachAsync(x => x.Synchronized = false);
-            DbContext.GenericClosures.ForEachAsync(x => x.Synchronized = false);
+            MarkUnsynchronized<TypeDefinition>();
+            MarkUnsynchronized<TypeParameter>();
+            MarkUnsynchronized<TypeImplementation>();
+            MarkUnsynchronized<ClosedTypeParameter>();
 
-            DbContext.SaveChanges();
+            SaveChanges();
 
             return true;
         }
@@ -68,7 +66,7 @@ namespace J4JSoftware.Roslyn.Sinks
             // but to do that we first have to add all the relevant assemblies and namespaces
             var allOkay = true;
 
-            var typeList = _typeSymbols.Select(ts => ts.Value)
+            var typeList = _typeSymbols.Select( ts => ts.Value )
                 .ToList();
 
             var context = new TypeProcessorContext( syntaxWalker, typeList );
@@ -96,33 +94,16 @@ namespace J4JSoftware.Roslyn.Sinks
                 allOkay &= ProcessImplementations( typeSymbol );
             }
 
-            DbContext.SaveChanges();
+            SaveChanges();
 
             return allOkay;
-        }
-
-        public override bool TryGetSunkValue(INamedTypeSymbol symbol, out TypeDefinition? result)
-        {
-            result = null;
-            var symbolName = SymbolName.GetFullyQualifiedName(symbol);
-
-            result = DbContext.TypeDefinitions
-                .FirstOrDefault(a => a.FullyQualifiedName == symbolName);
-
-            if (result == null)
-            {
-                Logger.Error<string>("Couldn't find TypeDefinition entity for {0}", symbolName);
-                return false;
-            }
-
-            return true;
         }
 
         protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, INamedTypeSymbol symbol )
         {
             var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
 
-            if (retVal.AlreadyProcessed)
+            if( retVal.AlreadyProcessed )
                 return retVal;
 
             // output the symbol to the database
@@ -147,13 +128,13 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             StoreNamedTypeSymbol( symbol, out _ );
 
-            foreach ( var interfaceSymbol in symbol.AllInterfaces )
+            foreach( var interfaceSymbol in symbol.AllInterfaces )
             {
-                if( !StoreNamedTypeSymbol(interfaceSymbol, out _))
+                if( !StoreNamedTypeSymbol( interfaceSymbol, out _ ) )
                     continue;
 
                 // add ancestors related to the interface symbol
-                AddAncestorTypes(interfaceSymbol);
+                AddAncestorTypes( interfaceSymbol );
 
                 // add ancestors related to closed generic types, if any, in
                 // the interface
@@ -175,14 +156,14 @@ namespace J4JSoftware.Roslyn.Sinks
             }
         }
 
-        private bool StoreNamedTypeSymbol(INamedTypeSymbol symbol, out SymbolInfo result)
+        private bool StoreNamedTypeSymbol( INamedTypeSymbol symbol, out SymbolInfo result )
         {
-            result = new SymbolInfo(symbol, SymbolName);
+            result = new SymbolInfo( symbol, SymbolName );
 
-            if (_typeSymbols.ContainsKey(result.SymbolName))
+            if( _typeSymbols.ContainsKey( result.SymbolName ) )
                 return false;
 
-            _typeSymbols.Add(result.SymbolName, (INamedTypeSymbol)result.Symbol);
+            _typeSymbols.Add( result.SymbolName, (INamedTypeSymbol) result.Symbol );
 
             return true;
         }
@@ -192,8 +173,8 @@ namespace J4JSoftware.Roslyn.Sinks
             switch( symbolInfo.TypeKind )
             {
                 case TypeKind.Error:
-                    Logger.Error<string>("Unhandled or incorrect type error for named type '{0}'",
-                        symbolInfo.SymbolName);
+                    Logger.Error<string>( "Unhandled or incorrect type error for named type '{0}'",
+                        symbolInfo.SymbolName );
 
                     return false;
 
@@ -201,29 +182,23 @@ namespace J4JSoftware.Roslyn.Sinks
                 case TypeKind.Pointer:
                     Logger.Error<string, TypeKind>(
                         "named type '{0}' is a {1} and not supported",
-                        symbolInfo.SymbolName, 
-                        symbolInfo.TypeKind);
+                        symbolInfo.SymbolName,
+                        symbolInfo.TypeKind );
 
                     return false;
             }
 
-            if ( !_assemblySink.TryGetSunkValue( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
+            if( !_assemblySink.TryGetSunkValue( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
                 return false;
 
             if( !_nsSink.TryGetSunkValue( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
                 return false;
 
-            var dbSymbol = DbContext.TypeDefinitions.FirstOrDefault( nt => nt.FullyQualifiedName == symbolInfo.SymbolName );
+            if( !GetByFullyQualifiedName( symbolInfo.SymbolName, out var dbSymbol ) )
+                dbSymbol = AddEntity( symbolInfo.SymbolName );
 
-            bool isNew = dbSymbol == null;
-
-            dbSymbol ??= new TypeDefinition() { FullyQualifiedName = symbolInfo.SymbolName };
-
-            if (isNew)
-                DbContext.TypeDefinitions.Add(dbSymbol);
-
-            dbSymbol.Synchronized = true;
-            dbSymbol.Name = SymbolName.GetName(symbolInfo.OriginalSymbol);
+            dbSymbol!.Synchronized = true;
+            dbSymbol.Name = SymbolName.GetName( symbolInfo.OriginalSymbol );
             dbSymbol.AssemblyID = dbAssembly!.ID;
             dbSymbol.NamespaceId = dbNS!.ID;
             dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
@@ -231,7 +206,7 @@ namespace J4JSoftware.Roslyn.Sinks
             dbSymbol.Nature = symbolInfo.TypeKind;
             dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbolInfo.Symbol.ContainingAssembly );
 
-            DbContext.SaveChanges();
+            SaveChanges();
 
             return true;
         }
@@ -256,12 +231,14 @@ namespace J4JSoftware.Roslyn.Sinks
             return allOkay;
         }
 
-        private TypeParameter ProcessTypeParameter(TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol)
+        private TypeParameter ProcessTypeParameter( TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol )
         {
-            var retVal = DbContext.TypeParameters
-                .FirstOrDefault(x => x.ParameterIndex == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID);
+            var tpSet = GetDbSet<TypeParameter>();
 
-            if (retVal == null)
+            var retVal = tpSet
+                .FirstOrDefault( x => x.ParameterIndex == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID );
+
+            if( retVal == null )
             {
                 retVal = new TypeParameter
                 {
@@ -269,7 +246,7 @@ namespace J4JSoftware.Roslyn.Sinks
                     ParameterIndex = tpSymbol.Ordinal
                 };
 
-                DbContext.TypeParameters.Add(retVal);
+                tpSet.Add( retVal );
             }
 
             retVal.Synchronized = true;
@@ -284,11 +261,13 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !TryGetSunkValue( constraintSymbol, out var constraintDb ) )
                 return false;
 
-            if( DbContext.TypeConstraints
+            var tcSet = GetDbSet<TypeConstraint>();
+
+            if( tcSet
                 .Any( tc => tc.ConstrainingTypeID == constraintDb!.ID && tc.TypeParameterID == tpDb.ID ) )
                 return true;
 
-            DbContext.TypeConstraints.Add( new TypeConstraint
+            tcSet.Add( new TypeConstraint
             {
                 ConstrainingType = constraintDb!,
                 TypeParameter = tpDb
@@ -297,34 +276,36 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        private bool ProcessImplementations(INamedTypeSymbol typeSymbol)
+        private bool ProcessImplementations( INamedTypeSymbol typeSymbol )
         {
-            if (!TryGetSunkValue(typeSymbol, out var typeDb))
+            if( !TryGetSunkValue( typeSymbol, out var typeDb ) )
                 return false;
 
             // process base type if it's defined
-            if (typeSymbol.BaseType != null && !ProcessImplementation(typeDb!, typeSymbol.BaseType))
+            if( typeSymbol.BaseType != null && !ProcessImplementation( typeDb!, typeSymbol.BaseType ) )
                 return false;
 
             var allOkay = true;
 
-            foreach (var interfaceSymbol in typeSymbol.Interfaces)
+            foreach( var interfaceSymbol in typeSymbol.Interfaces )
             {
-                allOkay &= ProcessImplementation(typeDb!, interfaceSymbol);
+                allOkay &= ProcessImplementation( typeDb!, interfaceSymbol );
             }
 
             return allOkay;
         }
 
-        private bool ProcessImplementation(TypeDefinition typeDb, INamedTypeSymbol implSymbol)
+        private bool ProcessImplementation( TypeDefinition typeDb, INamedTypeSymbol implSymbol )
         {
-            if (!TryGetSunkValue(implSymbol, out var implTypeDb))
+            if( !TryGetSunkValue( implSymbol, out var implTypeDb ) )
                 return false;
 
-            var implDb = DbContext.TypeImplementations
-                .FirstOrDefault(ti => ti.TypeDefinitionID == typeDb!.ID && ti.ImplementedTypeID == implTypeDb!.ID);
+            var implSet = GetDbSet<TypeImplementation>();
 
-            if (implDb == null)
+            var implDb = implSet
+                .FirstOrDefault( ti => ti.TypeDefinitionID == typeDb!.ID && ti.ImplementedTypeID == implTypeDb!.ID );
+
+            if( implDb == null )
             {
                 implDb = new TypeImplementation
                 {
@@ -332,37 +313,39 @@ namespace J4JSoftware.Roslyn.Sinks
                     TypeDefinitionID = typeDb!.ID
                 };
 
-                DbContext.TypeImplementations.Add(implDb);
+                implSet.Add( implDb );
             }
 
             implDb.Synchronized = true;
 
-            return ProcessTypeParameterClosures(implDb, implSymbol);
+            return ProcessTypeParameterClosures( implDb, implSymbol );
         }
 
-        private bool ProcessTypeParameterClosures(TypeImplementation implDb, INamedTypeSymbol implSymbol)
+        private bool ProcessTypeParameterClosures( TypeImplementation implDb, INamedTypeSymbol implSymbol )
         {
             var allOkay = true;
 
-            for (var idx = 0; idx < implSymbol.TypeArguments.Length; idx++)
+            for( var idx = 0; idx < implSymbol.TypeArguments.Length; idx++ )
             {
-                if (!(implSymbol.TypeArguments[idx] is INamedTypeSymbol ntSymbol))
+                if( !( implSymbol.TypeArguments[ idx ] is INamedTypeSymbol ntSymbol ) )
                     continue;
 
-                if (!TryGetSunkValue(ntSymbol, out var closingTypeDb))
+                if( !TryGetSunkValue( ntSymbol, out var closingTypeDb ) )
                 {
-                    Logger.Error<string>("Couldn't find TypeDefinition entity for closing type '{0}'", ntSymbol.Name);
+                    Logger.Error<string>( "Couldn't find TypeDefinition entity for closing type '{0}'", ntSymbol.Name );
                     allOkay = false;
 
                     continue;
                 }
 
+                var closedSet = GetDbSet<ClosedTypeParameter>();
+
                 var closureDb = implDb.ID != 0
-                    ? DbContext.GenericClosures
-                        .FirstOrDefault(gc => gc.ParameterIndex == idx && gc.TypeImplementationID == implDb.ID)
+                    ? closedSet
+                        .FirstOrDefault( gc => gc.ParameterIndex == idx && gc.TypeImplementationID == implDb.ID )
                     : null;
 
-                if (closureDb == null)
+                if( closureDb == null )
                 {
                     closureDb = new ClosedTypeParameter
                     {
@@ -370,7 +353,7 @@ namespace J4JSoftware.Roslyn.Sinks
                         TypeImplementation = implDb
                     };
 
-                    DbContext.GenericClosures.Add(closureDb);
+                    closedSet.Add( closureDb );
                 }
 
                 closureDb.ClosingTypeID = closingTypeDb!.ID;

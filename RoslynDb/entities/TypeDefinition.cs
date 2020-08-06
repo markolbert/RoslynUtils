@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.entities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeDefinitionConfigurator ) )]
-    public class TypeDefinition
+    public class TypeDefinition : IFullyQualifiedName, ISynchronized
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }
@@ -36,10 +37,22 @@ namespace J4JSoftware.Roslyn
         public List<TypeImplementation> ImplementedTypes { get; set; }
 
         // list of type implementations referencing this type definition
-        public List<TypeImplementation> ImplementationReferences { get; set; }
+        public List<TypeImplementation> Implementations { get; set; }
 
         // list of generic closures referencing this type definition
         public List<ClosedTypeParameter> GenericClosures { get; set; }
+
+        // list of methods defined for this type
+        public List<Method> Methods { get; set; }
+
+        // list of methods declaring this type as a return type
+        public List<Method> ReturnTypes { get; set; }
+        
+        // list of method arguments referencing this type
+        public List<ClosedMethodArgument> ClosedMethodArguments { get; set; }
+
+        // list of generic method type constraints referencing this type
+        public List<MethodTypeConstraint> MethodTypeConstraints { get; set; }
     }
 
     internal class TypeDefinitionConfigurator : EntityConfigurator<TypeDefinition>
