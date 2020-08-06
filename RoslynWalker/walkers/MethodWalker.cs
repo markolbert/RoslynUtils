@@ -15,6 +15,11 @@ namespace J4JSoftware.Roslyn.walkers
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
+            _ignoredNodeKinds.Add(SyntaxKind.SimpleLambdaExpression);
+            _ignoredNodeKinds.Add( SyntaxKind.ParenthesizedLambdaExpression );
+            _ignoredNodeKinds.Add( SyntaxKind.Attribute );
+            _ignoredNodeKinds.Add(SyntaxKind.GetAccessorDeclaration);
+            _ignoredNodeKinds.Add(SyntaxKind.SetAccessorDeclaration);
         }
 
         public MethodWalker(
