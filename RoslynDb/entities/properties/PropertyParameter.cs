@@ -17,7 +17,7 @@ namespace J4JSoftware.Roslyn
         public string Name { get; set; }
         public int PropertyID { get; set; }
         public Property Property { get; set; }
-        public int ParameterIndex { get; set; }
+        public int Ordinal { get; set; }
     }
 
     internal class PropertyParameterConfigurator : EntityConfigurator<PropertyParameter>
@@ -29,46 +29,5 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.PropertyID );
         }
-    }
-
-    public class TypeBase
-    {
-        protected TypeBase()
-        {
-        }
-
-        public int ID { get; set; }
-        public int ContainerID { get; set; }
-    }
-
-    public class ClosedTypeBase : TypeBase
-    {
-        protected ClosedTypeBase()
-        {
-        }
-
-        public int ClosedTypeID { get; set; }
-        public TypeDefinition ClosedType { get; set; }
-    }
-
-    public class GenericTypeBase : TypeBase
-    {
-        protected GenericTypeBase()
-        {
-        }
-
-        public GenericConstraint Constraints { get; set; }
-    }
-
-    public class GenericTypeConstraint
-    {
-        protected GenericTypeConstraint()
-        {
-        }
-
-        public int GenericTypeID { get; set; }
-        public GenericTypeBase GenericType { get; set; }
-        public int ConstrainingTypeID { get; set; }
-        public TypeDefinition ConstrainingType { get; set; }
     }
 }

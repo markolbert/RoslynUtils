@@ -167,7 +167,7 @@ namespace J4JSoftware.Roslyn.Sinks
                     closedSet.Add( (ClosedMethodParameter) methodArg );
             }
 
-            methodArg.ParameterIndex = arg.Ordinal;
+            methodArg.Ordinal = arg.Ordinal;
             methodArg.IsDiscard = arg.IsDiscard;
             methodArg.IsOptional = arg.IsOptional;
             methodArg.IsParams = arg.IsParams;

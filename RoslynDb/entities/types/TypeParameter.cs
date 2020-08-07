@@ -12,9 +12,9 @@ namespace J4JSoftware.Roslyn
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }
-        public string ParameterName { get; set; }
-        public int ParameterIndex { get; set; }
-        public GenericConstraint Constraints { get; set; }
+        public string Name { get; set; }
+        public int Ordinal { get; set; }
+        public TypeParameterConstraint Constraints { get; set; }
 
         public int TypeDefinitionID { get; set; }
         public TypeDefinition TypeDefinition { get; set; }
@@ -37,9 +37,9 @@ namespace J4JSoftware.Roslyn
                 .HasForeignKey( x => x.TypeDefinitionID );
 
             builder.Property(x => x.Constraints)
-                .HasConversion(new EnumToNumberConverter<GenericConstraint, int>());
+                .HasConversion(new EnumToNumberConverter<TypeParameterConstraint, int>());
 
-            builder.Property( x => x.ParameterName )
+            builder.Property( x => x.Name )
                 .IsRequired();
         }
     }

@@ -171,7 +171,7 @@ namespace J4JSoftware.Roslyn.Sinks
                     closedSet.Add((ClosedPropertyParameter)propParam);
             }
 
-            propParam.ParameterIndex = paramSymbol.Ordinal;
+            propParam.Ordinal = paramSymbol.Ordinal;
             propParam.Name = paramSymbol.Name;
 
             if (paramSymbol.Type is ITypeParameterSymbol tpSymbol)

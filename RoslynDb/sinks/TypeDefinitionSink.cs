@@ -236,22 +236,22 @@ namespace J4JSoftware.Roslyn.Sinks
             var tpSet = GetDbSet<TypeParameter>();
 
             var retVal = tpSet
-                .FirstOrDefault( x => x.ParameterIndex == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID );
+                .FirstOrDefault( x => x.Ordinal == tpSymbol.Ordinal && x.TypeDefinitionID == typeDefDb.ID );
 
             if( retVal == null )
             {
                 retVal = new TypeParameter
                 {
                     TypeDefinitionID = typeDefDb.ID,
-                    ParameterIndex = tpSymbol.Ordinal
+                    Ordinal = tpSymbol.Ordinal
                 };
 
                 tpSet.Add( retVal );
             }
 
             retVal.Synchronized = true;
-            retVal.ParameterName = tpSymbol.Name;
-            retVal.Constraints = tpSymbol.GetGenericConstraints();
+            retVal.Name = tpSymbol.Name;
+            retVal.Constraints = tpSymbol.GetTypeParameterConstraint();
 
             return retVal;
         }
@@ -342,14 +342,14 @@ namespace J4JSoftware.Roslyn.Sinks
 
                 var closureDb = implDb.ID != 0
                     ? closedSet
-                        .FirstOrDefault( gc => gc.ParameterIndex == idx && gc.TypeImplementationID == implDb.ID )
+                        .FirstOrDefault( gc => gc.Ordinal == idx && gc.TypeImplementationID == implDb.ID )
                     : null;
 
                 if( closureDb == null )
                 {
                     closureDb = new ClosedTypeParameter
                     {
-                        ParameterIndex = idx,
+                        Ordinal = idx,
                         TypeImplementation = implDb
                     };
 

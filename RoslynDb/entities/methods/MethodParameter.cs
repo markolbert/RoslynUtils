@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn
         }
 
         public int ID { get; set; }
-        public int ParameterIndex { get; set; }
+        public int Ordinal { get; set; }
         public string Name { get; set; }
         public bool Synchronized { get; set; }
         public int DeclaringMethodID { get; set; }
@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn
             builder.Property( x => x.ReferenceKind )
                 .HasConversion( new EnumToNumberConverter<RefKind, int>() );
 
-            builder.HasIndex(x => new { x.DeclaringMethodID, x.ParameterIndex });
+            builder.HasIndex(x => new { x.DeclaringMethodID, ParameterIndex = x.Ordinal });
         }
     }
 }

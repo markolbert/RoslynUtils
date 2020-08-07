@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn
         public bool Synchronized { get; set; }
         public int TypeImplementationID { get; set; }
         public TypeImplementation TypeImplementation { get; set; }
-        public int ParameterIndex { get; set; }
+        public int Ordinal { get; set; }
         public int ClosingTypeID { get; set; }
         public TypeDefinition ClosingType { get; set; }
     }
