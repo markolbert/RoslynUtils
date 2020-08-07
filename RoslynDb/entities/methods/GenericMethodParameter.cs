@@ -2,7 +2,7 @@
 
 namespace J4JSoftware.Roslyn
 {
-    public class GenericMethodArgument : MethodArgument
+    public class GenericMethodParameter : MethodParameter
     {
         public GenericConstraint Constraints { get; set; }
 

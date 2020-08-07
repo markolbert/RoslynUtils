@@ -30,11 +30,9 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            // mark all the existing assemblies as unsynchronized since we're starting
-            // the synchronization process
             MarkUnsynchronized<Method>();
-            MarkUnsynchronized<GenericMethodArgument>();
-            MarkUnsynchronized<ClosedMethodArgument>();
+            MarkUnsynchronized<GenericMethodParameter>();
+            MarkUnsynchronized<ClosedMethodParameter>();
 
             SaveChanges();
 
@@ -68,7 +66,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !_typeSink.TryGetSunkValue( (INamedTypeSymbol) rtInfo.Symbol, out var rtDb ) )
                 return retVal;
 
-            if( !GetArgumentTypeDefinitions( symbol, out var argTypeEntities ) )
+            if( !GetParameterTypeDefinitions( symbol, out var paramTypeEntities ) )
                 return retVal;
 
             // construct/update the method entity
@@ -84,9 +82,9 @@ namespace J4JSoftware.Roslyn.Sinks
             methodDb.Synchronized = true;
 
             // construct/update the argument entities related to the method entity
-            foreach( var arg in symbol.Parameters )
+            foreach( var parameter in symbol.Parameters )
             {
-                ProcessArgument(arg, methodDb, argTypeEntities);
+                ProcessParameter(parameter, methodDb, paramTypeEntities);
             }
 
             retVal.WasOutput = true;
@@ -94,7 +92,7 @@ namespace J4JSoftware.Roslyn.Sinks
             return retVal;
         }
 
-        private bool GetArgumentTypeDefinitions( IMethodSymbol methodSymbol, out Dictionary<string, List<TypeDefinition>> result )
+        private bool GetParameterTypeDefinitions( IMethodSymbol methodSymbol, out Dictionary<string, List<TypeDefinition>> result )
         {
             result = new Dictionary<string, List<TypeDefinition>>();
             var tdSet = GetDbSet<TypeDefinition>();
@@ -137,25 +135,25 @@ namespace J4JSoftware.Roslyn.Sinks
             }
         }
 
-        private void ProcessArgument(
+        private void ProcessParameter(
             IParameterSymbol arg, 
             Method methodDb,
             Dictionary<string, List<TypeDefinition>> argTypeEntities )
         {
-            var genSet = GetDbSet<GenericMethodArgument>();
-            var closedSet = GetDbSet<ClosedMethodArgument>();
+            var genSet = GetDbSet<GenericMethodParameter>();
+            var closedSet = GetDbSet<ClosedMethodParameter>();
 
             var methodArg = arg.Type is ITypeParameterSymbol
-                ? (MethodArgument) genSet
+                ? (MethodParameter) genSet
                     .FirstOrDefault( x => x.Name == arg.Name && x.DeclaringMethodID == methodDb.ID )
-                : (MethodArgument) closedSet
+                : (MethodParameter) closedSet
                     .FirstOrDefault( x => x.Name == arg.Name && x.DeclaringMethodID == methodDb.ID );
 
             if( methodArg == null )
             {
                 methodArg = arg.Type is ITypeParameterSymbol
-                    ? (MethodArgument) new GenericMethodArgument()
-                    : (MethodArgument) new ClosedMethodArgument();
+                    ? (MethodParameter) new GenericMethodParameter()
+                    : (MethodParameter) new ClosedMethodParameter();
 
                 if( methodDb.ID == 0 )
                     methodArg.DeclaringMethod = methodDb;
@@ -163,10 +161,10 @@ namespace J4JSoftware.Roslyn.Sinks
 
                 methodArg.Name = arg.Name;
 
-                if( methodArg is GenericMethodArgument )
-                    genSet.Add( (GenericMethodArgument) methodArg );
+                if( methodArg is GenericMethodParameter )
+                    genSet.Add( (GenericMethodParameter) methodArg );
                 else
-                    closedSet.Add( (ClosedMethodArgument) methodArg );
+                    closedSet.Add( (ClosedMethodParameter) methodArg );
             }
 
             methodArg.ParameterIndex = arg.Ordinal;
@@ -178,13 +176,13 @@ namespace J4JSoftware.Roslyn.Sinks
             methodArg.DefaultText = arg.HasExplicitDefaultValue ? arg.ExplicitDefaultValue?.ToString() ?? null : null;
 
             if( arg.Type is ITypeParameterSymbol tpSymbol )
-                ProcessGenericArg( (GenericMethodArgument) methodArg, argTypeEntities[ methodArg.Name ] );
+                ProcessGenericParameter( (GenericMethodParameter) methodArg, argTypeEntities[ methodArg.Name ] );
             else
-                ( (ClosedMethodArgument) methodArg ).ParameterTypeID = argTypeEntities[ arg.Name ].First().ID;
+                ( (ClosedMethodParameter) methodArg ).ParameterTypeID = argTypeEntities[ arg.Name ].First().ID;
         }
 
-        private void ProcessGenericArg( 
-            GenericMethodArgument genArg,
+        private void ProcessGenericParameter( 
+            GenericMethodParameter genArg,
             List<TypeDefinition> typeConstraints )
         {
             var mtSet = GetDbSet<MethodTypeConstraint>();
@@ -201,7 +199,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 constraintDb = new MethodTypeConstraint { ConstrainingTypeID = constTypeDb.ID };
 
                 if( genArg.ID == 0 )
-                    constraintDb.GenericMethodArgument = genArg;
+                    constraintDb.GenericMethodParameter = genArg;
                 else
                     constraintDb.GenericMethodArgumentID = genArg.ID;
 

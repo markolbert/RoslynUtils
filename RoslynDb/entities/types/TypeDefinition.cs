@@ -49,10 +49,22 @@ namespace J4JSoftware.Roslyn
         public List<Method> ReturnTypes { get; set; }
         
         // list of method arguments referencing this type
-        public List<ClosedMethodArgument> ClosedMethodArguments { get; set; }
+        public List<ClosedMethodParameter> ClosedMethodArguments { get; set; }
 
         // list of generic method type constraints referencing this type
         public List<MethodTypeConstraint> MethodTypeConstraints { get; set; }
+
+        // list of properties implemented by this type
+        public List<Property> Properties { get; set; }
+
+        // list of properties whose type matches this type
+        public List<Property> PropertyTypes { get; set; }
+
+        // list of PropertyParameters using this type
+        public List<ClosedPropertyParameter> ClosedPropertyParamters { get; set; }
+
+        // list of generic property type constraints referencing this type
+        public List<PropertyTypeConstraint> PropertyTypeConstraints { get; set; }
     }
 
     internal class TypeDefinitionConfigurator : EntityConfigurator<TypeDefinition>

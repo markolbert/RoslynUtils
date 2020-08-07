@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( MethodArgumentConfigurator ) )]
-    public class MethodArgument : ISynchronized
+    public class MethodParameter : ISynchronized
     {
-        protected MethodArgument()
+        protected MethodParameter()
         {
         }
 
@@ -28,9 +28,9 @@ namespace J4JSoftware.Roslyn
         public string? DefaultText { get; set; }
     }
 
-    internal class MethodArgumentConfigurator : EntityConfigurator<MethodArgument>
+    internal class MethodArgumentConfigurator : EntityConfigurator<MethodParameter>
     {
-        protected override void Configure(EntityTypeBuilder<MethodArgument> builder)
+        protected override void Configure(EntityTypeBuilder<MethodParameter> builder)
         {
             builder.HasOne(x => x.DeclaringMethod)
                 .WithMany(x => x.Arguments)

@@ -5,29 +5,29 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(MethodTypeConstraintConfigurator))]
-    public class MethodTypeConstraint
+    public class PropertyTypeConstraint
     {
-        public int GenericMethodArgumentID { get; set; }
-        public GenericMethodArgument GenericMethodArgument { get; set; }
+        public int GenericPropertyParameterID { get; set; }
+        public GenericPropertyParameter GenericPropertyParameter { get; set; }
         public int ConstrainingTypeID { get; set; }
         public TypeDefinition ConstrainingType { get; set; }
     }
 
-    internal class MethodTypeConstraintConfigurator : EntityConfigurator<MethodTypeConstraint>
+    internal class PropertyTypeConstraintConfigurator : EntityConfigurator<PropertyTypeConstraint>
     {
-        protected override void Configure(EntityTypeBuilder<MethodTypeConstraint> builder)
+        protected override void Configure(EntityTypeBuilder<PropertyTypeConstraint> builder)
         {
-            builder.HasKey( x => new { x.ConstrainingTypeID, TypeParameterID = x.GenericMethodArgumentID} );
+            builder.HasKey( x => new { x.ConstrainingTypeID, TypeParameterID = x.GenericPropertyParameterID} );
 
             builder.HasOne( x => x.ConstrainingType )
-                .WithMany( x => x.MethodTypeConstraints )
+                .WithMany( x => x.PropertyTypeConstraints )
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.ConstrainingTypeID );
 
-            builder.HasOne( x => x.GenericMethodArgument )
+            builder.HasOne( x => x.GenericPropertyParameter )
                 .WithMany( x => x.TypeConstraints )
                 .HasPrincipalKey( x => x.ID )
-                .HasForeignKey( x => x.GenericMethodArgumentID );
+                .HasForeignKey( x => x.GenericPropertyParameterID );
         }
     }
 }

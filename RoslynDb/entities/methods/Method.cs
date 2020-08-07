@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
         public TypeDefinition ReturnType { get; set; }
 
         // list of method arguments
-        public List<MethodArgument> Arguments { get; set; }
+        public List<MethodParameter> Arguments { get; set; }
     }
 
     internal class BaseMethodConfigurator : EntityConfigurator<Method>

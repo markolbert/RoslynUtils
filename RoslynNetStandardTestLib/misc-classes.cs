@@ -12,6 +12,36 @@ namespace J4JSoftware.Roslyn.Tests
         public List<string> GetFiltered( string text ) => _text
             .Where( t => t.IndexOf( text, StringComparison.OrdinalIgnoreCase ) >= 0 )
             .ToList();
+
+        public int IntegerProperty { get; protected set; }
+
+        public int this[ string key ]
+        {
+            get => -1;
+        }
+
+        public SimpleGeneric<string, int> GenericProperty { get; protected set; }
+
+        public int this[ SimpleGeneric<string, int> key ]
+        {
+            get => -1;
+        }
+    }
+
+    public class OpenGenericProperties<T1, T2>
+    {
+        public SimpleGeneric<T1, T2> GenericProperty { get; protected set; }
+
+        public int this[SimpleGeneric<T1, T2> key]
+        {
+            get => -1;
+        }
+    }
+
+    public class SimpleGeneric<T1, T2>
+    {
+        public T1 PropertyT1 { get; set; }
+        public T2 PropertyT2 { get; set; }
     }
 
     public class GenericClass1<T1, T2>

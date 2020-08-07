@@ -25,14 +25,16 @@ namespace J4JSoftware.Roslyn
         public DbSet<Namespace> Namespaces { get; set; }
         public DbSet<TypeDefinition> TypeDefinitions { get; set; }
         public DbSet<Method> Methods { get; set; }
+        public DbSet<Property> Properties { get; set; }
         public DbSet<AssemblyNamespace> AssemblyNamespaces { get; set; }
         public DbSet<TypeParameter> TypeParameters { get; set; }
         public DbSet<TypeConstraint> TypeConstraints { get; set; }
         public DbSet<TypeImplementation> TypeImplementations { get; set; }
         public DbSet<ClosedTypeParameter> ClosedTypeParameters { get; set; }
-        public DbSet<GenericMethodArgument> GenericMethodArguments { get; set; }
+        public DbSet<GenericMethodParameter> GenericMethodArguments { get; set; }
         public DbSet<MethodTypeConstraint> MethodTypeConstraints { get; set; }
-        public DbSet<ClosedMethodArgument> ClosedMethodArguments { get; set; }
+        public DbSet<ClosedMethodParameter> ClosedMethodArguments { get; set; }
+        public DbSet<PropertyParameter> PropertyParameters { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
