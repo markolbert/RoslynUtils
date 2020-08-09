@@ -31,8 +31,7 @@ namespace J4JSoftware.Roslyn.Sinks
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
             MarkUnsynchronized<Method>();
-            MarkUnsynchronized<GenericMethodParameter>();
-            MarkUnsynchronized<ClosedMethodParameter>();
+            MarkUnsynchronized<MethodParameter>();
 
             SaveChanges();
 
@@ -136,74 +135,66 @@ namespace J4JSoftware.Roslyn.Sinks
         }
 
         private void ProcessParameter(
-            IParameterSymbol arg, 
+            IParameterSymbol paramSymbol,
             Method methodDb,
-            Dictionary<string, List<TypeDefinition>> argTypeEntities )
+            Dictionary<string, List<TypeDefinition>> paramTypeEntities )
         {
-            var genSet = GetDbSet<GenericMethodParameter>();
-            var closedSet = GetDbSet<ClosedMethodParameter>();
+            var mpSet = GetDbSet<MethodParameter>();
 
-            var methodArg = arg.Type is ITypeParameterSymbol
-                ? (MethodParameter) genSet
-                    .FirstOrDefault( x => x.Name == arg.Name && x.DeclaringMethodID == methodDb.ID )
-                : (MethodParameter) closedSet
-                    .FirstOrDefault( x => x.Name == arg.Name && x.DeclaringMethodID == methodDb.ID );
+            var methodParamDb = mpSet
+                .FirstOrDefault( x => x.Name == paramSymbol.Name && x.DeclaringMethodID == methodDb.ID );
 
-            if( methodArg == null )
+            if( methodParamDb == null )
             {
-                methodArg = arg.Type is ITypeParameterSymbol
-                    ? (MethodParameter) new GenericMethodParameter()
-                    : (MethodParameter) new ClosedMethodParameter();
+                methodParamDb = new MethodParameter();
 
                 if( methodDb.ID == 0 )
-                    methodArg.DeclaringMethod = methodDb;
-                else methodArg.DeclaringMethodID = methodDb.ID;
+                    methodParamDb.DeclaringMethod = methodDb;
+                else methodParamDb.DeclaringMethodID = methodDb.ID;
 
-                methodArg.Name = arg.Name;
+                methodParamDb.Name = paramSymbol.Name;
 
-                if( methodArg is GenericMethodParameter )
-                    genSet.Add( (GenericMethodParameter) methodArg );
-                else
-                    closedSet.Add( (ClosedMethodParameter) methodArg );
+                mpSet.Add( methodParamDb );
             }
 
-            methodArg.Ordinal = arg.Ordinal;
-            methodArg.IsDiscard = arg.IsDiscard;
-            methodArg.IsOptional = arg.IsOptional;
-            methodArg.IsParams = arg.IsParams;
-            methodArg.IsThis = arg.IsThis;
-            methodArg.ReferenceKind = arg.RefKind;
-            methodArg.DefaultText = arg.HasExplicitDefaultValue ? arg.ExplicitDefaultValue?.ToString() ?? null : null;
+            methodParamDb.Ordinal = paramSymbol.Ordinal;
+            methodParamDb.IsDiscard = paramSymbol.IsDiscard;
+            methodParamDb.IsOptional = paramSymbol.IsOptional;
+            methodParamDb.IsParams = paramSymbol.IsParams;
+            methodParamDb.IsThis = paramSymbol.IsThis;
+            methodParamDb.ReferenceKind = paramSymbol.RefKind;
+            methodParamDb.DefaultText = paramSymbol.HasExplicitDefaultValue
+                ? paramSymbol.ExplicitDefaultValue?.ToString() ?? null
+                : null;
 
-            if( arg.Type is ITypeParameterSymbol tpSymbol )
-                ProcessGenericParameter( (GenericMethodParameter) methodArg, argTypeEntities[ methodArg.Name ] );
-            else
-                ( (ClosedMethodParameter) methodArg ).ParameterTypeID = argTypeEntities[ arg.Name ].First().ID;
+            ProcessParameterType( methodParamDb, paramTypeEntities[ methodParamDb.Name ] );
         }
 
-        private void ProcessGenericParameter( 
-            GenericMethodParameter genArg,
+        private void ProcessParameterType( 
+            MethodParameter methodParamDb,
             List<TypeDefinition> typeConstraints )
         {
-            var mtSet = GetDbSet<MethodTypeConstraint>();
+            var tiSet = GetDbSet<TypeAncestor>();
 
             foreach( var constTypeDb in typeConstraints )
             {
-                var constraintDb = mtSet
+                var tiDb = tiSet
                     .FirstOrDefault( x =>
-                        x.ConstrainingTypeID == constTypeDb.ID && x.GenericMethodArgumentID == genArg.ID );
+                        x.ChildTypeID == constTypeDb.ID 
+                        && x.MethodParameter != null
+                        && x.MethodParameter.ID == methodParamDb.ID );
 
-                if( constraintDb != null )
+                if( tiDb != null )
                     continue;
 
-                constraintDb = new MethodTypeConstraint { ConstrainingTypeID = constTypeDb.ID };
+                tiDb = new TypeAncestor { ChildTypeID = constTypeDb.ID };
 
-                if( genArg.ID == 0 )
-                    constraintDb.GenericMethodParameter = genArg;
+                if( methodParamDb.ID == 0 || tiDb.MethodParameter == null )
+                    tiDb.MethodParameter = methodParamDb;
                 else
-                    constraintDb.GenericMethodArgumentID = genArg.ID;
+                    tiDb.MethodParameter.ID = methodParamDb.ID;
 
-                mtSet.Add( constraintDb );
+                tiSet.Add( tiDb );
             }
         }
     }

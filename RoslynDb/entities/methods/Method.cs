@@ -22,7 +22,7 @@ namespace J4JSoftware.Roslyn
         public TypeDefinition DefiningType { get; set; }
 
         public int? ReturnTypeID { get; set; }
-        public TypeDefinition ReturnType { get; set; }
+        public TypeAncestor ReturnType { get; set; }
 
         // list of method arguments
         public List<MethodParameter> Arguments { get; set; }
@@ -38,9 +38,7 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.ID );
 
             builder.HasOne( x => x.ReturnType )
-                .WithMany( x => x.ReturnTypes )
-                .HasForeignKey( x => x.ReturnTypeID )
-                .HasPrincipalKey( x => x.ID );
+                .WithOne( x => x.MethodReturnType );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

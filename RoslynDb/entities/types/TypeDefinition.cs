@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.Deprecated;
 using J4JSoftware.Roslyn.entities;
+using J4JSoftware.Roslyn.entities.types;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -20,7 +22,7 @@ namespace J4JSoftware.Roslyn
         public DeclarationModifier DeclarationModifier { get; set; }
         public bool InDocumentationScope { get; set; }
 
-        // the namespace to which this TypeDefinition entity belongs
+        // the namespace to which this ChildType entity belongs
         public int NamespaceId { get; set; }
         public Namespace Namespace { get; set; }
 
@@ -30,41 +32,23 @@ namespace J4JSoftware.Roslyn
         // list of generic parameters used by this type definition, if any
         public List<TypeParameter> TypeParameters { get; set; }
 
-        // list of generic type constraints referencing this type definition, if any
-        public List<TypeConstraint> TypeConstraints { get; set; }
+        // list of type closures for this specific type definition
+        public List<TypeClosure> TypeClosures { get; set; }
+
+        // list of type closures using this type definition
+        public List<TypeClosure> TypeClosureReferences { get; set; }
 
         // list of types implemented by this type
-        public List<TypeImplementation> ImplementedTypes { get; set; }
+        public List<TypeAncestor> ImplementedTypes { get; set; }
 
         // list of type implementations referencing this type definition
-        public List<TypeImplementation> Implementations { get; set; }
-
-        // list of generic closures referencing this type definition
-        public List<ClosedTypeParameter> GenericClosures { get; set; }
+        public List<TypeAncestor> Implementations { get; set; }
 
         // list of methods defined for this type
         public List<Method> Methods { get; set; }
 
-        // list of methods declaring this type as a return type
-        public List<Method> ReturnTypes { get; set; }
-        
-        // list of method arguments referencing this type
-        public List<ClosedMethodParameter> ClosedMethodArguments { get; set; }
-
-        // list of generic method type constraints referencing this type
-        public List<MethodTypeConstraint> MethodTypeConstraints { get; set; }
-
         // list of properties implemented by this type
         public List<Property> Properties { get; set; }
-
-        // list of properties whose type matches this type
-        public List<Property> PropertyTypes { get; set; }
-
-        // list of PropertyParameters using this type
-        public List<ClosedPropertyParameter> ClosedPropertyParamters { get; set; }
-
-        // list of generic property type constraints referencing this type
-        public List<PropertyTypeConstraint> PropertyTypeConstraints { get; set; }
     }
 
     internal class TypeDefinitionConfigurator : EntityConfigurator<TypeDefinition>
@@ -82,8 +66,8 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey(x => x.ID);
 
             builder.HasMany( x => x.ImplementedTypes )
-                .WithOne( x => x.TypeDefinition )
-                .HasForeignKey( x => x.TypeDefinitionID )
+                .WithOne( x => x.ChildType )
+                .HasForeignKey( x => x.ChildTypeID )
                 .HasPrincipalKey( x => x.ID );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);

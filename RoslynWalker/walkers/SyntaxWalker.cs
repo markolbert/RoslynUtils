@@ -36,6 +36,7 @@ namespace J4JSoftware.Roslyn
         protected ISymbolName SymbolName { get; }
 
         public Type SymbolType { get; }
+        public object Predecessor { get; set; }
 
         public ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies => _modelAssemblies.AsReadOnly();
 

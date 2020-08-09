@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ITypeProcessor : IRoslynProcessor<TypeProcessorContext>, IEquatable<ITypeProcessor>
+    public interface ITypeProcessor : IRoslynProcessor<TypeProcessorContext>, ITopologicalSort<ITypeProcessor>
     {
         Type SupportedType { get; }
     }

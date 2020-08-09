@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
         public TypeDefinition DefiningType { get; set; } = null!;
 
         public int PropertyTypeID { get; set; }
-        public TypeDefinition PropertyType { get; set; } = null!;
+        public TypeAncestor PropertyType { get; set; } = null!;
 
         public List<PropertyParameter> Parameters { get; set; }
     }
@@ -54,9 +54,7 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.ID );
 
             builder.HasOne( x => x.PropertyType )
-                .WithMany( x => x.PropertyTypes )
-                .HasForeignKey( x => x.PropertyTypeID )
-                .HasPrincipalKey( x => x.ID );
+                .WithOne( x => x.Property );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 
@@ -65,7 +63,10 @@ namespace J4JSoftware.Roslyn
             builder.Property(x => x.FullyQualifiedName)
                 .IsRequired();
 
-            builder.Property(x => x.Accessibility)
+            builder.Property(x => x.GetAccessibility)
+                .HasConversion(new EnumToNumberConverter<Accessibility, int>());
+
+            builder.Property(x => x.SetAccessibility)
                 .HasConversion(new EnumToNumberConverter<Accessibility, int>());
 
             builder.Property(x => x.DeclarationModifier)

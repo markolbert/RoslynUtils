@@ -142,67 +142,57 @@ namespace J4JSoftware.Roslyn.Sinks
         private void ProcessParameter(
             IParameterSymbol paramSymbol,
             Property propDb,
-            Dictionary<string, List<TypeDefinition>> paramTypeEntities)
+            Dictionary<string, List<TypeDefinition>> paramTypeEntities )
         {
-            var genSet = GetDbSet<GenericPropertyParameter>();
-            var closedSet = GetDbSet<ClosedPropertyParameter>();
+            var ppSet = GetDbSet<PropertyParameter>();
 
-            var propParam = paramSymbol.Type is ITypeParameterSymbol
-                ? (PropertyParameter)genSet
-                    .FirstOrDefault(x => x.Name == paramSymbol.Name && x.PropertyID == propDb.ID)
-                : (PropertyParameter)closedSet
-                    .FirstOrDefault(x => x.Name == paramSymbol.Name && x.PropertyID == propDb.ID);
+            var propParamDb = ppSet
+                .FirstOrDefault( x => x.Name == paramSymbol.Name && x.PropertyID == propDb.ID );
 
-            if (propParam == null)
+            if( propParamDb == null )
             {
-                propParam = paramSymbol.Type is ITypeParameterSymbol
-                    ? (PropertyParameter)new GenericPropertyParameter()
-                    : (PropertyParameter)new ClosedPropertyParameter();
+                propParamDb = new PropertyParameter();
 
-                if (propDb.ID == 0)
-                    propParam.Property = propDb;
-                else propParam.PropertyID = propDb.ID;
+                if( propDb.ID == 0 )
+                    propParamDb.Property = propDb;
+                else propParamDb.PropertyID = propDb.ID;
 
-                propParam.Name = paramSymbol.Name;
+                propParamDb.Name = paramSymbol.Name;
 
-                if (propParam is GenericPropertyParameter)
-                    genSet.Add((GenericPropertyParameter)propParam);
-                else
-                    closedSet.Add((ClosedPropertyParameter)propParam);
+                ppSet.Add( propParamDb );
             }
 
-            propParam.Ordinal = paramSymbol.Ordinal;
-            propParam.Name = paramSymbol.Name;
+            propParamDb.Ordinal = paramSymbol.Ordinal;
+            propParamDb.Name = paramSymbol.Name;
 
-            if (paramSymbol.Type is ITypeParameterSymbol tpSymbol)
-                ProcessGenericParameter((GenericPropertyParameter)propParam, paramTypeEntities[propParam.Name]);
-            else
-                ((ClosedPropertyParameter)propParam).ParameterTypeID = paramTypeEntities[paramSymbol.Name].First().ID;
+            ProcessPropertyParameterType( propParamDb, paramTypeEntities[ propParamDb.Name ] );
         }
 
-        private void ProcessGenericParameter(
-            GenericPropertyParameter genParam,
+        private void ProcessPropertyParameterType(
+            PropertyParameter propParamDb,
             List<TypeDefinition> typeConstraints)
         {
-            var ptSet = GetDbSet<PropertyTypeConstraint>();
+            var tiSet = GetDbSet<TypeAncestor>();
 
             foreach (var constTypeDb in typeConstraints)
             {
-                var constraintDb = ptSet
+                var tiDb = tiSet
                     .FirstOrDefault(x =>
-                       x.ConstrainingTypeID == constTypeDb.ID && x.GenericPropertyParameterID == genParam.ID);
+                       x.ChildTypeID == constTypeDb.ID 
+                       && x.PropertyParameter != null
+                       && x.PropertyParameter.ID == propParamDb.ID);
 
-                if (constraintDb != null)
+                if (tiDb != null)
                     continue;
 
-                constraintDb = new PropertyTypeConstraint { ConstrainingTypeID = constTypeDb.ID };
+                tiDb = new TypeAncestor { ChildTypeID = constTypeDb.ID };
 
-                if (genParam.ID == 0)
-                    constraintDb.GenericPropertyParameter = genParam;
+                if (propParamDb.ID == 0 || tiDb.PropertyParameter == null)
+                    tiDb.PropertyParameter = propParamDb;
                 else
-                    constraintDb.GenericPropertyParameterID = genParam.ID;
+                    tiDb.PropertyParameter.ID = propParamDb.ID;
 
-                ptSet.Add(constraintDb);
+                tiSet.Add(tiDb);
             }
         }
     }

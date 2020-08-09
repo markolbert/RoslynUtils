@@ -9,16 +9,16 @@ namespace J4JSoftware.Roslyn
     [EntityConfiguration( typeof( MethodArgumentConfigurator ) )]
     public class MethodParameter : ISynchronized
     {
-        protected MethodParameter()
-        {
-        }
-
         public int ID { get; set; }
         public int Ordinal { get; set; }
         public string Name { get; set; }
         public bool Synchronized { get; set; }
+
         public int DeclaringMethodID { get; set; }
         public Method DeclaringMethod { get; set; }
+
+        public int ParameterTypeID { get; set; }
+        public TypeAncestor ParameterType { get; set; }
 
         public bool IsOptional { get; set; }
         public bool IsParams { get; set; }
@@ -36,6 +36,9 @@ namespace J4JSoftware.Roslyn
                 .WithMany(x => x.Arguments)
                 .HasForeignKey(x => x.DeclaringMethodID)
                 .HasPrincipalKey(x => x.ID);
+
+            builder.HasOne( x => x.ParameterType )
+                .WithOne( x => x.MethodParameter );
 
             builder.Property( x => x.ReferenceKind )
                 .HasConversion( new EnumToNumberConverter<RefKind, int>() );

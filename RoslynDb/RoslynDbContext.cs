@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.entities.types;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 #pragma warning disable 8618
@@ -19,21 +20,22 @@ namespace J4JSoftware.Roslyn
             _config = config ?? throw new NullReferenceException(nameof(config));
         }
 
-        // core entities
+        // assemblies and namespaces
         public DbSet<Assembly> Assemblies { get; set; }
         public DbSet<InScopeAssemblyInfo> InScopeInfo { get; set; }
         public DbSet<Namespace> Namespaces { get; set; }
-        public DbSet<TypeDefinition> TypeDefinitions { get; set; }
-        public DbSet<Method> Methods { get; set; }
-        public DbSet<Property> Properties { get; set; }
         public DbSet<AssemblyNamespace> AssemblyNamespaces { get; set; }
+
+        // type definition and implementation
+        public DbSet<TypeDefinition> TypeDefinitions { get; set; }
         public DbSet<TypeParameter> TypeParameters { get; set; }
-        public DbSet<TypeConstraint> TypeConstraints { get; set; }
-        public DbSet<TypeImplementation> TypeImplementations { get; set; }
-        public DbSet<ClosedTypeParameter> ClosedTypeParameters { get; set; }
-        public DbSet<GenericMethodParameter> GenericMethodArguments { get; set; }
-        public DbSet<MethodTypeConstraint> MethodTypeConstraints { get; set; }
-        public DbSet<ClosedMethodParameter> ClosedMethodArguments { get; set; }
+        public DbSet<TypeAncestor> TypeAncestors { get; set; }
+        public DbSet<TypeClosure> TypeClosures { get; set; }
+
+        public DbSet<Method> Methods { get; set; }
+        public DbSet<MethodParameter> MethodParameters { get; set; }
+
+        public DbSet<Property> Properties { get; set; }
         public DbSet<PropertyParameter> PropertyParameters { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

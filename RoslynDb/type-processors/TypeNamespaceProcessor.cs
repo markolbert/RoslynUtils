@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn
             _nsSink = nsSink;
         }
 
-        public override bool Process( TypeProcessorContext context )
+        protected override bool ProcessInternal( TypeProcessorContext context )
         {
             var allOkay = true;
 

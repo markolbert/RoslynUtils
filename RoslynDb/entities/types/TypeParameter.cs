@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Roslyn.Deprecated;
 using J4JSoftware.Roslyn.entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -16,25 +17,25 @@ namespace J4JSoftware.Roslyn
         public int Ordinal { get; set; }
         public TypeParameterConstraint Constraints { get; set; }
 
-        public int TypeDefinitionID { get; set; }
-        public TypeDefinition TypeDefinition { get; set; }
+        public int ContainingTypeID { get; set; }
+        public TypeDefinition ContainingType { get; set; }
 
-        public List<TypeConstraint> TypeConstraints { get; set; }
+        public List<TypeAncestor> TypeImplementations { get; set; }
     }
 
     internal class TypeParameterConfigurator : EntityConfigurator<TypeParameter>
     {
         protected override void Configure(EntityTypeBuilder<TypeParameter> builder)
         {
-            builder.HasMany(x => x.TypeConstraints)
-                .WithOne(x => x.TypeParameter)
-                .HasPrincipalKey(x => x.ID)
-                .HasForeignKey(x => x.TypeParameterID);
+            builder.HasMany( x => x.TypeImplementations )
+                .WithOne( x => x.TypeParameter )
+                .HasPrincipalKey( x => x.ID )
+                .HasForeignKey( x => x.ID );
 
-            builder.HasOne( x => x.TypeDefinition )
+            builder.HasOne( x => x.ContainingType )
                 .WithMany( x => x.TypeParameters )
                 .HasPrincipalKey( x => x.ID )
-                .HasForeignKey( x => x.TypeDefinitionID );
+                .HasForeignKey( x => x.ContainingTypeID );
 
             builder.Property(x => x.Constraints)
                 .HasConversion(new EnumToNumberConverter<TypeParameterConstraint, int>());

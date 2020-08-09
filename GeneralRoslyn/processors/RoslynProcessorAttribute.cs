@@ -15,10 +15,4 @@ namespace J4JSoftware.Roslyn
 
         public Type PredecessorType { get; }
     }
-
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class RoslynSinkAttribute : Attribute
-    {
-
-    }
 }

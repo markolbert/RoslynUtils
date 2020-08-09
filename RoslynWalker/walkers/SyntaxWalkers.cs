@@ -3,40 +3,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using J4JSoftware.Logging;
+using J4JSoftware.Roslyn.walkers;
 
 namespace J4JSoftware.Roslyn
 {
-    public class SyntaxWalkers
+    public sealed class SyntaxWalkers : TopologicallySortedCollection<ISyntaxWalker>
     {
-        private readonly IJ4JLogger _logger;
-        private readonly List<ISyntaxWalker> _walkers;
-
         public SyntaxWalkers(
             IEnumerable<ISyntaxWalker> syntaxWalkers,
             IJ4JLogger logger
         )
+        : base( syntaxWalkers, logger )
         {
-            _logger = logger;
-            _logger.SetLoggedType( this.GetType() );
-
-            var error = TopologicalSorter.CreateSequence( syntaxWalkers, out var walkers );
-
-            if( error != null )
-                _logger.Error( error );
-
-            _walkers = walkers ?? new List<ISyntaxWalker>();
         }
 
         public bool Process( List<CompiledProject> compResults )
         {
             var allOkay = true;
 
-            foreach( var walker in _walkers )
+            foreach( var walker in ExecutionSequence )
             {
                 allOkay &= walker.Process( compResults );
             }
 
             return allOkay;
+        }
+
+        protected override void SetPredecessors( List<ISyntaxWalker> items )
+        {
+            SetPredecessor<NamespaceWalker, AssemblyWalker>( items );
+            SetPredecessor<TypeDefinitionWalker, NamespaceWalker>( items );
+            SetPredecessor<MethodWalker, TypeDefinitionWalker>( items );
+            SetPredecessor<PropertyWalker, TypeDefinitionWalker>( items );
         }
     }
 }
