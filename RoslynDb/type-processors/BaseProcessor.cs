@@ -6,6 +6,8 @@ namespace J4JSoftware.Roslyn
 {
     public abstract class BaseProcessor<TEntity, TSource> : IRoslynProcessor<TSource>, ITopologicalSort<BaseProcessor<TEntity, TSource>>
     {
+        private BaseProcessor<TEntity, TSource>? _predecessor;
+
         protected BaseProcessor(
             RoslynDbContext dbContext,
             IJ4JLogger logger
@@ -21,7 +23,23 @@ namespace J4JSoftware.Roslyn
         protected IJ4JLogger Logger { get; }
 
         public Type SupportedType => typeof(TEntity);
-        public object Predecessor { get; set; }
+
+        public object? Predecessor
+        {
+            get => _predecessor;
+
+            set
+            {
+                if( value is BaseProcessor<TEntity, TSource> castValue )
+                {
+                    _predecessor = castValue;
+                    return;
+                }
+
+                throw new InvalidCastException(
+                    $"{nameof( Predecessor )} expects a {typeof( BaseProcessor<TEntity, TSource> )}, was assigned a {value.GetType()} instead" );
+            }
+        }
 
         public bool Process( TSource inputData )
         {

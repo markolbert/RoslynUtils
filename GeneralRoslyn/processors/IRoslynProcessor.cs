@@ -4,6 +4,7 @@ namespace J4JSoftware.Roslyn
 {
     public interface IRoslynProcessor
     {
+        Type SupportedType { get; }
         bool Process( object inputData );
     }
 

@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+﻿using System.Collections.Generic;
 using J4JSoftware.Logging;
+using J4JSoftware.Roslyn;
 using J4JSoftware.Roslyn.walkers;
 
-namespace J4JSoftware.Roslyn
+namespace Tests.RoslynWalker
 {
-    public sealed class SyntaxWalkers : TopologicallySortedCollection<ISyntaxWalker>
+    public sealed class SyntaxWalkers : TopologicallySortedCollection<ISyntaxWalker>, ISyntaxWalkers
     {
         public SyntaxWalkers(
             IEnumerable<ISyntaxWalker> syntaxWalkers,

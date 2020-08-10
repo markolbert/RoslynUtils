@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn
             IEnumerable<TNode> items,
             out List<TNode>? result
         )
-            where TNode : ITopologicalSort<TNode>
+            where TNode : class, ITopologicalSort<TNode>
         {
             result = null;
 
@@ -26,7 +26,11 @@ namespace J4JSoftware.Roslyn
             {
                 nodes.Add( item );
 
-                var predecessor = nodes.FirstOrDefault( n => Object.Equals( item, n.Predecessor ) );
+                var predecessor = nodes.FirstOrDefault( n =>
+                {
+                    n.GetPredecessor(out var predResult);
+                    return Equals( item, predResult );
+                } );
 
                 if( predecessor != null )
                     edges.Add( ( item, predecessor ) );

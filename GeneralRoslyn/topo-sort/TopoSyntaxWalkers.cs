@@ -6,7 +6,7 @@ using J4JSoftware.Logging;
 namespace J4JSoftware.Roslyn
 {
     public abstract class TopologicallySortedCollection<T> : ITopologicallySorted<T>
-        where T : ITopologicalSort<T>
+        where T : class, ITopologicalSort<T>
     {
         protected TopologicallySortedCollection(
             IEnumerable<T> items,
