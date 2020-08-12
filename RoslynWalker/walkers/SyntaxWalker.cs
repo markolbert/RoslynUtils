@@ -17,14 +17,14 @@ namespace J4JSoftware.Roslyn
         protected SyntaxWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             IDefaultSymbolSink defaultSymbolSink,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
         {
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
 
-            SymbolName = symbolName;
+            SymbolInfo = symbolInfo;
             SymbolType = typeof(TTarget);
 
             var sink = symbolSinks.FirstOrDefault( s => s.SupportsSymbol( SymbolType ) && !( s is IDefaultSymbolSink ) );
@@ -33,10 +33,10 @@ namespace J4JSoftware.Roslyn
         }
 
         protected IJ4JLogger Logger { get; }
-        protected ISymbolName SymbolName { get; }
+        protected ISymbolInfo SymbolInfo { get; }
 
+        public ISyntaxWalker Predecessor { get; set; }
         public Type SymbolType { get; }
-        public object Predecessor { get; set; }
 
         public ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies => _modelAssemblies.AsReadOnly();
 

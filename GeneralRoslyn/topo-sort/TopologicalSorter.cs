@@ -26,11 +26,7 @@ namespace J4JSoftware.Roslyn
             {
                 nodes.Add( item );
 
-                var predecessor = nodes.FirstOrDefault( n =>
-                {
-                    n.GetPredecessor(out var predResult);
-                    return Equals( item, predResult );
-                } );
+                var predecessor = nodes.FirstOrDefault( n => Equals( item, n.Predecessor ) );
 
                 if( predecessor != null )
                     edges.Add( ( item, predecessor ) );
@@ -73,7 +69,7 @@ namespace J4JSoftware.Roslyn
             if( edges.Any() )
                 return false;
 
-            result = retVal.ToList();
+            result = retVal.Reverse().ToList();
 
             return true;
         }

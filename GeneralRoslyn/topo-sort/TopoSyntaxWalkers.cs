@@ -5,9 +5,13 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class TopologicallySortedCollection<T> : ITopologicallySorted<T>
+    public abstract class TopologicallySortedCollection<T, TRoot> : ITopologicallySorted<T>
         where T : class, ITopologicalSort<T>
+        where TRoot : T
     {
+        protected readonly List<T> _rawItems;
+        private readonly List<T> _items = new List<T>();
+
         protected TopologicallySortedCollection(
             IEnumerable<T> items,
             IJ4JLogger logger
@@ -16,11 +20,19 @@ namespace J4JSoftware.Roslyn
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
 
-            var itemList = items.ToList();
+            _rawItems = items.ToList();
 
-            SetPredecessors( itemList );
+            var rootType = typeof(TRoot);
+            var rootNode = _rawItems.FirstOrDefault(x => x.GetType() == rootType);
 
-            switch( itemList.Count( x => x.Predecessor == null ) )
+            if (rootNode == null)
+                Logger.Error<Type>("Couldn't find '{rootType}'", rootType);
+            else
+                _items.Add( rootNode );
+
+            SetPredecessors();
+
+            switch( _items.Count(x=>x.Predecessor == null ) )
             {
                 case 0:
                     Logger.Error<Type>( "No root {0} defined", typeof(T) );
@@ -35,7 +47,7 @@ namespace J4JSoftware.Roslyn
                     break;
             }
 
-            if( TopologicalSorter.Sort( itemList, out var result ) )
+            if( TopologicalSorter.Sort( _items, out var result ) )
                 ExecutionSequence = result!;
             else
             {
@@ -46,25 +58,38 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
 
-        protected abstract void SetPredecessors( List<T> items );
+        protected abstract void SetPredecessors();
 
         public List<T> ExecutionSequence { get; }
 
-        protected void SetPredecessor<TWalker, TPred>( List<ISyntaxWalker> walkers )
-            where TWalker : ISyntaxWalker
-            where TPred : ISyntaxWalker
+        protected bool SetPredecessor<TNode, TPredecessorNode>()
+            where TNode : T
+            where TPredecessorNode : T
         {
-            var walker = walkers.FirstOrDefault( w => w is TWalker );
+            var nodeType = typeof(TNode);
+            var predecessorType = typeof(TPredecessorNode);
 
-            if( walker == null )
-                throw new ArgumentException( $"Couldn't find {nameof(ISyntaxWalker)} '{typeof(TWalker)}'" );
+            var node = _rawItems.FirstOrDefault( x => x.GetType() == nodeType );
 
-            var predecessor = walkers.FirstOrDefault( w => w is TPred );
+            if( node == null )
+            {
+                Logger.Error<Type>( "Couldn't find '{nodeType}'", nodeType );
+                return false;
+            }
+
+            var predecessor = _rawItems.FirstOrDefault( x => x.GetType() == predecessorType );
 
             if( predecessor == null )
-                throw new ArgumentException( $"Couldn't find {nameof(ISyntaxWalker)} '{typeof(TPred)}'" );
+            {
+                Logger.Error<Type>($"Couldn't find '{predecessorType}'", predecessorType);
+                return false;
+            }
 
-            walker.Predecessor = predecessor;
+            node.Predecessor = predecessor;
+
+            _items.Add( node );
+
+            return true;
         }
     }
 }

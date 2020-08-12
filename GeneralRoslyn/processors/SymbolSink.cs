@@ -13,34 +13,34 @@ namespace J4JSoftware.Roslyn
         where TSink : class
     {
         protected SymbolSink(
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
             )
         {
-            SymbolName = symbolName;
+            SymbolInfo = symbolInfo;
 
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
         }
 
         protected IJ4JLogger Logger { get; }
-        protected ISymbolName SymbolName { get; }
+        protected ISymbolInfo SymbolInfo { get; }
         protected List<string> ProcessedSymbolNames { get; } = new List<string>();
 
         public bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) =>
             OutputSymbolInternal( syntaxWalker, symbol ).WasOutput;
 
-        public virtual bool TryGetSunkValue( TSymbol symbol, out TSink? result )
-        {
-            result = null;
-            return false;
-        }
+        //public virtual bool TryGetSunkValue( TSymbol symbol, out TSink? result )
+        //{
+        //    result = null;
+        //    return false;
+        //}
 
         protected virtual SymbolInfo OutputSymbolInternal( 
             ISyntaxWalker syntaxWalker,
             TSymbol symbol )
         {
-            var retVal = new SymbolInfo( symbol, SymbolName );
+            var retVal = SymbolInfo.Create( symbol );
 
             retVal.AlreadyProcessed =
                 ProcessedSymbolNames.Exists( pn => pn.Equals( retVal.SymbolName, StringComparison.Ordinal ) );

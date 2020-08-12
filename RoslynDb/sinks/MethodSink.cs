@@ -16,16 +16,12 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class MethodSink : RoslynDbSink<IMethodSymbol, Method>
     {
-        private readonly ISymbolSink<INamedTypeSymbol, TypeDefinition> _typeSink;
-
         public MethodSink(
             RoslynDbContext dbContext,
-            ISymbolSink<INamedTypeSymbol, TypeDefinition> typeSink,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger )
-            : base( dbContext, symbolName, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _typeSink = typeSink;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -57,22 +53,20 @@ namespace J4JSoftware.Roslyn.Sinks
 
             // validate that we can identify all the related entities we'll need to create/update
             // the method entity
-            if( !_typeSink.TryGetSunkValue( symbol.ContainingType, out var dtDb ) )
+            if ( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var dtDb ) )
                 return retVal;
 
-            var rtInfo = new SymbolInfo( symbol.ReturnType, SymbolName );
-
-            if( !_typeSink.TryGetSunkValue( (INamedTypeSymbol) rtInfo.Symbol, out var rtDb ) )
+            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ReturnType, out var rtDb ) )
                 return retVal;
 
             if( !GetParameterTypeDefinitions( symbol, out var paramTypeEntities ) )
                 return retVal;
 
             // construct/update the method entity
-            if( !GetByFullyQualifiedName( retVal.SymbolName, out var methodDb ) )
+            if( !GetByFullyQualifiedName<Method>( symbol, out var methodDb ) )
                 methodDb = AddEntity( retVal.SymbolName );
 
-            methodDb!.Name = SymbolName.GetName( symbol );
+            methodDb!.Name = SymbolInfo.GetName( symbol );
             methodDb.Kind = symbol.MethodKind;
             methodDb.ReturnTypeID = rtDb!.ID;
             methodDb.DefiningTypeID = dtDb!.ID;
@@ -126,7 +120,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             bool get_type_definition( ISymbol symbol, out TypeDefinition? innerResult )
             {
-                var symbolInfo = new SymbolInfo( symbol, SymbolName );
+                var symbolInfo = SymbolInfo.Create( symbol );
 
                 innerResult = tdSet.FirstOrDefault( x => x.FullyQualifiedName == symbolInfo.SymbolName );
 

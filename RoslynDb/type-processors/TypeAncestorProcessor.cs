@@ -7,19 +7,15 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    [RoslynProcessor(typeof(TypeGenericTypesProcessor))]
-    public class TypeAncestorProcessor : BaseProcessor<INamedTypeSymbol, TypeProcessorContext>, ITypeProcessor
+    public class TypeAncestorProcessor : BaseProcessorDb<TypeProcessorContext>
     {
-        private readonly ISymbolName _symbolName;
-
         public TypeAncestorProcessor(
             RoslynDbContext dbContext,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
-            : base( dbContext, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _symbolName = symbolName;
         }
 
         protected override bool ProcessInternal( TypeProcessorContext context )
@@ -36,15 +32,8 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessAncestors(INamedTypeSymbol typeSymbol)
         {
-            var fqName = _symbolName.GetFullyQualifiedName( typeSymbol );
-
-            var typeDb = DbContext.TypeDefinitions.FirstOrDefault( td => td.FullyQualifiedName == fqName );
-
-            if( typeDb == null )
-            {
-                Logger.Error<string>( "Couldn't find type {0} in the database", fqName );
+            if( !GetByFullyQualifiedName<TypeDefinition>( typeSymbol, out var typeDb ) )
                 return false;
-            }
 
             if (!ProcessAncestor(typeDb!, typeSymbol.BaseType!))
                 return false;
@@ -61,17 +50,12 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessAncestor( TypeDefinition typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            var fqName = _symbolName.GetFullyQualifiedName( ancestorSymbol );
-
-            var implTypeDb = DbContext.TypeDefinitions.FirstOrDefault( td => td.FullyQualifiedName == fqName );
-
-            if( implTypeDb == null )
-            {
-                Logger.Error<string>( "Couldn't find ancestor type {0} in database", fqName );
+            if( !GetByFullyQualifiedName<TypeDefinition>( ancestorSymbol, out var implTypeDb ) )
                 return false;
-            }
 
-            var ancestorDb = DbContext.TypeAncestors
+            var ancestors = GetDbSet<TypeAncestor>();
+
+            var ancestorDb = ancestors
                 .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.ImplementingTypeID == implTypeDb!.ID );
 
             if( ancestorDb == null )
@@ -82,7 +66,7 @@ namespace J4JSoftware.Roslyn
                     ChildTypeID = typeDb!.ID
                 };
 
-                DbContext.TypeAncestors.Add( ancestorDb );
+                ancestors.Add( ancestorDb );
             }
 
             ancestorDb.Synchronized = true;
@@ -94,12 +78,15 @@ namespace J4JSoftware.Roslyn
         {
             var allOkay = true;
 
+            var typeDefinitions = GetDbSet<TypeDefinition>();
+            var typeClosures = GetDbSet<TypeClosure>();
+
             for( int idx = 0; idx < ancestorSymbol.TypeArguments.Length; idx++ )
             {
                 if( ancestorSymbol.TypeArguments[ idx ] is ITypeParameterSymbol )
                     continue;
 
-                var symbolInfo = new SymbolInfo( ancestorSymbol.TypeArguments[ idx ], _symbolName );
+                var symbolInfo = SymbolInfo.Create( ancestorSymbol.TypeArguments[ idx ] );
 
                 if( !( symbolInfo.Symbol is INamedTypeSymbol ) && symbolInfo.TypeKind != TypeKind.Array )
                 {
@@ -111,7 +98,7 @@ namespace J4JSoftware.Roslyn
                     continue;
                 }
 
-                var conDb = DbContext.TypeDefinitions
+                var conDb = typeDefinitions
                     .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
 
                 if( conDb == null )
@@ -122,8 +109,10 @@ namespace J4JSoftware.Roslyn
                     continue;
                 }
 
-                var closureDb = DbContext.TypeClosures
-                    .FirstOrDefault( c => c.TypeBeingClosedID == typeDb.ID && c.ClosingTypeID == conDb.ID );
+                var closureDb = typeClosures
+                    .FirstOrDefault( c => c.TypeBeingClosedID == typeDb.ID 
+                                          && c.ClosingTypeID == conDb.ID
+                                          && c.Ordinal == idx );
 
                 if( closureDb == null )
                 {
@@ -134,21 +123,13 @@ namespace J4JSoftware.Roslyn
                         Ordinal = idx
                     };
 
-                    DbContext.TypeClosures.Add( closureDb );
+                    typeClosures.Add( closureDb );
                 }
 
                 closureDb.Synchronized = true;
             }
 
             return allOkay;
-        }
-
-        public bool Equals( ITypeProcessor? other )
-        {
-            if (other == null)
-                return false;
-
-            return other.SupportedType == SupportedType;
         }
     }
 }

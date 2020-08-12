@@ -16,16 +16,12 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class PropertySink : RoslynDbSink<IPropertySymbol, Property>
     {
-        private readonly ISymbolSink<INamedTypeSymbol, TypeDefinition> _typeSink;
-
         public PropertySink(
             RoslynDbContext dbContext,
-            ISymbolSink<INamedTypeSymbol, TypeDefinition> typeSink,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger )
-            : base( dbContext, symbolName, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _typeSink = typeSink;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -56,12 +52,10 @@ namespace J4JSoftware.Roslyn.Sinks
 
             // validate that we can identify all the related entities we'll need to create/update
             // the method entity
-            if( !_typeSink.TryGetSunkValue( symbol.ContainingType, out var dtDb ) )
+            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var dtDb ) )
                 return retVal;
-            
-            var ptInfo = new SymbolInfo( symbol.Type, SymbolName );
 
-            if( !_typeSink.TryGetSunkValue( (INamedTypeSymbol) ptInfo.Symbol, out var rtDb ) )
+            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.Type, out var rtDb ) )
                 return retVal;
 
             // get the TypeDefinitions for the parameters, if any
@@ -69,10 +63,10 @@ namespace J4JSoftware.Roslyn.Sinks
                 return retVal;
 
             // construct/update the method entity
-            if ( !GetByFullyQualifiedName( retVal.SymbolName, out var propDb ) )
+            if ( !GetByFullyQualifiedName<Property>( symbol, out var propDb ) )
                 propDb = AddEntity( retVal.SymbolName );
 
-            propDb!.Name = SymbolName.GetName( symbol );
+            propDb!.Name = SymbolInfo.GetName( symbol );
             propDb.PropertyTypeID = rtDb!.ID;
             propDb.DefiningTypeID = dtDb!.ID;
             propDb.DeclarationModifier = symbol.GetDeclarationModifier();
@@ -131,7 +125,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             bool get_type_definition(ISymbol symbol, out TypeDefinition? innerResult)
             {
-                var symbolInfo = new SymbolInfo(symbol, SymbolName);
+                var symbolInfo = SymbolInfo.Create( symbol );
 
                 innerResult = tdSet.FirstOrDefault(x => x.FullyQualifiedName == symbolInfo.SymbolName);
 

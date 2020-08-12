@@ -12,16 +12,12 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class NamespaceSink : RoslynDbSink<INamespaceSymbol, Namespace>
     {
-        private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
-
         public NamespaceSink(
             RoslynDbContext dbContext,
-            ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger )
-            : base( dbContext, symbolName, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _assemblySink = assemblySink;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -39,10 +35,10 @@ namespace J4JSoftware.Roslyn.Sinks
             if (retVal.AlreadyProcessed)
                 return retVal;
 
-            if( !_assemblySink.TryGetSunkValue( symbol.ContainingAssembly, out var dbAssembly ) )
+            if( !GetByFullyQualifiedName<Assembly>( symbol.ContainingAssembly, out var dbAssembly ) )
                 return retVal;
 
-            if( !GetByFullyQualifiedName( retVal.SymbolName, out var dbSymbol ) )
+            if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
                 dbSymbol = AddEntity( retVal.SymbolName );
 
             // create the link between this namespace entity and the assembly entity to which it belongs

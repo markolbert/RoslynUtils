@@ -15,37 +15,71 @@ namespace J4JSoftware.Roslyn.Sinks
 
         protected RoslynDbSink(
             RoslynDbContext dbContext,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
-            : base( symbolName, logger )
+            : base( symbolInfo, logger )
         {
             _dbContext = dbContext;
         }
 
-        public override bool TryGetSunkValue( TSymbol symbol, out TSink? result )
-        {
-            var symbolName = SymbolName.GetFullyQualifiedName( symbol );
+        //public override bool TryGetSunkValue( TSymbol symbol, out TSink? result )
+        //{
+        //    var symbolName = SymbolName.GetFullyQualifiedName( symbol );
 
-            if( GetByFullyQualifiedName(symbolName, out var innerResult ) )
-            {
-                result = innerResult;
-                return true;
-            }
+        //    if( GetByFullyQualifiedName(symbolName, out var innerResult ) )
+        //    {
+        //        result = innerResult;
+        //        return true;
+        //    }
 
-            result = null;
-            return false;
-        }
+        //    result = null;
+        //    return false;
+        //}
 
         protected DbSet<TRelated> GetDbSet<TRelated>()
             where TRelated : class
             => _dbContext.Set<TRelated>();
 
-        protected bool GetByFullyQualifiedName( string fqn, out TSink? result )
+        protected TSink AddEntity(TSymbol symbol)
         {
             var dbSet = _dbContext.Set<TSink>();
 
-            result = dbSet.FirstOrDefault( x => x.FullyQualifiedName == fqn );
+            if( GetByFullyQualifiedName<TSink>( symbol, out var retVal ) )
+                return retVal!;
+
+            retVal = new TSink { FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ) };
+            dbSet.Add(retVal);
+
+            ProcessedSymbolNames.Add( retVal.FullyQualifiedName );
+
+            return retVal;
+        }
+
+        //protected bool GetByFullyQualifiedName( string fqn, out TSink? result )
+        //{
+        //    var dbSet = _dbContext.Set<TSink>();
+
+        //    result = dbSet.FirstOrDefault( x => x.FullyQualifiedName == fqn );
+
+        //    return result != null;
+        //}
+
+        protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result )
+            where TEntity : class, IFullyQualifiedName
+        {
+            result = null;
+
+            var symbolInfo = SymbolInfo.Create(symbol);
+
+            var dbSet = _dbContext.Set<TEntity>();
+
+            result = dbSet.FirstOrDefault( x => x.FullyQualifiedName == symbolInfo.SymbolName );
+
+            if( result == null )
+                Logger.Error<Type, string>( "Couldn't find instance of {0} in database for symbol {1}", 
+                    typeof(TEntity),
+                    symbolInfo.SymbolName );
 
             return result != null;
         }

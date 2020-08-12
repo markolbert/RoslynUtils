@@ -7,18 +7,15 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeNamespaceProcessor))]
-    public class TypeDiscoveredTypesProcessor : BaseProcessor<INamedTypeSymbol, TypeProcessorContext>, ITypeProcessor
+    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<TypeProcessorContext>
     {
-        private readonly ISymbolName _symbolName;
-
         public TypeDiscoveredTypesProcessor(
             RoslynDbContext dbContext,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
-            : base( dbContext, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _symbolName = symbolName;
         }
 
         protected override bool ProcessInternal( TypeProcessorContext context )
@@ -35,7 +32,7 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessSymbol( ISyntaxWalker syntaxWalker, INamedTypeSymbol ntSymbol )
         {
-            var symbolInfo = new SymbolInfo( ntSymbol, _symbolName );
+            var symbolInfo = SymbolInfo.Create( ntSymbol );
 
             switch( symbolInfo.TypeKind )
             {
@@ -55,25 +52,15 @@ namespace J4JSoftware.Roslyn
                     return false;
             }
 
-            var fqAssemblyName = _symbolName.GetFullyQualifiedName( symbolInfo.Symbol.ContainingAssembly );
-            var dbAssembly = DbContext.Assemblies.FirstOrDefault( a => a.FullyQualifiedName == fqAssemblyName );
-            
-            if( dbAssembly == null )
-            {
-                Logger.Error<string>( "Couldn't find assembly {0} in database", fqAssemblyName );
+            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
                 return false;
-            }
 
-            var fqNSName = _symbolName.GetFullyQualifiedName( symbolInfo.Symbol.ContainingNamespace );
-            var dbNS = DbContext.Namespaces.FirstOrDefault( ns => ns.FullyQualifiedName == fqNSName );
-
-            if( dbNS == null )
-            {
-                Logger.Error<string>("Couldn't find namespace {0} in database", fqNSName);
+            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
                 return false;
-            }
 
-            var dbSymbol = DbContext.TypeDefinitions
+            var typeDefinitions = GetDbSet<TypeDefinition>();
+
+            var dbSymbol = typeDefinitions
                     .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
 
             if( dbSymbol == null )
@@ -83,11 +70,11 @@ namespace J4JSoftware.Roslyn
                     FullyQualifiedName = symbolInfo.SymbolName
                 };
 
-                DbContext.TypeDefinitions.Add( dbSymbol );
+                typeDefinitions.Add( dbSymbol );
             }
 
             dbSymbol!.Synchronized = true;
-            dbSymbol.Name = _symbolName.GetName( symbolInfo.OriginalSymbol );
+            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.OriginalSymbol );
             dbSymbol.AssemblyID = dbAssembly!.ID;
             dbSymbol.NamespaceId = dbNS!.ID;
             dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
@@ -96,14 +83,6 @@ namespace J4JSoftware.Roslyn
             dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbolInfo.Symbol.ContainingAssembly );
 
             return true;
-        }
-
-        public bool Equals( ITypeProcessor? other )
-        {
-            if (other == null)
-                return false;
-
-            return other.SupportedType == SupportedType;
         }
     }
 }

@@ -7,19 +7,15 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    [RoslynProcessor(typeof(TypeDiscoveredTypesProcessor))]
-    public class TypeGenericTypesProcessor : BaseProcessor<INamedTypeSymbol, TypeProcessorContext>, ITypeProcessor
+    public class TypeGenericTypesProcessor : BaseProcessorDb<TypeProcessorContext>
     {
-        private readonly ISymbolName _symbolName;
-
         public TypeGenericTypesProcessor(
             RoslynDbContext dbContext,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
-            : base( dbContext, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _symbolName = symbolName;
         }
 
         protected override bool ProcessInternal( TypeProcessorContext context )
@@ -36,22 +32,14 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessGeneric(INamedTypeSymbol generic)
         {
-            var fqName = _symbolName.GetFullyQualifiedName(generic);
-
             if ( !generic.IsGenericType )
             {
-                Logger.Error<string>("Type {0} is not generic", fqName);
+                Logger.Error<string>("Type {0} is not generic", generic.Name);
                 return false;
             }
 
-            var typeDefDb = DbContext.TypeDefinitions
-                .FirstOrDefault( td => td.FullyQualifiedName == fqName );
-
-            if( typeDefDb == null )
-            {
-                Logger.Error<string>( "Couldn't find generic type {0} in the database", fqName );
+            if( !GetByFullyQualifiedName<TypeDefinition>( generic, out var typeDefDb ) )
                 return false;
-            }
 
             var allOkay = true;
 
@@ -71,7 +59,9 @@ namespace J4JSoftware.Roslyn
 
         private TypeParameter ProcessTypeParameter(TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol)
         {
-            var tpDb = DbContext.TypeParameters
+            var typeParameters = GetDbSet<TypeParameter>();
+
+            var tpDb = typeParameters
                 .FirstOrDefault(x => x.Ordinal == tpSymbol.Ordinal && x.ContainingTypeID == typeDefDb.ID);
 
             if (tpDb == null)
@@ -82,7 +72,7 @@ namespace J4JSoftware.Roslyn
                     Ordinal = tpSymbol.Ordinal
                 };
 
-                DbContext.TypeParameters.Add(tpDb);
+                typeParameters.Add(tpDb);
             }
 
             tpDb.Synchronized = true;
@@ -97,7 +87,7 @@ namespace J4JSoftware.Roslyn
             ITypeParameterSymbol tpSymbol,
             ITypeSymbol conSymbol)
         {
-            var symbolInfo = new SymbolInfo(conSymbol, _symbolName);
+            var symbolInfo = SymbolInfo.Create(conSymbol);
 
             if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
             {
@@ -107,7 +97,9 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var conDb = DbContext.TypeDefinitions
+            var typeDefinitions = GetDbSet<TypeDefinition>();
+
+            var conDb = typeDefinitions
                 .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
 
             if (conDb == null)
@@ -116,7 +108,9 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var closureDb = DbContext.TypeClosures
+            var typeClosures = GetDbSet<TypeClosure>();
+
+            var closureDb = typeClosures
                 .FirstOrDefault( c => c.TypeBeingClosedID == typeDefDb.ID && c.ClosingTypeID == conDb.ID );
 
             if (closureDb == null)
@@ -128,20 +122,12 @@ namespace J4JSoftware.Roslyn
                     Ordinal = tpSymbol.Ordinal
                 };
 
-                DbContext.TypeClosures.Add(closureDb);
+                typeClosures.Add(closureDb);
             }
 
             closureDb.Synchronized = true;
 
             return true;
-        }
-
-        public bool Equals( ITypeProcessor? other )
-        {
-            if (other == null)
-                return false;
-
-            return other.SupportedType == SupportedType;
         }
     }
 }

@@ -6,9 +6,4 @@ namespace J4JSoftware.Roslyn
     {
         bool Process( List<CompiledProject> compResults );
     }
-
-    public interface ISymbolProcessors : ITopologicallySorted<ISymbolProcessor>
-    {
-
-    }
 }

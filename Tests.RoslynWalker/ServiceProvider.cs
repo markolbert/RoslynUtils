@@ -51,15 +51,24 @@ namespace Tests.RoslynWalker
 
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
                 .Where(t => !t.IsAbstract
-                            && typeof(IRoslynProcessor).IsAssignableFrom(t)
+                            && typeof(IAtomicProcessor<TypeProcessorContext>).IsAssignableFrom(t)
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
+
+            builder.RegisterType<SyntaxWalkers>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
+
+            builder.RegisterType<TypeDefinitionProcessors>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
 
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
 
-            builder.RegisterType<SymbolName>()
-                .As<ISymbolName>();
+            builder.RegisterType<SymbolInfo.Factory>()
+                .As<ISymbolInfo>()
+                .SingleInstance();
 
             builder.RegisterType<InScopeAssemblyProcessor>()
                 .As<IInScopeAssemblyProcessor>();

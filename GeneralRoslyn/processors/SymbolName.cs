@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     public class SymbolName : ISymbolName
     {

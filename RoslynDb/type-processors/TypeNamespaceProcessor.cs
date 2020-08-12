@@ -7,38 +7,46 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeAssemblyProcessor))]
-    public class TypeNamespaceProcessor : BaseProcessor<INamespaceSymbol, TypeProcessorContext>, ITypeProcessor
+    public class TypeNamespaceProcessor : BaseProcessorDb<TypeProcessorContext>
     {
-        private readonly ISymbolSink<INamespaceSymbol, Namespace> _nsSink;
-
         public TypeNamespaceProcessor(
             RoslynDbContext dbContext,
-            ISymbolSink<INamespaceSymbol, Namespace> nsSink,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
-            : base( dbContext, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _nsSink = nsSink;
         }
 
         protected override bool ProcessInternal( TypeProcessorContext context )
         {
             var allOkay = true;
 
-            foreach( var nsSymbol in context.TypeSymbols.Select( ts => ts.ContainingNamespace ) )
+            var namespaces = GetDbSet<Namespace>();
+
+            foreach ( var nsSymbol in context.TypeSymbols.Select( ts => ts.ContainingNamespace ) )
             {
-                allOkay &= _nsSink.OutputSymbol( context.SyntaxWalker, nsSymbol );
+                if (GetByFullyQualifiedName<Namespace>(nsSymbol, out var dbSymbol))
+                {
+                    dbSymbol!.Synchronized = true;
+                    continue;
+                }
+
+                if( !GetByFullyQualifiedName<Assembly>( nsSymbol.ContainingAssembly, out var dbAssembly ) )
+                    allOkay = false;
+                else
+                {
+                    dbSymbol = new Namespace
+                    {
+                        FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( nsSymbol ),
+                        Name = SymbolInfo.GetName( nsSymbol )
+                    };
+
+                    namespaces.Add( dbSymbol );
+                }
             }
 
             return allOkay;
-        }
-
-        public bool Equals( ITypeProcessor? other )
-        {
-            if (other == null)
-                return false;
-
-            return other.SupportedType == SupportedType;
         }
     }
 }

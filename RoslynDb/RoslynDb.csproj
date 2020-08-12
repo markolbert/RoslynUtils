@@ -19,8 +19,6 @@
 	  <Compile Remove="entities\methods\MethodTypeConstraint.cs" />
 	  <Compile Remove="entities\types\ClosedTypeParameter.cs" />
 	  <Compile Remove="entities\types\TypeConstraint.cs" />
-	  <Compile Remove="type-processors\TypeAncestorProcessor.cs" />
-	  <Compile Remove="type-processors\TypeGenericTypesProcessor.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

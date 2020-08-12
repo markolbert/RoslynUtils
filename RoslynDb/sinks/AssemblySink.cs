@@ -14,9 +14,9 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public AssemblySink(
             RoslynDbContext dbContext,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger )
-            : base( dbContext, symbolName, logger )
+            : base( dbContext, symbolInfo, logger )
         {
         }
 
@@ -38,7 +38,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if( retVal.AlreadyProcessed )
                 return retVal;
 
-            if( !GetByFullyQualifiedName( retVal.SymbolName, out var dbSymbol ) )
+            if( !GetByFullyQualifiedName<Assembly>( symbol, out var dbSymbol ) )
                 dbSymbol = AddEntity( retVal.SymbolName );
 
             dbSymbol!.Synchronized = true;

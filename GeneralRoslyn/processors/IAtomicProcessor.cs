@@ -2,13 +2,12 @@
 
 namespace J4JSoftware.Roslyn
 {
-    public interface IRoslynProcessor
+    public interface IAtomicProcessor
     {
-        Type SupportedType { get; }
         bool Process( object inputData );
     }
 
-    public interface IRoslynProcessor<in TInput> : IRoslynProcessor
+    public interface IAtomicProcessor<TInput> : IAtomicProcessor, ITopologicalSort<IAtomicProcessor<TInput>>
     {
         bool Process( TInput inputData );
     }

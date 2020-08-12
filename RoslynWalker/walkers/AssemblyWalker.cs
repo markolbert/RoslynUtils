@@ -20,12 +20,12 @@ namespace J4JSoftware.Roslyn.walkers
 
         public AssemblyWalker( 
             IEnumerable<ISymbolSink> symbolSinks,
-            ISymbolName symbolName,
+            ISymbolInfo symbolInfo,
             IInScopeAssemblyProcessor inScopeProcessor,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger 
             ) 
-            : base( symbolSinks, defaultSymbolSink, symbolName, logger )
+            : base( symbolSinks, defaultSymbolSink, symbolInfo, logger )
         {
             _inScopeProcessor = inScopeProcessor;
         }

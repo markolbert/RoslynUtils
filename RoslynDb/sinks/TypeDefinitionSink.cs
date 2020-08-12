@@ -16,23 +16,17 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class TypeDefinitionSink : RoslynDbSink<INamedTypeSymbol, TypeDefinition>
     {
-        private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
-        private readonly ISymbolSink<INamespaceSymbol, Namespace> _nsSink;
-        private readonly List<ITypeProcessor> _processors;
+        private readonly ITypeDefinitionProcessors _processors;
         private readonly Dictionary<string, INamedTypeSymbol> _typeSymbols = new Dictionary<string, INamedTypeSymbol>();
 
         public TypeDefinitionSink(
             RoslynDbContext dbContext,
-            ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
-            ISymbolSink<INamespaceSymbol, Namespace> nsSink,
-            ISymbolName symbolName,
-            IEnumerable<ITypeProcessor> typeProcessors,
+            ISymbolInfo symbolInfo,
+            ITypeDefinitionProcessors processors,
             IJ4JLogger logger )
-            : base( dbContext, symbolName, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _assemblySink = assemblySink;
-            _nsSink = nsSink;
-            _processors = typeProcessors.ExecutionSequence;
+            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -55,19 +49,11 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            // we want to add all the parent types for each symbol's inheritance tree.
-            // but to do that we first have to add all the relevant assemblies and namespaces
-            var allOkay = true;
-
             var typeList = _typeSymbols.Select( ts => ts.Value )
                 .ToList();
 
-            var context = new TypeProcessorContext( syntaxWalker, typeList );
-
-            foreach( var processor in _processors )
-            {
-                allOkay &= processor.Process( context );
-            }
+            if( !_processors.Process( new TypeProcessorContext( syntaxWalker, typeList ) ) )
+                return false;
 
             //// add information related to any type definitions we found while
             //// processing the type definitions we found via the syntax walker. This would
@@ -92,7 +78,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             SaveChanges();
 
-            return allOkay;
+            return true;
         }
 
         protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, INamedTypeSymbol symbol )
@@ -154,7 +140,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
         private bool StoreNamedTypeSymbol( INamedTypeSymbol symbol, out SymbolInfo result )
         {
-            result = new SymbolInfo( symbol, SymbolName );
+            result = SymbolInfo.Create( symbol );
 
             if( _typeSymbols.ContainsKey( result.SymbolName ) )
                 return false;
@@ -184,17 +170,17 @@ namespace J4JSoftware.Roslyn.Sinks
                     return false;
             }
 
-            if( !_assemblySink.TryGetSunkValue( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
+            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
                 return false;
 
-            if( !_nsSink.TryGetSunkValue( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
+            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
                 return false;
 
-            if( !GetByFullyQualifiedName( symbolInfo.SymbolName, out var dbSymbol ) )
+            if( !GetByFullyQualifiedName<TypeDefinition>(symbolInfo.Symbol, out var dbSymbol))
                 dbSymbol = AddEntity( symbolInfo.SymbolName );
 
             dbSymbol!.Synchronized = true;
-            dbSymbol.Name = SymbolName.GetName( symbolInfo.OriginalSymbol );
+            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.OriginalSymbol );
             dbSymbol.AssemblyID = dbAssembly!.ID;
             dbSymbol.NamespaceId = dbNS!.ID;
             dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;

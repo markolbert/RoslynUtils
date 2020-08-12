@@ -5,41 +5,37 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAssemblyProcessor : BaseProcessor<Assembly, TypeProcessorContext>, ITypeProcessor
+    public class TypeAssemblyProcessor : BaseProcessorDb<TypeProcessorContext>
     {
-        private readonly ISymbolSink<IAssemblySymbol, Assembly> _assemblySink;
-
         public TypeAssemblyProcessor(
             RoslynDbContext dbContext,
-            ISymbolSink<IAssemblySymbol, Assembly> assemblySink,
+            ISymbolInfo symbolInfo,
             IJ4JLogger logger
         )
-            : base( dbContext, logger )
+            : base( dbContext, symbolInfo, logger )
         {
-            _assemblySink = assemblySink;
         }
 
         protected override bool ProcessInternal( TypeProcessorContext context )
         {
-            var allOkay = true;
+            var assemblies = GetDbSet<Assembly>();
 
             foreach( var assemblySymbol in context.TypeSymbols.Select( ts => ts.ContainingAssembly ) )
             {
-                if( assemblySymbol == null )
+                if( GetByFullyQualifiedName<Assembly>( assemblySymbol, out var dbSymbol ) ) 
                     continue;
 
-                allOkay &= _assemblySink.OutputSymbol( context.SyntaxWalker, assemblySymbol );
+                dbSymbol = new Assembly
+                {
+                    FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( assemblySymbol ),
+                    Name = SymbolInfo.GetName( assemblySymbol ),
+                    DotNetVersion = assemblySymbol.Identity.Version
+                };
+
+                assemblies.Add( dbSymbol );
             }
 
-            return allOkay;
-        }
-
-        public bool Equals( ITypeProcessor? other )
-        {
-            if (other == null)
-                return false;
-
-            return other.SupportedType == SupportedType;
+            return true;
         }
     }
 }
