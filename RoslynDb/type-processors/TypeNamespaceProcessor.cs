@@ -7,24 +7,24 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeAssemblyProcessor))]
-    public class TypeNamespaceProcessor : BaseProcessorDb<TypeProcessorContext>
+    public class TypeNamespaceProcessor : BaseProcessorDb<List<ITypeSymbol>>
     {
         public TypeNamespaceProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )
         {
         }
 
-        protected override bool ProcessInternal( TypeProcessorContext context )
+        protected override bool ProcessInternal(List<ITypeSymbol> typeSymbols )
         {
             var allOkay = true;
 
             var namespaces = GetDbSet<Namespace>();
 
-            foreach ( var nsSymbol in context.TypeSymbols.Select( ts => ts.ContainingNamespace ) )
+            foreach ( var nsSymbol in typeSymbols.Select( ts => ts.ContainingNamespace ) )
             {
                 if (GetByFullyQualifiedName<Namespace>(nsSymbol, out var dbSymbol))
                 {

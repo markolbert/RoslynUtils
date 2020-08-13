@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public PropertySink(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
@@ -159,35 +159,35 @@ namespace J4JSoftware.Roslyn.Sinks
             propParamDb.Ordinal = paramSymbol.Ordinal;
             propParamDb.Name = paramSymbol.Name;
 
-            ProcessPropertyParameterType( propParamDb, paramTypeEntities[ propParamDb.Name ] );
+            //ProcessPropertyParameterType( propParamDb, paramTypeEntities[ propParamDb.Name ] );
         }
 
-        private void ProcessPropertyParameterType(
-            PropertyParameter propParamDb,
-            List<TypeDefinition> typeConstraints)
-        {
-            var tiSet = GetDbSet<TypeAncestor>();
+        //private void ProcessPropertyParameterType(
+        //    PropertyParameter propParamDb,
+        //    List<TypeDefinition> typeConstraints)
+        //{
+        //    var tiSet = GetDbSet<TypeAncestor>();
 
-            foreach (var constTypeDb in typeConstraints)
-            {
-                var tiDb = tiSet
-                    .FirstOrDefault(x =>
-                       x.ChildTypeID == constTypeDb.ID 
-                       && x.PropertyParameter != null
-                       && x.PropertyParameter.ID == propParamDb.ID);
+        //    foreach (var constTypeDb in typeConstraints)
+        //    {
+        //        var tiDb = tiSet
+        //            .FirstOrDefault(x =>
+        //               x.ChildTypeID == constTypeDb.ID 
+        //               && x.PropertyParameter != null
+        //               && x.PropertyParameter.ID == propParamDb.ID);
 
-                if (tiDb != null)
-                    continue;
+        //        if (tiDb != null)
+        //            continue;
 
-                tiDb = new TypeAncestor { ChildTypeID = constTypeDb.ID };
+        //        tiDb = new TypeAncestor { ChildTypeID = constTypeDb.ID };
 
-                if (propParamDb.ID == 0 || tiDb.PropertyParameter == null)
-                    tiDb.PropertyParameter = propParamDb;
-                else
-                    tiDb.PropertyParameter.ID = propParamDb.ID;
+        //        if (propParamDb.ID == 0 || tiDb.PropertyParameter == null)
+        //            tiDb.PropertyParameter = propParamDb;
+        //        else
+        //            tiDb.PropertyParameter.ID = propParamDb.ID;
 
-                tiSet.Add(tiDb);
-            }
-        }
+        //        tiSet.Add(tiDb);
+        //    }
+        //}
     }
 }

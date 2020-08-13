@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.EFCoreUtilities;
-using J4JSoftware.Roslyn.entities.types;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 #pragma warning disable 8618
@@ -29,8 +28,8 @@ namespace J4JSoftware.Roslyn
         // type definition and implementation
         public DbSet<TypeDefinition> TypeDefinitions { get; set; }
         public DbSet<TypeParameter> TypeParameters { get; set; }
+        public DbSet<TypeArgument> TypeArguments { get; set; }
         public DbSet<TypeAncestor> TypeAncestors { get; set; }
-        public DbSet<TypeClosure> TypeClosures { get; set; }
 
         public DbSet<Method> Methods { get; set; }
         public DbSet<MethodParameter> MethodParameters { get; set; }

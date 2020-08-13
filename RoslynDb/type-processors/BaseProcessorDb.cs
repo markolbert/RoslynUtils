@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
 
         protected BaseProcessorDb(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
         : base( logger )
@@ -22,7 +22,7 @@ namespace J4JSoftware.Roslyn
             SymbolInfo = symbolInfo;
         }
 
-        protected ISymbolInfo SymbolInfo { get; }
+        protected ISymbolInfoFactory SymbolInfo { get; }
 
         protected DbSet<TRelated> GetDbSet<TRelated>()
             where TRelated : class

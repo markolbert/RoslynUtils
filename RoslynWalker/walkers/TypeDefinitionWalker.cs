@@ -22,7 +22,7 @@ namespace J4JSoftware.Roslyn.walkers
 
         public TypeDefinitionWalker(
             IEnumerable<ISymbolSink> symbolSinks,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger
         )

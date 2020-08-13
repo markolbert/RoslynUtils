@@ -2,29 +2,28 @@
 using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
-using J4JSoftware.Roslyn.entities.types;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeGenericTypesProcessor : BaseProcessorDb<TypeProcessorContext>
+    public class TypeGenericTypesProcessor : BaseProcessorDb<List<ITypeSymbol>>
     {
         public TypeGenericTypesProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )
         {
         }
 
-        protected override bool ProcessInternal( TypeProcessorContext context )
+        protected override bool ProcessInternal(List<ITypeSymbol> typeSymbols )
         {
             var allOkay = true;
 
-            foreach( var ntSymbol in context.TypeSymbols.Where( ts => ts.IsGenericType ) )
+            foreach( var symbol in typeSymbols.Where( ts => ts is INamedTypeSymbol ntSymbol && ntSymbol.IsGenericType ) )
             {
-                allOkay &= ProcessGeneric( ntSymbol );
+                allOkay &= ProcessGeneric( (INamedTypeSymbol) symbol );
             }
 
             return allOkay;
@@ -48,10 +47,10 @@ namespace J4JSoftware.Roslyn
             {
                 var tpDb = ProcessTypeParameter(typeDefDb!, tpSymbol);
 
-                foreach (var conSymbol in tpSymbol.ConstraintTypes)
-                {
-                    allOkay &= ProcessTypeConstraints(typeDefDb!, tpSymbol, conSymbol);
-                }
+                //foreach (var conSymbol in tpSymbol.ConstraintTypes)
+                //{
+                //    allOkay &= ProcessTypeConstraints(typeDefDb!, tpSymbol, conSymbol);
+                //}
             }
 
             return allOkay;
@@ -82,52 +81,52 @@ namespace J4JSoftware.Roslyn
             return tpDb;
         }
 
-        private bool ProcessTypeConstraints(
-            TypeDefinition typeDefDb,
-            ITypeParameterSymbol tpSymbol,
-            ITypeSymbol conSymbol)
-        {
-            var symbolInfo = SymbolInfo.Create(conSymbol);
+        //private bool ProcessTypeConstraints(
+        //    TypeDefinition typeDefDb,
+        //    ITypeParameterSymbol tpSymbol,
+        //    ITypeSymbol conSymbol)
+        //{
+        //    var symbolInfo = SymbolInfo.Create(conSymbol);
 
-            if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
-            {
-                Logger.Error<string>(
-                    "Constraining type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
-                    symbolInfo.SymbolName);
-                return false;
-            }
+        //    if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
+        //    {
+        //        Logger.Error<string>(
+        //            "Constraining type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
+        //            symbolInfo.SymbolName);
+        //        return false;
+        //    }
 
-            var typeDefinitions = GetDbSet<TypeDefinition>();
+        //    var typeDefinitions = GetDbSet<TypeDefinition>();
 
-            var conDb = typeDefinitions
-                .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
+        //    var conDb = typeDefinitions
+        //        .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
 
-            if (conDb == null)
-            {
-                Logger.Error<string>("Constraining type '{0}' not found in database", symbolInfo.SymbolName);
-                return false;
-            }
+        //    if (conDb == null)
+        //    {
+        //        Logger.Error<string>("Constraining type '{0}' not found in database", symbolInfo.SymbolName);
+        //        return false;
+        //    }
 
-            var typeClosures = GetDbSet<TypeClosure>();
+        //    var typeClosures = GetDbSet<TypeClosure>();
 
-            var closureDb = typeClosures
-                .FirstOrDefault( c => c.TypeBeingClosedID == typeDefDb.ID && c.ClosingTypeID == conDb.ID );
+        //    var closureDb = typeClosures
+        //        .FirstOrDefault( c => c.TypeBeingClosedID == typeDefDb.ID && c.ClosingTypeID == conDb.ID );
 
-            if (closureDb == null)
-            {
-                closureDb = new TypeClosure
-                {
-                    ClosingType = conDb,
-                    TypeBeingClosed = typeDefDb!,
-                    Ordinal = tpSymbol.Ordinal
-                };
+        //    if (closureDb == null)
+        //    {
+        //        closureDb = new TypeClosure
+        //        {
+        //            ClosingType = conDb,
+        //            TypeBeingClosed = typeDefDb!,
+        //            Ordinal = tpSymbol.Ordinal
+        //        };
 
-                typeClosures.Add(closureDb);
-            }
+        //        typeClosures.Add(closureDb);
+        //    }
 
-            closureDb.Synchronized = true;
+        //    closureDb.Synchronized = true;
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 }

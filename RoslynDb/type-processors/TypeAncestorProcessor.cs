@@ -2,27 +2,26 @@
 using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
-using J4JSoftware.Roslyn.entities.types;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAncestorProcessor : BaseProcessorDb<TypeProcessorContext>
+    public class TypeAncestorProcessor : BaseProcessorDb<List<ITypeSymbol>>
     {
         public TypeAncestorProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )
         {
         }
 
-        protected override bool ProcessInternal( TypeProcessorContext context )
+        protected override bool ProcessInternal( List<ITypeSymbol> typeSymbols )
         {
             var allOkay = true;
 
-            foreach( var ntSymbol in context.TypeSymbols.Where( ts => ts.BaseType != null ) )
+            foreach( var ntSymbol in typeSymbols.Where( ts => ts.BaseType != null ) )
             {
                 allOkay &= ProcessAncestors( ntSymbol );
             }
@@ -30,7 +29,7 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        private bool ProcessAncestors(INamedTypeSymbol typeSymbol)
+        private bool ProcessAncestors(ITypeSymbol typeSymbol)
         {
             if( !GetByFullyQualifiedName<TypeDefinition>( typeSymbol, out var typeDb ) )
                 return false;
@@ -53,83 +52,83 @@ namespace J4JSoftware.Roslyn
             if( !GetByFullyQualifiedName<TypeDefinition>( ancestorSymbol, out var implTypeDb ) )
                 return false;
 
-            var ancestors = GetDbSet<TypeAncestor>();
+            var typeAncestors = GetDbSet<TypeAncestor>();
 
-            var ancestorDb = ancestors
-                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.ImplementingTypeID == implTypeDb!.ID );
+            var ancestorDb = typeAncestors
+                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.AncestorTypeID == implTypeDb!.ID );
 
             if( ancestorDb == null )
             {
                 ancestorDb = new TypeAncestor
                 {
-                    ImplementingTypeID = implTypeDb!.ID,
+                    AncestorTypeID = implTypeDb!.ID,
                     ChildTypeID = typeDb!.ID
                 };
 
-                ancestors.Add( ancestorDb );
+                typeAncestors.Add( ancestorDb );
             }
 
             ancestorDb.Synchronized = true;
 
-            return ProcessAncestorClosures( typeDb, ancestorSymbol );
+            return true;
         }
 
-        private bool ProcessAncestorClosures( TypeDefinition typeDb, INamedTypeSymbol ancestorSymbol )
-        {
-            var allOkay = true;
+        //private bool ProcessAncestorClosures( TypeDefinition typeDb, INamedTypeSymbol ancestorSymbol )
+        //{
+        //    var allOkay = true;
 
-            var typeDefinitions = GetDbSet<TypeDefinition>();
-            var typeClosures = GetDbSet<TypeClosure>();
+        //    var typeDefinitions = GetDbSet<TypeDefinition>();
+        //    var typeClosures = GetDbSet<TypeClosure>();
 
-            for( int idx = 0; idx < ancestorSymbol.TypeArguments.Length; idx++ )
-            {
-                if( ancestorSymbol.TypeArguments[ idx ] is ITypeParameterSymbol )
-                    continue;
+        //    for( int idx = 0; idx < ancestorSymbol.TypeArguments.Length; idx++ )
+        //    {
+        //        if( ancestorSymbol.TypeArguments[ idx ] is ITypeParameterSymbol )
+        //            continue;
 
-                var symbolInfo = SymbolInfo.Create( ancestorSymbol.TypeArguments[ idx ] );
+        //        var symbolInfo = SymbolInfo.Create( ancestorSymbol.TypeArguments[ idx ] );
 
-                if( !( symbolInfo.Symbol is INamedTypeSymbol ) && symbolInfo.TypeKind != TypeKind.Array )
-                {
-                    Logger.Error<string>(
-                        "Closing type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
-                        symbolInfo.SymbolName );
-                    allOkay = false;
+        //        if( !( symbolInfo.Symbol is INamedTypeSymbol ) && symbolInfo.TypeKind != TypeKind.Array )
+        //        {
+        //            Logger.Error<string>(
+        //                "Closing type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
+        //                symbolInfo.SymbolName );
+        //            allOkay = false;
 
-                    continue;
-                }
+        //            continue;
+        //        }
 
-                var conDb = typeDefinitions
-                    .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
+        //        var conDb = typeDefinitions
+        //            .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
 
-                if( conDb == null )
-                {
-                    Logger.Error<string>( "Closing type '{0}' not found in database", symbolInfo.SymbolName );
-                    allOkay = false;
+        //        if( conDb == null )
+        //        {
+        //            Logger.Error<string>( "Closing type '{0}' not found in database", symbolInfo.SymbolName );
+        //            allOkay = false;
 
-                    continue;
-                }
+        //            continue;
+        //        }
 
-                var closureDb = typeClosures
-                    .FirstOrDefault( c => c.TypeBeingClosedID == typeDb.ID 
-                                          && c.ClosingTypeID == conDb.ID
-                                          && c.Ordinal == idx );
+        //        var closureDb = typeClosures
+        //            .FirstOrDefault( c => c.TypeBeingClosedID == typeDb.ID 
+        //                                  && c.ClosingTypeID == conDb.ID
+        //                                  && c.Ordinal == idx );
 
-                if( closureDb == null )
-                {
-                    closureDb = new TypeClosure
-                    {
-                        ClosingType = conDb,
-                        TypeBeingClosed = typeDb!,
-                        Ordinal = idx
-                    };
+        //        if( closureDb == null )
+        //        {
+        //            closureDb = new TypeClosure
+        //            {
+        //                ClosingType = conDb,
+        //                TypeBeingClosed = typeDb!,
+        //                Ordinal = idx
+        //            };
 
-                    typeClosures.Add( closureDb );
-                }
+        //            typeClosures.Add( closureDb );
+        //        }
 
-                closureDb.Synchronized = true;
-            }
+        //        closureDb.Synchronized = true;
+        //    }
 
-            return allOkay;
-        }
+        //    return allOkay;
+        //}
     }
 }

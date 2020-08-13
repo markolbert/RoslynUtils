@@ -2,7 +2,7 @@
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ISymbolInfo
+    public interface ISymbolInfoFactory
     {
         SymbolInfo Create( ISymbol symbol );
         string GetFullyQualifiedName( ISymbol symbol );

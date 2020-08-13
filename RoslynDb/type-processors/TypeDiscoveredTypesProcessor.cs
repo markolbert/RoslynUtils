@@ -7,30 +7,30 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeNamespaceProcessor))]
-    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<TypeProcessorContext>
+    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<List<ITypeSymbol>>
     {
         public TypeDiscoveredTypesProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )
         {
         }
 
-        protected override bool ProcessInternal( TypeProcessorContext context )
+        protected override bool ProcessInternal( List<ITypeSymbol> typeSymbols )
         {
             var allOkay = true;
 
-            foreach( var ntSymbol in context.TypeSymbols )
+            foreach( var ntSymbol in typeSymbols )
             {
-                allOkay &= ProcessSymbol( context.SyntaxWalker, ntSymbol );
+                allOkay &= ProcessSymbol( ntSymbol );
             }
 
             return allOkay;
         }
 
-        private bool ProcessSymbol( ISyntaxWalker syntaxWalker, INamedTypeSymbol ntSymbol )
+        private bool ProcessSymbol( ITypeSymbol ntSymbol )
         {
             var symbolInfo = SymbolInfo.Create( ntSymbol );
 
@@ -80,7 +80,7 @@ namespace J4JSoftware.Roslyn
             dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
             dbSymbol.DeclarationModifier = symbolInfo.OriginalSymbol.GetDeclarationModifier();
             dbSymbol.Nature = symbolInfo.TypeKind;
-            dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbolInfo.Symbol.ContainingAssembly );
+            dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
 
             return true;
         }

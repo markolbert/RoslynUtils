@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
 using J4JSoftware.Roslyn.Sinks;
 using J4JSoftware.Roslyn.walkers;
+using Microsoft.CodeAnalysis;
 using Serilog.Events;
 
 namespace Tests.RoslynWalker
@@ -51,7 +53,7 @@ namespace Tests.RoslynWalker
 
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
                 .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<TypeProcessorContext>).IsAssignableFrom(t)
+                            && typeof(IAtomicProcessor<List<ITypeSymbol>>).IsAssignableFrom(t)
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 
@@ -66,8 +68,8 @@ namespace Tests.RoslynWalker
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
 
-            builder.RegisterType<SymbolInfo.Factory>()
-                .As<ISymbolInfo>()
+            builder.RegisterType<SymbolInfoFactory>()
+                .As<ISymbolInfoFactory>()
                 .SingleInstance();
 
             builder.RegisterType<InScopeAssemblyProcessor>()

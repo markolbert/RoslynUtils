@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn.walkers
 
         public NamespaceWalker(
             IEnumerable<ISymbolSink> symbolSinks,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger
         )

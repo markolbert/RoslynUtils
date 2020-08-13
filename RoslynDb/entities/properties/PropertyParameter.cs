@@ -17,7 +17,7 @@ namespace J4JSoftware.Roslyn
         public Property Property { get; set; }
 
         public int ParameterTypeID { get; set; }
-        public TypeAncestor ParameterType { get; set; }
+        public TypeDefinition ParameterType { get; set; }
     }
 
     internal class PropertyParameterConfigurator : EntityConfigurator<PropertyParameter>
@@ -29,8 +29,10 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.PropertyID );
 
-            builder.HasOne(x => x.ParameterType)
-                .WithOne(x => x.PropertyParameter);
+            builder.HasOne( x => x.ParameterType )
+                .WithMany( x => x.PropertyParameters )
+                .HasPrincipalKey( x => x.ID )
+                .HasForeignKey( x => x.ParameterTypeID );
         }
     }
 }

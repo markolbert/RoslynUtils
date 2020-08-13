@@ -1,7 +1,10 @@
-﻿namespace J4JSoftware.Roslyn
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
+
+namespace J4JSoftware.Roslyn
 {
     public interface ITypeDefinitionProcessors
     {
-        bool Process( TypeProcessorContext context );
+        bool Process( List<ITypeSymbol> typeSymbols );
     }
 }

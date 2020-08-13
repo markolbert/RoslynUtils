@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
         public Method DeclaringMethod { get; set; }
 
         public int ParameterTypeID { get; set; }
-        public TypeAncestor ParameterType { get; set; }
+        public TypeDefinition ParameterType { get; set; }
 
         public bool IsOptional { get; set; }
         public bool IsParams { get; set; }
@@ -38,7 +38,9 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey(x => x.ID);
 
             builder.HasOne( x => x.ParameterType )
-                .WithOne( x => x.MethodParameter );
+                .WithMany( x => x.MethodParameters )
+                .HasPrincipalKey( x => x.ID )
+                .HasForeignKey( x => x.ParameterTypeID );
 
             builder.Property( x => x.ReferenceKind )
                 .HasConversion( new EnumToNumberConverter<RefKind, int>() );

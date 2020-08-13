@@ -20,17 +20,17 @@ namespace J4JSoftware.Roslyn
         public int ContainingTypeID { get; set; }
         public TypeDefinition ContainingType { get; set; }
 
-        public List<TypeAncestor> TypeImplementations { get; set; }
+        public List<TypeConstraint> TypeConstraints { get; set; }
     }
 
     internal class TypeParameterConfigurator : EntityConfigurator<TypeParameter>
     {
         protected override void Configure(EntityTypeBuilder<TypeParameter> builder)
         {
-            builder.HasMany( x => x.TypeImplementations )
+            builder.HasMany( x => x.TypeConstraints )
                 .WithOne( x => x.TypeParameter )
                 .HasPrincipalKey( x => x.ID )
-                .HasForeignKey( x => x.ID );
+                .HasForeignKey( x => x.TypeParameterID );
 
             builder.HasOne( x => x.ContainingType )
                 .WithMany( x => x.TypeParameters )

@@ -17,7 +17,7 @@ namespace J4JSoftware.Roslyn
         protected SyntaxWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             IDefaultSymbolSink defaultSymbolSink,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
         {
@@ -33,7 +33,7 @@ namespace J4JSoftware.Roslyn
         }
 
         protected IJ4JLogger Logger { get; }
-        protected ISymbolInfo SymbolInfo { get; }
+        protected ISymbolInfoFactory SymbolInfo { get; }
 
         public ISyntaxWalker Predecessor { get; set; }
         public Type SymbolType { get; }

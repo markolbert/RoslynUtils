@@ -1,9 +1,5 @@
-﻿using System;
-using System.Linq;
-using FluentAssertions;
-using J4JSoftware.Logging;
+﻿using FluentAssertions;
 using J4JSoftware.Roslyn;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

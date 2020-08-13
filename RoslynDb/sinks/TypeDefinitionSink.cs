@@ -1,27 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Threading.Tasks;
 using J4JSoftware.Logging;
-using J4JSoftware.Roslyn.entities.types;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
     public class TypeDefinitionSink : RoslynDbSink<INamedTypeSymbol, TypeDefinition>
     {
         private readonly ITypeDefinitionProcessors _processors;
-        private readonly Dictionary<string, INamedTypeSymbol> _typeSymbols = new Dictionary<string, INamedTypeSymbol>();
+        private readonly Dictionary<string, ITypeSymbol> _typeSymbols = new Dictionary<string, ITypeSymbol>();
 
         public TypeDefinitionSink(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             ITypeDefinitionProcessors processors,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
@@ -36,8 +27,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             MarkUnsynchronized<TypeDefinition>();
             MarkUnsynchronized<TypeParameter>();
-            MarkUnsynchronized<TypeAncestor>();
-            MarkUnsynchronized<TypeClosure>();
+            MarkUnsynchronized<TypeArgument>();
 
             SaveChanges();
 
@@ -52,7 +42,7 @@ namespace J4JSoftware.Roslyn.Sinks
             var typeList = _typeSymbols.Select( ts => ts.Value )
                 .ToList();
 
-            if( !_processors.Process( new TypeProcessorContext( syntaxWalker, typeList ) ) )
+            if( !_processors.Process( typeList ) )
                 return false;
 
             //// add information related to any type definitions we found while
@@ -87,7 +77,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if( retVal.AlreadyProcessed )
                 return retVal;
-
+            
             // output the symbol to the database
             if( !ProcessSymbol( syntaxWalker, retVal ) )
                 return retVal;
@@ -106,7 +96,7 @@ namespace J4JSoftware.Roslyn.Sinks
             return retVal;
         }
 
-        private void AddAncestorTypes( INamedTypeSymbol symbol )
+        private void AddAncestorTypes( ITypeSymbol symbol )
         {
             StoreNamedTypeSymbol( symbol, out _ );
 
@@ -120,9 +110,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
                 // add ancestors related to closed generic types, if any, in
                 // the interface
-                foreach( var closingSymbol in interfaceSymbol.TypeArguments
-                    .Where( ta => ta is INamedTypeSymbol )
-                    .Cast<INamedTypeSymbol>() )
+                foreach( var closingSymbol in interfaceSymbol.TypeArguments )
                 {
                     AddAncestorTypes( closingSymbol );
                 }
@@ -138,14 +126,14 @@ namespace J4JSoftware.Roslyn.Sinks
             }
         }
 
-        private bool StoreNamedTypeSymbol( INamedTypeSymbol symbol, out SymbolInfo result )
+        private bool StoreNamedTypeSymbol( ITypeSymbol symbol, out SymbolInfo result )
         {
             result = SymbolInfo.Create( symbol );
 
             if( _typeSymbols.ContainsKey( result.SymbolName ) )
                 return false;
 
-            _typeSymbols.Add( result.SymbolName, (INamedTypeSymbol) result.Symbol );
+            _typeSymbols.Add( result.SymbolName, (ITypeSymbol) result.Symbol );
 
             return true;
         }

@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
         protected RoslynDbSink(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
         )
             : base( symbolInfo, logger )

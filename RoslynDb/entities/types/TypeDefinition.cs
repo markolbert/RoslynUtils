@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using J4JSoftware.Roslyn.Deprecated;
 using J4JSoftware.Roslyn.entities;
-using J4JSoftware.Roslyn.entities.types;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -32,23 +32,32 @@ namespace J4JSoftware.Roslyn
         // list of generic parameters used by this type definition, if any
         public List<TypeParameter> TypeParameters { get; set; }
 
-        // list of type closures for this specific type definition
-        public List<TypeClosure> TypeClosures { get; set; }
+        // list of type arguments defined for generic parameters used by this type definition, if any
+        public List<TypeArgument> TypeArguments { get; set; }
 
-        // list of type closures using this type definition
-        public List<TypeClosure> TypeClosureReferences { get; set; }
-
-        // list of types implemented by this type
-        public List<TypeAncestor> ImplementedTypes { get; set; }
-
-        // list of type implementations referencing this type definition
-        public List<TypeAncestor> Implementations { get; set; }
+        // list of type constraints (for generic type parameters) using this type definition
+        public List<TypeConstraint> TypeConstraints { get; set; }
 
         // list of methods defined for this type
         public List<Method> Methods { get; set; }
 
+        // list of return types referencing this type definition
+        public List<Method> ReturnTypes { get; set; }
+
+        // list of method parameters referencing this type definition
+        public List<MethodParameter> MethodParameters { get; set; }
+
         // list of properties implemented by this type
         public List<Property> Properties { get; set; }
+
+        // list of properties having a return value equal to this type
+        public List<Property> PropertyTypes { get; set; }
+
+        // list of property parameters using this type
+        public List<PropertyParameter> PropertyParameters { get; set; }
+
+        // list of types implemented by this type (including the type it is descended from)
+        public List<TypeAncestor> AncestorTypes { get; set; }
     }
 
     internal class TypeDefinitionConfigurator : EntityConfigurator<TypeDefinition>
@@ -64,11 +73,6 @@ namespace J4JSoftware.Roslyn
                 .WithMany(x => x.Types)
                 .HasForeignKey(x => x.AssemblyID)
                 .HasPrincipalKey(x => x.ID);
-
-            builder.HasMany( x => x.ImplementedTypes )
-                .WithOne( x => x.ChildType )
-                .HasForeignKey( x => x.ChildTypeID )
-                .HasPrincipalKey( x => x.ID );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

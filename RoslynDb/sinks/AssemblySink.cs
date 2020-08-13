@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public AssemblySink(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {

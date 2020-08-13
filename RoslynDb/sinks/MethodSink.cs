@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public MethodSink(
             RoslynDbContext dbContext,
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
@@ -161,35 +161,31 @@ namespace J4JSoftware.Roslyn.Sinks
                 ? paramSymbol.ExplicitDefaultValue?.ToString() ?? null
                 : null;
 
-            ProcessParameterType( methodParamDb, paramTypeEntities[ methodParamDb.Name ] );
+            //ProcessParameterType( methodParamDb, paramTypeEntities[ methodParamDb.Name ] );
         }
 
-        private void ProcessParameterType( 
-            MethodParameter methodParamDb,
-            List<TypeDefinition> typeConstraints )
-        {
-            var tiSet = GetDbSet<TypeAncestor>();
+        //private void ProcessParameterType( 
+        //    MethodParameter methodParamDb,
+        //    List<TypeDefinition> typeConstraints )
+        //{
+        //    var typeDefinitions = GetDbSet<TypeDefinition>();
 
-            foreach( var constTypeDb in typeConstraints )
-            {
-                var tiDb = tiSet
-                    .FirstOrDefault( x =>
-                        x.ChildTypeID == constTypeDb.ID 
-                        && x.MethodParameter != null
-                        && x.MethodParameter.ID == methodParamDb.ID );
+        //    foreach( var constTypeDb in typeConstraints )
+        //    {
+        //        var tiDb = typeDefinitions.FirstOrDefault( x => x.ID == constTypeDb.ID );
 
-                if( tiDb != null )
-                    continue;
+        //        if( tiDb != null )
+        //            continue;
 
-                tiDb = new TypeAncestor { ChildTypeID = constTypeDb.ID };
+        //        tiDb = new TypeAncestor { ChildTypeID = constTypeDb.ID };
 
-                if( methodParamDb.ID == 0 || tiDb.MethodParameter == null )
-                    tiDb.MethodParameter = methodParamDb;
-                else
-                    tiDb.MethodParameter.ID = methodParamDb.ID;
+        //        if( methodParamDb.ID == 0 || tiDb.MethodParameter == null )
+        //            tiDb.MethodParameter = methodParamDb;
+        //        else
+        //            tiDb.MethodParameter.ID = methodParamDb.ID;
 
-                tiSet.Add( tiDb );
-            }
-        }
+        //        typeDefinitions.Add( tiDb );
+        //    }
+        //}
     }
 }

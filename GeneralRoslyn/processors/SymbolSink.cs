@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
         where TSink : class
     {
         protected SymbolSink(
-            ISymbolInfo symbolInfo,
+            ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
             )
         {
@@ -24,7 +24,7 @@ namespace J4JSoftware.Roslyn
         }
 
         protected IJ4JLogger Logger { get; }
-        protected ISymbolInfo SymbolInfo { get; }
+        protected ISymbolInfoFactory SymbolInfo { get; }
         protected List<string> ProcessedSymbolNames { get; } = new List<string>();
 
         public bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) =>

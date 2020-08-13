@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
         public TypeDefinition DefiningType { get; set; } = null!;
 
         public int PropertyTypeID { get; set; }
-        public TypeAncestor PropertyType { get; set; } = null!;
+        public TypeDefinition PropertyType { get; set; } = null!;
 
         public List<PropertyParameter> Parameters { get; set; }
     }
@@ -54,7 +54,9 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.ID );
 
             builder.HasOne( x => x.PropertyType )
-                .WithOne( x => x.Property );
+                .WithMany( x => x.PropertyTypes )
+                .HasPrincipalKey( x => x.ID )
+                .HasForeignKey( x => x.PropertyTypeID );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

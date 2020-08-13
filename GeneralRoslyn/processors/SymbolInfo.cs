@@ -20,52 +20,15 @@ namespace J4JSoftware.Roslyn
                                   | SymbolDisplayParameterOptions.IncludeType)
             .RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
 
+        public static SymbolDisplayFormat GenericTypeFormat { get; } = SymbolDisplayFormat.FullyQualifiedFormat
+            .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted)
+            .RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+
         public static SymbolDisplayFormat NameFormat { get; } = SymbolDisplayFormat.MinimallyQualifiedFormat;
-
-        public class Factory : ISymbolInfo
-        {
-            public SymbolInfo Create( ISymbol symbol ) => new SymbolInfo( symbol, this );
-
-            public string GetFullyQualifiedName( ISymbol symbol )
-            {
-                return symbol switch
-                {
-                    ITypeParameterSymbol tpSymbol => tpSymbol.TypeParameterKind switch
-                    {
-                        TypeParameterKind.Method => tpSymbol.DeclaringMethod == null
-                            ? string.Empty
-                            : $"{tpSymbol.DeclaringMethod.ToDisplayString(FullyQualifiedFormat)}::{tpSymbol.Name}",
-                        TypeParameterKind.Type => tpSymbol.DeclaringType == null
-                            ? string.Empty
-                            : $"{tpSymbol.DeclaringType.ToDisplayString(FullyQualifiedFormat)}::{tpSymbol.Name}",
-                        _ => string.Empty
-                    },
-                    _ => symbol.ToDisplayString(FullyQualifiedFormat)
-                };
-            }
-
-            public string GetName( ISymbol symbol )
-            {
-                return symbol switch
-                {
-                    ITypeParameterSymbol tpSymbol => tpSymbol.TypeParameterKind switch
-                    {
-                        TypeParameterKind.Method => tpSymbol.DeclaringMethod == null
-                            ? string.Empty
-                            : $"{tpSymbol.DeclaringMethod.ToDisplayString(NameFormat)}::{tpSymbol.Name}",
-                        TypeParameterKind.Type => tpSymbol.DeclaringType == null
-                            ? string.Empty
-                            : $"{tpSymbol.DeclaringType.ToDisplayString(NameFormat)}::{tpSymbol.Name}",
-                        _ => string.Empty
-                    },
-                    _ => symbol.ToDisplayString(NameFormat)
-                };
-            }
-        }
 
         private bool _wasOutput;
 
-        private SymbolInfo( ISymbol symbol, Factory siFactory )
+        internal SymbolInfo( ISymbol symbol, SymbolInfoFactory siFactory )
         {
             OriginalSymbol = symbol;
 
