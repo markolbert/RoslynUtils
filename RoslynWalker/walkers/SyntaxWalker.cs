@@ -29,6 +29,9 @@ namespace J4JSoftware.Roslyn
 
             var sink = symbolSinks.FirstOrDefault( s => s.SupportsSymbol( SymbolType ) && !( s is IDefaultSymbolSink ) );
 
+            if( sink == null )
+                Logger.Error<Type>( "Couldn't find an ISymbolSink for type {0}", SymbolType );
+
             _symbolSink = sink ?? defaultSymbolSink;
         }
 

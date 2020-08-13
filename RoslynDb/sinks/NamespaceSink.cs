@@ -12,6 +12,8 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class NamespaceSink : RoslynDbSink<INamespaceSymbol, Namespace>
     {
+        private readonly List<INamespaceSymbol> _symbols = new List<INamespaceSymbol>();
+
         public NamespaceSink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -22,49 +24,107 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
+            if (!base.InitializeSink(syntaxWalker))
+                return false;
+
+            _symbols.Clear();
+
             MarkUnsynchronized<Namespace>();
             SaveChanges();
 
             return true;
         }
 
-        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, INamespaceSymbol symbol )
+        public override bool FinalizeSink(ISyntaxWalker syntaxWalker)
         {
-            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+            if (!base.FinalizeSink(syntaxWalker))
+                return false;
 
-            if (retVal.AlreadyProcessed)
-                return retVal;
+            var allOkay = true;
 
-            if( !GetByFullyQualifiedName<Assembly>( symbol.ContainingAssembly, out var dbAssembly ) )
-                return retVal;
-
-            if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
-                dbSymbol = AddEntity( retVal.SymbolName );
-
-            // create the link between this namespace entity and the assembly entity to which it belongs
-            var anDbSet = GetDbSet<AssemblyNamespace>();
-
-            var anDb = anDbSet.FirstOrDefault( x => x.AssemblyID == dbAssembly!.ID && x.NamespaceID == dbSymbol!.ID );
-
-            if( anDb == null )
+            foreach( var symbol in _symbols.Distinct( Comparer ) )
             {
-                anDb = new AssemblyNamespace()
+                var symbolInfo = SymbolInfo.Create( symbol );
+
+                if( !GetByFullyQualifiedName<Assembly>( symbol.ContainingAssembly, out var dbAssembly ) )
                 {
-                    AssemblyID = dbAssembly!.ID,
-                    Namespace = dbSymbol!
-                };
+                    allOkay = false;
+                    continue;
+                }
 
-                anDbSet.Add( anDb );
+                if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
+                    dbSymbol = AddEntity( symbolInfo.SymbolName );
+
+                // create the link between this namespace entity and the assembly entity to which it belongs
+                var assemblyNamespaces = GetDbSet<AssemblyNamespace>();
+
+                var anDb = assemblyNamespaces
+                    .FirstOrDefault( x => x.AssemblyID == dbAssembly!.ID && x.NamespaceID == dbSymbol!.ID );
+
+                if( anDb == null )
+                {
+                    anDb = new AssemblyNamespace()
+                    {
+                        AssemblyID = dbAssembly!.ID,
+                        Namespace = dbSymbol!
+                    };
+
+                    assemblyNamespaces.Add( anDb );
+                }
+
+                dbSymbol!.Synchronized = true;
+                dbSymbol.Name = symbol.Name;
             }
-
-            dbSymbol!.Synchronized = true;
-            dbSymbol.Name = symbol.Name;
 
             SaveChanges();
 
-            retVal.WasOutput = true;
+            return allOkay;
+        }
 
-            return retVal;
+        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, INamespaceSymbol symbol )
+        {
+            if (!base.OutputSymbol(syntaxWalker, symbol))
+                return false;
+
+            _symbols.Add(symbol);
+
+            return true;
+
+            //var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+
+            //if (retVal.AlreadyProcessed)
+            //    return retVal;
+
+            //if( !GetByFullyQualifiedName<Assembly>( symbol.ContainingAssembly, out var dbAssembly ) )
+            //    return retVal;
+
+            //if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
+            //    dbSymbol = AddEntity( retVal.SymbolName );
+
+            //// create the link between this namespace entity and the assembly entity to which it belongs
+            //var anDbSet = GetDbSet<AssemblyNamespace>();
+
+            //var anDb = anDbSet.FirstOrDefault( x => x.AssemblyID == dbAssembly!.ID && x.NamespaceID == dbSymbol!.ID );
+
+            //if( anDb == null )
+            //{
+            //    anDb = new AssemblyNamespace()
+            //    {
+            //        AssemblyID = dbAssembly!.ID,
+            //        Namespace = dbSymbol!
+            //    };
+
+            //    anDbSet.Add( anDb );
+            //}
+
+            //dbSymbol!.Synchronized = true;
+            //dbSymbol.Name = symbol.Name;
+
+            //SaveChanges();
+
+            //retVal.WasOutput = true;
+
+            //return retVal;
         }
     }
 }

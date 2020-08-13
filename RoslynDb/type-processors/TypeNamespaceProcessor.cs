@@ -9,6 +9,8 @@ namespace J4JSoftware.Roslyn
     [RoslynProcessor(typeof(TypeAssemblyProcessor))]
     public class TypeNamespaceProcessor : BaseProcessorDb<List<ITypeSymbol>>
     {
+        private readonly SymbolEqualityComparer<INamespaceSymbol> _comparer;
+
         public TypeNamespaceProcessor(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -16,6 +18,7 @@ namespace J4JSoftware.Roslyn
         )
             : base( dbContext, symbolInfo, logger )
         {
+            _comparer = new SymbolEqualityComparer<INamespaceSymbol>(SymbolInfo);
         }
 
         protected override bool ProcessInternal(List<ITypeSymbol> typeSymbols )
@@ -24,9 +27,11 @@ namespace J4JSoftware.Roslyn
 
             var namespaces = GetDbSet<Namespace>();
 
-            foreach ( var nsSymbol in typeSymbols.Select( ts => ts.ContainingNamespace ) )
+            foreach( var nsSymbol in typeSymbols.Select( ts => ts.ContainingNamespace )
+                .Where( x => x != null )
+                .Distinct( _comparer ) )
             {
-                if (GetByFullyQualifiedName<Namespace>(nsSymbol, out var dbSymbol))
+                if( GetByFullyQualifiedName<Namespace>( nsSymbol, out var dbSymbol ) )
                 {
                     dbSymbol!.Synchronized = true;
                     continue;

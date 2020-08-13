@@ -25,10 +25,10 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
         protected ISymbolInfoFactory SymbolInfo { get; }
-        protected List<string> ProcessedSymbolNames { get; } = new List<string>();
+        //protected List<string> ProcessedSymbolNames { get; } = new List<string>();
 
-        public bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) =>
-            OutputSymbolInternal( syntaxWalker, symbol ).WasOutput;
+        public virtual bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) => true;
+            //OutputSymbolInternal( syntaxWalker, symbol ).WasOutput;
 
         //public virtual bool TryGetSunkValue( TSymbol symbol, out TSink? result )
         //{
@@ -36,26 +36,26 @@ namespace J4JSoftware.Roslyn
         //    return false;
         //}
 
-        protected virtual SymbolInfo OutputSymbolInternal( 
-            ISyntaxWalker syntaxWalker,
-            TSymbol symbol )
-        {
-            var retVal = SymbolInfo.Create( symbol );
+        //protected virtual SymbolInfo OutputSymbolInternal(
+        //    ISyntaxWalker syntaxWalker,
+        //    TSymbol symbol ) => SymbolInfo.Create( symbol );
+        //{
+        //    var retVal = SymbolInfo.Create( symbol );
 
-            retVal.AlreadyProcessed =
-                ProcessedSymbolNames.Exists( pn => pn.Equals( retVal.SymbolName, StringComparison.Ordinal ) );
+        //    retVal.AlreadyProcessed =
+        //        ProcessedSymbolNames.Exists( pn => pn.Equals( retVal.SymbolName, StringComparison.Ordinal ) );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
         public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol) == symbolType;
 
-        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker )
-        {
-            ProcessedSymbolNames.Clear();
+        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker ) => true;
+        //{
+        //    ProcessedSymbolNames.Clear();
 
-            return true;
-        }
+        //    return true;
+        //}
 
         public virtual bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
 

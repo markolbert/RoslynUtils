@@ -21,7 +21,10 @@ namespace J4JSoftware.Roslyn.Sinks
             : base( symbolInfo, logger )
         {
             _dbContext = dbContext;
+            Comparer = new SymbolEqualityComparer<TSymbol>( symbolInfo );
         }
+
+        protected SymbolEqualityComparer<TSymbol> Comparer { get; }
 
         //public override bool TryGetSunkValue( TSymbol symbol, out TSink? result )
         //{
@@ -51,7 +54,7 @@ namespace J4JSoftware.Roslyn.Sinks
             retVal = new TSink { FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ) };
             dbSet.Add(retVal);
 
-            ProcessedSymbolNames.Add( retVal.FullyQualifiedName );
+            //ProcessedSymbolNames.Add( retVal.FullyQualifiedName );
 
             return retVal;
         }
@@ -95,6 +98,8 @@ namespace J4JSoftware.Roslyn.Sinks
             dbSet.ForEachAsync(x => x.Synchronized = false);
         }
 
+        // assumes an entity with the provided fully qualified name does not already 
+        // exist in the database
         protected TSink AddEntity( string fqn )
         {
             var dbSet = _dbContext.Set<TSink>();
@@ -102,7 +107,7 @@ namespace J4JSoftware.Roslyn.Sinks
             var retVal = new TSink { FullyQualifiedName = fqn };
             dbSet.Add( retVal );
 
-            ProcessedSymbolNames.Add( fqn );
+            //ProcessedSymbolNames.Add( fqn );
 
             return retVal;
         }

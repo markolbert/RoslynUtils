@@ -1,14 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using Serilog;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeDefinitionSink : RoslynDbSink<INamedTypeSymbol, TypeDefinition>
+    public class TypeDefinitionSink : RoslynDbSink<ITypeSymbol, TypeDefinition>
     {
         private readonly ITypeDefinitionProcessors _processors;
-        private readonly Dictionary<string, ITypeSymbol> _typeSymbols = new Dictionary<string, ITypeSymbol>();
+
+        // sadly, you can't just record ITypeSymbols because when you follow them to their ancestors, implemented
+        // interfaces and the like you run into infinite loops. So we use a Dictionary and only explicitly
+        // store ITypeSymbols that we haven't come across before
+        private readonly Dictionary<string, ITypeSymbol> _symbols = new Dictionary<string, ITypeSymbol>();
 
         public TypeDefinitionSink(
             RoslynDbContext dbContext,
@@ -22,8 +28,10 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            // clear the collection of processed type symbols
-            _typeSymbols.Clear();
+            if (!base.InitializeSink(syntaxWalker))
+                return false;
+
+            _symbols.Clear();
 
             MarkUnsynchronized<TypeDefinition>();
             MarkUnsynchronized<TypeParameter>();
@@ -39,8 +47,17 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            var typeList = _typeSymbols.Select( ts => ts.Value )
-                .ToList();
+            var allOkay = true;
+            var typeList = _symbols.Select( x=>x.Value ).ToList();
+
+            // add the types we initially collected
+            foreach( var typeSymbol in typeList )
+            {
+                allOkay &= ProcessSymbol( typeSymbol );
+            }
+
+            //var typeList = _typeSymbols.Select( ts => ts.Value )
+            //    .ToList();
 
             if( !_processors.Process( typeList ) )
                 return false;
@@ -68,42 +85,52 @@ namespace J4JSoftware.Roslyn.Sinks
 
             SaveChanges();
 
-            return true;
+            return allOkay;
         }
 
-        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, INamedTypeSymbol symbol )
+        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
         {
-            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+            if (!base.OutputSymbol(syntaxWalker, symbol))
+                return false;
 
-            if( retVal.AlreadyProcessed )
-                return retVal;
-            
-            // output the symbol to the database
-            if( !ProcessSymbol( syntaxWalker, retVal ) )
-                return retVal;
+            // this call also adds the symbol itself to the collection of symbols
+            // to be processed
+            AddAncestorTypes( symbol );
 
-            // store the processed symbol and all of its ancestor types if we haven't
-            // already processed it
-            if( !_typeSymbols.ContainsKey( retVal.SymbolName ) )
-            {
-                _typeSymbols.Add( retVal.SymbolName, (INamedTypeSymbol) retVal.Symbol );
+            return true;
 
-                AddAncestorTypes( symbol );
-            }
+            //// output the symbol to the database
+            //if( !ProcessSymbol( syntaxWalker, retVal ) )
+            //    return retVal;
 
-            retVal.WasOutput = true;
+            //// store the processed symbol and all of its ancestor types if we haven't
+            //// already processed it
+            //if( !_typeSymbols.ContainsKey( retVal.SymbolName ) )
+            //{
+            //    _typeSymbols.Add( retVal.SymbolName, (INamedTypeSymbol) retVal.Symbol );
 
-            return retVal;
+            //    AddAncestorTypes( symbol );
+            //}
+
+            //retVal.WasOutput = true;
+
+            //return retVal;
         }
 
         private void AddAncestorTypes( ITypeSymbol symbol )
         {
-            StoreNamedTypeSymbol( symbol, out _ );
+            if( !try_add_symbol( symbol ) )
+                return;
+
+            //StoreNamedTypeSymbol( symbol, out _ );
 
             foreach( var interfaceSymbol in symbol.AllInterfaces )
             {
-                if( !StoreNamedTypeSymbol( interfaceSymbol, out _ ) )
+                if( !try_add_symbol( interfaceSymbol ) )
                     continue;
+
+                //if( !StoreNamedTypeSymbol( interfaceSymbol, out _ ) )
+                //    continue;
 
                 // add ancestors related to the interface symbol
                 AddAncestorTypes( interfaceSymbol );
@@ -120,27 +147,45 @@ namespace J4JSoftware.Roslyn.Sinks
 
             while( baseSymbol != null )
             {
-                StoreNamedTypeSymbol( baseSymbol, out var symbolInfo );
+                if( !try_add_symbol( baseSymbol ) )
+                    Logger.Error<string>("Couldn't store ITypeSymbol for {0}", baseSymbol.Name  );
 
-                baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
+                //StoreNamedTypeSymbol( baseSymbol, out var symbolInfo );
+
+                baseSymbol = baseSymbol.BaseType;
+                //baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
+            }
+
+            bool try_add_symbol( ITypeSymbol typeSymbol )
+            {
+                var fqName = SymbolInfo.GetFullyQualifiedName(symbol);
+
+                if (_symbols.ContainsKey(fqName))
+                    return false;
+
+                _symbols.Add(fqName, symbol);
+
+                return true;
             }
         }
 
-        private bool StoreNamedTypeSymbol( ITypeSymbol symbol, out SymbolInfo result )
+        //private bool StoreNamedTypeSymbol( ITypeSymbol symbol, out SymbolInfo result )
+        //{
+        //    result = SymbolInfo.Create( symbol );
+
+        //    if( _typeSymbols.ContainsKey( result.SymbolName ) )
+        //        return false;
+
+        //    _typeSymbols.Add( result.SymbolName, (ITypeSymbol) result.Symbol );
+
+        //    return true;
+        //}
+
+        private bool ProcessSymbol( ITypeSymbol symbol )
         {
-            result = SymbolInfo.Create( symbol );
+            var symbolInfo = SymbolInfo.Create(symbol);
 
-            if( _typeSymbols.ContainsKey( result.SymbolName ) )
-                return false;
-
-            _typeSymbols.Add( result.SymbolName, (ITypeSymbol) result.Symbol );
-
-            return true;
-        }
-
-        private bool ProcessSymbol( ISyntaxWalker syntaxWalker, SymbolInfo symbolInfo )
-        {
-            switch( symbolInfo.TypeKind )
+            switch ( symbolInfo.TypeKind )
             {
                 case TypeKind.Error:
                     Logger.Error<string>( "Unhandled or incorrect type error for named type '{0}'",
@@ -174,9 +219,9 @@ namespace J4JSoftware.Roslyn.Sinks
             dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
             dbSymbol.DeclarationModifier = symbolInfo.OriginalSymbol.GetDeclarationModifier();
             dbSymbol.Nature = symbolInfo.TypeKind;
-            dbSymbol.InDocumentationScope = syntaxWalker.InDocumentationScope( symbolInfo.Symbol.ContainingAssembly );
+            dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
 
-            SaveChanges();
+            //SaveChanges();
 
             return true;
         }

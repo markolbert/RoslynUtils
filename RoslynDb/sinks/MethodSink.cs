@@ -1,21 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
     public class MethodSink : RoslynDbSink<IMethodSymbol, Method>
     {
+        private readonly List<IMethodSymbol> _symbols = new List<IMethodSymbol>();
+
         public MethodSink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -26,6 +19,11 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
+            if (!base.InitializeSink(syntaxWalker))
+                return false;
+
+            _symbols.Clear();
+
             MarkUnsynchronized<Method>();
             MarkUnsynchronized<MethodParameter>();
 
@@ -39,50 +37,64 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            SaveChanges();
+            var allOkay = true;
 
-            return true;
-        }
-
-        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, IMethodSymbol symbol )
-        {
-            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
-
-            if( retVal.AlreadyProcessed )
-                return retVal;
-
-            // validate that we can identify all the related entities we'll need to create/update
-            // the method entity
-            if ( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var dtDb ) )
-                return retVal;
-
-            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ReturnType, out var rtDb ) )
-                return retVal;
-
-            if( !GetParameterTypeDefinitions( symbol, out var paramTypeEntities ) )
-                return retVal;
-
-            // construct/update the method entity
-            if( !GetByFullyQualifiedName<Method>( symbol, out var methodDb ) )
-                methodDb = AddEntity( retVal.SymbolName );
-
-            methodDb!.Name = SymbolInfo.GetName( symbol );
-            methodDb.Kind = symbol.MethodKind;
-            methodDb.ReturnTypeID = rtDb!.ID;
-            methodDb.DefiningTypeID = dtDb!.ID;
-            methodDb.DeclarationModifier = symbol.GetDeclarationModifier();
-            methodDb.Accessibility = symbol.DeclaredAccessibility;
-            methodDb.Synchronized = true;
-
-            // construct/update the argument entities related to the method entity
-            foreach( var parameter in symbol.Parameters )
+            foreach( var symbol in _symbols.Distinct( Comparer ) )
             {
-                ProcessParameter(parameter, methodDb, paramTypeEntities);
+                allOkay &= ProcessSymbol( symbol );
             }
 
-            retVal.WasOutput = true;
+            SaveChanges();
 
-            return retVal;
+            return allOkay;
+        }
+
+        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, IMethodSymbol symbol )
+        {
+            if (!base.OutputSymbol(syntaxWalker, symbol))
+                return false;
+
+            _symbols.Add( symbol );
+
+            return true;
+
+            //var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+
+            //if( retVal.AlreadyProcessed )
+            //    return retVal;
+
+            //// validate that we can identify all the related entities we'll need to create/update
+            //// the method entity
+            //if ( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var dtDb ) )
+            //    return retVal;
+
+            //if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ReturnType, out var rtDb ) )
+            //    return retVal;
+
+            //if( !GetParameterTypeDefinitions( symbol, out var paramTypeEntities ) )
+            //    return retVal;
+
+            //// construct/update the method entity
+            //if( !GetByFullyQualifiedName<Method>( symbol, out var methodDb ) )
+            //    methodDb = AddEntity( retVal.SymbolName );
+
+            //methodDb!.Name = SymbolInfo.GetName( symbol );
+            //methodDb.Kind = symbol.MethodKind;
+            //methodDb.ReturnTypeID = rtDb!.ID;
+            //methodDb.DefiningTypeID = dtDb!.ID;
+            //methodDb.DeclarationModifier = symbol.GetDeclarationModifier();
+            //methodDb.Accessibility = symbol.DeclaredAccessibility;
+            //methodDb.Synchronized = true;
+
+            //// construct/update the argument entities related to the method entity
+            //foreach( var parameter in symbol.Parameters )
+            //{
+            //    ProcessParameter(parameter, methodDb, paramTypeEntities);
+            //}
+
+            //retVal.WasOutput = true;
+
+            //return retVal;
         }
 
         private bool GetParameterTypeDefinitions( IMethodSymbol methodSymbol, out Dictionary<string, List<TypeDefinition>> result )
@@ -126,6 +138,42 @@ namespace J4JSoftware.Roslyn.Sinks
 
                 return innerResult != null;
             }
+        }
+
+        private bool ProcessSymbol( IMethodSymbol symbol )
+        {
+            // validate that we can identify all the related entities we'll need to create/update
+            // the method entity
+            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var dtDb ) )
+                return false;
+
+            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.ReturnType, out var rtDb))
+                return false;
+
+            if (!GetParameterTypeDefinitions(symbol, out var paramTypeEntities))
+                return false;
+
+            // construct/update the method entity
+            var symbolInfo = SymbolInfo.Create(symbol);
+
+            if (!GetByFullyQualifiedName<Method>(symbol, out var methodDb))
+                methodDb = AddEntity(symbolInfo.SymbolName);
+
+            methodDb!.Name = SymbolInfo.GetName(symbol);
+            methodDb.Kind = symbol.MethodKind;
+            methodDb.ReturnTypeID = rtDb!.ID;
+            methodDb.DefiningTypeID = dtDb!.ID;
+            methodDb.DeclarationModifier = symbol.GetDeclarationModifier();
+            methodDb.Accessibility = symbol.DeclaredAccessibility;
+            methodDb.Synchronized = true;
+
+            // construct/update the argument entities related to the method entity
+            foreach (var parameter in symbol.Parameters)
+            {
+                ProcessParameter(parameter, methodDb, paramTypeEntities);
+            }
+
+            return true;
         }
 
         private void ProcessParameter(

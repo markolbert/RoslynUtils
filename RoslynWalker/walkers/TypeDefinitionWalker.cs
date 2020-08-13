@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace J4JSoftware.Roslyn.walkers
 {
     [ RoslynProcessor( typeof(NamespaceWalker) ) ]
-    public class TypeDefinitionWalker : SyntaxWalker<INamedTypeSymbol>
+    public class TypeDefinitionWalker : SyntaxWalker<ITypeSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
@@ -32,7 +32,7 @@ namespace J4JSoftware.Roslyn.walkers
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, 
             CompiledFile context,
-            out INamedTypeSymbol? result )
+            out ITypeSymbol? result )
         {
             result = null;
 
@@ -53,9 +53,9 @@ namespace J4JSoftware.Roslyn.walkers
                 return true;
             }
 
-            if( !context.GetSymbol<INamedTypeSymbol>( node, out var typeSymbol ) )
+            if( !context.GetSymbol<ITypeSymbol>( node, out var typeSymbol ) )
             {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no INamedTypeSymbol found for node of kind {1}",
+                Logger.Verbose<string, SyntaxKind>( "{0}: no ITypeSymbol found for node of kind {1}",
                     context.Container.AssemblyName,
                     node.Kind() );
 

@@ -12,6 +12,8 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class AssemblySink : RoslynDbSink<IAssemblySymbol, Assembly>
     {
+        private readonly List<IAssemblySymbol> _symbols = new List<IAssemblySymbol>();
+
         public AssemblySink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -25,31 +27,61 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
+            _symbols.Clear();
+
             MarkUnsynchronized<Assembly>();
             SaveChanges();
 
             return true;
         }
 
-        protected override SymbolInfo OutputSymbolInternal( ISyntaxWalker syntaxWalker, IAssemblySymbol symbol )
+        public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
+            if( !base.FinalizeSink( syntaxWalker ) )
+                return false;
 
-            if( retVal.AlreadyProcessed )
-                return retVal;
+            foreach( var symbol in _symbols.Distinct( Comparer ) )
+            {
+                var symbolInfo = SymbolInfo.Create( symbol );
 
-            if( !GetByFullyQualifiedName<Assembly>( symbol, out var dbSymbol ) )
-                dbSymbol = AddEntity( retVal.SymbolName );
+                if (!GetByFullyQualifiedName<Assembly>(symbol, out var dbSymbol))
+                    dbSymbol = AddEntity(symbolInfo.SymbolName);
 
-            dbSymbol!.Synchronized = true;
-            dbSymbol.Name = symbol.Name;
-            dbSymbol.DotNetVersion = symbol.Identity.Version;
+                dbSymbol!.Synchronized = true;
+                dbSymbol.Name = symbol.Name;
+                dbSymbol.DotNetVersion = symbol.Identity.Version;
+            }
 
             SaveChanges();
 
-            retVal.WasOutput = true;
+            return true;
+        }
 
-            return retVal;
+        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, IAssemblySymbol symbol )
+        {
+            if( !base.OutputSymbol( syntaxWalker, symbol ) )
+                return false;
+
+            _symbols.Add( symbol );
+
+            return true;
+            //var symbolInfo = SymbolInfo.Create( symbol );
+
+            //if( retVal.AlreadyProcessed )
+            //    return retVal;
+
+            //if( !GetByFullyQualifiedName<Assembly>( symbol, out var dbSymbol ) )
+            //    dbSymbol = AddEntity( retVal.SymbolName );
+
+            //dbSymbol!.Synchronized = true;
+            //dbSymbol.Name = symbol.Name;
+            //dbSymbol.DotNetVersion = symbol.Identity.Version;
+
+            //SaveChanges();
+
+            //retVal.WasOutput = true;
+
+            //return retVal;
         }
     }
 }

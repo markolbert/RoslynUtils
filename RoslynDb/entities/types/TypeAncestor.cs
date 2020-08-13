@@ -28,6 +28,8 @@ namespace J4JSoftware.Roslyn
                 .WithMany( x => x.AncestorTypes )
                 .HasForeignKey( x => x.AncestorTypeID )
                 .HasPrincipalKey( x => x.ID );
+
+            builder.HasKey( x => new { x.ChildTypeID, x.AncestorTypeID } );
         }
     }
 

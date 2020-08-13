@@ -21,12 +21,13 @@ namespace J4JSoftware.Roslyn
             .RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
 
         public static SymbolDisplayFormat GenericTypeFormat { get; } = SymbolDisplayFormat.FullyQualifiedFormat
-            .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted)
-            .RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+            .WithGlobalNamespaceStyle( SymbolDisplayGlobalNamespaceStyle.Omitted )
+            .RemoveMiscellaneousOptions( SymbolDisplayMiscellaneousOptions.UseSpecialTypes )
+            .RemoveGenericsOptions( SymbolDisplayGenericsOptions.IncludeTypeParameters );
 
         public static SymbolDisplayFormat NameFormat { get; } = SymbolDisplayFormat.MinimallyQualifiedFormat;
 
-        private bool _wasOutput;
+        //private bool _wasOutput;
 
         internal SymbolInfo( ISymbol symbol, SymbolInfoFactory siFactory )
         {
@@ -64,13 +65,13 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        public bool AlreadyProcessed { get; set; }
+        //public bool AlreadyProcessed { get; set; }
 
-        public bool WasOutput
-        {
-            get => _wasOutput || AlreadyProcessed;
-            set => _wasOutput = value;
-        }
+        //public bool WasOutput
+        //{
+        //    get => _wasOutput || AlreadyProcessed;
+        //    set => _wasOutput = value;
+        //}
 
         public ISymbol OriginalSymbol { get; }
         public IMethodSymbol? Method { get; }
