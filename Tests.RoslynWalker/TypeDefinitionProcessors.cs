@@ -19,7 +19,7 @@ namespace Tests.RoslynWalker
         {
             SetPredecessor<TypeNamespaceProcessor, TypeAssemblyProcessor>();
             SetPredecessor<TypeDiscoveredTypesProcessor, TypeNamespaceProcessor>();
-            //SetPredecessor<TypeGenericTypesProcessor, TypeDiscoveredTypesProcessor>();
+            SetPredecessor<TypeGenericTypesProcessor, TypeDiscoveredTypesProcessor>();
             //SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
         }
 

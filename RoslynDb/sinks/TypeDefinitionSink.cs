@@ -35,6 +35,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             MarkUnsynchronized<TypeDefinition>();
             MarkUnsynchronized<TypeParameter>();
+            MarkUnsynchronized<TypeConstraint>();
             MarkUnsynchronized<TypeArgument>();
 
             SaveChanges();
@@ -143,7 +144,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 }
             }
 
-            var baseSymbol = symbol.BaseType;
+            var baseSymbol = get_base_symbol( symbol );
 
             while( baseSymbol != null )
             {
@@ -152,7 +153,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
                 //StoreNamedTypeSymbol( baseSymbol, out var symbolInfo );
 
-                baseSymbol = baseSymbol.BaseType;
+                baseSymbol = get_base_symbol( baseSymbol );
                 //baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
             }
 
@@ -166,6 +167,15 @@ namespace J4JSoftware.Roslyn.Sinks
                 _symbols.Add(fqName, symbol);
 
                 return true;
+            }
+
+            ITypeSymbol? get_base_symbol( ITypeSymbol typeSymbol )
+            {
+                return typeSymbol switch
+                {
+                    IArrayTypeSymbol arraySymbol => arraySymbol.ElementType,
+                    _ => symbol.BaseType
+                };
             }
         }
 

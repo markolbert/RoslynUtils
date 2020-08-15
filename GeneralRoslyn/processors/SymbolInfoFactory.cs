@@ -48,7 +48,12 @@ namespace J4JSoftware.Roslyn
             if (typeSymbol is INamedTypeSymbol ntSymbol && ntSymbol.IsGenericType)
                 return $"{ntSymbol.ToDisplayString(SymbolInfo.GenericTypeFormat)}<{ntSymbol.TypeParameters.Length}>";
 
-            return typeSymbol.ToDisplayString(SymbolInfo.FullyQualifiedFormat);
+            var retVal = typeSymbol.ToDisplayString(SymbolInfo.FullyQualifiedFormat);
+
+            if( typeSymbol is IArrayTypeSymbol arraySymbol )
+                retVal = $"{retVal}[{arraySymbol.Rank}]";
+
+            return retVal;
         }
     }
 }
