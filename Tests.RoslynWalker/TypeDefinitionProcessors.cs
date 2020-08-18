@@ -20,7 +20,7 @@ namespace Tests.RoslynWalker
             SetPredecessor<TypeNamespaceProcessor, TypeAssemblyProcessor>();
             SetPredecessor<TypeDiscoveredTypesProcessor, TypeNamespaceProcessor>();
             SetPredecessor<TypeGenericTypesProcessor, TypeDiscoveredTypesProcessor>();
-            //SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
+            SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
         }
 
         public bool Process(List<ITypeSymbol> context )

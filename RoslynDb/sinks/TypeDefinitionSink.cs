@@ -143,7 +143,12 @@ namespace J4JSoftware.Roslyn.Sinks
                 }
             }
 
-            var baseSymbol = get_base_symbol( symbol );
+            // array symbols have two ancestry paths, one pointing to Array
+            // and the other pointing to whatever type of element they contain
+            if( symbol is IArrayTypeSymbol arraySymbol )
+                AddAncestorTypes(arraySymbol.ElementType);
+
+            var baseSymbol = symbol.BaseType;
 
             while( baseSymbol != null )
             {
@@ -152,7 +157,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
                 //StoreNamedTypeSymbol( baseSymbol, out var symbolInfo );
 
-                baseSymbol = get_base_symbol( baseSymbol );
+                baseSymbol = baseSymbol.BaseType;
                 //baseSymbol = ( (ITypeSymbol) symbolInfo.Symbol ).BaseType;
             }
 
@@ -171,14 +176,14 @@ namespace J4JSoftware.Roslyn.Sinks
                 return true;
             }
 
-            ITypeSymbol? get_base_symbol( ITypeSymbol typeSymbol )
-            {
-                return typeSymbol switch
-                {
-                    IArrayTypeSymbol arraySymbol => arraySymbol.ElementType,
-                    _ => typeSymbol.BaseType
-                };
-            }
+            //ITypeSymbol? get_base_symbol( ITypeSymbol typeSymbol )
+            //{
+            //    return typeSymbol switch
+            //    {
+            //        IArrayTypeSymbol arraySymbol => arraySymbol.ElementType,
+            //        _ => typeSymbol.BaseType
+            //    };
+            //}
         }
 
         //private bool StoreNamedTypeSymbol( ITypeSymbol symbol, out SymbolInfo result )
