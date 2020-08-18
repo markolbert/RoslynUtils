@@ -46,7 +46,7 @@ namespace J4JSoftware.Roslyn.Sinks
             {
                 var symbolInfo = SymbolInfo.Create( symbol );
 
-                if( !GetByFullyQualifiedName<Assembly>( symbol.ContainingAssembly, out var dbAssembly ) )
+                if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
                 {
                     allOkay = false;
                     continue;

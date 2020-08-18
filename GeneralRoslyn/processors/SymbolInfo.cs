@@ -31,36 +31,41 @@ namespace J4JSoftware.Roslyn
 
         internal SymbolInfo( ISymbol symbol, SymbolInfoFactory siFactory )
         {
-            OriginalSymbol = symbol;
-
-            // these assignments get overridden in certain cases
             Symbol = symbol;
             SymbolName = siFactory.GetFullyQualifiedName( symbol );
+
+            // these assignments may be overwritten below
+            ContainingAssembly = symbol.ContainingAssembly;
+            ContainingNamespace = symbol.ContainingNamespace;
 
             switch ( symbol )
             {
                 case INamedTypeSymbol ntSymbol:
+                    AssociatedSymbol = ntSymbol.BaseType;
                     TypeKind = ntSymbol.TypeKind;
                     break;
 
                 case IArrayTypeSymbol arraySymbol:
                     TypeKind = TypeKind.Array;
-                    Symbol = arraySymbol.ElementType;
-                    SymbolName = siFactory.GetFullyQualifiedName(Symbol);
+                    ContainingAssembly = arraySymbol.ElementType.ContainingAssembly;
+                    ContainingNamespace = arraySymbol.ElementType.ContainingNamespace;
+                    AssociatedSymbol = arraySymbol.ElementType;
                     break;
 
                 case IDynamicTypeSymbol dynSymbol:
+                    AssociatedSymbol = dynSymbol.BaseType;
                     TypeKind = TypeKind.Dynamic;
                     break;
 
                 case IPointerTypeSymbol ptrSymbol:
+                    AssociatedSymbol = ptrSymbol.BaseType;
                     TypeKind = TypeKind.Pointer;
                     break;
 
                 case ITypeParameterSymbol typeParamSymbol:
                     TypeKind = TypeKind.TypeParameter;
-                    Symbol = typeParamSymbol.DeclaringType ?? typeParamSymbol.DeclaringMethod!.ContainingType;
-                    Method = typeParamSymbol.DeclaringMethod;
+                    AssociatedSymbol = typeParamSymbol.DeclaringType ?? typeParamSymbol.DeclaringMethod!.ContainingType;
+                    //Method = typeParamSymbol.DeclaringMethod;
                     break;
             }
         }
@@ -73,10 +78,12 @@ namespace J4JSoftware.Roslyn
         //    set => _wasOutput = value;
         //}
 
-        public ISymbol OriginalSymbol { get; }
-        public IMethodSymbol? Method { get; }
         public ISymbol Symbol { get; }
+        public IAssemblySymbol ContainingAssembly { get; }
+        public INamespaceSymbol ContainingNamespace { get; }
+        //public IMethodSymbol? Method { get; }
+        public ISymbol? AssociatedSymbol { get; }
         public string SymbolName { get; }
         public TypeKind TypeKind { get; } = TypeKind.Error;
     }
-}
+} 

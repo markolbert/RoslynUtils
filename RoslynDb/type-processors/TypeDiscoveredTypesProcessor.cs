@@ -52,10 +52,10 @@ namespace J4JSoftware.Roslyn
                     return false;
             }
 
-            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
+            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
                 return false;
 
-            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
+            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.ContainingNamespace, out var dbNS ) )
                 return false;
 
             var typeDefinitions = GetDbSet<TypeDefinition>();
@@ -74,11 +74,11 @@ namespace J4JSoftware.Roslyn
             }
 
             dbSymbol!.Synchronized = true;
-            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.OriginalSymbol );
+            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.Symbol );
             dbSymbol.AssemblyID = dbAssembly!.ID;
             dbSymbol.NamespaceId = dbNS!.ID;
-            dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
-            dbSymbol.DeclarationModifier = symbolInfo.OriginalSymbol.GetDeclarationModifier();
+            dbSymbol.Accessibility = symbolInfo.Symbol.DeclaredAccessibility;
+            dbSymbol.DeclarationModifier = symbolInfo.Symbol.GetDeclarationModifier();
             dbSymbol.Nature = symbolInfo.TypeKind;
             dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
 

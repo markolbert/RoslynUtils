@@ -60,8 +60,9 @@ namespace J4JSoftware.Roslyn.Sinks
             //var typeList = _typeSymbols.Select( ts => ts.Value )
             //    .ToList();
 
-            if( !_processors.Process( typeList ) )
-                return false;
+            SaveChanges();
+
+            allOkay &= _processors.Process( typeList );
 
             //// add information related to any type definitions we found while
             //// processing the type definitions we found via the syntax walker. This would
@@ -83,8 +84,6 @@ namespace J4JSoftware.Roslyn.Sinks
             //{
             //    allOkay &= ProcessAncestors( typeSymbol );
             //}
-
-            SaveChanges();
 
             return allOkay;
         }
@@ -159,12 +158,15 @@ namespace J4JSoftware.Roslyn.Sinks
 
             bool try_add_symbol( ITypeSymbol typeSymbol )
             {
-                var fqName = SymbolInfo.GetFullyQualifiedName(symbol);
+                if( typeSymbol is ITypeParameterSymbol )
+                    return true;
+
+                var fqName = SymbolInfo.GetFullyQualifiedName(typeSymbol);
 
                 if (_symbols.ContainsKey(fqName))
                     return false;
 
-                _symbols.Add(fqName, symbol);
+                _symbols.Add(fqName, typeSymbol);
 
                 return true;
             }
@@ -174,7 +176,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return typeSymbol switch
                 {
                     IArrayTypeSymbol arraySymbol => arraySymbol.ElementType,
-                    _ => symbol.BaseType
+                    _ => typeSymbol.BaseType
                 };
             }
         }
@@ -213,21 +215,21 @@ namespace J4JSoftware.Roslyn.Sinks
                     return false;
             }
 
-            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.Symbol.ContainingAssembly, out var dbAssembly ) )
+            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
                 return false;
 
-            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.Symbol.ContainingNamespace, out var dbNS ) )
+            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.ContainingNamespace, out var dbNS ) )
                 return false;
 
             if( !GetByFullyQualifiedName<TypeDefinition>(symbolInfo.Symbol, out var dbSymbol))
                 dbSymbol = AddEntity( symbolInfo.SymbolName );
 
             dbSymbol!.Synchronized = true;
-            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.OriginalSymbol );
+            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.Symbol );
             dbSymbol.AssemblyID = dbAssembly!.ID;
             dbSymbol.NamespaceId = dbNS!.ID;
-            dbSymbol.Accessibility = symbolInfo.OriginalSymbol.DeclaredAccessibility;
-            dbSymbol.DeclarationModifier = symbolInfo.OriginalSymbol.GetDeclarationModifier();
+            dbSymbol.Accessibility = symbolInfo.Symbol.DeclaredAccessibility;
+            dbSymbol.DeclarationModifier = symbolInfo.Symbol.GetDeclarationModifier();
             dbSymbol.Nature = symbolInfo.TypeKind;
             dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
 

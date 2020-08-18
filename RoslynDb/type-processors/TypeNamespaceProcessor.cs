@@ -27,8 +27,7 @@ namespace J4JSoftware.Roslyn
 
             var namespaces = GetDbSet<Namespace>();
 
-            foreach( var nsSymbol in typeSymbols.Select( ts => ts.ContainingNamespace )
-                .Where( x => x != null )
+            foreach( var nsSymbol in typeSymbols.Select( ts => SymbolInfo.Create(ts).ContainingNamespace )
                 .Distinct( _comparer ) )
             {
                 if( GetByFullyQualifiedName<Namespace>( nsSymbol, out var dbSymbol ) )

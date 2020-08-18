@@ -24,12 +24,14 @@ namespace J4JSoftware.Roslyn
         {
             var assemblies = GetDbSet<Assembly>();
 
-            foreach( var assemblySymbol in typeSymbols.Select( ts => ts.ContainingAssembly )
-                .Where( x => x != null )
+            foreach( var assemblySymbol in typeSymbols.Select( ts => SymbolInfo.Create(ts).ContainingAssembly )
                 .Distinct( _comparer ) )
             {
                 if( GetByFullyQualifiedName<Assembly>( assemblySymbol, out var dbSymbol ) )
+                {
+                    dbSymbol!.Synchronized = true;
                     continue;
+                }
 
                 dbSymbol = new Assembly
                 {
