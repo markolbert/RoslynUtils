@@ -7,8 +7,6 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class PropertySink : RoslynDbSink<IPropertySymbol, Property>
     {
-        private readonly List<IPropertySymbol> _symbols = new List<IPropertySymbol>();
-
         public PropertySink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -21,8 +19,6 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             if (!base.InitializeSink(syntaxWalker))
                 return false;
-
-            _symbols.Clear();
 
             MarkUnsynchronized<Property>();
 
@@ -38,7 +34,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             var allOkay = true;
 
-            foreach( var symbol in _symbols.Distinct( Comparer ) )
+            foreach( var symbol in Symbols )
             {
                 allOkay &= ProcessSymbol( symbol );
             }
@@ -46,60 +42,6 @@ namespace J4JSoftware.Roslyn.Sinks
             SaveChanges();
 
             return allOkay;
-        }
-
-        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, IPropertySymbol symbol )
-        {
-            if (!base.OutputSymbol(syntaxWalker, symbol))
-                return false;
-
-            _symbols.Add(symbol);
-
-            return true;
-
-            //var retVal = base.OutputSymbolInternal( syntaxWalker, symbol );
-
-            //if( retVal.AlreadyProcessed )
-            //    return retVal;
-
-            //// validate that we can identify all the related entities we'll need to create/update
-            //// the method entity
-            //if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var dtDb ) )
-            //    return retVal;
-
-            //if( !GetByFullyQualifiedName<TypeDefinition>( symbol.Type, out var rtDb ) )
-            //    return retVal;
-
-            //// get the TypeDefinitions for the parameters, if any
-            //if (!GetParameterTypeDefinitions(symbol, out var paramTypeEntities))
-            //    return retVal;
-
-            //// construct/update the method entity
-            //if ( !GetByFullyQualifiedName<Property>( symbol, out var propDb ) )
-            //    propDb = AddEntity( retVal.SymbolName );
-
-            //propDb!.Name = SymbolInfo.GetName( symbol );
-            //propDb.PropertyTypeID = rtDb!.ID;
-            //propDb.DefiningTypeID = dtDb!.ID;
-            //propDb.DeclarationModifier = symbol.GetDeclarationModifier();
-            //propDb.GetAccessibility = symbol.GetMethod?.DeclaredAccessibility ?? null;
-            //propDb.SetAccessibility = symbol.SetMethod?.DeclaredAccessibility ?? null;
-            //propDb.ReturnsByRef = symbol.ReturnsByRef;
-            //propDb.ReturnsByRefReadOnly = symbol.ReturnsByRefReadonly;
-            //propDb.IsReadOnly = symbol.IsReadOnly;
-            //propDb.IsWithEvents = symbol.IsWithEvents;
-            //propDb.IsWriteOnly = symbol.IsWriteOnly;
-            //propDb.Synchronized = true;
-
-            //// construct/update the argument entities related to the method entity
-            //foreach (var parameter in symbol.Parameters)
-            //{
-            //    ProcessParameter(parameter, propDb, paramTypeEntities);
-            //}
-
-            //retVal.WasOutput = true;
-
-            //return retVal;
         }
 
         private bool GetParameterTypeDefinitions(IPropertySymbol propSymbol, out Dictionary<string, List<TypeDefinition>> result)

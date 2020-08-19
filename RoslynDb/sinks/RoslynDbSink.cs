@@ -21,24 +21,30 @@ namespace J4JSoftware.Roslyn.Sinks
             : base( symbolInfo, logger )
         {
             _dbContext = dbContext;
-            Comparer = new SymbolEqualityComparer<TSymbol>( symbolInfo );
+            Symbols = new UniqueSymbols<TSymbol>(symbolInfo);
         }
 
-        protected SymbolEqualityComparer<TSymbol> Comparer { get; }
+        protected UniqueSymbols<TSymbol> Symbols { get; }
 
-        //public override bool TryGetSunkValue( TSymbol symbol, out TSink? result )
-        //{
-        //    var symbolName = SymbolName.GetFullyQualifiedName( symbol );
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
+        {
+            if( !base.InitializeSink( syntaxWalker ) )
+                return false;
 
-        //    if( GetByFullyQualifiedName(symbolName, out var innerResult ) )
-        //    {
-        //        result = innerResult;
-        //        return true;
-        //    }
+            Symbols.Clear();
 
-        //    result = null;
-        //    return false;
-        //}
+            return true;
+        }
+
+        public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)
+        {
+            if (!base.OutputSymbol(syntaxWalker, symbol))
+                return false;
+
+            Symbols.Add( symbol );
+
+            return true;
+        }
 
         protected DbSet<TRelated> GetDbSet<TRelated>()
             where TRelated : class
@@ -54,19 +60,8 @@ namespace J4JSoftware.Roslyn.Sinks
             retVal = new TSink { FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ) };
             dbSet.Add(retVal);
 
-            //ProcessedSymbolNames.Add( retVal.FullyQualifiedName );
-
             return retVal;
         }
-
-        //protected bool GetByFullyQualifiedName( string fqn, out TSink? result )
-        //{
-        //    var dbSet = _dbContext.Set<TSink>();
-
-        //    result = dbSet.FirstOrDefault( x => x.FullyQualifiedName == fqn );
-
-        //    return result != null;
-        //}
 
         protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result )
             where TEntity : class, IFullyQualifiedName

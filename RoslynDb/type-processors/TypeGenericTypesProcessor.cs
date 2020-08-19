@@ -111,14 +111,14 @@ namespace J4JSoftware.Roslyn
             var typeConstraints = GetDbSet<TypeConstraint>();
 
             var typeConstraintDb = typeConstraints
-                .FirstOrDefault(c => c.TypeParameterID == tpDb.ID && c.ConstrainingTypeID == conDb.ID);
+                .FirstOrDefault(c => c.TypeParameterBaseID == tpDb.ID && c.ConstrainingTypeID == conDb.ID);
 
             if (typeConstraintDb == null)
             {
                 typeConstraintDb = new TypeConstraint
                 {
                     ConstrainingTypeID = conDb.ID,
-                    TypeParameter = tpDb
+                    TypeParameterBase = tpDb
                 };
 
                 typeConstraints.Add(typeConstraintDb);

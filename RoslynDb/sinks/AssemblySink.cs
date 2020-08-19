@@ -12,8 +12,6 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class AssemblySink : RoslynDbSink<IAssemblySymbol, Assembly>
     {
-        private readonly List<IAssemblySymbol> _symbols = new List<IAssemblySymbol>();
-
         public AssemblySink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -27,8 +25,6 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
-            _symbols.Clear();
-
             MarkUnsynchronized<Assembly>();
             SaveChanges();
 
@@ -40,7 +36,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            foreach( var symbol in _symbols.Distinct( Comparer ) )
+            foreach( var symbol in Symbols )
             {
                 var symbolInfo = SymbolInfo.Create( symbol );
 
@@ -55,33 +51,6 @@ namespace J4JSoftware.Roslyn.Sinks
             SaveChanges();
 
             return true;
-        }
-
-        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, IAssemblySymbol symbol )
-        {
-            if( !base.OutputSymbol( syntaxWalker, symbol ) )
-                return false;
-
-            _symbols.Add( symbol );
-
-            return true;
-            //var symbolInfo = SymbolInfo.Create( symbol );
-
-            //if( retVal.AlreadyProcessed )
-            //    return retVal;
-
-            //if( !GetByFullyQualifiedName<Assembly>( symbol, out var dbSymbol ) )
-            //    dbSymbol = AddEntity( retVal.SymbolName );
-
-            //dbSymbol!.Synchronized = true;
-            //dbSymbol.Name = symbol.Name;
-            //dbSymbol.DotNetVersion = symbol.Identity.Version;
-
-            //SaveChanges();
-
-            //retVal.WasOutput = true;
-
-            //return retVal;
         }
     }
 }

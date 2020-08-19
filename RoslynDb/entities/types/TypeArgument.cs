@@ -9,13 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(TypeArgumentConfigurator))]
-    public class TypeArgument : ISynchronized
+    public class TypeArgument : TypeArgumentBase, ISynchronized
     {
-        public int ID { get; set; }
-        public bool Synchronized { get; set; }
-        public string Name { get; set; }
-        public int Ordinal { get; set; }
-
         public int TypeDefinitionID { get; set; }
         public TypeDefinition TypeDefinition { get; set; }
     }
@@ -28,9 +23,6 @@ namespace J4JSoftware.Roslyn
                 .WithMany( x => x.TypeArguments )
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.TypeDefinitionID );
-
-            builder.Property( x => x.Name )
-                .IsRequired();
         }
     }
 
