@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
 
             MarkUnsynchronized<Method>();
-            MarkUnsynchronized<MethodParameter>();
+            MarkUnsynchronized<MethodArgument>();
 
             SaveChanges();
 
@@ -129,14 +129,14 @@ namespace J4JSoftware.Roslyn.Sinks
             Method methodDb,
             Dictionary<string, List<TypeDefinition>> paramTypeEntities )
         {
-            var mpSet = GetDbSet<MethodParameter>();
+            var mpSet = GetDbSet<MethodArgument>();
 
             var methodParamDb = mpSet
                 .FirstOrDefault( x => x.Name == paramSymbol.Name && x.DeclaringMethodID == methodDb.ID );
 
             if( methodParamDb == null )
             {
-                methodParamDb = new MethodParameter();
+                methodParamDb = new MethodArgument();
 
                 if( methodDb.ID == 0 )
                     methodParamDb.DeclaringMethod = methodDb;

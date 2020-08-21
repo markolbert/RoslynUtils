@@ -26,6 +26,7 @@ namespace J4JSoftware.Roslyn
         public int NamespaceId { get; set; }
         public Namespace Namespace { get; set; }
 
+        // the assembly defining this type
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
 
@@ -38,6 +39,7 @@ namespace J4JSoftware.Roslyn
         // list of type constraints (for generic type parameters) using this type definition
         public List<TypeConstraint> TypeConstraints { get; set; }
 
+
         // list of methods defined for this type
         public List<Method> Methods { get; set; }
 
@@ -45,7 +47,7 @@ namespace J4JSoftware.Roslyn
         public List<Method> ReturnTypes { get; set; }
 
         // list of method parameters referencing this type definition
-        public List<MethodParameter> MethodParameters { get; set; }
+        public List<MethodArgument> MethodParameters { get; set; }
 
         // list of properties implemented by this type
         public List<Property> Properties { get; set; }

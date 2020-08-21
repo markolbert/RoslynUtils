@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( MethodArgumentConfigurator ) )]
-    public class MethodParameter : ISynchronized
+    public class MethodArgument : ISynchronized
     {
         public int ID { get; set; }
         public int Ordinal { get; set; }
@@ -17,8 +17,8 @@ namespace J4JSoftware.Roslyn
         public int DeclaringMethodID { get; set; }
         public Method DeclaringMethod { get; set; }
 
-        public int ParameterTypeID { get; set; }
-        public TypeDefinition ParameterType { get; set; }
+        public int ArgumentTypeId { get; set; }
+        public TypeDefinition ArgumentType { get; set; }
 
         public bool IsOptional { get; set; }
         public bool IsParams { get; set; }
@@ -28,19 +28,19 @@ namespace J4JSoftware.Roslyn
         public string? DefaultText { get; set; }
     }
 
-    internal class MethodArgumentConfigurator : EntityConfigurator<MethodParameter>
+    internal class MethodArgumentConfigurator : EntityConfigurator<MethodArgument>
     {
-        protected override void Configure(EntityTypeBuilder<MethodParameter> builder)
+        protected override void Configure(EntityTypeBuilder<MethodArgument> builder)
         {
             builder.HasOne(x => x.DeclaringMethod)
                 .WithMany(x => x.Arguments)
                 .HasForeignKey(x => x.DeclaringMethodID)
                 .HasPrincipalKey(x => x.ID);
 
-            builder.HasOne( x => x.ParameterType )
+            builder.HasOne( x => x.ArgumentType )
                 .WithMany( x => x.MethodParameters )
                 .HasPrincipalKey( x => x.ID )
-                .HasForeignKey( x => x.ParameterTypeID );
+                .HasForeignKey( x => x.ArgumentTypeId );
 
             builder.Property( x => x.ReferenceKind )
                 .HasConversion( new EnumToNumberConverter<RefKind, int>() );

@@ -8,8 +8,6 @@ namespace J4JSoftware.Roslyn
 {
     public class TypeAssemblyProcessor : BaseProcessorDb<List<ITypeSymbol>>
     {
-        private readonly SymbolEqualityComparer<IAssemblySymbol> _comparer;
-
         public TypeAssemblyProcessor(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
@@ -17,15 +15,13 @@ namespace J4JSoftware.Roslyn
         )
             : base( dbContext, symbolInfo, logger )
         {
-            _comparer = new SymbolEqualityComparer<IAssemblySymbol>( SymbolInfo );
         }
 
         protected override bool ProcessInternal( List<ITypeSymbol> typeSymbols )
         {
             var assemblies = GetDbSet<Assembly>();
 
-            foreach( var assemblySymbol in typeSymbols.Select( ts => SymbolInfo.Create(ts).ContainingAssembly )
-                .Distinct( _comparer ) )
+            foreach( var assemblySymbol in typeSymbols.Select( ts => SymbolInfo.Create(ts).ContainingAssembly ) )
             {
                 if( GetByFullyQualifiedName<Assembly>( assemblySymbol, out var dbSymbol ) )
                 {
