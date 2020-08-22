@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn.entities;
@@ -7,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class BaseProcessorDb<TSource> : AtomicProcessor<TSource>
+    public abstract class BaseProcessorDb<TSymbol, TSource> : AtomicProcessor<TSource>
+        where TSymbol : class, ISymbol
+        where TSource : IEnumerable
     {
         private readonly RoslynDbContext _dbContext;
 
@@ -23,6 +27,21 @@ namespace J4JSoftware.Roslyn
         }
 
         protected ISymbolInfoFactory SymbolInfo { get; }
+
+        protected abstract bool ExtractSymbol( object item, out TSymbol? result );
+        protected abstract bool ProcessSymbol( TSymbol symbol );
+
+        protected override bool ProcessInternal( TSource inputData )
+        {
+            var allOkay = true;
+
+            foreach( var symbol in FilterSymbols( inputData ) )
+            {
+                allOkay = ProcessSymbol( symbol );
+            }
+
+            return allOkay;
+        }
 
         protected DbSet<TRelated> GetDbSet<TRelated>()
             where TRelated : class
@@ -55,6 +74,25 @@ namespace J4JSoftware.Roslyn
             _dbContext.SaveChanges();
 
             return true;
+        }
+
+        private IEnumerable<TSymbol> FilterSymbols(TSource source)
+        {
+            var processed = new Dictionary<string, TSymbol>();
+
+            foreach (var item in source)
+            {
+                if (item == null || !ExtractSymbol(item, out var symbol))
+                    continue;
+
+                var fqn = SymbolInfo.GetFullyQualifiedName(symbol!);
+                if (processed.ContainsKey(fqn))
+                    continue;
+
+                processed.Add(fqn, symbol!);
+
+                yield return symbol!;
+            }
         }
     }
 }

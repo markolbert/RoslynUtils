@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeGenericTypesProcessor : BaseProcessorDb<List<ITypeSymbol>>
+    public class TypeGenericTypesProcessor : BaseProcessorDb<INamedTypeSymbol, List<ITypeSymbol>>
     {
         public TypeGenericTypesProcessor(
             RoslynDbContext dbContext,
@@ -17,28 +17,17 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ProcessInternal(List<ITypeSymbol> typeSymbols )
+        protected override bool ExtractSymbol( object item, out INamedTypeSymbol? result )
         {
-            var allOkay = true;
+            if( item is INamedTypeSymbol ntSymbol && ntSymbol.IsGenericType )
+                result = ntSymbol;
+            else result = null;
 
-            foreach( var symbol in typeSymbols
-                .Where( ts => ts is INamedTypeSymbol ntSymbol && ntSymbol.IsGenericType )
-                .Cast<INamedTypeSymbol>())
-            {
-                allOkay &= ProcessGeneric( symbol );
-            }
-
-            return allOkay;
+            return result != null;
         }
 
-        private bool ProcessGeneric(INamedTypeSymbol generic)
+        protected override bool ProcessSymbol(INamedTypeSymbol generic)
         {
-            if ( !generic.IsGenericType )
-            {
-                Logger.Error<string>("Type {0} is not generic", generic.Name);
-                return false;
-            }
-
             if( !GetByFullyQualifiedName<TypeDefinition>( generic, out var typeDefDb ) )
                 return false;
 
@@ -53,6 +42,12 @@ namespace J4JSoftware.Roslyn
                 {
                     allOkay &= ProcessTypeConstraints(tpDb, conSymbol);
                 }
+            }
+
+            // create/update all TypeArguments related to this generic type
+            for( var taOrdinal = 0; taOrdinal < generic.TypeArguments.Length; taOrdinal++)
+            {
+                ProcessTypeArgument( typeDefDb!, generic.TypeArguments[taOrdinal], taOrdinal );
             }
 
             return allOkay;
@@ -97,27 +92,19 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var typeDefinitions = GetDbSet<TypeDefinition>();
-
-            var conDb = typeDefinitions
-                .FirstOrDefault(td => td.FullyQualifiedName == symbolInfo.SymbolName);
-
-            if (conDb == null)
-            {
-                Logger.Error<string>("Constraining type '{0}' not found in database", symbolInfo.SymbolName);
+            if( !GetByFullyQualifiedName<TypeDefinition>( constraintSymbol, out var conDb ) )
                 return false;
-            }
 
             var typeConstraints = GetDbSet<TypeConstraint>();
 
             var typeConstraintDb = typeConstraints
-                .FirstOrDefault(c => c.TypeParameterBaseID == tpDb.ID && c.ConstrainingTypeID == conDb.ID);
+                .FirstOrDefault(c => c.TypeParameterBaseID == tpDb.ID && c.ConstrainingTypeID == conDb!.ID);
 
             if (typeConstraintDb == null)
             {
                 typeConstraintDb = new TypeConstraint
                 {
-                    ConstrainingTypeID = conDb.ID,
+                    ConstrainingTypeID = conDb!.ID,
                     TypeParameterBase = tpDb
                 };
 
@@ -127,6 +114,32 @@ namespace J4JSoftware.Roslyn
             typeConstraintDb.Synchronized = true;
 
             return true;
+        }
+
+        private void ProcessTypeArgument(TypeDefinition typeDefDb, ITypeSymbol taSymbol, int taOrdinal )
+        {
+            // don't process anything other than INamedTypeSymbols or IArrayTypeSymbols
+            if( !( taSymbol is INamedTypeSymbol ) && !( taSymbol is IArrayTypeSymbol ) )
+                return;
+
+            var typeArguments = GetDbSet<TypeArgument>();
+
+            var taDb = typeArguments
+                .FirstOrDefault(x => x.Ordinal == taOrdinal && x.TypeDefinitionID == typeDefDb.ID);
+
+            if (taDb == null)
+            {
+                taDb = new TypeArgument
+                {
+                    TypeDefinition = typeDefDb,
+                    Ordinal = taOrdinal
+                };
+
+                typeArguments.Add(taDb);
+            }
+
+            taDb.Synchronized = true;
+            taDb.Name = taSymbol.Name;
         }
     }
 }

@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeNamespaceProcessor))]
-    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<List<ITypeSymbol>>
+    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<ITypeSymbol, List<ITypeSymbol>>
     {
         public TypeDiscoveredTypesProcessor(
             RoslynDbContext dbContext,
@@ -18,19 +18,22 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ProcessInternal( List<ITypeSymbol> typeSymbols )
+        protected override bool ExtractSymbol( object item, out ITypeSymbol? result )
         {
-            var allOkay = true;
+            result = null;
 
-            foreach( var ntSymbol in typeSymbols )
+            if (!(item is ITypeSymbol typeSymbol))
             {
-                allOkay &= ProcessSymbol( ntSymbol );
+                Logger.Error("Supplied item is not an ITypeSymbol");
+                return false;
             }
 
-            return allOkay;
+            result = typeSymbol;
+
+            return true;
         }
 
-        private bool ProcessSymbol( ITypeSymbol ntSymbol )
+        protected override bool ProcessSymbol( ITypeSymbol ntSymbol )
         {
             var symbolInfo = SymbolInfo.Create( ntSymbol );
 

@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAncestorProcessor : BaseProcessorDb<List<ITypeSymbol>>
+    public class TypeAncestorProcessor : BaseProcessorDb<ITypeSymbol, List<ITypeSymbol>>
     {
         public TypeAncestorProcessor(
             RoslynDbContext dbContext,
@@ -17,31 +17,36 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ProcessInternal( List<ITypeSymbol> typeSymbols )
+        protected override bool ExtractSymbol( object item, out ITypeSymbol? result )
         {
-            var allOkay = true;
-
-            foreach( var ntSymbol in typeSymbols.Where( ts => ts.BaseType != null ) )
+            if( item is ITypeSymbol typeSymbol )
+                result = typeSymbol;
+            else
             {
-                allOkay &= ProcessAncestors( ntSymbol );
+                Logger.Error("Supplied item is not an ITypeSymbol");
+                result = null;
             }
 
-            return allOkay;
+            return result != null;
         }
 
-        private bool ProcessAncestors(ITypeSymbol typeSymbol)
+        protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
             if( !GetByFullyQualifiedName<TypeDefinition>( typeSymbol, out var typeDb ) )
                 return false;
 
-            if (!ProcessAncestor(typeDb!, typeSymbol.BaseType!))
+            // typeSymbol must be System.Object, which has no base type
+            if( typeSymbol.BaseType == null )
+                return true;
+
+            if( !ProcessAncestor( typeDb!, typeSymbol.BaseType ) )
                 return false;
 
             var allOkay = true;
 
-            foreach (var interfaceSymbol in typeSymbol.Interfaces)
+            foreach( var interfaceSymbol in typeSymbol.Interfaces )
             {
-                allOkay &= ProcessAncestor(typeDb!, interfaceSymbol);
+                allOkay &= ProcessAncestor( typeDb!, interfaceSymbol );
             }
 
             return allOkay;
@@ -72,63 +77,5 @@ namespace J4JSoftware.Roslyn
 
             return true;
         }
-
-        //private bool ProcessAncestorClosures( TypeDefinition typeDb, INamedTypeSymbol ancestorSymbol )
-        //{
-        //    var allOkay = true;
-
-        //    var typeDefinitions = GetDbSet<TypeDefinition>();
-        //    var typeClosures = GetDbSet<TypeClosure>();
-
-        //    for( int idx = 0; idx < ancestorSymbol.TypeArguments.Length; idx++ )
-        //    {
-        //        if( ancestorSymbol.TypeArguments[ idx ] is ITypeParameterSymbol )
-        //            continue;
-
-        //        var symbolInfo = SymbolInfo.Create( ancestorSymbol.TypeArguments[ idx ] );
-
-        //        if( !( symbolInfo.Symbol is INamedTypeSymbol ) && symbolInfo.TypeKind != TypeKind.Array )
-        //        {
-        //            Logger.Error<string>(
-        //                "Closing type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
-        //                symbolInfo.SymbolName );
-        //            allOkay = false;
-
-        //            continue;
-        //        }
-
-        //        var conDb = typeDefinitions
-        //            .FirstOrDefault( td => td.FullyQualifiedName == symbolInfo.SymbolName );
-
-        //        if( conDb == null )
-        //        {
-        //            Logger.Error<string>( "Closing type '{0}' not found in database", symbolInfo.SymbolName );
-        //            allOkay = false;
-
-        //            continue;
-        //        }
-
-        //        var closureDb = typeClosures
-        //            .FirstOrDefault( c => c.TypeBeingClosedID == typeDb.ID 
-        //                                  && c.ClosingTypeID == conDb.ID
-        //                                  && c.Ordinal == idx );
-
-        //        if( closureDb == null )
-        //        {
-        //            closureDb = new TypeClosure
-        //            {
-        //                ClosingType = conDb,
-        //                TypeBeingClosed = typeDb!,
-        //                Ordinal = idx
-        //            };
-
-        //            typeClosures.Add( closureDb );
-        //        }
-
-        //        closureDb.Synchronized = true;
-        //    }
-
-        //    return allOkay;
-        //}
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAssemblyProcessor : BaseProcessorDb<List<ITypeSymbol>>
+    public class TypeAssemblyProcessor : BaseProcessorDb<IAssemblySymbol, List<ITypeSymbol>>
     {
         public TypeAssemblyProcessor(
             RoslynDbContext dbContext,
@@ -17,27 +17,38 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ProcessInternal( List<ITypeSymbol> typeSymbols )
+        protected override bool ExtractSymbol( object item, out IAssemblySymbol? result )
+        {
+            result = null;
+
+            if( !( item is ITypeSymbol typeSymbol ) )
+            {
+                Logger.Error("Supplied item is not an ITypeSymbol");
+                return false;
+            }
+
+            result = typeSymbol.ContainingAssembly;
+
+            return result != null;
+        }
+
+        protected override bool ProcessSymbol( IAssemblySymbol symbol )
         {
             var assemblies = GetDbSet<Assembly>();
 
-            foreach( var assemblySymbol in typeSymbols.Select( ts => SymbolInfo.Create(ts).ContainingAssembly ) )
+            if( !GetByFullyQualifiedName<Assembly>( symbol, out var dbSymbol ) )
             {
-                if( GetByFullyQualifiedName<Assembly>( assemblySymbol, out var dbSymbol ) )
-                {
-                    dbSymbol!.Synchronized = true;
-                    continue;
-                }
-
                 dbSymbol = new Assembly
                 {
-                    FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( assemblySymbol ),
-                    Name = SymbolInfo.GetName( assemblySymbol ),
-                    DotNetVersion = assemblySymbol.Identity.Version
+                    FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ),
+                    Name = SymbolInfo.GetName( symbol ),
+                    DotNetVersion = symbol.Identity.Version
                 };
 
                 assemblies.Add( dbSymbol );
             }
+
+            dbSymbol!.Synchronized = true;
 
             return true;
         }

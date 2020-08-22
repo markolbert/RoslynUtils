@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeAssemblyProcessor))]
-    public class TypeNamespaceProcessor : BaseProcessorDb<List<ITypeSymbol>>
+    public class TypeNamespaceProcessor : BaseProcessorDb<INamespaceSymbol, List<ITypeSymbol>>
     {
         public TypeNamespaceProcessor(
             RoslynDbContext dbContext,
@@ -18,35 +18,39 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ProcessInternal(List<ITypeSymbol> typeSymbols )
+        protected override bool ExtractSymbol( object item, out INamespaceSymbol? result )
         {
-            var allOkay = true;
+            result = null;
 
-            var namespaces = GetDbSet<Namespace>();
-
-            foreach( var nsSymbol in typeSymbols.Select( ts => SymbolInfo.Create(ts).ContainingNamespace ) )
+            if (!(item is ITypeSymbol typeSymbol))
             {
-                if( GetByFullyQualifiedName<Namespace>( nsSymbol, out var dbSymbol ) )
-                {
-                    dbSymbol!.Synchronized = true;
-                    continue;
-                }
-
-                if( !GetByFullyQualifiedName<Assembly>( nsSymbol.ContainingAssembly, out var dbAssembly ) )
-                    allOkay = false;
-                else
-                {
-                    dbSymbol = new Namespace
-                    {
-                        FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( nsSymbol ),
-                        Name = SymbolInfo.GetName( nsSymbol )
-                    };
-
-                    namespaces.Add( dbSymbol );
-                }
+                Logger.Error("Supplied item is not an ITypeSymbol");
+                return false;
             }
 
-            return allOkay;
+            result = typeSymbol.ContainingNamespace;
+
+            return result != null;
+        }
+
+        protected override bool ProcessSymbol( INamespaceSymbol symbol )
+        {
+            var namespaces = GetDbSet<Namespace>();
+
+            if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
+            {
+                dbSymbol = new Namespace
+                {
+                    FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ),
+                    Name = SymbolInfo.GetName( symbol )
+                };
+
+                namespaces.Add( dbSymbol );
+            }
+
+            dbSymbol!.Synchronized = true;
+
+            return true;
         }
     }
 }
