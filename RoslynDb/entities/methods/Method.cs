@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
         public TypeDefinition ReturnType { get; set; }
 
         // list of method arguments
-        public List<MethodArgument> Arguments { get; set; }
+        public List<MethodArgumentBase> Arguments { get; set; }
 
         // list of generic parameters used by this method, if any
         public List<MethodTypeParameter> TypeParameters { get; set; }

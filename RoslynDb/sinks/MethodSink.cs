@@ -22,6 +22,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             MarkUnsynchronized<Method>();
             MarkUnsynchronized<MethodArgument>();
+            MarkUnsynchronized<MethodTypeParameter>();
 
             SaveChanges();
 
@@ -186,14 +187,16 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if (methodTpDb == null)
             {
-                methodTpDb = new MethodTypeParameter
-                {
-                    DeclaringMethodID = methodDb.ID,
-                    Ordinal = tpSymbol.Ordinal
-                };
+                methodTpDb = new MethodTypeParameter();
 
                 methodTypeParameters.Add(methodTpDb);
             }
+
+            methodTpDb.Ordinal = tpSymbol.Ordinal;
+
+            if (methodDb.ID == 0)
+                methodTpDb.DeclaringMethod = methodDb;
+            else methodTpDb.DeclaringMethodID = methodDb.ID;
 
             methodTpDb.Synchronized = true;
             methodTpDb.Name = tpSymbol.Name;
@@ -234,14 +237,16 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if (typeConstraintDb == null)
             {
-                typeConstraintDb = new TypeConstraint
-                {
-                    ConstrainingTypeID = conDb.ID,
-                    TypeParameterBase = methodTpDb
-                };
+                typeConstraintDb = new TypeConstraint();
 
                 typeConstraints.Add(typeConstraintDb);
             }
+
+            if( methodTpDb.ID == 0 )
+                typeConstraintDb.TypeParameterBase = methodTpDb;
+            else typeConstraintDb.TypeParameterBaseID = methodTpDb.ID;
+
+            typeConstraintDb.ConstrainingType = conDb;
 
             typeConstraintDb.Synchronized = true;
 

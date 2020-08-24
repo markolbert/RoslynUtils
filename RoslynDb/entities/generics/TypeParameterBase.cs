@@ -21,7 +21,12 @@ namespace J4JSoftware.Roslyn
         public int Ordinal { get; set; }
         public TypeParameterConstraint Constraints { get; set; }
 
+        // list of types this type parameter must implement
         public List<TypeConstraint> TypeConstraints { get; set; }
+
+        // list of method arguments this type parameter is referenced by
+        // these can be either TypeParameters or MethodTypeParameters
+        public List<MethodArgumentTypeParameter> MethodArguments { get; set; }
     }
 
     internal class TypeParameterBaseConfigurator : EntityConfigurator<TypeParameterBase>
