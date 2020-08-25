@@ -7,12 +7,16 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class MethodSink : RoslynDbSink<IMethodSymbol, Method>
     {
+        private readonly ISymbolSetProcessor<IMethodSymbol> _processors;
+
         public MethodSink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
+            ISymbolSetProcessor<IMethodSymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
+            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -22,7 +26,8 @@ namespace J4JSoftware.Roslyn.Sinks
 
             MarkUnsynchronized<Method>();
             MarkUnsynchronized<MethodArgument>();
-            MarkUnsynchronized<MethodTypeParameter>();
+            MarkUnsynchronized<TypeDefinitionMethodArgument>();
+            MarkUnsynchronized<TypeParameterMethodArgument>();
 
             SaveChanges();
 
@@ -34,223 +39,88 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            var allOkay = true;
+            return _processors.Process(Symbols);
+            //var allOkay = true;
 
-            foreach( var symbol in Symbols )
-            {
-                allOkay &= ProcessSymbol( symbol );
-            }
+            //foreach( var symbol in Symbols )
+            //{
+            //    allOkay &= ProcessSymbol( symbol );
+            //}
 
-            SaveChanges();
+            //SaveChanges();
 
-            return allOkay;
+            //return allOkay;
         }
 
 
-        private bool ProcessSymbol(IMethodSymbol symbol)
-        {
-            // validate that we can identify all the related entities we'll need to create/update
-            // the method entity
-            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.ContainingType, out var dtDb))
-                return false;
+        //private bool ProcessSymbol(IMethodSymbol methodSymbol)
+        //{
+        //    // validate that we can identify all the related entities we'll need to create/update
+        //    // the method entity
+        //    if (!GetByFullyQualifiedName<TypeDefinition>(methodSymbol.ContainingType, out var dtDb))
+        //        return false;
 
-            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.ReturnType, out var rtDb))
-                return false;
+        //    if (!GetByFullyQualifiedName<TypeDefinition>(methodSymbol.ReturnType, out var rtDb))
+        //        return false;
 
-            if (!GetParameterTypeDefinitions(symbol, out var paramTypeEntities))
-                return false;
+        //    // construct/update the method entity
+        //    var symbolInfo = SymbolInfo.Create(methodSymbol);
 
-            // construct/update the method entity
-            var symbolInfo = SymbolInfo.Create(symbol);
+        //    if (!GetByFullyQualifiedName<Method>(methodSymbol, out var methodDb))
+        //        methodDb = AddEntity(symbolInfo.SymbolName);
 
-            if (!GetByFullyQualifiedName<Method>(symbol, out var methodDb))
-                methodDb = AddEntity(symbolInfo.SymbolName);
+        //    methodDb!.Name = SymbolInfo.GetName(methodSymbol);
+        //    methodDb.Kind = methodSymbol.MethodKind;
+        //    methodDb.ReturnTypeID = rtDb!.ID;
+        //    methodDb.DefiningTypeID = dtDb!.ID;
+        //    methodDb.DeclarationModifier = methodSymbol.GetDeclarationModifier();
+        //    methodDb.Accessibility = methodSymbol.DeclaredAccessibility;
+        //    methodDb.Synchronized = true;
 
-            methodDb!.Name = SymbolInfo.GetName(symbol);
-            methodDb.Kind = symbol.MethodKind;
-            methodDb.ReturnTypeID = rtDb!.ID;
-            methodDb.DefiningTypeID = dtDb!.ID;
-            methodDb.DeclarationModifier = symbol.GetDeclarationModifier();
-            methodDb.Accessibility = symbol.DeclaredAccessibility;
-            methodDb.Synchronized = true;
+        //    return true;
+        //}
 
-            var allOkay = true;
+        //private bool GetArgumentTypeDefinitions(IMethodSymbol methodSymbol, out Dictionary<string, List<TypeDefinition>> result)
+        //{
+        //    result = new Dictionary<string, List<TypeDefinition>>();
+        //    var tdSet = GetDbSet<TypeDefinition>();
 
-            // construct/update the argument entities related to the method entity
-            foreach (var parameter in symbol.Parameters)
-            {
-                allOkay &= ProcessParameter(parameter, methodDb, paramTypeEntities);
-            }
+        //    foreach (var arg in methodSymbol.Parameters)
+        //    {
+        //        result.Add(arg.Name, new List<TypeDefinition>());
 
-            foreach( var tpSymbol in symbol.TypeParameters )
-            {
-                var methodTpDb = ProcessMethodTypeParameter( methodDb, tpSymbol );
+        //        if (arg.Type is ITypeParameterSymbol tpSymbol)
+        //        {
+        //            foreach (var typeConstraint in tpSymbol.ConstraintTypes.Cast<INamedTypeSymbol>())
+        //            {
+        //                if (typeConstraint == null)
+        //                    continue;
 
-                foreach( var conSymbol in tpSymbol.ConstraintTypes )
-                {
-                    allOkay &= ProcessTypeConstraints( methodTpDb, conSymbol );
-                }
-            }
+        //                if (!get_type_definition(typeConstraint, out var tpDb))
+        //                    return false;
 
-            return allOkay;
-        }
+        //                result[arg.Name].Add(tpDb!);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            if (!get_type_definition(arg.Type, out var tpDb))
+        //                return false;
 
-        private bool ProcessParameter(
-            IParameterSymbol argSymbol,
-            Method methodDb,
-            Dictionary<string, List<TypeDefinition>> paramTypeEntities )
-        {
-            if( !GetByFullyQualifiedName<TypeDefinition>( argSymbol.Type, out var argTypeDb ) )
-                return false;
+        //            result[arg.Name].Add(tpDb!);
+        //        }
+        //    }
 
-            var methodArguments = GetDbSet<MethodArgument>();
+        //    return true;
 
-            var argDb = methodArguments
-                .FirstOrDefault( x => x.Name == argSymbol.Name && x.DeclaringMethodID == methodDb.ID );
+        //    bool get_type_definition(ISymbol symbol, out TypeDefinition? innerResult)
+        //    {
+        //        var symbolInfo = SymbolInfo.Create(symbol);
 
-            if( argDb == null )
-            {
-                argDb = new MethodArgument();
+        //        innerResult = tdSet.FirstOrDefault(x => x.FullyQualifiedName == symbolInfo.SymbolName);
 
-                if( methodDb.ID == 0 )
-                    argDb.DeclaringMethod = methodDb;
-                else argDb.DeclaringMethodID = methodDb.ID;
-
-                argDb.Name = argSymbol.Name;
-
-                methodArguments.Add( argDb );
-            }
-
-            argDb.Ordinal = argSymbol.Ordinal;
-            argDb.ArgumentTypeId = argTypeDb!.ID;
-            argDb.IsDiscard = argSymbol.IsDiscard;
-            argDb.IsOptional = argSymbol.IsOptional;
-            argDb.IsParams = argSymbol.IsParams;
-            argDb.IsThis = argSymbol.IsThis;
-            argDb.ReferenceKind = argSymbol.RefKind;
-            argDb.DefaultText = argSymbol.HasExplicitDefaultValue
-                ? argSymbol.ExplicitDefaultValue?.ToString() ?? null
-                : null;
-
-            return true;
-        }
-
-        private bool GetParameterTypeDefinitions(IMethodSymbol methodSymbol, out Dictionary<string, List<TypeDefinition>> result)
-        {
-            result = new Dictionary<string, List<TypeDefinition>>();
-            var tdSet = GetDbSet<TypeDefinition>();
-
-            foreach (var arg in methodSymbol.Parameters)
-            {
-                result.Add(arg.Name, new List<TypeDefinition>());
-
-                if (arg.Type is ITypeParameterSymbol tpSymbol)
-                {
-                    foreach (var typeConstraint in tpSymbol.ConstraintTypes.Cast<INamedTypeSymbol>())
-                    {
-                        if (typeConstraint == null)
-                            continue;
-
-                        if (!get_type_definition(typeConstraint, out var tpDb))
-                            return false;
-
-                        result[arg.Name].Add(tpDb!);
-                    }
-                }
-                else
-                {
-                    if (!get_type_definition(arg.Type, out var tpDb))
-                        return false;
-
-                    result[arg.Name].Add(tpDb!);
-                }
-            }
-
-            return true;
-
-            bool get_type_definition(ISymbol symbol, out TypeDefinition? innerResult)
-            {
-                var symbolInfo = SymbolInfo.Create(symbol);
-
-                innerResult = tdSet.FirstOrDefault(x => x.FullyQualifiedName == symbolInfo.SymbolName);
-
-                return innerResult != null;
-            }
-        }
-
-        private MethodTypeParameter ProcessMethodTypeParameter(Method methodDb, ITypeParameterSymbol tpSymbol)
-        {
-            var methodTypeParameters = GetDbSet<MethodTypeParameter>();
-
-            var methodTpDb = methodTypeParameters
-                .FirstOrDefault(x => x.Ordinal == tpSymbol.Ordinal && x.DeclaringMethodID == methodDb.ID);
-
-            if (methodTpDb == null)
-            {
-                methodTpDb = new MethodTypeParameter();
-
-                methodTypeParameters.Add(methodTpDb);
-            }
-
-            methodTpDb.Ordinal = tpSymbol.Ordinal;
-
-            if (methodDb.ID == 0)
-                methodTpDb.DeclaringMethod = methodDb;
-            else methodTpDb.DeclaringMethodID = methodDb.ID;
-
-            methodTpDb.Synchronized = true;
-            methodTpDb.Name = tpSymbol.Name;
-            methodTpDb.Constraints = tpSymbol.GetTypeParameterConstraint();
-
-            return methodTpDb;
-        }
-
-        private bool ProcessTypeConstraints(
-            MethodTypeParameter methodTpDb,
-            ITypeSymbol constraintSymbol)
-        {
-            var symbolInfo = SymbolInfo.Create(constraintSymbol);
-
-            if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
-            {
-                Logger.Error<string>(
-                    "Constraining type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
-                    symbolInfo.SymbolName);
-                return false;
-            }
-
-            var typeDefinitions = GetDbSet<TypeDefinition>();
-
-            var conDb = typeDefinitions
-                .FirstOrDefault(td => td.FullyQualifiedName == symbolInfo.SymbolName);
-
-            if (conDb == null)
-            {
-                Logger.Error<string>("Constraining type '{0}' not found in database", symbolInfo.SymbolName);
-                return false;
-            }
-
-            var typeConstraints = GetDbSet<TypeConstraint>();
-
-            var typeConstraintDb = typeConstraints
-                .FirstOrDefault(c => c.TypeParameterBaseID == methodTpDb.ID && c.ConstrainingTypeID == conDb.ID);
-
-            if (typeConstraintDb == null)
-            {
-                typeConstraintDb = new TypeConstraint();
-
-                typeConstraints.Add(typeConstraintDb);
-            }
-
-            if( methodTpDb.ID == 0 )
-                typeConstraintDb.TypeParameterBase = methodTpDb;
-            else typeConstraintDb.TypeParameterBaseID = methodTpDb.ID;
-
-            typeConstraintDb.ConstrainingType = conDb;
-
-            typeConstraintDb.Synchronized = true;
-
-            return true;
-        }
+        //        return innerResult != null;
+        //    }
+        //}
     }
 }

@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
 
         protected ISymbolInfoFactory SymbolInfo { get; }
 
-        protected abstract bool ExtractSymbol( object item, out TSymbol? result );
+        protected abstract IEnumerable<TSymbol> ExtractSymbols( object item );
         protected abstract bool ProcessSymbol( TSymbol symbol );
 
         protected override bool ProcessInternal( TSource inputData )
@@ -82,16 +82,19 @@ namespace J4JSoftware.Roslyn
 
             foreach (var item in source)
             {
-                if (item == null || !ExtractSymbol(item, out var symbol))
+                if (item == null )
                     continue;
 
-                var fqn = SymbolInfo.GetFullyQualifiedName(symbol!);
-                if (processed.ContainsKey(fqn))
-                    continue;
+                foreach( var symbol in ExtractSymbols(item) )
+                {
+                    var fqn = SymbolInfo.GetFullyQualifiedName(symbol!);
+                    if (processed.ContainsKey(fqn))
+                        continue;
 
-                processed.Add(fqn, symbol!);
+                    processed.Add(fqn, symbol!);
 
-                yield return symbol!;
+                    yield return symbol!;
+                }
             }
         }
     }

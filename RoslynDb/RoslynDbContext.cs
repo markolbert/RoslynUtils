@@ -27,8 +27,8 @@ namespace J4JSoftware.Roslyn
 
         // type definition and implementation
         public DbSet<TypeDefinition> TypeDefinitions { get; set; }
-        public DbSet<TypeParameter> TypeParameters { get; set; }
-        public DbSet<TypeArgument> TypeArguments { get; set; }
+        public DbSet<TypeDefinitionTypeParameter> TypeDefinitionParameters { get; set; }
+        public DbSet<TypeDefinitionTypeArgument> TypeDefinitionArguments { get; set; }
         public DbSet<TypeAncestor> TypeAncestors { get; set; }
 
         public DbSet<Method> Methods { get; set; }

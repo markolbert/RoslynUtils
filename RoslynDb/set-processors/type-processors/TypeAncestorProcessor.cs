@@ -17,17 +17,10 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ExtractSymbol( object item, out ITypeSymbol? result )
+        protected override IEnumerable<ITypeSymbol> ExtractSymbols( object item )
         {
             if( item is ITypeSymbol typeSymbol )
-                result = typeSymbol;
-            else
-            {
-                Logger.Error("Supplied item is not an ITypeSymbol");
-                result = null;
-            }
-
-            return result != null;
+                yield return typeSymbol;
         }
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )

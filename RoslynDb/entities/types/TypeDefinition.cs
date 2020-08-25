@@ -31,10 +31,10 @@ namespace J4JSoftware.Roslyn
         public Assembly Assembly { get; set; }
 
         // list of generic parameters used by this type definition, if any
-        public List<TypeParameter> TypeParameters { get; set; }
+        public List<TypeDefinitionTypeParameter> TypeParameterReferences { get; set; }
 
         // list of type arguments defined for generic parameters used by this type definition, if any
-        public List<TypeArgument> TypeArguments { get; set; }
+        public List<TypeDefinitionTypeArgument> TypeArgumentReferences { get; set; }
 
         // list of type constraints (for generic type parameters) using this type definition
         public List<TypeConstraint> TypeConstraints { get; set; }
@@ -46,8 +46,8 @@ namespace J4JSoftware.Roslyn
         // list of return types referencing this type definition
         public List<Method> ReturnTypes { get; set; }
 
-        // list of method parameters referencing this type definition
-        public List<MethodArgument> MethodParameters { get; set; }
+        // list of method arguments referencing this type definition
+        public List<TypeDefinitionMethodArgument> MethodArguments { get; set; }
 
         // list of properties implemented by this type
         public List<Property> Properties { get; set; }

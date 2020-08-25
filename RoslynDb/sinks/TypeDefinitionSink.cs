@@ -9,12 +9,12 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class TypeDefinitionSink : RoslynDbSink<ITypeSymbol, TypeDefinition>
     {
-        private readonly ITypeDefinitionProcessors _processors;
+        private readonly ISymbolSetProcessor<ITypeSymbol> _processors;
 
         public TypeDefinitionSink(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
-            ITypeDefinitionProcessors processors,
+            ISymbolSetProcessor<ITypeSymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
@@ -41,19 +41,19 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            var allOkay = true;
+            //var allOkay = true;
 
-            // add the types we initially collected
-            foreach( var typeSymbol in Symbols )
-            {
-                allOkay &= ProcessSymbol( typeSymbol );
-            }
+            //// add the types we initially collected
+            //foreach( var typeSymbol in Symbols )
+            //{
+            //    allOkay &= ProcessSymbol( typeSymbol );
+            //}
 
-            SaveChanges();
+            //SaveChanges();
 
-            allOkay &= _processors.Process( Symbols.Symbols );
+            return _processors.Process( Symbols );
 
-            return allOkay;
+            //return allOkay;
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
@@ -104,47 +104,47 @@ namespace J4JSoftware.Roslyn.Sinks
             }
         }
 
-        private bool ProcessSymbol( ITypeSymbol symbol )
-        {
-            var symbolInfo = SymbolInfo.Create(symbol);
+        //private bool ProcessSymbol( ITypeSymbol symbol )
+        //{
+        //    var symbolInfo = SymbolInfo.Create(symbol);
 
-            switch ( symbolInfo.TypeKind )
-            {
-                case TypeKind.Error:
-                    Logger.Error<string>( "Unhandled or incorrect type error for named type '{0}'",
-                        symbolInfo.SymbolName );
+        //    switch ( symbolInfo.TypeKind )
+        //    {
+        //        case TypeKind.Error:
+        //            Logger.Error<string>( "Unhandled or incorrect type error for named type '{0}'",
+        //                symbolInfo.SymbolName );
 
-                    return false;
+        //            return false;
 
-                case TypeKind.Dynamic:
-                case TypeKind.Pointer:
-                    Logger.Error<string, TypeKind>(
-                        "named type '{0}' is a {1} and not supported",
-                        symbolInfo.SymbolName,
-                        symbolInfo.TypeKind );
+        //        case TypeKind.Dynamic:
+        //        case TypeKind.Pointer:
+        //            Logger.Error<string, TypeKind>(
+        //                "named type '{0}' is a {1} and not supported",
+        //                symbolInfo.SymbolName,
+        //                symbolInfo.TypeKind );
 
-                    return false;
-            }
+        //            return false;
+        //    }
 
-            if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
-                return false;
+        //    if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
+        //        return false;
 
-            if( !GetByFullyQualifiedName<Namespace>( symbolInfo.ContainingNamespace, out var dbNS ) )
-                return false;
+        //    if( !GetByFullyQualifiedName<Namespace>( symbolInfo.ContainingNamespace, out var dbNS ) )
+        //        return false;
 
-            if( !GetByFullyQualifiedName<TypeDefinition>(symbolInfo.Symbol, out var dbSymbol))
-                dbSymbol = AddEntity( symbolInfo.SymbolName );
+        //    if( !GetByFullyQualifiedName<TypeDefinition>(symbolInfo.Symbol, out var dbSymbol))
+        //        dbSymbol = AddEntity( symbolInfo.SymbolName );
 
-            dbSymbol!.Synchronized = true;
-            dbSymbol.Name = SymbolInfo.GetName( symbolInfo.Symbol );
-            dbSymbol.AssemblyID = dbAssembly!.ID;
-            dbSymbol.NamespaceId = dbNS!.ID;
-            dbSymbol.Accessibility = symbolInfo.Symbol.DeclaredAccessibility;
-            dbSymbol.DeclarationModifier = symbolInfo.Symbol.GetDeclarationModifier();
-            dbSymbol.Nature = symbolInfo.TypeKind;
-            dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
+        //    dbSymbol!.Synchronized = true;
+        //    dbSymbol.Name = SymbolInfo.GetName( symbolInfo.Symbol );
+        //    dbSymbol.AssemblyID = dbAssembly!.ID;
+        //    dbSymbol.NamespaceId = dbNS!.ID;
+        //    dbSymbol.Accessibility = symbolInfo.Symbol.DeclaredAccessibility;
+        //    dbSymbol.DeclarationModifier = symbolInfo.Symbol.GetDeclarationModifier();
+        //    dbSymbol.Nature = symbolInfo.TypeKind;
+        //    dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 }

@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
 
         public void Clear() => _symbols.Clear();
 
-        public List<TSymbol> Symbols => _symbols.Select( x => x.Value ).ToList();
+        //public List<TSymbol> Symbols => _symbols.Select( x => x.Value ).ToList();
 
         public bool Add( TSymbol symbol )
         {

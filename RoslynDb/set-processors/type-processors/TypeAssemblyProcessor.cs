@@ -17,19 +17,20 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ExtractSymbol( object item, out IAssemblySymbol? result )
+        protected override IEnumerable<IAssemblySymbol> ExtractSymbols( object item )
         {
-            result = null;
-
             if( !( item is ITypeSymbol typeSymbol ) )
             {
                 Logger.Error("Supplied item is not an ITypeSymbol");
-                return false;
+                yield break;
             }
 
-            result = typeSymbol.ContainingAssembly;
+            if( typeSymbol.ContainingAssembly == null )
+            {
+                Logger.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", typeSymbol.Name);
+            }
 
-            return result != null;
+            yield return typeSymbol.ContainingAssembly!;
         }
 
         protected override bool ProcessSymbol( IAssemblySymbol symbol )

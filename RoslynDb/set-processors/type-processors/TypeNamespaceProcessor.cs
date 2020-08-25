@@ -18,19 +18,21 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ExtractSymbol( object item, out INamespaceSymbol? result )
+        protected override IEnumerable<INamespaceSymbol> ExtractSymbols( object item )
         {
-            result = null;
-
             if (!(item is ITypeSymbol typeSymbol))
             {
                 Logger.Error("Supplied item is not an ITypeSymbol");
-                return false;
+                yield break;
             }
 
-            result = typeSymbol.ContainingNamespace;
+            if( typeSymbol.ContainingNamespace == null )
+            {
+                Logger.Information<string>( "ITypeSymbol '{0}' does not have a ContainingNamespace", typeSymbol.Name );
+                yield break;
+            }
 
-            return result != null;
+            yield return typeSymbol.ContainingNamespace!;
         }
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )

@@ -25,14 +25,7 @@ namespace J4JSoftware.Roslyn
         public TypeDefinition ReturnType { get; set; }
 
         // list of method arguments
-        public List<MethodArgumentBase> Arguments { get; set; }
-
-        // list of generic parameters used by this method, if any
-        public List<MethodTypeParameter> TypeParameters { get; set; }
-
-        // list of type arguments defined for generic parameters used by this method, if any
-        public List<TypeArgument> TypeArguments { get; set; }
-
+        public List<MethodArgument> Arguments { get; set; }
     }
 
     internal class BaseMethodConfigurator : EntityConfigurator<Method>

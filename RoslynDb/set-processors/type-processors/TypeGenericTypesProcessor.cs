@@ -17,13 +17,10 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool ExtractSymbol( object item, out INamedTypeSymbol? result )
+        protected override IEnumerable<INamedTypeSymbol> ExtractSymbols( object item )
         {
             if( item is INamedTypeSymbol ntSymbol && ntSymbol.IsGenericType )
-                result = ntSymbol;
-            else result = null;
-
-            return result != null;
+                yield return ntSymbol;
         }
 
         protected override bool ProcessSymbol(INamedTypeSymbol generic)
@@ -36,12 +33,7 @@ namespace J4JSoftware.Roslyn
             // first create/update all the TypeParameters related to this generic type
             foreach (var tpSymbol in generic.TypeParameters)
             {
-                var tpDb = ProcessTypeParameter(typeDefDb!, tpSymbol);
-
-                foreach (var conSymbol in tpSymbol.ConstraintTypes)
-                {
-                    allOkay &= ProcessTypeConstraints(tpDb, conSymbol);
-                }
+                allOkay &= ProcessTypeParameter(typeDefDb!, tpSymbol);
             }
 
             // create/update all TypeArguments related to this generic type
@@ -53,29 +45,70 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        private TypeParameter ProcessTypeParameter(TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol)
+        private bool ProcessTypeParameter(TypeDefinition typeDefDb, ITypeParameterSymbol tpSymbol)
         {
             var typeParameters = GetDbSet<TypeParameter>();
 
+            var constraints = tpSymbol.GetTypeParameterConstraint();
+
+            var fqnTypeConstraints = tpSymbol.ConstraintTypes
+                .Select( ct => SymbolInfo.GetFullyQualifiedName( ct ) )
+                .ToList();
+
+            // see if the TypeParameter entity is already in the database
+            // match on Constraints and identical TypeConstraints
             var tpDb = typeParameters
-                .FirstOrDefault(x => x.Ordinal == tpSymbol.Ordinal && x.ContainingTypeID == typeDefDb.ID);
+                .FirstOrDefault( x => x.Constraints == constraints
+                                      && !x.TypeConstraints
+                                          .Select( tc => tc.ConstrainingType.FullyQualifiedName )
+                                          .Except( fqnTypeConstraints ).Any()
+                                      && x.TypeConstraints.Count == fqnTypeConstraints.Count );
+
+            var allOkay = true;
 
             if (tpDb == null)
             {
-                tpDb = new TypeParameter
-                {
-                    ContainingTypeID = typeDefDb.ID,
-                    Ordinal = tpSymbol.Ordinal
-                };
-
+                tpDb = new TypeParameter();
                 typeParameters.Add(tpDb);
+
+                // create the constraint entities
+                foreach( var tcSymbol in tpSymbol.ConstraintTypes )
+                {
+                    allOkay &= ProcessTypeConstraints( tpDb, tcSymbol );
+                }
             }
 
             tpDb.Synchronized = true;
-            tpDb.Name = tpSymbol.Name;
-            tpDb.Constraints = tpSymbol.GetTypeParameterConstraint();
+            tpDb.Constraints = constraints;
 
-            return tpDb;
+            // see if the TypeDefinitionTypeParameter entity exists, and
+            // create it if it doesn't
+            ProcessTypeParameterUsage( typeDefDb, tpDb );
+
+            return allOkay;
+        }
+
+        private void ProcessTypeParameterUsage( TypeDefinition typeDefDb, TypeParameter tpDb )
+        {
+            var tdTypeParameters = GetDbSet<TypeDefinitionTypeParameter>();
+
+            var tdtpDb = tdTypeParameters
+                .FirstOrDefault(x => x.TypeParameterID == tpDb.ID && x.ReferencingTypeID == typeDefDb.ID);
+
+            if (tdtpDb != null)
+                return;
+
+            tdtpDb = new TypeDefinitionTypeParameter();
+
+            if (typeDefDb.ID == 0)
+                tdtpDb.ReferencingType = typeDefDb;
+            else tdtpDb.ReferencingTypeID = typeDefDb.ID;
+
+            if (tpDb.ID == 0)
+                tdtpDb.TypeParameter = tpDb;
+            else tdtpDb.TypeParameterID = tpDb.ID;
+
+            tdTypeParameters.Add(tdtpDb);
         }
 
         private bool ProcessTypeConstraints(
@@ -98,14 +131,14 @@ namespace J4JSoftware.Roslyn
             var typeConstraints = GetDbSet<TypeConstraint>();
 
             var typeConstraintDb = typeConstraints
-                .FirstOrDefault(c => c.TypeParameterBaseID == tpDb.ID && c.ConstrainingTypeID == conDb!.ID);
+                .FirstOrDefault(c => c.TypeParameterID == tpDb.ID && c.ConstrainingTypeID == conDb!.ID);
 
             if (typeConstraintDb == null)
             {
                 typeConstraintDb = new TypeConstraint
                 {
                     ConstrainingTypeID = conDb!.ID,
-                    TypeParameterBase = tpDb
+                    TypeParameter = tpDb
                 };
 
                 typeConstraints.Add(typeConstraintDb);
@@ -122,14 +155,14 @@ namespace J4JSoftware.Roslyn
             if( !( taSymbol is INamedTypeSymbol ) && !( taSymbol is IArrayTypeSymbol ) )
                 return;
 
-            var typeArguments = GetDbSet<TypeArgument>();
+            var typeArguments = GetDbSet<TypeDefinitionTypeArgument>();
 
             var taDb = typeArguments
                 .FirstOrDefault(x => x.Ordinal == taOrdinal && x.TypeDefinitionID == typeDefDb.ID);
 
             if (taDb == null)
             {
-                taDb = new TypeArgument
+                taDb = new TypeDefinitionTypeArgument
                 {
                     TypeDefinition = typeDefDb,
                     Ordinal = taOrdinal
@@ -139,7 +172,6 @@ namespace J4JSoftware.Roslyn
             }
 
             taDb.Synchronized = true;
-            taDb.Name = taSymbol.Name;
         }
     }
 }

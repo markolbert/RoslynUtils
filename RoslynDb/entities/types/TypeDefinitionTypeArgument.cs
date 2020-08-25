@@ -8,21 +8,23 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration(typeof(TypeArgumentConfigurator))]
-    public class TypeArgument : TypeArgumentBase, ISynchronized
+    [EntityConfiguration(typeof(TypeDefinitionTypeArgumentConfigurator))]
+    public class TypeDefinitionTypeArgument : TypeArgument
     {
         public int TypeDefinitionID { get; set; }
         public TypeDefinition TypeDefinition { get; set; }
     }
 
-    internal class TypeArgumentConfigurator : EntityConfigurator<TypeArgument>
+    internal class TypeDefinitionTypeArgumentConfigurator : EntityConfigurator<TypeDefinitionTypeArgument>
     {
-        protected override void Configure(EntityTypeBuilder<TypeArgument> builder)
+        protected override void Configure(EntityTypeBuilder<TypeDefinitionTypeArgument> builder)
         {
             builder.HasOne( x => x.TypeDefinition )
-                .WithMany( x => x.TypeArguments )
+                .WithMany( x => x.TypeArgumentReferences )
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.TypeDefinitionID );
+
+            builder.HasKey( x => new { x.TypeDefinitionID, x.Ordinal } );
         }
     }
 

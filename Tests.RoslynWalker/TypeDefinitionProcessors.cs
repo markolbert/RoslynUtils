@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 namespace Tests.RoslynWalker
 {
     public sealed class TypeDefinitionProcessors 
-        : TopologicallySortedCollection<IAtomicProcessor<List<ITypeSymbol>>, TypeAssemblyProcessor>, ITypeDefinitionProcessors
+        : TopologicallySortedCollection<IAtomicProcessor<List<ITypeSymbol>>, TypeAssemblyProcessor>, ISymbolSetProcessor<ITypeSymbol>
     {
         public TypeDefinitionProcessors( 
             IEnumerable<IAtomicProcessor<List<ITypeSymbol>>> items, 
@@ -23,7 +23,7 @@ namespace Tests.RoslynWalker
             SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
         }
 
-        public bool Process(List<ITypeSymbol> context )
+        public bool Process( IEnumerable<ITypeSymbol> context )
         {
             var allOkay = true;
 

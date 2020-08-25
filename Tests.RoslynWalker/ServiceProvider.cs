@@ -65,6 +65,10 @@ namespace Tests.RoslynWalker
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
+            builder.RegisterType<MethodProcessors>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
+
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
 
