@@ -24,7 +24,8 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.TypeDefinitionID );
 
-            builder.HasKey( x => new { x.TypeDefinitionID, x.Ordinal } );
+            builder.HasIndex( x => new { x.TypeDefinitionID, x.Ordinal } )
+                .IsUnique();
         }
     }
 

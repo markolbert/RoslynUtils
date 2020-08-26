@@ -16,6 +16,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
+        public int ID { get; set; }
         public string Name { get; set; }
         public int Ordinal { get; set; }
         public int TypeParameterID { get; set; }

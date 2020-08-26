@@ -15,6 +15,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
+        public int ID { get; set; }
         public bool Synchronized { get; set; }
         public int Ordinal { get; set; }
     }

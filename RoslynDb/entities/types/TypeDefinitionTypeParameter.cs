@@ -19,6 +19,9 @@ namespace J4JSoftware.Roslyn
                 .WithMany(x => x.TypeParameterReferences)
                 .HasPrincipalKey(x => x.ID)
                 .HasForeignKey(x => x.ReferencingTypeID);
+
+            builder.HasIndex( x => new { x.ReferencingTypeID, x.TypeParameterID } )
+                .IsUnique();
         }
     }
 }

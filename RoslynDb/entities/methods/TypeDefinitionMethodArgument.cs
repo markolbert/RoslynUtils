@@ -10,10 +10,6 @@ namespace J4JSoftware.Roslyn
     [EntityConfiguration( typeof( TypeDefinitionMethodArgumentConfigurator ) )]
     public class TypeDefinitionMethodArgument : MethodArgument
     {
-        public TypeDefinitionMethodArgument()
-        {
-        }
-
         public int TypeDefinitionID { get; set; }
         public TypeDefinition TypeDefinition { get; set; }
     }
@@ -26,6 +22,9 @@ namespace J4JSoftware.Roslyn
                 .WithMany( x => x.MethodArguments )
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.TypeDefinitionID );
+
+            builder.HasIndex( x => new { x.DeclaringMethodID, x.TypeDefinitionID } )
+                .IsUnique();
         }
     }
 }

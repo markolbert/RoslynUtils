@@ -18,6 +18,9 @@ namespace J4JSoftware.Roslyn
                 .WithMany( x => x.MethodArguments )
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.TypeParameterID );
+
+            builder.HasIndex( x => new { x.DeclaringMethodID, x.TypeParameterID } )
+                .IsUnique();
         }
     }
 }
