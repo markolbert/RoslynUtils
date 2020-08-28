@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAncestorProcessor : BaseProcessorDb<ITypeSymbol, List<ITypeSymbol>>
+    public class TypeAncestorProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
     {
         public TypeAncestorProcessor(
             RoslynDbContext dbContext,

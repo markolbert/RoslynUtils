@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class MethodArgumentProcessor : BaseProcessorDb<IParameterSymbol, List<IMethodSymbol>>
+    public class MethodArgumentProcessor : BaseProcessorDb<IMethodSymbol, IParameterSymbol>
     {
         public MethodArgumentProcessor( 
             RoslynDbContext dbContext, 

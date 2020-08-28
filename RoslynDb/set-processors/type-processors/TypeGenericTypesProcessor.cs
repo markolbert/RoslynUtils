@@ -3,10 +3,11 @@ using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeGenericTypesProcessor : BaseProcessorDb<INamedTypeSymbol, List<ITypeSymbol>>
+    public class TypeGenericTypesProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public TypeGenericTypesProcessor(
             RoslynDbContext dbContext,
@@ -56,13 +57,25 @@ namespace J4JSoftware.Roslyn
                 .ToList();
 
             // see if the TypeParameter entity is already in the database
-            // match on Constraints and identical TypeConstraints
-            var tpDb = typeParameters
-                .FirstOrDefault( x => x.Constraints == constraints
-                                      && !x.TypeConstraints
-                                          .Select( tc => tc.ConstrainingType.FullyQualifiedName )
-                                          .Except( fqnTypeConstraints ).Any()
-                                      && x.TypeConstraints.Count == fqnTypeConstraints.Count );
+            // match on Constraints and identical TypeConstraints. Do this in two phases,
+            // first retrieving TypeParameters based solely on the Constraints property
+            var possibleDb = typeParameters
+                .Include( x => x.TypeConstraints )
+                .ThenInclude( x => x.ConstrainingType )
+                .Where( x => x.Constraints == constraints && x.Name == tpSymbol.Name )
+                .ToList();
+
+            var tpDb = possibleDb.Count switch
+            {
+                0 => null,
+                _ => possibleDb
+                    .FirstOrDefault( x =>
+                        !x.TypeConstraints
+                            .Select( tc => tc.ConstrainingType.FullyQualifiedName )
+                            .Except( fqnTypeConstraints ).Any()
+                        && x.TypeConstraints.Count == fqnTypeConstraints.Count
+                    )
+            };
 
             var allOkay = true;
 
@@ -79,36 +92,41 @@ namespace J4JSoftware.Roslyn
             }
 
             tpDb.Synchronized = true;
+            tpDb.Name = tpSymbol.Name;
             tpDb.Constraints = constraints;
 
             // see if the TypeDefinitionTypeParameter entity exists, and
             // create it if it doesn't
-            ProcessTypeParameterUsage( typeDefDb, tpDb );
+            ProcessTypeParameterUsage( tpSymbol, typeDefDb, tpDb );
+
+            SaveChanges();
 
             return allOkay;
         }
 
-        private void ProcessTypeParameterUsage( TypeDefinition typeDefDb, TypeParameter tpDb )
+        private void ProcessTypeParameterUsage( ITypeParameterSymbol tpSymbol, TypeDefinition typeDefDb, TypeParameter tpDb )
         {
             var tdTypeParameters = GetDbSet<TypeDefinitionTypeParameter>();
 
             var tdtpDb = tdTypeParameters
                 .FirstOrDefault(x => x.TypeParameterID == tpDb.ID && x.ReferencingTypeID == typeDefDb.ID);
 
-            if (tdtpDb != null)
-                return;
+            if( tdtpDb == null )
+            {
+                tdtpDb = new TypeDefinitionTypeParameter();
 
-            tdtpDb = new TypeDefinitionTypeParameter();
+                if( typeDefDb.ID == 0 )
+                    tdtpDb.ReferencingType = typeDefDb;
+                else tdtpDb.ReferencingTypeID = typeDefDb.ID;
 
-            if (typeDefDb.ID == 0)
-                tdtpDb.ReferencingType = typeDefDb;
-            else tdtpDb.ReferencingTypeID = typeDefDb.ID;
+                if( tpDb.ID == 0 )
+                    tdtpDb.TypeParameter = tpDb;
+                else tdtpDb.TypeParameterID = tpDb.ID;
 
-            if (tpDb.ID == 0)
-                tdtpDb.TypeParameter = tpDb;
-            else tdtpDb.TypeParameterID = tpDb.ID;
+                tdTypeParameters.Add( tdtpDb );
+            }
 
-            tdTypeParameters.Add(tdtpDb);
+            tdtpDb.Name = tpSymbol.Name;
         }
 
         private bool ProcessTypeConstraints(

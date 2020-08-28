@@ -6,10 +6,10 @@ using Microsoft.CodeAnalysis;
 namespace Tests.RoslynWalker
 {
     public sealed class TypeDefinitionProcessors 
-        : TopologicallySortedCollection<IAtomicProcessor<List<ITypeSymbol>>, TypeAssemblyProcessor>, ISymbolSetProcessor<ITypeSymbol>
+        : TopologicallySortedCollection<IAtomicProcessor<IEnumerable<ITypeSymbol>>, TypeAssemblyProcessor>, ISymbolSetProcessor<ITypeSymbol>
     {
         public TypeDefinitionProcessors( 
-            IEnumerable<IAtomicProcessor<List<ITypeSymbol>>> items, 
+            IEnumerable<IAtomicProcessor<IEnumerable<ITypeSymbol>>> items, 
             IJ4JLogger logger 
         ) : base( items, logger )
         {
@@ -23,6 +23,8 @@ namespace Tests.RoslynWalker
             SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
         }
 
+        // ensure the context object is able to reset itself so it can 
+        // handle multiple iterations
         public bool Process( IEnumerable<ITypeSymbol> context )
         {
             var allOkay = true;

@@ -36,9 +36,9 @@ namespace J4JSoftware.Roslyn
 
         public IEnumerator<TSymbol> GetEnumerator()
         {
-            foreach( var kvp in _symbols )
+            foreach( var value in _symbols.Select( kvp => kvp.Value ).ToList() )
             {
-                yield return kvp.Value;
+                yield return value;
             }
         }
 

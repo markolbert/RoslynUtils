@@ -8,7 +8,7 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class AtomicProcessor<TInput> : IAtomicProcessor<TInput>
+    public abstract class AtomicProcessor<TSource> : IAtomicProcessor<TSource>
     {
         protected AtomicProcessor(
             IJ4JLogger logger
@@ -20,9 +20,9 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
 
-        public IAtomicProcessor<TInput> Predecessor { get; set; }
+        public IAtomicProcessor<TSource> Predecessor { get; set; }
 
-        public bool Process(TInput inputData)
+        public bool Process(TSource inputData)
         {
             if (!InitializeProcessor(inputData))
                 return false;
@@ -33,25 +33,25 @@ namespace J4JSoftware.Roslyn
             return FinalizeProcessor(inputData);
         }
 
-        protected virtual bool InitializeProcessor(TInput inputData) => true;
+        protected virtual bool InitializeProcessor(TSource inputData) => true;
 
-        protected virtual bool FinalizeProcessor( TInput inputData ) => true;
+        protected virtual bool FinalizeProcessor( TSource inputData ) => true;
 
-        protected abstract bool ProcessInternal(TInput inputData);
+        protected abstract bool ProcessInternal(TSource inputData);
 
         bool IAtomicProcessor.Process( object inputData )
         {
-            if( inputData is TInput castData )
+            if( inputData is TSource castData )
                 return Process( castData );
 
-            Logger.Error<Type, Type>( "Expected a {0} but got a {1}", typeof(TInput), inputData.GetType() );
+            Logger.Error<Type, Type>( "Expected a {0} but got a {1}", typeof(TSource), inputData.GetType() );
 
             return false;
         }
 
         // processors are equal if they are the same type, so duplicate instances of the 
         // same type are always equal (and shouldn't be present in the processing set)
-        public bool Equals( IAtomicProcessor<TInput>? other )
+        public bool Equals( IAtomicProcessor<TSource>? other )
         {
             if (other == null)
                 return false;

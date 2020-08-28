@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 namespace J4JSoftware.Roslyn
 {
     [RoslynProcessor(typeof(TypeNamespaceProcessor))]
-    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<ITypeSymbol, List<ITypeSymbol>>
+    public class TypeDiscoveredTypesProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
     {
         public TypeDiscoveredTypesProcessor(
             RoslynDbContext dbContext,

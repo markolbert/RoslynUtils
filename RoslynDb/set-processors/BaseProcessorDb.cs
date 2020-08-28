@@ -9,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class BaseProcessorDb<TSymbol, TSource> : AtomicProcessor<TSource>
-        where TSymbol : class, ISymbol
-        where TSource : IEnumerable
+    public abstract class BaseProcessorDb<TSource, TResult> : AtomicProcessor<IEnumerable<TSource>>
+        where TResult : class, ISymbol
+        where TSource : class, ISymbol
     {
         private readonly RoslynDbContext _dbContext;
 
@@ -28,10 +28,10 @@ namespace J4JSoftware.Roslyn
 
         protected ISymbolInfoFactory SymbolInfo { get; }
 
-        protected abstract IEnumerable<TSymbol> ExtractSymbols( object item );
-        protected abstract bool ProcessSymbol( TSymbol symbol );
+        protected abstract IEnumerable<TResult> ExtractSymbols( object item );
+        protected abstract bool ProcessSymbol( TResult symbol );
 
-        protected override bool ProcessInternal( TSource inputData )
+        protected override bool ProcessInternal( IEnumerable<TSource> inputData )
         {
             var allOkay = true;
 
@@ -66,19 +66,21 @@ namespace J4JSoftware.Roslyn
             return result != null;
         }
 
-        protected override bool FinalizeProcessor( TSource inputData )
+        protected override bool FinalizeProcessor( IEnumerable<TSource> inputData )
         {
             if( !base.FinalizeProcessor( inputData ) )
                 return false;
 
-            _dbContext.SaveChanges();
+            SaveChanges();
 
             return true;
         }
 
-        private IEnumerable<TSymbol> FilterSymbols(TSource source)
+        protected void SaveChanges() => _dbContext.SaveChanges();
+
+        private IEnumerable<TResult> FilterSymbols(IEnumerable<TSource> source)
         {
-            var processed = new Dictionary<string, TSymbol>();
+            var processed = new Dictionary<string, TResult>();
 
             foreach (var item in source)
             {

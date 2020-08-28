@@ -53,7 +53,13 @@ namespace Tests.RoslynWalker
 
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
                 .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<List<ITypeSymbol>>).IsAssignableFrom(t)
+                            && typeof(IAtomicProcessor<IEnumerable<ITypeSymbol>>).IsAssignableFrom(t)
+                            && t.GetConstructors().Length > 0)
+                .AsImplementedInterfaces();
+
+            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
+                .Where(t => !t.IsAbstract
+                            && typeof(IAtomicProcessor<IEnumerable<IMethodSymbol>>).IsAssignableFrom(t)
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 

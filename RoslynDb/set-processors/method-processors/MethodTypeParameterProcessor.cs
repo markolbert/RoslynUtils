@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
-    public class MethodTypeParameterProcessor : BaseProcessorDb<ITypeParameterSymbol, List<IMethodSymbol>>
+    public class MethodTypeParameterProcessor : BaseProcessorDb<IMethodSymbol, ITypeParameterSymbol>
     {
         public MethodTypeParameterProcessor( 
             RoslynDbContext dbContext, 
@@ -43,13 +44,25 @@ namespace J4JSoftware.Roslyn
                 .ToList();
 
             // see if the TypeParameter entity is already in the database
-            // match on Constraints and identical TypeConstraints
-            var tpDb = typeParameters
-                .FirstOrDefault(x => x.Constraints == constraints
-                                     && !x.TypeConstraints
-                                         .Select(tc => tc.ConstrainingType.FullyQualifiedName)
-                                         .Except(fqnTypeConstraints).Any()
-                                     && x.TypeConstraints.Count == fqnTypeConstraints.Count);
+            // match on Constraints and identical TypeConstraints. Do this in two phases,
+            // first retrieving TypeParameters based solely on the Constraints property
+            var possibleDb = typeParameters
+                .Include(x => x.TypeConstraints)
+                .ThenInclude(x => x.ConstrainingType)
+                .Where(x => x.Constraints == constraints && x.Name == symbol.Name)
+                .ToList();
+
+            var tpDb = possibleDb.Count switch
+            {
+                0 => null,
+                _ => possibleDb
+                    .FirstOrDefault(x =>
+                        !x.TypeConstraints
+                            .Select(tc => tc.ConstrainingType.FullyQualifiedName)
+                            .Except(fqnTypeConstraints).Any()
+                        && x.TypeConstraints.Count == fqnTypeConstraints.Count
+                    )
+            };
 
             var allOkay = true;
 
@@ -67,6 +80,8 @@ namespace J4JSoftware.Roslyn
 
             tpDb.Synchronized = true;
             tpDb.Constraints = constraints;
+
+            SaveChanges();
 
             return allOkay;
         }

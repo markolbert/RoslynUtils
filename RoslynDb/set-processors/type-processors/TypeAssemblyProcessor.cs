@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAssemblyProcessor : BaseProcessorDb<IAssemblySymbol, List<ITypeSymbol>>
+    public class TypeAssemblyProcessor : BaseProcessorDb<ITypeSymbol, IAssemblySymbol>
     {
         public TypeAssemblyProcessor(
             RoslynDbContext dbContext,
@@ -28,6 +28,7 @@ namespace J4JSoftware.Roslyn
             if( typeSymbol.ContainingAssembly == null )
             {
                 Logger.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", typeSymbol.Name);
+                yield break;
             }
 
             yield return typeSymbol.ContainingAssembly!;

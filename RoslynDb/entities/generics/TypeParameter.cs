@@ -12,6 +12,7 @@ namespace J4JSoftware.Roslyn
     public class TypeParameter
     {
         public int ID { get; set; }
+        public string Name { get; set; }
         public bool Synchronized { get; set; }
         public TypeParameterConstraint Constraints { get; set; }
 
@@ -37,6 +38,9 @@ namespace J4JSoftware.Roslyn
 
             builder.Property(x => x.Constraints)
                 .HasConversion(new EnumToNumberConverter<TypeParameterConstraint, int>());
+
+            builder.Property( x => x.Name )
+                .IsRequired();
         }
     }
 

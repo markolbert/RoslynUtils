@@ -31,6 +31,11 @@ namespace J4JSoftware.Roslyn
         public DbSet<TypeDefinitionTypeArgument> TypeDefinitionArguments { get; set; }
         public DbSet<TypeAncestor> TypeAncestors { get; set; }
 
+        // generic types
+        public DbSet<TypeConstraint> TypeConstraints { get; set; }
+        public DbSet<TypeParameter> TypeParameters { get; set; }
+        public DbSet<TypeArgument> TypeArguments { get; set; }
+
         public DbSet<Method> Methods { get; set; }
         public DbSet<MethodArgument> MethodArguments { get; set; }
 
