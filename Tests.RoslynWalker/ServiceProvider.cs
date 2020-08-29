@@ -67,7 +67,7 @@ namespace Tests.RoslynWalker
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
-            builder.RegisterType<TypeDefinitionProcessors>()
+            builder.RegisterType<TypeProcessors>()
                 .AsImplementedInterfaces()
                 .SingleInstance();
 

@@ -12,7 +12,7 @@ namespace J4JSoftware.Roslyn
     public class TypeDefinitionTypeArgument : TypeArgument
     {
         public int TypeDefinitionID { get; set; }
-        public TypeDefinition TypeDefinition { get; set; }
+        public FixedTypeDb TypeDefinition { get; set; }
     }
 
     internal class TypeDefinitionTypeArgumentConfigurator : EntityConfigurator<TypeDefinitionTypeArgument>

@@ -45,7 +45,7 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessNamedTypeSymbol( IParameterSymbol symbol, INamedTypeSymbol ntSymbol )
         {
-            if( !GetByFullyQualifiedName<TypeDefinition>( ntSymbol, out var tdDb ) )
+            if( !GetByFullyQualifiedName<FixedTypeDb>( ntSymbol, out var tdDb ) )
                 return false;
 
             if( !GetByFullyQualifiedName<Method>( symbol.ContainingSymbol, out var methodDb ) )
@@ -58,7 +58,7 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessArraySymbol( IParameterSymbol symbol, IArrayTypeSymbol arraySymbol )
         {
-            if (!GetByFullyQualifiedName<TypeDefinition>(arraySymbol, out var tdDb))
+            if (!GetByFullyQualifiedName<FixedTypeDb>(arraySymbol, out var tdDb))
                 return false;
 
             if (!GetByFullyQualifiedName<Method>(symbol.ContainingSymbol, out var methodDb))
@@ -69,72 +69,72 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private void ProcessDefinedType( TypeDefinition tdDb, Method methodDb )
+        private void ProcessDefinedType( FixedTypeDb tdDb, Method methodDb )
         {
-            var tdMethodArgs = GetDbSet<TypeDefinitionMethodArgument>();
+            //var tdMethodArgs = GetDbSet<TypeDefinitionMethodArgument>();
 
-            var tdMethodArg = tdMethodArgs
-                .FirstOrDefault(x => x.TypeDefinitionID == tdDb.ID && x.DeclaringMethodID == methodDb.ID);
+            //var tdMethodArg = tdMethodArgs
+            //    .FirstOrDefault(x => x.TypeDefinitionID == tdDb.ID && x.DeclaringMethodID == methodDb.ID);
 
-            if (tdMethodArg == null)
-            {
-                tdMethodArg = new TypeDefinitionMethodArgument
-                {
-                    DeclaringMethodID = methodDb!.ID,
-                    TypeDefinitionID = tdDb.ID
-                };
+            //if (tdMethodArg == null)
+            //{
+            //    tdMethodArg = new TypeDefinitionMethodArgument
+            //    {
+            //        DeclaringMethodID = methodDb!.ID,
+            //        TypeDefinitionID = tdDb.ID
+            //    };
 
-                tdMethodArgs.Add(tdMethodArg);
-            }
+            //    tdMethodArgs.Add(tdMethodArg);
+            //}
 
-            tdMethodArg.Synchronized = true;
+            //tdMethodArg.Synchronized = true;
         }
 
         private bool ProcessTypeParameterSymbol( IParameterSymbol symbol, ITypeParameterSymbol tpSymbol )
         {
-            if (!GetByFullyQualifiedName<Method>(symbol.ContainingSymbol, out var methodDb))
-                return false;
+            //if (!GetByFullyQualifiedName<Method>(symbol.ContainingSymbol, out var methodDb))
+            //    return false;
 
-            var typeParameters = GetDbSet<TypeParameter>();
+            //var typeParameters = GetDbSet<TypeParameter>();
 
-            var constraints = tpSymbol.GetTypeParameterConstraint();
+            //var constraints = tpSymbol.GetTypeParameterConstraint();
 
-            var fqnTypeConstraints = tpSymbol.ConstraintTypes
-                .Select(ct => SymbolInfo.GetFullyQualifiedName(ct))
-                .ToList();
+            //var fqnTypeConstraints = tpSymbol.ConstraintTypes
+            //    .Select(ct => SymbolInfo.GetFullyQualifiedName(ct))
+            //    .ToList();
 
-            // see if the TypeParameter entity is already in the database
-            // match on Constraints and identical TypeConstraints
-            var tpDb = typeParameters
-                .FirstOrDefault(x => x.Constraints == constraints
-                                     && !x.TypeConstraints
-                                         .Select(tc => tc.ConstrainingType.FullyQualifiedName)
-                                         .Except(fqnTypeConstraints).Any()
-                                     && x.TypeConstraints.Count == fqnTypeConstraints.Count);
+            //// see if the TypeParameter entity is already in the database
+            //// match on Constraints and identical TypeConstraints
+            //var tpDb = typeParameters
+            //    .FirstOrDefault(x => x.Constraints == constraints
+            //                         && !x.TypeConstraints
+            //                             .Select(tc => tc.ConstrainingType.FullyQualifiedName)
+            //                             .Except(fqnTypeConstraints).Any()
+            //                         && x.TypeConstraints.Count == fqnTypeConstraints.Count);
 
-            if( tpDb == null )
-            {
-                Logger.Error<string>("Couldn't find TypeParameter for symbol '{0}'", tpSymbol.Name);
-                return false;
-            }
+            //if( tpDb == null )
+            //{
+            //    Logger.Error<string>("Couldn't find TypeParameter for symbol '{0}'", tpSymbol.Name);
+            //    return false;
+            //}
 
-            var tpMethodArgs = GetDbSet<TypeParameterMethodArgument>();
+            //var tpMethodArgs = GetDbSet<TypeParameterMethodArgument>();
 
-            var tpMethodArg = tpMethodArgs
-                .FirstOrDefault(x => x.TypeParameterID == tpDb.ID && x.DeclaringMethodID == methodDb.ID);
+            //var tpMethodArg = tpMethodArgs
+            //    .FirstOrDefault(x => x.TypeParameterID == tpDb.ID && x.DeclaringMethodID == methodDb.ID);
 
-            if (tpMethodArg == null)
-            {
-                tpMethodArg = new TypeParameterMethodArgument
-                {
-                    DeclaringMethodID = methodDb!.ID,
-                    TypeParameterID = tpDb.ID
-                };
+            //if (tpMethodArg == null)
+            //{
+            //    tpMethodArg = new TypeParameterMethodArgument
+            //    {
+            //        DeclaringMethodID = methodDb!.ID,
+            //        TypeParameterID = tpDb.ID
+            //    };
 
-                tpMethodArgs.Add(tpMethodArg);
-            }
+            //    tpMethodArgs.Add(tpMethodArg);
+            //}
 
-            tpMethodArg.Synchronized = true;
+            //tpMethodArg.Synchronized = true;
 
             return true;
         }

@@ -18,13 +18,6 @@ namespace J4JSoftware.Roslyn
 
         // list of types this type parameter must implement
         public List<TypeConstraint> TypeConstraints { get; set; }
-
-        // list of TypeParameterUsages refering to this TypeParameter
-        public List<TypeParameterUsage> References { get; set; }
-
-        // list of method arguments referencing this type definition
-        public List<TypeParameterMethodArgument> MethodArguments { get; set; }
-
     }
 
     internal class TypeParameterConfigurator : EntityConfigurator<TypeParameter>

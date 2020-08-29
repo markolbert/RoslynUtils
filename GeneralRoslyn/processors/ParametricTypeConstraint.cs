@@ -3,7 +3,7 @@
 namespace J4JSoftware.Roslyn
 {
     [Flags]
-    public enum TypeParameterConstraint
+    public enum ParametricTypeConstraint
     {
         Constructor = 1 << 0,
         NotNull = 1 << 1,

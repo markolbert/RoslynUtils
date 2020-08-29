@@ -43,16 +43,16 @@ namespace J4JSoftware.Roslyn
             return retVal;
         }
 
-        public static TypeParameterConstraint GetTypeParameterConstraint(this ITypeParameterSymbol typeParamSymbol)
+        public static ParametricTypeConstraint GetParametricTypeConstraint(this ITypeParameterSymbol typeParamSymbol)
         {
-            var retVal = TypeParameterConstraint.None;
+            var retVal = ParametricTypeConstraint.None;
             if (typeParamSymbol == null) return retVal;
 
-            if (typeParamSymbol.HasConstructorConstraint) retVal |= TypeParameterConstraint.Constructor;
-            if (typeParamSymbol.HasNotNullConstraint) retVal |= TypeParameterConstraint.NotNull;
-            if (typeParamSymbol.HasReferenceTypeConstraint) retVal |= TypeParameterConstraint.Reference;
-            if (typeParamSymbol.HasUnmanagedTypeConstraint) retVal |= TypeParameterConstraint.Unmanaged;
-            if (typeParamSymbol.HasValueTypeConstraint) retVal |= TypeParameterConstraint.Value;
+            if (typeParamSymbol.HasConstructorConstraint) retVal |= ParametricTypeConstraint.Constructor;
+            if (typeParamSymbol.HasNotNullConstraint) retVal |= ParametricTypeConstraint.NotNull;
+            if (typeParamSymbol.HasReferenceTypeConstraint) retVal |= ParametricTypeConstraint.Reference;
+            if (typeParamSymbol.HasUnmanagedTypeConstraint) retVal |= ParametricTypeConstraint.Unmanaged;
+            if (typeParamSymbol.HasValueTypeConstraint) retVal |= ParametricTypeConstraint.Value;
 
             return retVal;
         }

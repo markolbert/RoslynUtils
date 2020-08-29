@@ -20,21 +20,17 @@ namespace J4JSoftware.Roslyn
         }
 
         // assemblies and namespaces
-        public DbSet<Assembly> Assemblies { get; set; }
+        public DbSet<AssemblyDb> Assemblies { get; set; }
         public DbSet<InScopeAssemblyInfo> InScopeInfo { get; set; }
-        public DbSet<Namespace> Namespaces { get; set; }
+        public DbSet<NamespaceDb> Namespaces { get; set; }
         public DbSet<AssemblyNamespace> AssemblyNamespaces { get; set; }
 
         // type definition and implementation
-        public DbSet<TypeDefinition> TypeDefinitions { get; set; }
-        public DbSet<TypeDefinitionTypeParameter> TypeDefinitionParameters { get; set; }
-        public DbSet<TypeDefinitionTypeArgument> TypeDefinitionArguments { get; set; }
+        public DbSet<FixedTypeDb> FixedTypes { get; set; }
+        public DbSet<GenericTypeDb> GenericTypes { get; set; }
+        public DbSet<ParametricTypeDb> TypeParametricTypes { get; set; }
+        public DbSet<MethodParametricTypeDb> MethodParametericTypes { get; set; }
         public DbSet<TypeAncestor> TypeAncestors { get; set; }
-
-        // generic types
-        public DbSet<TypeConstraint> TypeConstraints { get; set; }
-        public DbSet<TypeParameter> TypeParameters { get; set; }
-        public DbSet<TypeArgument> TypeArguments { get; set; }
 
         public DbSet<Method> Methods { get; set; }
         public DbSet<MethodArgument> MethodArguments { get; set; }

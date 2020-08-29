@@ -6,9 +6,9 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAssemblyProcessor : BaseProcessorDb<ITypeSymbol, IAssemblySymbol>
+    public class AssemblyProcessor : BaseProcessorDb<ITypeSymbol, IAssemblySymbol>
     {
-        public TypeAssemblyProcessor(
+        public AssemblyProcessor(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
@@ -36,11 +36,11 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IAssemblySymbol symbol )
         {
-            var assemblies = GetDbSet<Assembly>();
+            var assemblies = GetDbSet<AssemblyDb>();
 
-            if( !GetByFullyQualifiedName<Assembly>( symbol, out var dbSymbol ) )
+            if( !GetByFullyQualifiedName<AssemblyDb>( symbol, out var dbSymbol ) )
             {
-                dbSymbol = new Assembly
+                dbSymbol = new AssemblyDb
                 {
                     FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ),
                     Name = SymbolInfo.GetName( symbol ),

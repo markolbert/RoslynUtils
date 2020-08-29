@@ -7,7 +7,7 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeDefinitionSink : RoslynDbSink<ITypeSymbol, TypeDefinition>
+    public class TypeDefinitionSink : RoslynDbSink<ITypeSymbol, FixedTypeDb>
     {
         private readonly ISymbolSetProcessor<ITypeSymbol> _processors;
 
@@ -26,10 +26,9 @@ namespace J4JSoftware.Roslyn.Sinks
             if (!base.InitializeSink(syntaxWalker))
                 return false;
 
-            MarkUnsynchronized<TypeDefinition>();
-            MarkUnsynchronized<TypeParameter>();
-            MarkUnsynchronized<TypeConstraint>();
-            MarkUnsynchronized<TypeArgument>();
+            MarkUnsynchronized<FixedTypeDb>();
+            MarkUnsynchronized<GenericTypeDb>();
+            MarkUnsynchronized<ParametricTypeDb>();
 
             SaveChanges();
 
@@ -68,8 +67,8 @@ namespace J4JSoftware.Roslyn.Sinks
 
         private void StoreTypeTree( ITypeSymbol symbol )
         {
-            // if we've visited this symbol or it's an ITypeParameterSymbol go no further
-            if( symbol is ITypeParameterSymbol || !Symbols.Add( symbol ) )
+            // if we've visited this symbol go no further
+            if( /*symbol is ITypeParameterSymbol ||*/ !Symbols.Add( symbol ) )
                 return;
 
             foreach( var interfaceSymbol in symbol.AllInterfaces )

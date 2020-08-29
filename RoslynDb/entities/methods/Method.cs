@@ -19,16 +19,15 @@ namespace J4JSoftware.Roslyn
         public DeclarationModifier DeclarationModifier { get; set; }
 
         public int DefiningTypeID { get; set; }
-        public TypeDefinition DefiningType { get; set; }
+        public FixedTypeDb DefiningType { get; set; }
 
         public int? ReturnTypeID { get; set; }
-        public TypeDefinition ReturnType { get; set; }
+        public FixedTypeDb ReturnType { get; set; }
+
+        public List<MethodParametricTypeDb> ParametricTypes { get; set; }
 
         // list of method arguments
         public List<MethodArgument> Arguments { get; set; }
-
-        // list of generic parameters used by this type definition, if any
-        public List<MethodTypeParameter> TypeParameterReferences { get; set; }
     }
 
     internal class BaseMethodConfigurator : EntityConfigurator<Method>

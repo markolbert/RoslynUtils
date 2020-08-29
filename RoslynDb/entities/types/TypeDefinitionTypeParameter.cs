@@ -8,7 +8,7 @@ namespace J4JSoftware.Roslyn
     {
         public int ReferencingTypeID { get; set; }
 
-        public TypeDefinition ReferencingType { get; set; }
+        public FixedTypeDb ReferencingType { get; set; }
     }
 
     internal class TypeDefinitionTypeParameterConfigurator : EntityConfigurator<TypeDefinitionTypeParameter>

@@ -32,10 +32,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IMethodSymbol symbol )
         {
-            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ContainingType, out var typeDb ) )
+            if( !GetByFullyQualifiedName<FixedTypeDb>( symbol.ContainingType, out var typeDb ) )
                 return false;
 
-            if( !GetByFullyQualifiedName<TypeDefinition>( symbol.ReturnType, out var retValDb ) )
+            if( !GetByFullyQualifiedName<FixedTypeDb>( symbol.ReturnType, out var retValDb ) )
                 return false;
 
             if( !GetByFullyQualifiedName<Method>( symbol, out var methodDb ) )
@@ -81,40 +81,40 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool ProcessTypeConstraints( TypeParameter tpDb, ITypeSymbol constraintSymbol)
-        {
-            var symbolInfo = SymbolInfo.Create(constraintSymbol);
+        //private bool ProcessTypeConstraints( TypeParameter tpDb, ITypeSymbol constraintSymbol)
+        //{
+        //    var symbolInfo = SymbolInfo.Create(constraintSymbol);
 
-            if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
-            {
-                Logger.Error<string>(
-                    "Constraining type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
-                    symbolInfo.SymbolName);
-                return false;
-            }
+        //    if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
+        //    {
+        //        Logger.Error<string>(
+        //            "Constraining type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
+        //            symbolInfo.SymbolName);
+        //        return false;
+        //    }
 
-            if (!GetByFullyQualifiedName<TypeDefinition>(constraintSymbol, out var conDb))
-                return false;
+        //    if (!GetByFullyQualifiedName<FixedTypeDb>(constraintSymbol, out var conDb))
+        //        return false;
 
-            var typeConstraints = GetDbSet<TypeConstraint>();
+        //    var typeConstraints = GetDbSet<TypeConstraint>();
 
-            var typeConstraintDb = typeConstraints
-                .FirstOrDefault(c => c.TypeParameterID == tpDb.ID && c.ConstrainingTypeID == conDb!.ID);
+        //    var typeConstraintDb = typeConstraints
+        //        .FirstOrDefault(c => c.TypeParameterID == tpDb.ID && c.ConstrainingTypeID == conDb!.ID);
 
-            if (typeConstraintDb == null)
-            {
-                typeConstraintDb = new TypeConstraint
-                {
-                    ConstrainingTypeID = conDb!.ID,
-                    TypeParameter = tpDb
-                };
+        //    if (typeConstraintDb == null)
+        //    {
+        //        typeConstraintDb = new TypeConstraint
+        //        {
+        //            ConstrainingTypeID = conDb!.ID,
+        //            TypeParameter = tpDb
+        //        };
 
-                typeConstraints.Add(typeConstraintDb);
-            }
+        //        typeConstraints.Add(typeConstraintDb);
+        //    }
 
-            typeConstraintDb.Synchronized = true;
+        //    typeConstraintDb.Synchronized = true;
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 }

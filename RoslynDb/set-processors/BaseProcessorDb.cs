@@ -52,16 +52,23 @@ namespace J4JSoftware.Roslyn
         {
             result = null;
 
-            var symbolInfo = SymbolInfo.Create(symbol);
-
             var dbSet = _dbContext.Set<TEntity>();
 
-            result = dbSet.FirstOrDefault(x => x.FullyQualifiedName == symbolInfo.SymbolName);
+            var fqn = SymbolInfo.GetFullyQualifiedName( symbol );
+
+            result = dbSet.FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
             if (result == null)
                 Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
                     typeof(TEntity),
-                    symbolInfo.SymbolName);
+                    fqn);
+
+            // special handling for AssemblyDb to force loading of InScopeInfo property,
+            // if it exists
+            if( result is AssemblyDb assemblyDb )
+                _dbContext.Entry(assemblyDb  )
+                    .Reference(x=>x.InScopeInfo)
+                    .Load();
 
             return result != null;
         }

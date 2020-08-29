@@ -36,10 +36,10 @@ namespace J4JSoftware.Roslyn
         public bool IsReadOnly { get; set; }
 
         public int DefiningTypeID { get; set; }
-        public TypeDefinition DefiningType { get; set; } = null!;
+        public FixedTypeDb DefiningType { get; set; } = null!;
 
         public int PropertyTypeID { get; set; }
-        public TypeDefinition PropertyType { get; set; } = null!;
+        public FixedTypeDb PropertyType { get; set; } = null!;
 
         public List<PropertyParameter> Parameters { get; set; }
     }

@@ -33,10 +33,10 @@ namespace J4JSoftware.Roslyn
         {
             // validate that we can identify all the related entities we'll need to create/update
             // the method entity
-            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.ContainingType, out var dtDb))
+            if (!GetByFullyQualifiedName<FixedTypeDb>(symbol.ContainingType, out var dtDb))
                 return false;
 
-            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.ReturnType, out var rtDb))
+            if (!GetByFullyQualifiedName<FixedTypeDb>(symbol.ReturnType, out var rtDb))
                 return false;
 
             // construct/update the method entity

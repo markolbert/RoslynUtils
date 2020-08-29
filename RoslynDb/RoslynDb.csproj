@@ -14,14 +14,23 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="entities\generics\TypeArgument.cs" />
+	  <Compile Remove="entities\generics\TypeConstraint.cs" />
+	  <Compile Remove="entities\generics\TypeParameter.cs" />
 	  <Compile Remove="entities\generics\TypeParameterBase.cs" />
+	  <Compile Remove="entities\generics\TypeParameterUsage.cs" />
 	  <Compile Remove="entities\methods\ClosedMethodParameter.cs" />
 	  <Compile Remove="entities\methods\GenericMethodParameter.cs" />
 	  <Compile Remove="entities\methods\MethodArgumentBase.cs" />
 	  <Compile Remove="entities\methods\MethodTypeArgument.cs" />
 	  <Compile Remove="entities\methods\MethodTypeConstraint.cs" />
+	  <Compile Remove="entities\methods\MethodTypeParameter.cs" />
+	  <Compile Remove="entities\methods\TypeDefinitionMethodArgument.cs" />
+	  <Compile Remove="entities\methods\TypeParameterMethodArgument.cs" />
 	  <Compile Remove="entities\types\ClosedTypeParameter.cs" />
 	  <Compile Remove="entities\types\TypeClosure.cs" />
+	  <Compile Remove="entities\types\TypeDefinitionTypeArgument.cs" />
+	  <Compile Remove="entities\types\TypeDefinitionTypeParameter.cs" />
 	  <Compile Remove="set-processors\type-processors\TypeProcessorContext.cs" />
 	</ItemGroup>
 
@@ -39,6 +48,10 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\EFCoreUtilities\EFCoreUtilities\EFCoreUtilities.csproj" />
 		<ProjectReference Include="..\GeneralRoslyn\GeneralRoslyn.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="entities\generics\" />
 	</ItemGroup>
 
 </Project>

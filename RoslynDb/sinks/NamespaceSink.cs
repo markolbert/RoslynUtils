@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class NamespaceSink : RoslynDbSink<INamespaceSymbol, Namespace>
+    public class NamespaceSink : RoslynDbSink<INamespaceSymbol, NamespaceDb>
     {
         public NamespaceSink(
             RoslynDbContext dbContext,
@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if (!base.InitializeSink(syntaxWalker))
                 return false;
 
-            MarkUnsynchronized<Namespace>();
+            MarkUnsynchronized<NamespaceDb>();
             SaveChanges();
 
             return true;
@@ -42,13 +42,13 @@ namespace J4JSoftware.Roslyn.Sinks
             {
                 var symbolInfo = SymbolInfo.Create( symbol );
 
-                if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
+                if( !GetByFullyQualifiedName<AssemblyDb>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
                 {
                     allOkay = false;
                     continue;
                 }
 
-                if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
+                if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbSymbol ) )
                     dbSymbol = AddEntity( symbolInfo.SymbolName );
 
                 // create the link between this namespace entity and the assembly entity to which it belongs

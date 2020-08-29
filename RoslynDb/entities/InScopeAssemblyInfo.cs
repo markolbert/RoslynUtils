@@ -84,7 +84,7 @@ namespace J4JSoftware.Roslyn
         public int AssemblyID { get; set; }
 
 #pragma warning disable 8618
-        public Assembly Assembly { get; set; }
+        public AssemblyDb Assembly { get; set; }
 #pragma warning restore 8618
     }
 

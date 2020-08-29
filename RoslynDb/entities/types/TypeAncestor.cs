@@ -14,9 +14,9 @@ namespace J4JSoftware.Roslyn
     public class TypeAncestor : ISynchronized
     {
         public int ChildTypeID { get; set; }
-        public TypeDefinition ChildType { get; set; }
+        public TypeDb ChildType { get; set; }
         public int AncestorTypeID { get; set; }
-        public TypeDefinition AncestorType { get; set; }
+        public TypeDb AncestorType { get; set; }
         public bool Synchronized { get; set; }
     }
 

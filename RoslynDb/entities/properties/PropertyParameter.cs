@@ -17,7 +17,7 @@ namespace J4JSoftware.Roslyn
         public Property Property { get; set; }
 
         public int ParameterTypeID { get; set; }
-        public TypeDefinition ParameterType { get; set; }
+        public FixedTypeDb ParameterType { get; set; }
     }
 
     internal class PropertyParameterConfigurator : EntityConfigurator<PropertyParameter>

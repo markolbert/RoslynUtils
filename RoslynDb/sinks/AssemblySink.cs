@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class AssemblySink : RoslynDbSink<IAssemblySymbol, Assembly>
+    public class AssemblySink : RoslynDbSink<IAssemblySymbol, AssemblyDb>
     {
         public AssemblySink(
             RoslynDbContext dbContext,
@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
-            MarkUnsynchronized<Assembly>();
+            MarkUnsynchronized<AssemblyDb>();
             SaveChanges();
 
             return true;
@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn.Sinks
             {
                 var symbolInfo = SymbolInfo.Create( symbol );
 
-                if (!GetByFullyQualifiedName<Assembly>(symbol, out var dbSymbol))
+                if (!GetByFullyQualifiedName<AssemblyDb>(symbol, out var dbSymbol))
                     dbSymbol = AddEntity(symbolInfo.SymbolName);
 
                 dbSymbol!.Synchronized = true;

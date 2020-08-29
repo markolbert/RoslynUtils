@@ -44,14 +44,14 @@ namespace J4JSoftware.Roslyn.Sinks
             return allOkay;
         }
 
-        private bool GetParameterTypeDefinitions(IPropertySymbol propSymbol, out Dictionary<string, List<TypeDefinition>> result)
+        private bool GetParameterTypeDefinitions(IPropertySymbol propSymbol, out Dictionary<string, List<FixedTypeDb>> result)
         {
-            result = new Dictionary<string, List<TypeDefinition>>();
-            var tdSet = GetDbSet<TypeDefinition>();
+            result = new Dictionary<string, List<FixedTypeDb>>();
+            var tdSet = GetDbSet<FixedTypeDb>();
 
             foreach (var arg in propSymbol.Parameters)
             {
-                result.Add(arg.Name, new List<TypeDefinition>());
+                result.Add(arg.Name, new List<FixedTypeDb>());
 
                 if (arg.Type is ITypeParameterSymbol tpSymbol)
                 {
@@ -77,7 +77,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             return true;
 
-            bool get_type_definition(ISymbol symbol, out TypeDefinition? innerResult)
+            bool get_type_definition(ISymbol symbol, out FixedTypeDb? innerResult)
             {
                 var symbolInfo = SymbolInfo.Create( symbol );
 
@@ -91,10 +91,10 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             // validate that we can identify all the related entities we'll need to create/update
             // the method entity
-            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.ContainingType, out var dtDb))
+            if (!GetByFullyQualifiedName<FixedTypeDb>(symbol.ContainingType, out var dtDb))
                 return false;
 
-            if (!GetByFullyQualifiedName<TypeDefinition>(symbol.Type, out var rtDb))
+            if (!GetByFullyQualifiedName<FixedTypeDb>(symbol.Type, out var rtDb))
                 return false;
 
             // get the TypeDefinitions for the parameters, if any
@@ -132,7 +132,7 @@ namespace J4JSoftware.Roslyn.Sinks
         private void ProcessParameter(
             IParameterSymbol paramSymbol,
             Property propDb,
-            Dictionary<string, List<TypeDefinition>> paramTypeEntities )
+            Dictionary<string, List<FixedTypeDb>> paramTypeEntities )
         {
             var ppSet = GetDbSet<PropertyParameter>();
 

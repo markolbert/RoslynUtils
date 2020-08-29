@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn.walkers
 {
-    [ RoslynProcessor( typeof(NamespaceWalker) ) ]
     public class TypeDefinitionWalker : SyntaxWalker<ITypeSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
@@ -47,9 +46,9 @@ namespace J4JSoftware.Roslyn.walkers
             // down the road.
             if( node.Kind() == SyntaxKind.ConstructorDeclaration
                 && context.GetSymbol<IMethodSymbol>( node, out var methodSymbol )
-                && methodSymbol!.ReturnType is INamedTypeSymbol returnSymbol )
+                /* && methodSymbol!.ReturnType is INamedTypeSymbol returnSymbol */ )
             {
-                result = returnSymbol;
+                result = methodSymbol!.ReturnType;
                 return true;
             }
 

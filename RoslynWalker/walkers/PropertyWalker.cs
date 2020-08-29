@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn.walkers
 {
-    [ RoslynProcessor( typeof(TypeDefinitionWalker) ) ]
     public class PropertyWalker : SyntaxWalker<IPropertySymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();

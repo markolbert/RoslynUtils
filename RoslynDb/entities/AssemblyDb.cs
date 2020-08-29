@@ -9,7 +9,7 @@ using NuGet.Versioning;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(AssemblyConfigurator))]
-    public class Assembly : IFullyQualifiedName, ISynchronized
+    public class AssemblyDb : IFullyQualifiedName, ISynchronized
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }
@@ -29,12 +29,12 @@ namespace J4JSoftware.Roslyn
         public InScopeAssemblyInfo? InScopeInfo { get; set; }
 
         public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
-        public List<TypeDefinition>? Types { get; set; }
+        public List<TypeDb>? Types { get; set; }
     }
 
-    internal class AssemblyConfigurator : EntityConfigurator<Assembly>
+    internal class AssemblyConfigurator : EntityConfigurator<AssemblyDb>
     {
-        protected override void Configure( EntityTypeBuilder<Assembly> builder )
+        protected override void Configure( EntityTypeBuilder<AssemblyDb> builder )
         {
             builder.Ignore( x => x.DotNetVersion );
 

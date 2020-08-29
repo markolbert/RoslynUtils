@@ -6,9 +6,9 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAncestorProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
+    public class AncestorProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
     {
-        public TypeAncestorProcessor(
+        public AncestorProcessor(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            if( !GetByFullyQualifiedName<TypeDefinition>( typeSymbol, out var typeDb ) )
+            if( !GetByFullyQualifiedName<FixedTypeDb>( typeSymbol, out var typeDb ) )
                 return false;
 
             // typeSymbol must be System.Object, which has no base type
@@ -45,9 +45,9 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        private bool ProcessAncestor( TypeDefinition typeDb, INamedTypeSymbol ancestorSymbol )
+        private bool ProcessAncestor( FixedTypeDb typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            if( !GetByFullyQualifiedName<TypeDefinition>( ancestorSymbol, out var implTypeDb ) )
+            if( !GetByFullyQualifiedName<FixedTypeDb>( ancestorSymbol, out var implTypeDb ) )
                 return false;
 
             var typeAncestors = GetDbSet<TypeAncestor>();

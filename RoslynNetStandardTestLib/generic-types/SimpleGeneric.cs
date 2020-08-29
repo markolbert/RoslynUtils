@@ -4,5 +4,7 @@
     {
         public T1 PropertyT1 { get; set; }
         public T2 PropertyT2 { get; set; }
+        public T1[] ArrayPropertyT1 { get; set; }
+        public T2[] ArrayPropertyT2 { get; set; }
     }
 }

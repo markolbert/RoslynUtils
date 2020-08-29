@@ -5,10 +5,10 @@ using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class TypeDefinitionProcessors 
-        : TopologicallySortedCollection<IAtomicProcessor<IEnumerable<ITypeSymbol>>, TypeAssemblyProcessor>, ISymbolSetProcessor<ITypeSymbol>
+    public sealed class TypeProcessors 
+        : TopologicallySortedCollection<IAtomicProcessor<IEnumerable<ITypeSymbol>>, AssemblyProcessor>, ISymbolSetProcessor<ITypeSymbol>
     {
-        public TypeDefinitionProcessors( 
+        public TypeProcessors( 
             IEnumerable<IAtomicProcessor<IEnumerable<ITypeSymbol>>> items, 
             IJ4JLogger logger 
         ) : base( items, logger )
@@ -17,10 +17,11 @@ namespace Tests.RoslynWalker
 
         protected override void SetPredecessors()
         {
-            SetPredecessor<TypeNamespaceProcessor, TypeAssemblyProcessor>();
-            SetPredecessor<TypeDiscoveredTypesProcessor, TypeNamespaceProcessor>();
-            SetPredecessor<TypeGenericTypesProcessor, TypeDiscoveredTypesProcessor>();
-            SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
+            SetPredecessor<NamespaceProcessor, AssemblyProcessor>();
+            SetPredecessor<ImplementableTypeProcessor, NamespaceProcessor>();
+            SetPredecessor<ParametricTypeProcessor, ImplementableTypeProcessor>();
+            //SetPredecessor<TypeGenericTypesProcessor, TypeDiscoveredTypesProcessor>();
+            //SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
         }
 
         // ensure the context object is able to reset itself so it can 

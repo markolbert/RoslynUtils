@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
         public int TypeParameterID { get; set; }
         public TypeParameter TypeParameter { get; set; }
         public int ConstrainingTypeID { get; set; }
-        public TypeDefinition ConstrainingType { get; set; }
+        public FixedTypeDb ConstrainingType { get; set; }
         public bool Synchronized { get; set; }
     }
 

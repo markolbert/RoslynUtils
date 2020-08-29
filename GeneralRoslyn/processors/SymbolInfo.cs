@@ -27,8 +27,6 @@ namespace J4JSoftware.Roslyn
 
         public static SymbolDisplayFormat NameFormat { get; } = SymbolDisplayFormat.MinimallyQualifiedFormat;
 
-        //private bool _wasOutput;
-
         internal SymbolInfo( ISymbol symbol, SymbolInfoFactory siFactory )
         {
             Symbol = symbol;
@@ -65,23 +63,13 @@ namespace J4JSoftware.Roslyn
                 case ITypeParameterSymbol typeParamSymbol:
                     TypeKind = TypeKind.TypeParameter;
                     AssociatedSymbol = typeParamSymbol.DeclaringType ?? typeParamSymbol.DeclaringMethod!.ContainingType;
-                    //Method = typeParamSymbol.DeclaringMethod;
                     break;
             }
         }
 
-        //public bool AlreadyProcessed { get; set; }
-
-        //public bool WasOutput
-        //{
-        //    get => _wasOutput || AlreadyProcessed;
-        //    set => _wasOutput = value;
-        //}
-
         public ISymbol Symbol { get; }
         public IAssemblySymbol ContainingAssembly { get; }
         public INamespaceSymbol ContainingNamespace { get; }
-        //public IMethodSymbol? Method { get; }
         public ISymbol? AssociatedSymbol { get; }
         public string SymbolName { get; }
         public TypeKind TypeKind { get; } = TypeKind.Error;

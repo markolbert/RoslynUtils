@@ -26,8 +26,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             MarkUnsynchronized<Method>();
             MarkUnsynchronized<MethodArgument>();
-            MarkUnsynchronized<TypeDefinitionMethodArgument>();
-            MarkUnsynchronized<TypeParameterMethodArgument>();
+            MarkUnsynchronized<MethodParametricTypeDb>();
 
             SaveChanges();
 

@@ -6,10 +6,9 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    [RoslynProcessor(typeof(TypeAssemblyProcessor))]
-    public class TypeNamespaceProcessor : BaseProcessorDb<ITypeSymbol, INamespaceSymbol>
+    public class NamespaceProcessor : BaseProcessorDb<ITypeSymbol, INamespaceSymbol>
     {
-        public TypeNamespaceProcessor(
+        public NamespaceProcessor(
             RoslynDbContext dbContext,
             ISymbolInfoFactory symbolInfo,
             IJ4JLogger logger
@@ -37,11 +36,11 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )
         {
-            var namespaces = GetDbSet<Namespace>();
+            var namespaces = GetDbSet<NamespaceDb>();
 
-            if( !GetByFullyQualifiedName<Namespace>( symbol, out var dbSymbol ) )
+            if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbSymbol ) )
             {
-                dbSymbol = new Namespace
+                dbSymbol = new NamespaceDb
                 {
                     FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ),
                     Name = SymbolInfo.GetName( symbol )

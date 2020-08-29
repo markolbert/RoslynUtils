@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     [ AttributeUsage( AttributeTargets.Class, AllowMultiple = true, Inherited = false ) ]
     public class RoslynProcessorAttribute : Attribute
