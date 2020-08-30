@@ -7,7 +7,7 @@ using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace J4JSoftware.Roslyn.entities.types
+namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(DefinedTypeDbConfigurator))]
     public class ImplementableTypeDb : TypeDb

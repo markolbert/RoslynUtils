@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn
     {
         public AssemblyProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )

@@ -18,8 +18,9 @@ namespace Tests.RoslynWalker
         protected override void SetPredecessors()
         {
             SetPredecessor<NamespaceProcessor, AssemblyProcessor>();
-            SetPredecessor<ImplementableTypeProcessor, NamespaceProcessor>();
-            SetPredecessor<ParametricTypeProcessor, ImplementableTypeProcessor>();
+            SetPredecessor<NamedTypeProcessor, NamespaceProcessor>();
+            SetPredecessor<ParametricTypeProcessor, NamedTypeProcessor>();
+            SetPredecessor<ArrayTypeProcessor, ParametricTypeProcessor>();
             //SetPredecessor<TypeGenericTypesProcessor, TypeDiscoveredTypesProcessor>();
             //SetPredecessor<TypeAncestorProcessor, TypeGenericTypesProcessor>();
         }

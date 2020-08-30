@@ -11,11 +11,11 @@ namespace J4JSoftware.Roslyn
         where TSymbol : ISymbol
     {
         private readonly Dictionary<string, TSymbol> _symbols = new Dictionary<string, TSymbol>();
-        private readonly ISymbolInfoFactory _siFactory;
+        private readonly ISymbolNamer _siFactory;
 
-        public UniqueSymbols( ISymbolInfoFactory symbolInfoFactory )
+        public UniqueSymbols( ISymbolNamer symbolNamer )
         {
-            _siFactory = symbolInfoFactory;
+            _siFactory = symbolNamer;
         }
 
         public void Clear() => _symbols.Clear();

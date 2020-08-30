@@ -9,7 +9,7 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public PropertySink(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
@@ -60,7 +60,7 @@ namespace J4JSoftware.Roslyn.Sinks
                         if (typeConstraint == null)
                             continue;
 
-                        if (!get_type_definition(typeConstraint, out var tpDb))
+                        if (!GetByFullyQualifiedName<FixedTypeDb>(typeConstraint, out var tpDb))
                             return false;
 
                         result[arg.Name].Add(tpDb!);
@@ -68,7 +68,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 }
                 else
                 {
-                    if (!get_type_definition(arg.Type, out var tpDb))
+                    if (!GetByFullyQualifiedName<FixedTypeDb>(arg.Type, out var tpDb))
                         return false;
 
                     result[arg.Name].Add(tpDb!);
@@ -76,15 +76,6 @@ namespace J4JSoftware.Roslyn.Sinks
             }
 
             return true;
-
-            bool get_type_definition(ISymbol symbol, out FixedTypeDb? innerResult)
-            {
-                var symbolInfo = SymbolInfo.Create( symbol );
-
-                innerResult = tdSet.FirstOrDefault(x => x.FullyQualifiedName == symbolInfo.SymbolName);
-
-                return innerResult != null;
-            }
         }
 
         private bool ProcessSymbol( IPropertySymbol symbol )
@@ -102,10 +93,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
 
             // construct/update the method entity
-            var symbolInfo = SymbolInfo.Create( symbol );
-
-            if (!GetByFullyQualifiedName<Property>(symbol, out var propDb))
-                propDb = AddEntity(symbolInfo.SymbolName);
+            GetByFullyQualifiedName<Property>(symbol, out var propDb, true);
 
             propDb!.Name = SymbolInfo.GetName(symbol);
             propDb.PropertyTypeID = rtDb!.ID;

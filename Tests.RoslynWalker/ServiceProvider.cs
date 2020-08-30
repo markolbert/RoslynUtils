@@ -78,8 +78,8 @@ namespace Tests.RoslynWalker
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
 
-            builder.RegisterType<SymbolInfoFactory>()
-                .As<ISymbolInfoFactory>()
+            builder.RegisterType<SymbolNamer>()
+                .As<ISymbolNamer>()
                 .SingleInstance();
 
             builder.RegisterType<InScopeAssemblyProcessor>()

@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public AssemblySink(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
@@ -38,10 +38,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             foreach( var symbol in Symbols )
             {
-                var symbolInfo = SymbolInfo.Create( symbol );
-
-                if (!GetByFullyQualifiedName<AssemblyDb>(symbol, out var dbSymbol))
-                    dbSymbol = AddEntity(symbolInfo.SymbolName);
+                GetByFullyQualifiedName<AssemblyDb>( symbol, out var dbSymbol, true );
 
                 dbSymbol!.Synchronized = true;
                 dbSymbol.Name = symbol.Name;

@@ -2,7 +2,7 @@
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     public class SymbolInfo
     {
@@ -27,7 +27,7 @@ namespace J4JSoftware.Roslyn
 
         public static SymbolDisplayFormat NameFormat { get; } = SymbolDisplayFormat.MinimallyQualifiedFormat;
 
-        internal SymbolInfo( ISymbol symbol, SymbolInfoFactory siFactory )
+        internal SymbolInfo( ISymbol symbol, SymbolNamer siFactory )
         {
             Symbol = symbol;
             SymbolName = siFactory.GetFullyQualifiedName( symbol );

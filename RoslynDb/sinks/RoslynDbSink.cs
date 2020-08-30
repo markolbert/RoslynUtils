@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
         protected RoslynDbSink(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger
         )
             : base( symbolInfo, logger )
@@ -63,23 +63,42 @@ namespace J4JSoftware.Roslyn.Sinks
             return retVal;
         }
 
-        protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result )
-            where TEntity : class, IFullyQualifiedName
+        protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
+            where TEntity : class, IFullyQualifiedName, new()
         {
             result = null;
 
-            var symbolInfo = SymbolInfo.Create(symbol);
+            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
 
             var dbSet = _dbContext.Set<TEntity>();
 
-            result = dbSet.FirstOrDefault( x => x.FullyQualifiedName == symbolInfo.SymbolName );
+            result = dbSet.FirstOrDefault( x => x.FullyQualifiedName == fqn );
 
             if( result == null )
-                Logger.Error<Type, string>( "Couldn't find instance of {0} in database for symbol {1}", 
+            {
+                if( createIfMissing )
+                {
+                    result = new TEntity { FullyQualifiedName = fqn };
+                    dbSet.Add(result);
+                }
+                else
+                {
+                    Logger.Error<Type, string>( "Couldn't find instance of {0} in database for symbol {1}", 
                     typeof(TEntity),
-                    symbolInfo.SymbolName );
+                    fqn );
 
-            return result != null;
+                    return false;
+                }
+            }
+
+            // special handling for AssemblyDb to force loading of InScopeInfo property,
+            // if it exists
+            if (result is AssemblyDb assemblyDb)
+                _dbContext.Entry(assemblyDb)
+                    .Reference(x => x.InScopeInfo)
+                    .Load();
+
+            return true;
         }
 
         protected void MarkUnsynchronized<TEntity>()

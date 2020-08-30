@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
     {
         public MethodProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolInfoFactory symbolInfo, 
+            ISymbolNamer symbolInfo, 
             IJ4JLogger logger ) 
             : base( dbContext, symbolInfo, logger )
         {

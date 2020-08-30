@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public TypeDefinitionSink(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             ISymbolSetProcessor<ITypeSymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )

@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public NamespaceSink(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger )
             : base( dbContext, symbolInfo, logger )
         {
@@ -40,16 +40,13 @@ namespace J4JSoftware.Roslyn.Sinks
 
             foreach( var symbol in Symbols )
             {
-                var symbolInfo = SymbolInfo.Create( symbol );
-
-                if( !GetByFullyQualifiedName<AssemblyDb>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
+                if( !GetByFullyQualifiedName<AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
                 {
                     allOkay = false;
                     continue;
                 }
 
-                if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbSymbol ) )
-                    dbSymbol = AddEntity( symbolInfo.SymbolName );
+                GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbSymbol, true );
 
                 // create the link between this namespace entity and the assembly entity to which it belongs
                 var assemblyNamespaces = GetDbSet<AssemblyNamespace>();

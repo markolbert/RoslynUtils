@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
     {
         protected TypeProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )

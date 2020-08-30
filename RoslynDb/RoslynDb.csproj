@@ -31,6 +31,7 @@
 	  <Compile Remove="entities\types\TypeClosure.cs" />
 	  <Compile Remove="entities\types\TypeDefinitionTypeArgument.cs" />
 	  <Compile Remove="entities\types\TypeDefinitionTypeParameter.cs" />
+	  <Compile Remove="set-processors\type-processors\GenericTypesProcessor.cs" />
 	  <Compile Remove="set-processors\type-processors\TypeProcessorContext.cs" />
 	</ItemGroup>
 

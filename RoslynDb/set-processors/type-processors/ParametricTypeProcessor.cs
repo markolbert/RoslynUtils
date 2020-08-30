@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn
     {
         public ParametricTypeProcessor(
             RoslynDbContext dbContext,
-            ISymbolInfoFactory symbolInfo,
+            ISymbolNamer symbolInfo,
             IJ4JLogger logger
         )
             : base( dbContext, symbolInfo, logger )
@@ -47,7 +47,7 @@ namespace J4JSoftware.Roslyn
                 yield return atpSymbol;
         }
 
-        // symbol is guranteed to be an ITypeParameterSymbol
+        // symbol is guaranteed to be an ITypeParameterSymbol
         protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
         {
             if( !ValidateAssembly( symbol, out var assemblyDb ) )
@@ -56,7 +56,7 @@ namespace J4JSoftware.Roslyn
             if( !ValidateNamespace( symbol, out var nsDb ) )
                 return false;
 
-            var dbSymbol = GetEntityFromTypeSymbol( symbol );
+            var dbSymbol = (ParametricTypeDb?) GetTypeByFullyQualifiedName( symbol, true );
 
             if( dbSymbol == null )
                 return false;
@@ -71,49 +71,6 @@ namespace J4JSoftware.Roslyn
             dbSymbol.Constraints = symbol.GetParametricTypeConstraint();
 
             return true;
-        }
-
-        private ParametricTypeDb? GetEntityFromTypeSymbol(ITypeParameterSymbol symbol )
-        {
-            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
-
-            if ( symbol.DeclaringType == null )
-            {
-                Logger.Error<string>( "ITypeParameterSymbol '{0}' does not have a DeclaringType property", fqn );
-                return null;
-            }
-
-            TypeDb? containingTypeDb = null;
-
-            if (GetByFullyQualifiedName<GenericTypeDb>(symbol.DeclaringType, out var genericDb))
-                containingTypeDb = genericDb!;
-            else
-            {
-                if( GetByFullyQualifiedName<FixedTypeDb>( symbol.DeclaringType, out var fixedDb ) )
-                    containingTypeDb = fixedDb!;
-            }
-
-            if( containingTypeDb == null )
-            {
-                Logger.Error<string>( "ITypeParameterSymbol.DeclaringType '{0}' not defined in the database",
-                    SymbolInfo.GetFullyQualifiedName( symbol.DeclaringType ) );
-
-                return null;
-            }
-
-            if (!GetByFullyQualifiedName<ParametricTypeDb>(symbol, out var parametricDb))
-            {
-                parametricDb = new ParametricTypeDb { FullyQualifiedName = fqn };
-
-                if (containingTypeDb.ID == 0)
-                    parametricDb.ContainingType = containingTypeDb;
-                else parametricDb.ContainingTypeID = containingTypeDb.ID;
-
-                var parametricTypes = GetDbSet<ParametricTypeDb>();
-                parametricTypes.Add(parametricDb);
-            }
-
-            return parametricDb!;
         }
     }
 }
