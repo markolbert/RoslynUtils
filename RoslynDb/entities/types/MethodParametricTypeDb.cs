@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn
     public class MethodParametricTypeDb : ParametricTypeBaseDb
     {
         public int ContainingMethodID { get; set; }
-        public Method ContainingMethod { get; set; }
+        public MethodBaseDb ContainingMethod { get; set; }
     }
 
     internal class MethodParametricTypeDbConfigurator : EntityConfigurator<MethodParametricTypeDb>

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class MethodSink : RoslynDbSink<IMethodSymbol, Method>
+    public class MethodSink : RoslynDbSink<IMethodSymbol, MethodDb>
     {
         private readonly ISymbolSetProcessor<IMethodSymbol> _processors;
 
@@ -24,7 +24,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if (!base.InitializeSink(syntaxWalker))
                 return false;
 
-            MarkUnsynchronized<Method>();
+            MarkUnsynchronized<MethodDb>();
             MarkUnsynchronized<MethodArgument>();
             MarkUnsynchronized<MethodParametricTypeDb>();
 

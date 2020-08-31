@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 namespace Tests.RoslynWalker
 {
     public sealed class MethodProcessors 
-        : TopologicallySortedCollection<IAtomicProcessor<IEnumerable<IMethodSymbol>>, MethodTypeParameterProcessor>, ISymbolSetProcessor<IMethodSymbol>
+        : TopologicallySortedCollection<IAtomicProcessor<IEnumerable<IMethodSymbol>>, MethodParametricTypeProcessor>, ISymbolSetProcessor<IMethodSymbol>
     {
         public MethodProcessors( 
             IEnumerable<IAtomicProcessor<IEnumerable<IMethodSymbol>>> items, 
@@ -17,7 +17,7 @@ namespace Tests.RoslynWalker
 
         protected override void SetPredecessors()
         {
-            SetPredecessor<MethodDiscoveredMethodsProcessor, MethodTypeParameterProcessor>();
+            SetPredecessor<MethodDiscoveredMethodsProcessor, MethodParametricTypeProcessor>();
             SetPredecessor<MethodArgumentProcessor, MethodDiscoveredMethodsProcessor>();
         }
 

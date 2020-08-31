@@ -43,6 +43,16 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
+        protected override bool FinalizeProcessor(IEnumerable<TSource> inputData)
+        {
+            if (!base.FinalizeProcessor(inputData))
+                return false;
+
+            SaveChanges();
+
+            return true;
+        }
+
         protected DbSet<TRelated> GetDbSet<TRelated>()
             where TRelated : class
             => _dbContext.Set<TRelated>();
@@ -96,27 +106,36 @@ namespace J4JSoftware.Roslyn
             };
         }
 
-        protected TypeDb? GetParametricTypeDeclaringType( ITypeParameterSymbol symbol )
+        protected void SaveChanges() => _dbContext.SaveChanges();
+
+        protected bool ValidateAssembly(ITypeSymbol symbol, out AssemblyDb? result)
         {
-            var fqn = SymbolInfo.GetFullyQualifiedName( symbol );
+            result = null;
 
-            if( symbol.DeclaringType == null )
-            {
-                Logger.Error<string>( "ITypeParameterSymbol '{0}' does not have a DeclaringType property", fqn );
-                return null;
-            }
+            if (symbol.ContainingAssembly == null)
+                return false;
 
-            if( GetByFullyQualifiedName<GenericTypeDb>( symbol.DeclaringType, out var genericDb ) )
-                return genericDb!;
-            else
-            {
-                if( GetByFullyQualifiedName<FixedTypeDb>( symbol.DeclaringType, out var fixedDb ) )
-                    return fixedDb!;
-            }
+            if (!GetByFullyQualifiedName<AssemblyDb>(symbol.ContainingAssembly, out var dbResult))
+                return false;
 
-            Logger.Error<string>( "ITypeParameterSymbol.DeclaringType '{0}' not defined in the database", fqn );
+            result = dbResult;
 
-            return null;
+            return true;
+        }
+
+        protected bool ValidateNamespace(ITypeSymbol ntSymbol, out NamespaceDb? result)
+        {
+            result = null;
+
+            if (ntSymbol.ContainingNamespace == null)
+                return false;
+
+            if (!GetByFullyQualifiedName<NamespaceDb>(ntSymbol.ContainingNamespace, out var dbResult))
+                return false;
+
+            result = dbResult;
+
+            return true;
         }
 
         private TypeDb? GetFixedType( INamedTypeSymbol symbol, bool createIfMissing, string? fqn = null )
@@ -173,43 +192,114 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        private TypeDb? GetParametricType( ITypeParameterSymbol symbol, bool createIfMissing, string? fqn = null )
+        protected object? GetParametricTypeContainer( ITypeParameterSymbol symbol )
         {
-            var containingTypeDb = GetParametricTypeDeclaringType( symbol );
+            object? retVal = null;
 
-            if( containingTypeDb == null )
-                return null;
-
-            fqn ??= SymbolInfo.GetFullyQualifiedName(symbol);
-
-            var retVal = GetDbSet<ParametricTypeDb>().FirstOrDefault( x => x.FullyQualifiedName == fqn );
-
-            if( retVal == null && createIfMissing )
+            if (symbol.DeclaringType != null)
+                retVal = GetTypeContainer(symbol);
+            else
             {
-                retVal = new ParametricTypeDb { FullyQualifiedName = fqn };
-
-                var parametricTypes = GetDbSet<ParametricTypeDb>();
-                parametricTypes.Add(retVal);
-
-                if (containingTypeDb.ID == 0)
-                    retVal.ContainingType = containingTypeDb;
-                else retVal.ContainingTypeID = containingTypeDb.ID;
+                if (symbol.DeclaringMethod != null)
+                    retVal = GetMethodContainer(symbol);
             }
+
+            // this error should only occur if we're contained by a type
+            // which somehow hasn't been processed into the database
+            if (retVal == null)
+                Logger.Error<string>("Could not find a container entity for ITypeParameterSymbol '{0}'",
+                    SymbolInfo.GetFullyQualifiedName(symbol));
 
             return retVal;
         }
 
-        protected override bool FinalizeProcessor( IEnumerable<TSource> inputData )
+        private ImplementableTypeDb? GetTypeContainer(ITypeParameterSymbol symbol)
         {
-            if( !base.FinalizeProcessor( inputData ) )
-                return false;
+            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
 
-            SaveChanges();
+            if (symbol.DeclaringType == null)
+                return null;
 
-            return true;
+            if (GetByFullyQualifiedName<GenericTypeDb>(symbol.DeclaringType, out var genericDb))
+                return genericDb!;
+            else
+            {
+                if (GetByFullyQualifiedName<FixedTypeDb>(symbol.DeclaringType, out var fixedDb))
+                    return fixedDb!;
+            }
+
+            Logger.Error<string>("DeclaringType of ITypeParameterSymbol '{0}' not found in the database", fqn);
+
+            return null;
         }
 
-        protected void SaveChanges() => _dbContext.SaveChanges();
+        private MethodPlaceholderDb? GetMethodContainer(ITypeParameterSymbol symbol)
+        {
+            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
+
+            if (symbol.DeclaringMethod == null)
+                return null;
+
+            if (GetByFullyQualifiedName<MethodPlaceholderDb>(symbol.DeclaringMethod, out var placeHolderDb, true))
+                return placeHolderDb!;
+
+            Logger.Error<string>("DeclaringMethod of ITypeParameterSymbol '{0}' not found in the database", fqn);
+            return null;
+        }
+
+        private ParametricTypeBaseDb? GetParametricType( 
+            ITypeParameterSymbol symbol, 
+            bool createIfMissing,
+            string? fqn = null )
+        {
+            fqn ??= SymbolInfo.GetFullyQualifiedName( symbol );
+
+            if( symbol.DeclaringType != null )
+                return GetTypeParametricType( symbol, createIfMissing, fqn );
+
+            if( symbol.DeclaringMethod != null )
+                return GetMethodParametricType( symbol, createIfMissing, fqn );
+
+            Logger.Error<string>("Unsupported parametric type container ({0})", fqn  );
+
+            return null;
+        }
+
+        private ParametricTypeDb? GetTypeParametricType( 
+            ITypeParameterSymbol symbol, 
+            bool createIfMissing,
+            string fqn )
+        {
+            var retVal = GetDbSet<ParametricTypeDb>().FirstOrDefault( x => x.FullyQualifiedName == fqn );
+
+            if( retVal != null || !createIfMissing ) 
+                return retVal;
+            
+            retVal = new ParametricTypeDb { FullyQualifiedName = fqn };
+
+            var parametricTypes = GetDbSet<ParametricTypeDb>();
+            parametricTypes.Add( retVal );
+
+            return retVal;
+        }
+
+        private MethodParametricTypeDb? GetMethodParametricType( 
+            ITypeParameterSymbol symbol, 
+            bool createIfMissing,
+            string fqn )
+        {
+            var retVal = GetDbSet<MethodParametricTypeDb>().FirstOrDefault(x => x.FullyQualifiedName == fqn);
+
+            if (retVal != null || !createIfMissing)
+                return retVal;
+
+            retVal = new MethodParametricTypeDb { FullyQualifiedName = fqn };
+
+            var parametricTypes = GetDbSet<MethodParametricTypeDb>();
+            parametricTypes.Add(retVal);
+
+            return retVal;
+        }
 
         private IEnumerable<TResult> FilterSymbols(IEnumerable<TSource> source)
         {
@@ -223,6 +313,7 @@ namespace J4JSoftware.Roslyn
                 foreach( var symbol in ExtractSymbols(item) )
                 {
                     var fqn = SymbolInfo.GetFullyQualifiedName(symbol!);
+
                     if (processed.ContainsKey(fqn))
                         continue;
 

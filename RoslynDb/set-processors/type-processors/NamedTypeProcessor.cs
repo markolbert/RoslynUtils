@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class NamedTypeProcessor : TypeProcessor<INamedTypeSymbol>
+    public class NamedTypeProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public NamedTypeProcessor(
             RoslynDbContext dbContext,
@@ -44,13 +44,6 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol(INamedTypeSymbol symbol)
         {
-            //// we consider arrays as belonging to the assembly and namespace containing
-            //// their element type
-            //ITypeSymbol contextSymbol = symbol;
-
-            //if (symbol is IArrayTypeSymbol tempSymbol)
-            //    contextSymbol = tempSymbol.ElementType;
-
             if (!ValidateAssembly(symbol, out var assemblyDb))
                 return false;
 

@@ -19,16 +19,41 @@ namespace J4JSoftware.Roslyn
 
         protected override IEnumerable<ITypeSymbol> ExtractSymbols( object item )
         {
-            if( item is ITypeSymbol typeSymbol )
-                yield return typeSymbol;
+            if (!(item is ITypeSymbol typeSymbol))
+            {
+                Logger.Error("Supplied item is not an ITypeSymbol");
+                yield break;
+            }
+
+            if (typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol)
+            {
+                Logger.Error<string>("Unhandled ITypeSymbol '{0}'", typeSymbol.Name);
+                yield break;
+            }
+
+            if (typeSymbol is IErrorTypeSymbol)
+            {
+                Logger.Error("ITypeSymbol is an IErrorTypeSymbol, ignored");
+                yield break;
+            }
+
+            yield return typeSymbol;
         }
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            if( !GetByFullyQualifiedName<FixedTypeDb>( typeSymbol, out var typeDb ) )
-                return false;
+            var typeDb = GetTypeByFullyQualifiedName( typeSymbol );
 
-            // typeSymbol must be System.Object, which has no base type
+            if( typeDb == null )
+            {
+                Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
+                    SymbolInfo.GetFullyQualifiedName( typeSymbol ), 
+                    typeSymbol.TypeKind );
+
+                return false;
+            }
+
+            // if typeSymbol is System.Object, which has no base type, we're done
             if( typeSymbol.BaseType == null )
                 return true;
 
@@ -45,28 +70,35 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        private bool ProcessAncestor( FixedTypeDb typeDb, INamedTypeSymbol ancestorSymbol )
+        private bool ProcessAncestor( TypeDb typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            if( !GetByFullyQualifiedName<FixedTypeDb>( ancestorSymbol, out var implTypeDb ) )
-                return false;
-
-            var typeAncestors = GetDbSet<TypeAncestor>();
-
-            var ancestorDb = typeAncestors
-                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.AncestorTypeID == implTypeDb!.ID );
+            var ancestorDb = GetTypeByFullyQualifiedName( ancestorSymbol );
 
             if( ancestorDb == null )
             {
-                ancestorDb = new TypeAncestor
+                Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
+                    SymbolInfo.GetFullyQualifiedName( ancestorSymbol ) );
+
+                return false;
+            }
+
+            var typeAncestors = GetDbSet<TypeAncestor>();
+
+            var typeAncestorDb = typeAncestors
+                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.AncestorTypeID == ancestorDb!.ID );
+
+            if( typeAncestorDb == null )
+            {
+                typeAncestorDb = new TypeAncestor
                 {
-                    AncestorTypeID = implTypeDb!.ID,
+                    AncestorTypeID = ancestorDb!.ID,
                     ChildTypeID = typeDb!.ID
                 };
 
-                typeAncestors.Add( ancestorDb );
+                typeAncestors.Add( typeAncestorDb );
             }
 
-            ancestorDb.Synchronized = true;
+            typeAncestorDb.Synchronized = true;
 
             return true;
         }

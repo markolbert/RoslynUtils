@@ -32,20 +32,27 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IMethodSymbol symbol )
         {
-            if( !GetByFullyQualifiedName<FixedTypeDb>( symbol.ContainingType, out var typeDb ) )
+            var typeDb = GetTypeByFullyQualifiedName( symbol.ContainingType );
+
+            if( typeDb == null )
+            {
+                Logger.Error<string>( "Couldn't find containing type for IMethod '{0}'",
+                    SymbolInfo.GetFullyQualifiedName( symbol ) );
+
                 return false;
+            }
 
             if( !GetByFullyQualifiedName<FixedTypeDb>( symbol.ReturnType, out var retValDb ) )
                 return false;
 
-            if( !GetByFullyQualifiedName<Method>( symbol, out var methodDb ) )
+            if( !GetByFullyQualifiedName<MethodDb>( symbol, out var methodDb ) )
             {
-                methodDb = new Method
+                methodDb = new MethodDb
                 {
                     FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol )
                 };
 
-                var methods = GetDbSet<Method>();
+                var methods = GetDbSet<MethodDb>();
                 methods.Add( methodDb );
             }
 
@@ -71,12 +78,12 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        private bool ProcessTypeParameter( Method methodDb, ITypeParameterSymbol tpSymbol )
+        private bool ProcessTypeParameter( MethodDb methodDb, ITypeParameterSymbol tpSymbol )
         {
             return true;
         }
 
-        private bool ProcessTypeArgument( Method methodDb, ITypeSymbol typeSymbol, int ordinal )
+        private bool ProcessTypeArgument( MethodDb methodDb, ITypeSymbol typeSymbol, int ordinal )
         {
             return true;
         }

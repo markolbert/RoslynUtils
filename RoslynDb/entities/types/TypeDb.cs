@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using J4JSoftware.EFCoreUtilities;
 using J4JSoftware.Roslyn.Deprecated;
 using J4JSoftware.Roslyn.entities;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeDbConfigurator ) )]
+    [Table("Types")]
     public class TypeDb : IFullyQualifiedName, ISynchronized
     {
         protected TypeDb()
@@ -35,7 +37,7 @@ namespace J4JSoftware.Roslyn
         public List<ParametricTypeDb> ParametricTypes { get; set; }
 
         // list of return types referencing this type definition
-        public List<Method> ReturnTypes { get; set; }
+        public List<MethodDb> ReturnTypes { get; set; }
 
         // list of properties having a return value equal to this type
         public List<Property> PropertyTypes { get; set; }

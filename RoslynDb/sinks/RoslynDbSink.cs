@@ -50,19 +50,6 @@ namespace J4JSoftware.Roslyn.Sinks
             where TRelated : class
             => _dbContext.Set<TRelated>();
 
-        protected TSink AddEntity(TSymbol symbol)
-        {
-            var dbSet = _dbContext.Set<TSink>();
-
-            if( GetByFullyQualifiedName<TSink>( symbol, out var retVal ) )
-                return retVal!;
-
-            retVal = new TSink { FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ) };
-            dbSet.Add(retVal);
-
-            return retVal;
-        }
-
         protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
             where TEntity : class, IFullyQualifiedName, new()
         {
@@ -110,20 +97,6 @@ namespace J4JSoftware.Roslyn.Sinks
             var dbSet = GetDbSet<TEntity>().Cast<ISynchronized>();
 
             dbSet.ForEachAsync(x => x.Synchronized = false);
-        }
-
-        // assumes an entity with the provided fully qualified name does not already 
-        // exist in the database
-        protected TSink AddEntity( string fqn )
-        {
-            var dbSet = _dbContext.Set<TSink>();
-
-            var retVal = new TSink { FullyQualifiedName = fqn };
-            dbSet.Add( retVal );
-
-            //ProcessedSymbolNames.Add( fqn );
-
-            return retVal;
         }
 
         protected virtual void SaveChanges() => _dbContext.SaveChanges();

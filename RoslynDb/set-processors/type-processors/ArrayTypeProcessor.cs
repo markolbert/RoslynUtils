@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ArrayTypeProcessor : TypeProcessor<IArrayTypeSymbol>
+    public class ArrayTypeProcessor : BaseProcessorDb<ITypeSymbol, IArrayTypeSymbol>
     {
         public ArrayTypeProcessor(
             RoslynDbContext dbContext,
@@ -42,35 +42,77 @@ namespace J4JSoftware.Roslyn
                 yield return arraySymbol;
         }
 
-        protected override bool ProcessSymbol(IArrayTypeSymbol symbol)
+        protected override bool ProcessSymbol( IArrayTypeSymbol symbol )
         {
             //// we consider arrays as belonging to the assembly and namespace containing
             //// their element type
-            if (!ValidateAssembly(symbol.ElementType, out var assemblyDb))
+            if( !ValidateAssembly( symbol.ElementType, out var assemblyDb ) )
                 return false;
 
-            if (!ValidateNamespace(symbol.ElementType, out var nsDb))
+            if( !ValidateNamespace( symbol.ElementType, out var nsDb ) )
                 return false;
 
-            var dbSymbol = GetTypeByFullyQualifiedName(symbol, true);
+            // arrays can be based on parametric types...which have to containers
+            object? containerDb = null;
 
-            if (dbSymbol == null)
+            if( symbol.ElementType is ITypeParameterSymbol tpElementSymbol )
             {
-                Logger.Error<string, TypeKind>("Unsupported ITypeSymbol '{0}' ({1})", symbol.Name, symbol.TypeKind);
+                containerDb = GetParametricTypeContainer( tpElementSymbol );
+
+                if( containerDb == null )
+                    return false;
+            }
+
+            var dbSymbol = GetTypeByFullyQualifiedName( symbol, true );
+
+            if( dbSymbol == null )
+            {
+                Logger.Error<string, TypeKind>( "Unsupported ITypeSymbol '{0}' ({1})", symbol.Name, symbol.TypeKind );
                 return false;
             }
 
             dbSymbol.Synchronized = true;
-            dbSymbol.Name = SymbolInfo.GetName(symbol);
+            dbSymbol.Name = SymbolInfo.GetName( symbol );
             dbSymbol.AssemblyID = assemblyDb!.ID;
             dbSymbol.NamespaceId = nsDb!.ID;
             dbSymbol.Accessibility = symbol.DeclaredAccessibility;
             dbSymbol.Nature = symbol.TypeKind;
             dbSymbol.InDocumentationScope = assemblyDb.InScopeInfo != null;
 
-            // arrays can also be based on ParametricTypes
+            // arrays can also be based on ParametricTypes, which don't have declaration modifiers
             if( dbSymbol is ImplementableTypeDb impDb )
                 impDb.DeclarationModifier = symbol.GetDeclarationModifier();
+
+            // if the array is based on a parametric type, specify its container
+            if( symbol.ElementType is ITypeParameterSymbol )
+            {
+                switch( containerDb )
+                {
+                    case ImplementableTypeDb implTypeDb:
+                        var parametricTypeDb = (ParametricTypeDb) dbSymbol;
+
+                        if( implTypeDb.ID == 0 )
+                            parametricTypeDb.ContainingType = implTypeDb;
+                        else parametricTypeDb.ContainingTypeID = implTypeDb.ID;
+
+                        break;
+
+                    case MethodPlaceholderDb mpDb:
+                        var methodParametricTypeDb = (MethodParametricTypeDb) dbSymbol;
+
+                        if( mpDb.ID == 0 )
+                            methodParametricTypeDb.ContainingMethod = mpDb;
+                        else methodParametricTypeDb.ContainingMethodID = mpDb.ID;
+
+                        break;
+
+                    default:
+                        Logger.Error<string>( "Unsupported parametric type container for symbol '{0}'",
+                            SymbolInfo.GetFullyQualifiedName( symbol ) );
+
+                        return false;
+                }
+            }
 
             return true;
         }

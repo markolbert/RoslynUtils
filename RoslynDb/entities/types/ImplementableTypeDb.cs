@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
         public DeclarationModifier DeclarationModifier { get; set; }
         
         // list of methods defined for this type
-        public List<Method> Methods { get; set; }
+        public List<MethodDb> Methods { get; set; }
 
         // list of properties defined for this type
         public List<Property> Properties { get; set; }

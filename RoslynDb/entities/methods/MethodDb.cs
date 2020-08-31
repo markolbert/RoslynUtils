@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection;
 using J4JSoftware.EFCoreUtilities;
 using J4JSoftware.Roslyn.entities;
 using Microsoft.CodeAnalysis;
@@ -7,13 +10,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration( typeof( BaseMethodConfigurator ) )]
-    public class Method : IFullyQualifiedName, ISynchronized
+    [EntityConfiguration( typeof( MethodDbConfigurator ) )]
+    public class MethodDb : MethodBaseDb
     {
-        public int ID { get; set; }
-        public string FullyQualifiedName { get; set; }
         public string Name { get; set; }
-        public bool Synchronized { get; set; }
         public MethodKind Kind { get; set; }
         public Accessibility Accessibility { get; set; }
         public DeclarationModifier DeclarationModifier { get; set; }
@@ -24,15 +24,13 @@ namespace J4JSoftware.Roslyn
         public int? ReturnTypeID { get; set; }
         public FixedTypeDb ReturnType { get; set; }
 
-        public List<MethodParametricTypeDb> ParametricTypes { get; set; }
-
         // list of method arguments
         public List<MethodArgument> Arguments { get; set; }
     }
 
-    internal class BaseMethodConfigurator : EntityConfigurator<Method>
+    internal class MethodDbConfigurator : EntityConfigurator<MethodDb>
     {
-        protected override void Configure( EntityTypeBuilder<Method> builder )
+        protected override void Configure( EntityTypeBuilder<MethodDb> builder )
         {
             builder.HasOne( x => x.DefiningType )
                 .WithMany( x => x.Methods )
@@ -43,11 +41,6 @@ namespace J4JSoftware.Roslyn
                 .WithMany( x => x.ReturnTypes )
                 .HasPrincipalKey( x => x.ID )
                 .HasForeignKey( x => x.ReturnTypeID );
-
-            builder.HasAlternateKey(x => x.FullyQualifiedName);
-
-            builder.Property(x => x.FullyQualifiedName)
-                .IsRequired();
 
             builder.Property( x => x.Accessibility )
                 .HasConversion( new EnumToNumberConverter<Accessibility, int>() );

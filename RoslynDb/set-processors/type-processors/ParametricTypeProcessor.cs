@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ParametricTypeProcessor : TypeProcessor<ITypeParameterSymbol>
+    public class ParametricTypeProcessor : BaseProcessorDb<ITypeSymbol, ITypeParameterSymbol>
     {
         public ParametricTypeProcessor(
             RoslynDbContext dbContext,
@@ -42,12 +42,12 @@ namespace J4JSoftware.Roslyn
             if( typeSymbol is ITypeParameterSymbol tpSymbol )
                 yield return tpSymbol;
 
-            if( typeSymbol is IArrayTypeSymbol arraySymbol &&
-                arraySymbol.ElementType is ITypeParameterSymbol atpSymbol )
+            if( typeSymbol is IArrayTypeSymbol arraySymbol 
+                && arraySymbol.ElementType is ITypeParameterSymbol atpSymbol )
                 yield return atpSymbol;
         }
 
-        // symbol is guaranteed to be an ITypeParameterSymbol
+        // symbol is guaranteed to be an ITypeParameterSymbol 
         protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
         {
             if( !ValidateAssembly( symbol, out var assemblyDb ) )
@@ -56,19 +56,59 @@ namespace J4JSoftware.Roslyn
             if( !ValidateNamespace( symbol, out var nsDb ) )
                 return false;
 
-            var dbSymbol = (ParametricTypeDb?) GetTypeByFullyQualifiedName( symbol, true );
+            // Finding the container for the parametric type is complicated by the
+            // fact parametric types can be contained by either a type or a method...
+            // and we haven't yet processed any method symbols into the database
+            // at this point. So we create a MethodPlaceholderDb object for such
+            // method containers, and replace them when we actually process the
+            // methods.
+            object? containerDb = GetParametricTypeContainer( symbol );
+
+            // this error should only occur if we're contained by a type
+            // which somehow hasn't been processed into the database
+            if( containerDb == null )
+                return false;
+
+            var dbSymbol = (ParametricTypeBaseDb?) GetTypeByFullyQualifiedName( symbol, true );
 
             if( dbSymbol == null )
                 return false;
 
             dbSymbol.Synchronized = true;
-            dbSymbol.Name = SymbolInfo.GetName(symbol);
+            dbSymbol.Name = SymbolInfo.GetName( symbol );
             dbSymbol.AssemblyID = assemblyDb!.ID;
             dbSymbol.NamespaceId = nsDb!.ID;
             dbSymbol.Accessibility = symbol.DeclaredAccessibility;
             dbSymbol.Nature = symbol.TypeKind;
             dbSymbol.InDocumentationScope = assemblyDb.InScopeInfo != null;
             dbSymbol.Constraints = symbol.GetParametricTypeConstraint();
+
+            switch( containerDb )
+            {
+                case ImplementableTypeDb implTypeDb:
+                    var parametricTypeDb = (ParametricTypeDb)dbSymbol;
+
+                    if (implTypeDb.ID == 0)
+                        parametricTypeDb.ContainingType = implTypeDb;
+                    else parametricTypeDb.ContainingTypeID = implTypeDb.ID;
+
+                    break;
+
+                case MethodPlaceholderDb mpDb:
+                    var methodParametricTypeDb = (MethodParametricTypeDb) dbSymbol;
+
+                    if (mpDb.ID == 0)
+                        methodParametricTypeDb.ContainingMethod = mpDb;
+                    else methodParametricTypeDb.ContainingMethodID = mpDb.ID;
+
+                    break;
+
+                default:
+                    Logger.Error<string>( "Unsupported parametric type container for symbol '{0}'",
+                        SymbolInfo.GetFullyQualifiedName( symbol ) );
+
+                    return false;
+            }
 
             return true;
         }

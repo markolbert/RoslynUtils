@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
         public bool Synchronized { get; set; }
 
         public int DeclaringMethodID { get; set; }
-        public Method DeclaringMethod { get; set; }
+        public MethodDb DeclaringMethod { get; set; }
 
         public bool IsOptional { get; set; }
         public bool IsParams { get; set; }

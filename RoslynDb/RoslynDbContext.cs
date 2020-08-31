@@ -32,8 +32,9 @@ namespace J4JSoftware.Roslyn
         public DbSet<MethodParametricTypeDb> MethodParametericTypes { get; set; }
         public DbSet<TypeAncestor> TypeAncestors { get; set; }
 
-        public DbSet<Method> Methods { get; set; }
+        public DbSet<MethodDb> Methods { get; set; }
         public DbSet<MethodArgument> MethodArguments { get; set; }
+        public DbSet<MethodPlaceholderDb> PlaceholderMethods { get; set; }
 
         public DbSet<Property> Properties { get; set; }
         public DbSet<PropertyParameter> PropertyParameters { get; set; }

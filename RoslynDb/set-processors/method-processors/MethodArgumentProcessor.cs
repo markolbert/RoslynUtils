@@ -48,7 +48,7 @@ namespace J4JSoftware.Roslyn
             if( !GetByFullyQualifiedName<FixedTypeDb>( ntSymbol, out var tdDb ) )
                 return false;
 
-            if( !GetByFullyQualifiedName<Method>( symbol.ContainingSymbol, out var methodDb ) )
+            if( !GetByFullyQualifiedName<MethodDb>( symbol.ContainingSymbol, out var methodDb ) )
                 return false;
 
             ProcessDefinedType( tdDb!, methodDb! );
@@ -61,7 +61,7 @@ namespace J4JSoftware.Roslyn
             if (!GetByFullyQualifiedName<FixedTypeDb>(arraySymbol, out var tdDb))
                 return false;
 
-            if (!GetByFullyQualifiedName<Method>(symbol.ContainingSymbol, out var methodDb))
+            if (!GetByFullyQualifiedName<MethodDb>(symbol.ContainingSymbol, out var methodDb))
                 return false;
 
             ProcessDefinedType(tdDb!, methodDb!);
@@ -69,7 +69,7 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private void ProcessDefinedType( FixedTypeDb tdDb, Method methodDb )
+        private void ProcessDefinedType( FixedTypeDb tdDb, MethodDb methodDb )
         {
             //var tdMethodArgs = GetDbSet<TypeDefinitionMethodArgument>();
 

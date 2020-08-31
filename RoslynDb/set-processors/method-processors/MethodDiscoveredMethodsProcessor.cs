@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             // construct/update the method entity
-            GetByFullyQualifiedName<Method>( symbol, out var methodDb, true );
+            GetByFullyQualifiedName<MethodDb>( symbol, out var methodDb, true );
 
             methodDb!.Name = SymbolInfo.GetName(symbol);
             methodDb.Kind = symbol.MethodKind;
