@@ -6,11 +6,11 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn.walkers
 {
-    public class TypeDefinitionWalker : SyntaxWalker<ITypeSymbol>
+    public class TypeWalker : SyntaxWalker<ITypeSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
-        static TypeDefinitionWalker()
+        static TypeWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn.walkers
             //_ignoredNodeKinds.Add( SyntaxKind.ParameterList );
         }
 
-        public TypeDefinitionWalker(
+        public TypeWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             ISymbolNamer symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,

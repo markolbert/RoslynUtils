@@ -17,6 +17,12 @@ namespace J4JSoftware.Roslyn
         }
 
         public DeclarationModifier DeclarationModifier { get; set; }
+
+        // list of TypeArguments for this type
+        public List<TypeArgument> TypeArguments { get; set; }
+
+        // list of TypeArguments where this type is referenced as a closing type
+        public List<TypeArgument> TypeArgumentReferences { get; set; }
         
         // list of methods defined for this type
         public List<MethodDb> Methods { get; set; }

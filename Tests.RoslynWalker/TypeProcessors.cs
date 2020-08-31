@@ -22,6 +22,7 @@ namespace Tests.RoslynWalker
             SetPredecessor<ParametricTypeProcessor, NamedTypeProcessor>();
             SetPredecessor<ArrayTypeProcessor, ParametricTypeProcessor>();
             SetPredecessor<AncestorProcessor, ArrayTypeProcessor>();
+            SetPredecessor<TypeArgumentProcessor, AncestorProcessor>();
         }
 
         // ensure the context object is able to reset itself so it can 

@@ -7,11 +7,11 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeDefinitionSink : RoslynDbSink<ITypeSymbol, FixedTypeDb>
+    public class TypeSink : RoslynDbSink<ITypeSymbol, FixedTypeDb>
     {
         private readonly ISymbolSetProcessor<ITypeSymbol> _processors;
 
-        public TypeDefinitionSink(
+        public TypeSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolInfo,
             ISymbolSetProcessor<ITypeSymbol> processors,
@@ -29,6 +29,9 @@ namespace J4JSoftware.Roslyn.Sinks
             MarkUnsynchronized<FixedTypeDb>();
             MarkUnsynchronized<GenericTypeDb>();
             MarkUnsynchronized<ParametricTypeDb>();
+            MarkUnsynchronized<TypeAncestor>();
+            MarkUnsynchronized<TypeArgument>();
+            MarkUnsynchronized<MethodPlaceholderDb>();
 
             SaveChanges();
 

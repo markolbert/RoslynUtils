@@ -30,7 +30,7 @@ namespace Tests.RoslynWalker
         protected override void SetPredecessors()
         {
             SetPredecessor<NamespaceWalker, AssemblyWalker>();
-            SetPredecessor<TypeDefinitionWalker, NamespaceWalker>();
+            SetPredecessor<TypeWalker, NamespaceWalker>();
             //SetPredecessor<MethodWalker, TypeDefinitionWalker>();
             //SetPredecessor<PropertyWalker, TypeDefinitionWalker>();
         }
