@@ -11,12 +11,44 @@ namespace J4JSoftware.Roslyn
 {
     public class MethodProcessor : BaseProcessorDb<IMethodSymbol, IMethodSymbol>
     {
+        private readonly List<string> _placeholders = new List<string>();
+
         public MethodProcessor( 
             RoslynDbContext dbContext, 
             ISymbolNamer symbolInfo, 
             IJ4JLogger logger ) 
             : base( dbContext, symbolInfo, logger )
         {
+        }
+
+        protected override bool InitializeProcessor( IEnumerable<IMethodSymbol> inputData )
+        {
+            if( !base.InitializeProcessor( inputData ) )
+                return false;
+
+            // identify the method placeholder entities we need to replace
+            _placeholders.Clear();
+
+            var placeholders = GetDbSet<MethodPlaceholderDb>();
+            _placeholders.AddRange( placeholders.Select( p => p.FullyQualifiedName ) );
+
+            return true;
+        }
+
+        protected override bool FinalizeProcessor( IEnumerable<IMethodSymbol> inputData )
+        {
+            if( !base.FinalizeProcessor( inputData ) )
+                return false;
+
+            var placeholders = GetDbSet<MethodPlaceholderDb>();
+
+            if( placeholders.Any() )
+            {
+                Logger.Error("MethodPlaceholderDb entities still exist in the database");
+                return false;
+            }
+
+            return true;
         }
 
         protected override IEnumerable<IMethodSymbol> ExtractSymbols( object item )
@@ -32,6 +64,8 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IMethodSymbol symbol )
         {
+            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
+
             var typeDb = GetTypeByFullyQualifiedName( symbol.ContainingType );
 
             if( typeDb == null )
@@ -42,19 +76,52 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !GetByFullyQualifiedName<FixedTypeDb>( symbol.ReturnType, out var retValDb ) )
-                return false;
+            var retValDb = GetTypeByFullyQualifiedName( symbol.ReturnType );
 
-            if( !GetByFullyQualifiedName<MethodDb>( symbol, out var methodDb ) )
+            if( retValDb == null )
             {
-                methodDb = new MethodDb
-                {
-                    FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol )
-                };
+                Logger.Error<string, string>( "Couldn't find return type '{0}' in database for method '{1}'",
+                    SymbolInfo.GetFullyQualifiedName( symbol.ReturnType ),
+                    fqn );
 
-                var methods = GetDbSet<MethodDb>();
-                methods.Add( methodDb );
+                return false;
             }
+
+            // if this method corresponds to a placeholder method, grab the MethodParametricTypeDb object
+            // referencing the placeholder so we can switch it over to the methodDb object we'll be creating
+            List<MethodParametricTypeDb> methodParametricDbs = new List<MethodParametricTypeDb>();
+
+            var methodTypeParameters = GetDbSet<MethodParametricTypeDb>();
+
+            if ( _placeholders.Any( p => p.Equals( fqn, StringComparison.Ordinal ) ) )
+            {
+                var placeholders = GetDbSet<MethodPlaceholderDb>();
+                var placeholderDb = placeholders.FirstOrDefault(p => p.FullyQualifiedName.Equals(fqn));
+
+                if( placeholderDb == null )
+                {
+                    Logger.Error<string>( "Could not find placeholder for '{0}' in the database", fqn );
+                    return false;
+                }
+
+                // remove the placeholder as otherwise adding the "real" method further
+                // down will fail. we have to save the changes right away to avoid a concurrency
+                // violation problem.
+                placeholders.Remove( placeholderDb );
+                SaveChanges();
+
+                methodParametricDbs.AddRange( methodTypeParameters
+                    .Where( mtp => mtp.ContainingMethodID == placeholderDb.ID ) );
+
+                if( !methodParametricDbs.Any() )
+                {
+                    Logger.Error<string>("Could not find placeholder(s) for '{0}' in the database", fqn);
+                    return false;
+                }
+            }
+
+
+            GetByFullyQualifiedName<MethodDb>( symbol, out var methodDb, true );
 
             methodDb!.Name = symbol.Name;
             methodDb.Accessibility = symbol.DeclaredAccessibility;
@@ -63,65 +130,17 @@ namespace J4JSoftware.Roslyn
             methodDb.DefiningTypeID = typeDb!.ID;
             methodDb.ReturnTypeID = retValDb!.ID;
 
-            var allOkay = true;
-
-            foreach( var tpSymbol in symbol.TypeParameters )
+            // replace placeholder referencing this method
+            foreach( var methodParametricDb in methodParametricDbs! )
             {
-                allOkay &= ProcessTypeParameter( methodDb, tpSymbol );
+                if( methodDb.ID == 0 )
+                    methodParametricDb.ContainingMethod = methodDb;
+                else methodParametricDb.ID = methodDb.ID;
             }
 
-            for( var idx = 0; idx < symbol.TypeArguments.Length; idx++ )
-            {
-                allOkay &= ProcessTypeArgument( methodDb, symbol.TypeArguments[ idx ], idx );
-            }
+            methodTypeParameters.RemoveRange( methodParametricDbs );
 
-            return allOkay;
-        }
-
-        private bool ProcessTypeParameter( MethodDb methodDb, ITypeParameterSymbol tpSymbol )
-        {
             return true;
         }
-
-        private bool ProcessTypeArgument( MethodDb methodDb, ITypeSymbol typeSymbol, int ordinal )
-        {
-            return true;
-        }
-
-        //private bool ProcessTypeConstraints( TypeParameter tpDb, ITypeSymbol constraintSymbol)
-        //{
-        //    var symbolInfo = SymbolInfo.Create(constraintSymbol);
-
-        //    if (!(symbolInfo.Symbol is INamedTypeSymbol) && symbolInfo.TypeKind != TypeKind.Array)
-        //    {
-        //        Logger.Error<string>(
-        //            "Constraining type '{0}' is neither an INamedTypeSymbol nor an IArrayTypeSymbol",
-        //            symbolInfo.SymbolName);
-        //        return false;
-        //    }
-
-        //    if (!GetByFullyQualifiedName<FixedTypeDb>(constraintSymbol, out var conDb))
-        //        return false;
-
-        //    var typeConstraints = GetDbSet<TypeConstraint>();
-
-        //    var typeConstraintDb = typeConstraints
-        //        .FirstOrDefault(c => c.TypeParameterID == tpDb.ID && c.ConstrainingTypeID == conDb!.ID);
-
-        //    if (typeConstraintDb == null)
-        //    {
-        //        typeConstraintDb = new TypeConstraint
-        //        {
-        //            ConstrainingTypeID = conDb!.ID,
-        //            TypeParameter = tpDb
-        //        };
-
-        //        typeConstraints.Add(typeConstraintDb);
-        //    }
-
-        //    typeConstraintDb.Synchronized = true;
-
-        //    return true;
-        //}
     }
 }

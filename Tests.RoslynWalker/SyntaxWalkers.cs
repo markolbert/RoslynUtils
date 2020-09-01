@@ -31,7 +31,7 @@ namespace Tests.RoslynWalker
         {
             SetPredecessor<NamespaceWalker, AssemblyWalker>();
             SetPredecessor<TypeWalker, NamespaceWalker>();
-            //SetPredecessor<MethodWalker, TypeDefinitionWalker>();
+            SetPredecessor<MethodWalker, TypeWalker>();
             //SetPredecessor<PropertyWalker, TypeDefinitionWalker>();
         }
     }
