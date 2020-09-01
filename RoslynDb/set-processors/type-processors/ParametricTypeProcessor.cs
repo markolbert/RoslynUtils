@@ -10,10 +10,10 @@ namespace J4JSoftware.Roslyn
     {
         public ParametricTypeProcessor(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -75,7 +75,7 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             dbSymbol.Synchronized = true;
-            dbSymbol.Name = SymbolInfo.GetName( symbol );
+            dbSymbol.Name = SymbolNamer.GetName( symbol );
             dbSymbol.AssemblyID = assemblyDb!.ID;
             dbSymbol.NamespaceId = nsDb!.ID;
             dbSymbol.Accessibility = symbol.DeclaredAccessibility;
@@ -105,7 +105,7 @@ namespace J4JSoftware.Roslyn
 
                 default:
                     Logger.Error<string>( "Unsupported parametric type container for symbol '{0}'",
-                        SymbolInfo.GetFullyQualifiedName( symbol ) );
+                        SymbolNamer.GetFullyQualifiedName( symbol ) );
 
                     return false;
             }

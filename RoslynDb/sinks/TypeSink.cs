@@ -13,10 +13,10 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public TypeSink(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             ISymbolSetProcessor<ITypeSymbol> processors,
             IJ4JLogger logger )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
             _processors = processors;
         }
@@ -29,8 +29,8 @@ namespace J4JSoftware.Roslyn.Sinks
             MarkUnsynchronized<FixedTypeDb>();
             MarkUnsynchronized<GenericTypeDb>();
             MarkUnsynchronized<ParametricTypeDb>();
-            MarkUnsynchronized<TypeAncestor>();
-            MarkUnsynchronized<TypeArgument>();
+            MarkUnsynchronized<TypeAncestorDb>();
+            MarkUnsynchronized<TypeArgumentDb>();
             MarkUnsynchronized<MethodPlaceholderDb>();
 
             SaveChanges();

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(TypeImplementationConfigurator))]
-    public class TypeAncestor : ISynchronized
+    public class TypeAncestorDb : ISynchronized
     {
         public int ChildTypeID { get; set; }
         public TypeDb ChildType { get; set; }
@@ -20,9 +20,9 @@ namespace J4JSoftware.Roslyn
         public bool Synchronized { get; set; }
     }
 
-    internal class TypeImplementationConfigurator : EntityConfigurator<TypeAncestor>
+    internal class TypeImplementationConfigurator : EntityConfigurator<TypeAncestorDb>
     {
-        protected override void Configure(EntityTypeBuilder<TypeAncestor> builder)
+        protected override void Configure(EntityTypeBuilder<TypeAncestorDb> builder)
         {
             builder.HasOne( x => x.AncestorType )
                 .WithMany( x => x.AncestorTypes )

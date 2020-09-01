@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
         public FixedTypeDb ReturnType { get; set; }
 
         // list of method arguments
-        public List<MethodArgument> Arguments { get; set; }
+        public List<ArgumentDb> Arguments { get; set; }
     }
 
     internal class MethodDbConfigurator : EntityConfigurator<MethodDb>

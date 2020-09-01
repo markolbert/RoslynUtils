@@ -17,16 +17,16 @@ namespace J4JSoftware.Roslyn
 
         protected BaseProcessorDb(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger
         )
         : base( logger )
         {
             _dbContext = dbContext;
-            SymbolInfo = symbolInfo;
+            SymbolNamer = symbolNamer;
         }
 
-        protected ISymbolNamer SymbolInfo { get; }
+        protected ISymbolNamer SymbolNamer { get; }
 
         protected abstract IEnumerable<TResult> ExtractSymbols( object item );
         protected abstract bool ProcessSymbol( TResult symbol );
@@ -64,7 +64,7 @@ namespace J4JSoftware.Roslyn
 
             var dbSet = _dbContext.Set<TEntity>();
 
-            var fqn = SymbolInfo.GetFullyQualifiedName( symbol );
+            var fqn = SymbolNamer.GetFullyQualifiedName( symbol );
 
             result = dbSet.FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
@@ -140,7 +140,7 @@ namespace J4JSoftware.Roslyn
 
         private TypeDb? GetFixedType( INamedTypeSymbol symbol, bool createIfMissing, string? fqn = null )
         {
-            fqn ??= SymbolInfo.GetFullyQualifiedName( symbol );
+            fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
 
             if( symbol.IsGenericType )
             {
@@ -170,7 +170,7 @@ namespace J4JSoftware.Roslyn
 
         private TypeDb? GetArrayType( IArrayTypeSymbol symbol, bool createIfMissing, string? fqn = null )
         {
-            fqn ??= SymbolInfo.GetFullyQualifiedName(symbol);
+            fqn ??= SymbolNamer.GetFullyQualifiedName(symbol);
 
             switch (symbol.ElementType)
             {
@@ -208,14 +208,14 @@ namespace J4JSoftware.Roslyn
             // which somehow hasn't been processed into the database
             if (retVal == null)
                 Logger.Error<string>("Could not find a container entity for ITypeParameterSymbol '{0}'",
-                    SymbolInfo.GetFullyQualifiedName(symbol));
+                    SymbolNamer.GetFullyQualifiedName(symbol));
 
             return retVal;
         }
 
         private ImplementableTypeDb? GetTypeContainer(ITypeParameterSymbol symbol)
         {
-            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
+            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
             if (symbol.DeclaringType == null)
                 return null;
@@ -235,7 +235,7 @@ namespace J4JSoftware.Roslyn
 
         private MethodPlaceholderDb? GetMethodContainer(ITypeParameterSymbol symbol)
         {
-            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
+            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
             if (symbol.DeclaringMethod == null)
                 return null;
@@ -252,7 +252,7 @@ namespace J4JSoftware.Roslyn
             bool createIfMissing,
             string? fqn = null )
         {
-            fqn ??= SymbolInfo.GetFullyQualifiedName( symbol );
+            fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
 
             if( symbol.DeclaringType != null )
                 return GetTypeParametricType( symbol, createIfMissing, fqn );
@@ -312,7 +312,7 @@ namespace J4JSoftware.Roslyn
 
                 foreach( var symbol in ExtractSymbols(item) )
                 {
-                    var fqn = SymbolInfo.GetFullyQualifiedName(symbol!);
+                    var fqn = SymbolNamer.GetFullyQualifiedName(symbol!);
 
                     if (processed.ContainsKey(fqn))
                         continue;

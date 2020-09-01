@@ -12,9 +12,9 @@ namespace J4JSoftware.Roslyn
     {
         public MethodDiscoveredMethodsProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolNamer symbolInfo, 
+            ISymbolNamer symbolNamer, 
             IJ4JLogger logger ) 
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -42,7 +42,7 @@ namespace J4JSoftware.Roslyn
             // construct/update the method entity
             GetByFullyQualifiedName<MethodDb>( symbol, out var methodDb, true );
 
-            methodDb!.Name = SymbolInfo.GetName(symbol);
+            methodDb!.Name = SymbolNamer.GetName(symbol);
             methodDb.Kind = symbol.MethodKind;
             methodDb.ReturnTypeID = rtDb!.ID;
             methodDb.DefiningTypeID = dtDb!.ID;

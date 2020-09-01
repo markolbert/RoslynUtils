@@ -15,9 +15,9 @@ namespace J4JSoftware.Roslyn
 
         public MethodProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolNamer symbolInfo, 
+            ISymbolNamer symbolNamer, 
             IJ4JLogger logger ) 
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -64,14 +64,14 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IMethodSymbol symbol )
         {
-            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
+            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
             var typeDb = GetTypeByFullyQualifiedName( symbol.ContainingType );
 
             if( typeDb == null )
             {
                 Logger.Error<string>( "Couldn't find containing type for IMethod '{0}'",
-                    SymbolInfo.GetFullyQualifiedName( symbol ) );
+                    SymbolNamer.GetFullyQualifiedName( symbol ) );
 
                 return false;
             }
@@ -81,7 +81,7 @@ namespace J4JSoftware.Roslyn
             if( retValDb == null )
             {
                 Logger.Error<string, string>( "Couldn't find return type '{0}' in database for method '{1}'",
-                    SymbolInfo.GetFullyQualifiedName( symbol.ReturnType ),
+                    SymbolNamer.GetFullyQualifiedName( symbol.ReturnType ),
                     fqn );
 
                 return false;

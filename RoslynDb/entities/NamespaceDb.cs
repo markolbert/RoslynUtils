@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
         public string Name { get; set; } = null!;
         public string FullyQualifiedName { get; set; } = null!;
 
-        public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
+        public List<AssemblyNamespaceDb>? AssemblyNamespaces { get; set; }
         public List<TypeDb>? Types { get; set; }
     }
 

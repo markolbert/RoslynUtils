@@ -15,13 +15,13 @@ namespace J4JSoftware.Roslyn.Sinks
 
         protected RoslynDbSink(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger
         )
-            : base( symbolInfo, logger )
+            : base( symbolNamer, logger )
         {
             _dbContext = dbContext;
-            Symbols = new UniqueSymbols<TSymbol>(symbolInfo);
+            Symbols = new UniqueSymbols<TSymbol>(symbolNamer);
         }
 
         protected UniqueSymbols<TSymbol> Symbols { get; }
@@ -55,7 +55,7 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             result = null;
 
-            var fqn = SymbolInfo.GetFullyQualifiedName(symbol);
+            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
             var dbSet = _dbContext.Set<TEntity>();
 

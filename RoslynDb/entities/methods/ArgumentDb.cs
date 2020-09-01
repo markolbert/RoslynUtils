@@ -7,12 +7,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( MethodArgumentConfigurator ) )]
-    public class MethodArgument : ISynchronized
+    public class ArgumentDb : ISynchronized
     {
-        protected MethodArgument()
-        {
-        }
-
         public int ID { get; set; }
         public int Ordinal { get; set; }
         public string Name { get; set; }
@@ -27,12 +23,24 @@ namespace J4JSoftware.Roslyn
         public bool IsDiscard { get; set; }
         public RefKind ReferenceKind { get; set; }
         public string? DefaultText { get; set; }
+
+        public int ArgumentTypeID { get; set; }
+        public TypeDb ArgumentType { get; set; }
     }
 
-    internal class MethodArgumentConfigurator : EntityConfigurator<MethodArgument>
+    internal class MethodArgumentConfigurator : EntityConfigurator<ArgumentDb>
     {
-        protected override void Configure(EntityTypeBuilder<MethodArgument> builder)
+        protected override void Configure(EntityTypeBuilder<ArgumentDb> builder)
         {
+            builder.HasOne( x => x.ArgumentType )
+                .WithMany( x => x.MethodArguments )
+                .HasPrincipalKey( x => x.ID )
+                .HasForeignKey( x => x.ArgumentTypeID );
+
+            builder.HasOne( x => x.DeclaringMethod )
+                .WithMany( x => x.Arguments )
+                .HasPrincipalKey( x => x.ID )
+                .HasForeignKey( x => x.DeclaringMethodID );
         }
     }
 }

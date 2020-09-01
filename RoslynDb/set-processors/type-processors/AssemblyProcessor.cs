@@ -10,10 +10,10 @@ namespace J4JSoftware.Roslyn
     {
         public AssemblyProcessor(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -42,8 +42,8 @@ namespace J4JSoftware.Roslyn
             {
                 dbSymbol = new AssemblyDb
                 {
-                    FullyQualifiedName = SymbolInfo.GetFullyQualifiedName( symbol ),
-                    Name = SymbolInfo.GetName( symbol ),
+                    FullyQualifiedName = SymbolNamer.GetFullyQualifiedName( symbol ),
+                    Name = SymbolNamer.GetName( symbol ),
                     DotNetVersion = symbol.Identity.Version
                 };
 

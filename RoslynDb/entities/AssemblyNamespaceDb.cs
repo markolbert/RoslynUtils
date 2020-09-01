@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( AssemblyNamespaceConfigurator ) )]
-    public class AssemblyNamespace
+    public class AssemblyNamespaceDb
     {
         public int AssemblyID { get; set; }
         public AssemblyDb Assembly { get; set; } = null!;
@@ -13,9 +13,9 @@ namespace J4JSoftware.Roslyn
         public NamespaceDb Namespace { get; set; } = null!;
     }
 
-    internal class AssemblyNamespaceConfigurator : EntityConfigurator<AssemblyNamespace>
+    internal class AssemblyNamespaceConfigurator : EntityConfigurator<AssemblyNamespaceDb>
     {
-        protected override void Configure( EntityTypeBuilder<AssemblyNamespace> builder )
+        protected override void Configure( EntityTypeBuilder<AssemblyNamespaceDb> builder )
         {
             builder.HasKey( x => new { x.AssemblyID, x.NamespaceID } );
         }

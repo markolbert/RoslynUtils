@@ -9,9 +9,9 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public PropertySink(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -95,7 +95,7 @@ namespace J4JSoftware.Roslyn.Sinks
             // construct/update the method entity
             GetByFullyQualifiedName<Property>(symbol, out var propDb, true);
 
-            propDb!.Name = SymbolInfo.GetName(symbol);
+            propDb!.Name = SymbolNamer.GetName(symbol);
             propDb.PropertyTypeID = rtDb!.ID;
             propDb.DefiningTypeID = dtDb!.ID;
             propDb.DeclarationModifier = symbol.GetDeclarationModifier();

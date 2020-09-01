@@ -39,11 +39,14 @@ namespace J4JSoftware.Roslyn
         // list of return types referencing this type definition
         public List<MethodDb> ReturnTypes { get; set; }
 
+        // list of method arguments referencing this type definition
+        public List<ArgumentDb> MethodArguments { get; set; }
+
         // list of properties having a return value equal to this type
         public List<Property> PropertyTypes { get; set; }
 
         // list of types implemented by this type (including the type it is descended from)
-        public List<TypeAncestor> AncestorTypes { get; set; }
+        public List<TypeAncestorDb> AncestorTypes { get; set; }
     }
 
     internal class TypeDbConfigurator : EntityConfigurator<TypeDb>

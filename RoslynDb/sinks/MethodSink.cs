@@ -11,10 +11,10 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public MethodSink(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             ISymbolSetProcessor<IMethodSymbol> processors,
             IJ4JLogger logger )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
             _processors = processors;
         }
@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
 
             MarkUnsynchronized<MethodDb>();
-            MarkUnsynchronized<MethodArgument>();
+            MarkUnsynchronized<ArgumentDb>();
             MarkUnsynchronized<MethodParametricTypeDb>();
 
             SaveChanges();

@@ -17,8 +17,7 @@ namespace Tests.RoslynWalker
 
         protected override void SetPredecessors()
         {
-            //SetPredecessor<MethodDiscoveredMethodsProcessor, MethodParametricTypeProcessor>();
-            //SetPredecessor<MethodArgumentProcessor, MethodDiscoveredMethodsProcessor>();
+            SetPredecessor<ArgumentProcessor, MethodProcessor>();
         }
 
         // ensure the context object is able to reset itself so it can 

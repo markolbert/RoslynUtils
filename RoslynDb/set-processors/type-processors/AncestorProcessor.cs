@@ -10,10 +10,10 @@ namespace J4JSoftware.Roslyn
     {
         public AncestorProcessor(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -47,7 +47,7 @@ namespace J4JSoftware.Roslyn
             if( typeDb == null )
             {
                 Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
-                    SymbolInfo.GetFullyQualifiedName( typeSymbol ), 
+                    SymbolNamer.GetFullyQualifiedName( typeSymbol ), 
                     typeSymbol.TypeKind );
 
                 return false;
@@ -77,19 +77,19 @@ namespace J4JSoftware.Roslyn
             if( ancestorDb == null )
             {
                 Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
-                    SymbolInfo.GetFullyQualifiedName( ancestorSymbol ) );
+                    SymbolNamer.GetFullyQualifiedName( ancestorSymbol ) );
 
                 return false;
             }
 
-            var typeAncestors = GetDbSet<TypeAncestor>();
+            var typeAncestors = GetDbSet<TypeAncestorDb>();
 
             var typeAncestorDb = typeAncestors
                 .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.AncestorTypeID == ancestorDb!.ID );
 
             if( typeAncestorDb == null )
             {
-                typeAncestorDb = new TypeAncestor
+                typeAncestorDb = new TypeAncestorDb
                 {
                     AncestorTypeID = ancestorDb!.ID,
                     ChildTypeID = typeDb!.ID

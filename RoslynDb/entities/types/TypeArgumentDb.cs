@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(TypeArgumentConfigurator))]
-    public class TypeArgument : ISynchronized
+    public class TypeArgumentDb : ISynchronized
     {
         public int ID { get; set; }
         public bool Synchronized { get; set; }
@@ -22,9 +22,9 @@ namespace J4JSoftware.Roslyn
         public ImplementableTypeDb ArgumentType { get; set; }
     }
 
-    internal class TypeArgumentConfigurator : EntityConfigurator<TypeArgument>
+    internal class TypeArgumentConfigurator : EntityConfigurator<TypeArgumentDb>
     {
-        protected override void Configure(EntityTypeBuilder<TypeArgument> builder)
+        protected override void Configure(EntityTypeBuilder<TypeArgumentDb> builder)
         {
             builder.HasOne(x => x.ArgumentType)
                 .WithMany(x => x.TypeArgumentReferences)

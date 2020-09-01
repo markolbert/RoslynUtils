@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
 
         public InScopeAssemblyInfo? InScopeInfo { get; set; }
 
-        public List<AssemblyNamespace>? AssemblyNamespaces { get; set; }
+        public List<AssemblyNamespaceDb>? AssemblyNamespaces { get; set; }
         public List<TypeDb>? Types { get; set; }
     }
 

@@ -10,10 +10,10 @@ namespace J4JSoftware.Roslyn
     {
         public TypeArgumentProcessor(
             RoslynDbContext dbContext,
-            ISymbolNamer symbolInfo,
+            ISymbolNamer symbolNamer,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolInfo, logger )
+            : base( dbContext, symbolNamer, logger )
         {
         }
 
@@ -57,7 +57,7 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             var allOkay = true;
-            var typeArgs = GetDbSet<TypeArgument>();
+            var typeArgs = GetDbSet<TypeArgumentDb>();
 
             for( var ordinal = 0; ordinal < symbol.TypeArguments.Length; ordinal++)
             {
@@ -68,8 +68,8 @@ namespace J4JSoftware.Roslyn
                 if( typeDb == null )
                 {
                     Logger.Error<string, string>( "", 
-                        SymbolInfo.GetFullyQualifiedName( typeArgSymbol ),
-                        SymbolInfo.GetFullyQualifiedName( symbol ) );
+                        SymbolNamer.GetFullyQualifiedName( typeArgSymbol ),
+                        SymbolNamer.GetFullyQualifiedName( symbol ) );
 
                     allOkay = false;
 
@@ -80,7 +80,7 @@ namespace J4JSoftware.Roslyn
 
                 if( typeArgDb == null )
                 {
-                    typeArgDb = new TypeArgument();
+                    typeArgDb = new TypeArgumentDb();
 
                     typeArgs.Add( typeArgDb );
                 }
