@@ -13,8 +13,6 @@ namespace J4JSoftware.Roslyn
         {
             var retVal = DeclarationModifier.None;
 
-            if (symbol == null) return retVal;
-
             if (symbol.IsAbstract) retVal |= DeclarationModifier.Abstract;
             if (symbol.IsOverride) retVal |= DeclarationModifier.Override;
             if (symbol.IsSealed) retVal |= DeclarationModifier.Sealed;
@@ -46,7 +44,6 @@ namespace J4JSoftware.Roslyn
         public static ParametricTypeConstraint GetParametricTypeConstraint(this ITypeParameterSymbol typeParamSymbol)
         {
             var retVal = ParametricTypeConstraint.None;
-            if (typeParamSymbol == null) return retVal;
 
             if (typeParamSymbol.HasConstructorConstraint) retVal |= ParametricTypeConstraint.Constructor;
             if (typeParamSymbol.HasNotNullConstraint) retVal |= ParametricTypeConstraint.NotNull;

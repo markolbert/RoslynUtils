@@ -28,10 +28,10 @@ namespace J4JSoftware.Roslyn
         public List<MethodDb> Methods { get; set; }
 
         // list of properties defined for this type
-        public List<Property> Properties { get; set; }
+        public List<PropertyDb> Properties { get; set; }
 
         // list of property arguments referencing this type
-        public List<PropertyParameter> PropertyParameters { get; set; }
+        public List<PropertyParameterDb> PropertyParameters { get; set; }
     }
 
     internal class DefinedTypeDbConfigurator : EntityConfigurator<ImplementableTypeDb>

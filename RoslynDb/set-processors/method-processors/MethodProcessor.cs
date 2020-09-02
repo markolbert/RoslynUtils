@@ -129,9 +129,18 @@ namespace J4JSoftware.Roslyn
             methodDb.Kind = symbol.MethodKind;
             methodDb.DefiningTypeID = typeDb!.ID;
             methodDb.ReturnTypeID = retValDb!.ID;
+            methodDb.ReturnsByRef = symbol.ReturnsByRef;
+            methodDb.ReturnsByRefReadOnly = symbol.ReturnsByRefReadonly;
+            methodDb.IsAbstract = symbol.IsAbstract;
+            methodDb.IsExtern = symbol.IsExtern;
+            methodDb.IsOverride = symbol.IsOverride;
+            methodDb.IsReadOnly = symbol.IsReadOnly;
+            methodDb.IsSealed = symbol.IsSealed;
+            methodDb.IsStatic = symbol.IsStatic;
+            methodDb.IsVirtual = symbol.IsVirtual;
 
             // replace placeholder referencing this method
-            foreach( var methodParametricDb in methodParametricDbs! )
+            foreach ( var methodParametricDb in methodParametricDbs! )
             {
                 if( methodDb.ID == 0 )
                     methodParametricDb.ContainingMethod = methodDb;

@@ -43,7 +43,7 @@ namespace J4JSoftware.Roslyn
         public List<ArgumentDb> MethodArguments { get; set; }
 
         // list of properties having a return value equal to this type
-        public List<Property> PropertyTypes { get; set; }
+        public List<PropertyDb> PropertyTypes { get; set; }
 
         // list of types implemented by this type (including the type it is descended from)
         public List<TypeAncestorDb> AncestorTypes { get; set; }

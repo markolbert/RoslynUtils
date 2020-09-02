@@ -43,23 +43,13 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
-            //var allOkay = true;
-
-            //// add the types we initially collected
-            //foreach( var typeSymbol in Symbols )
-            //{
-            //    allOkay &= ProcessSymbol( typeSymbol );
-            //}
-
-            //SaveChanges();
-
             return _processors.Process( Symbols );
-
-            //return allOkay;
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
         {
+            var fqn = SymbolNamer.GetFullyQualifiedName( symbol );
+
             // we don't call the base implementation because it tries to add the symbol
             // which is fine but we need to drill into it's parentage and we only want to
             // do that if we haven't visited it before

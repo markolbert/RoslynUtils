@@ -89,7 +89,7 @@ namespace J4JSoftware.Roslyn.Sinks
         }
 
         protected void MarkUnsynchronized<TEntity>()
-            where TEntity : class
+            where TEntity : class, ISynchronized
         {
             if( !typeof(ISynchronized).IsAssignableFrom( typeof(TEntity) ) )
                 return;

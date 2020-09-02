@@ -63,6 +63,12 @@ namespace Tests.RoslynWalker
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 
+            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
+                .Where(t => !t.IsAbstract
+                            && typeof(IAtomicProcessor<IEnumerable<IPropertySymbol>>).IsAssignableFrom(t)
+                            && t.GetConstructors().Length > 0)
+                .AsImplementedInterfaces();
+
             builder.RegisterType<SyntaxWalkers>()
                 .AsImplementedInterfaces()
                 .SingleInstance();
@@ -72,6 +78,10 @@ namespace Tests.RoslynWalker
                 .SingleInstance();
 
             builder.RegisterType<MethodProcessors>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
+
+            builder.RegisterType<PropertyProcessors>()
                 .AsImplementedInterfaces()
                 .SingleInstance();
 

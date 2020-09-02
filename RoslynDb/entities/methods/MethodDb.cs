@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration( typeof( MethodDbConfigurator ) )]
+    [ EntityConfiguration( typeof(MethodDbConfigurator) ) ]
     public class MethodDb : MethodBaseDb
     {
         public string Name { get; set; }
@@ -23,6 +23,18 @@ namespace J4JSoftware.Roslyn
 
         public int? ReturnTypeID { get; set; }
         public FixedTypeDb ReturnType { get; set; }
+
+        public bool ReturnsByRef { get; set; }
+        public bool ReturnsByRefReadOnly { get; set; }
+
+        public bool IsAbstract { get; set; }
+        public bool IsExtern { get; set; }
+        public bool IsOverride { get; set; }
+        public bool IsReadOnly { get; set; }
+        public bool IsSealed { get; set; }
+        public bool IsStatic { get; set; }
+        public bool IsVirtual { get; set; }
+
 
         // list of method arguments
         public List<ArgumentDb> Arguments { get; set; }

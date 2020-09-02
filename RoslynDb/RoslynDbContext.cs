@@ -37,8 +37,8 @@ namespace J4JSoftware.Roslyn
         public DbSet<ArgumentDb> MethodArguments { get; set; }
         public DbSet<MethodPlaceholderDb> PlaceholderMethods { get; set; }
 
-        public DbSet<Property> Properties { get; set; }
-        public DbSet<PropertyParameter> PropertyParameters { get; set; }
+        public DbSet<PropertyDb> Properties { get; set; }
+        public DbSet<PropertyParameterDb> PropertyParameters { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

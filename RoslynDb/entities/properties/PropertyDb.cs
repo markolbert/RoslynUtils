@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using J4JSoftware.EFCoreUtilities;
 using J4JSoftware.Roslyn.entities;
 using Microsoft.CodeAnalysis;
@@ -7,8 +8,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {
+    [Table("Properties")]
     [EntityConfiguration( typeof( PropertyConfigurator ) )]
-    public class Property : IFullyQualifiedName, ISynchronized
+    public class PropertyDb : IFullyQualifiedName, ISynchronized
     {
         public int ID { get; set; }
         public string FullyQualifiedName { get; set; } = null!;
@@ -29,11 +31,19 @@ namespace J4JSoftware.Roslyn
         public Accessibility? GetAccessibility { get; set; }
         public Accessibility? SetAccessibility { get; set; }
         public DeclarationModifier DeclarationModifier { get; set; }
+        
         public bool ReturnsByRef { get; set; }
         public bool ReturnsByRefReadOnly { get; set; }
-        public bool IsWithEvents { get; set; }
-        public bool IsWriteOnly { get; set; }
+
+        public bool IsAbstract { get; set; }
+        public bool IsExtern { get; set; }
+        public bool IsIndexer { get; set; }
+        public bool IsOverride { get; set; }
         public bool IsReadOnly { get; set; }
+        public bool IsSealed { get; set; }
+        public bool IsStatic { get; set; }
+        public bool IsVirtual { get; set; }
+        public bool IsWriteOnly { get; set; }
 
         public int DefiningTypeID { get; set; }
         public FixedTypeDb DefiningType { get; set; } = null!;
@@ -41,12 +51,12 @@ namespace J4JSoftware.Roslyn
         public int PropertyTypeID { get; set; }
         public FixedTypeDb PropertyType { get; set; } = null!;
 
-        public List<PropertyParameter> Parameters { get; set; }
+        public List<PropertyParameterDb> Parameters { get; set; }
     }
 
-    internal class PropertyConfigurator : EntityConfigurator<Property>
+    internal class PropertyConfigurator : EntityConfigurator<PropertyDb>
     {
-        protected override void Configure( EntityTypeBuilder<Property> builder )
+        protected override void Configure( EntityTypeBuilder<PropertyDb> builder )
         {
             builder.HasOne( x => x.DefiningType )
                 .WithMany( x => x.Properties )

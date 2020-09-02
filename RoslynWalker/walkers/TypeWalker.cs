@@ -14,9 +14,6 @@ namespace J4JSoftware.Roslyn.walkers
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
-            //_ignoredNodeKinds.Add( SyntaxKind.TypeParameter );
-            //_ignoredNodeKinds.Add( SyntaxKind.TypeParameterConstraintClause );
-            //_ignoredNodeKinds.Add( SyntaxKind.ParameterList );
         }
 
         public TypeWalker(
@@ -45,8 +42,7 @@ namespace J4JSoftware.Roslyn.walkers
             // type of void it's possible for System.Void to be overlooked, causing problems
             // down the road.
             if( node.Kind() == SyntaxKind.ConstructorDeclaration
-                && context.GetSymbol<IMethodSymbol>( node, out var methodSymbol )
-                /* && methodSymbol!.ReturnType is INamedTypeSymbol returnSymbol */ )
+                && context.GetSymbol<IMethodSymbol>( node, out var methodSymbol ) )
             {
                 result = methodSymbol!.ReturnType;
                 return true;
