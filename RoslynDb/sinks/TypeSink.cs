@@ -14,9 +14,10 @@ namespace J4JSoftware.Roslyn.Sinks
         public TypeSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             ISymbolSetProcessor<ITypeSymbol> processors,
             IJ4JLogger logger )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
             _processors = processors;
         }

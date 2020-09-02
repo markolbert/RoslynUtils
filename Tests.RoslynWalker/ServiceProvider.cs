@@ -69,6 +69,10 @@ namespace Tests.RoslynWalker
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 
+            builder.RegisterType<DocObjectTypeMapper>()
+                .As<IDocObjectTypeMapper>()
+                .SingleInstance();
+
             builder.RegisterType<SyntaxWalkers>()
                 .AsImplementedInterfaces()
                 .SingleInstance();

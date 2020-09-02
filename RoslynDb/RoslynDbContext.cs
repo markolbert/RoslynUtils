@@ -19,6 +19,8 @@ namespace J4JSoftware.Roslyn
             _config = config ?? throw new NullReferenceException(nameof(config));
         }
 
+        public DbSet<DocObject> DocObjects { get; set; }
+
         // assemblies and namespaces
         public DbSet<AssemblyDb> Assemblies { get; set; }
         public DbSet<InScopeAssemblyInfo> InScopeInfo { get; set; }

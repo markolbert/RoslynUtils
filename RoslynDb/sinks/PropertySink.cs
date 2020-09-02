@@ -12,9 +12,10 @@ namespace J4JSoftware.Roslyn.Sinks
         public PropertySink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             ISymbolSetProcessor<IPropertySymbol> processors,
             IJ4JLogger logger )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
             _processors = processors;
         }

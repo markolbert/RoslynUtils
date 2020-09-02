@@ -56,12 +56,12 @@ namespace J4JSoftware.Roslyn
             builder.HasOne( x => x.Namespace )
                 .WithMany( x => x.Types )
                 .HasForeignKey( x => x.NamespaceId )
-                .HasPrincipalKey( x => x.ID );
+                .HasPrincipalKey( x => x.DocObjectID );
 
             builder.HasOne(x => x.Assembly)
                 .WithMany(x => x.Types)
                 .HasForeignKey(x => x.AssemblyID)
-                .HasPrincipalKey(x => x.ID);
+                .HasPrincipalKey(x => x.DocObjectID);
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

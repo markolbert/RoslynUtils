@@ -9,9 +9,10 @@ using NuGet.Versioning;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(AssemblyConfigurator))]
-    public class AssemblyDb : IFullyQualifiedName, ISynchronized
+    public class AssemblyDb : IDocObject, IFullyQualifiedName, ISynchronized
     {
-        public int ID { get; set; }
+        public int DocObjectID { get; set; }
+        public DocObject DocObject { get; set; }
         public bool Synchronized { get; set; }
         public string Name { get; set; } = string.Empty;
         public string FullyQualifiedName { get; set; } = string.Empty;
@@ -36,12 +37,14 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<AssemblyDb> builder )
         {
+            builder.HasKey(x => x.DocObjectID);
+
             builder.Ignore( x => x.DotNetVersion );
 
             builder.HasMany(x => x.AssemblyNamespaces)
                 .WithOne(x => x.Assembly)
                 .HasForeignKey(x => x.AssemblyID)
-                .HasPrincipalKey(x => x.ID);
+                .HasPrincipalKey(x => x.DocObjectID);
 
             builder.HasAlternateKey( x => x.FullyQualifiedName );
 

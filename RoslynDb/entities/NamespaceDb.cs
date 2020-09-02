@@ -6,9 +6,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( NamespaceConfigurator ) )]
-    public class NamespaceDb : IFullyQualifiedName, ISynchronized
+    public class NamespaceDb : IDocObject, IFullyQualifiedName, ISynchronized
     {
-        public int ID { get; set; }
+        public int DocObjectID { get; set; }
+        public DocObject DocObject { get; set; }
         public bool Synchronized { get; set; }
         public string Name { get; set; } = null!;
         public string FullyQualifiedName { get; set; } = null!;
@@ -21,15 +22,17 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<NamespaceDb> builder )
         {
+            builder.HasKey( x => x.DocObjectID );
+
             builder.HasMany( x => x.AssemblyNamespaces )
                 .WithOne( x => x.Namespace )
                 .HasForeignKey( x => x.NamespaceID )
-                .HasPrincipalKey( x => x.ID );
+                .HasPrincipalKey( x => x.DocObjectID );
 
             builder.HasMany(x => x.Types)
                 .WithOne(x => x.Namespace)
                 .HasForeignKey(x => x.NamespaceId)
-                .HasPrincipalKey(x => x.ID);
+                .HasPrincipalKey(x => x.DocObjectID);
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 

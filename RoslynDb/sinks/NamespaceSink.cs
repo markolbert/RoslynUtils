@@ -15,8 +15,9 @@ namespace J4JSoftware.Roslyn.Sinks
         public NamespaceSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -40,25 +41,29 @@ namespace J4JSoftware.Roslyn.Sinks
 
             foreach( var symbol in Symbols )
             {
-                if( !GetByFullyQualifiedName<AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
+                if( !GetByFullyQualifiedNameNG<AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
                 {
                     allOkay = false;
                     continue;
                 }
 
-                GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbSymbol, true );
+                if( !GetByFullyQualifiedNameNG<NamespaceDb>( symbol, out var dbSymbol, true ) )
+                {
+                    allOkay = false;
+                    continue;
+                }
 
                 // create the link between this namespace entity and the assembly entity to which it belongs
                 var assemblyNamespaces = GetDbSet<AssemblyNamespaceDb>();
 
                 var anDb = assemblyNamespaces
-                    .FirstOrDefault( x => x.AssemblyID == dbAssembly!.ID && x.NamespaceID == dbSymbol!.ID );
+                    .FirstOrDefault( x => x.AssemblyID == dbAssembly!.DocObjectID && x.NamespaceID == dbSymbol!.DocObjectID );
 
                 if( anDb == null )
                 {
                     anDb = new AssemblyNamespaceDb()
                     {
-                        AssemblyID = dbAssembly!.ID,
+                        AssemblyID = dbAssembly!.DocObjectID,
                         Namespace = dbSymbol!
                     };
 

@@ -76,8 +76,8 @@ namespace J4JSoftware.Roslyn
 
             dbSymbol.Synchronized = true;
             dbSymbol.Name = SymbolNamer.GetName( symbol );
-            dbSymbol.AssemblyID = assemblyDb!.ID;
-            dbSymbol.NamespaceId = nsDb!.ID;
+            dbSymbol.AssemblyID = assemblyDb!.DocObjectID;
+            dbSymbol.NamespaceId = nsDb!.DocObjectID;
             dbSymbol.Accessibility = symbol.DeclaredAccessibility;
             dbSymbol.Nature = symbol.TypeKind;
             dbSymbol.InDocumentationScope = assemblyDb.InScopeInfo != null;

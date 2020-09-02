@@ -15,8 +15,9 @@ namespace J4JSoftware.Roslyn.Sinks
         public AssemblySink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -36,18 +37,22 @@ namespace J4JSoftware.Roslyn.Sinks
             if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
+            var allOkay = true;
+
             foreach( var symbol in Symbols )
             {
-                GetByFullyQualifiedName<AssemblyDb>( symbol, out var dbSymbol, true );
-
-                dbSymbol!.Synchronized = true;
-                dbSymbol.Name = symbol.Name;
-                dbSymbol.DotNetVersion = symbol.Identity.Version;
+                if( GetByFullyQualifiedNameNG<AssemblyDb>( symbol, out var dbSymbol, true ) )
+                {
+                    dbSymbol!.Synchronized = true;
+                    dbSymbol.Name = symbol.Name;
+                    dbSymbol.DotNetVersion = symbol.Identity.Version;
+                }
+                else allOkay = false;
             }
 
             SaveChanges();
 
-            return true;
+            return allOkay;
         }
     }
 }
