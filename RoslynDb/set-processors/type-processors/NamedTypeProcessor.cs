@@ -11,9 +11,10 @@ namespace J4JSoftware.Roslyn
         public NamedTypeProcessor(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -44,10 +45,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol(INamedTypeSymbol symbol)
         {
-            if (!ValidateAssembly(symbol, out var assemblyDb))
+            if( !GetByFullyQualifiedName<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
                 return false;
 
-            if (!ValidateNamespace(symbol, out var nsDb))
+            if (!GetByFullyQualifiedName<NamespaceDb>(symbol.ContainingNamespace, out var nsDb))
                 return false;
 
             var dbSymbol = GetTypeByFullyQualifiedName(symbol, true);

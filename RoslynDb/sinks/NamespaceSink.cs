@@ -12,13 +12,17 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class NamespaceSink : RoslynDbSink<INamespaceSymbol, NamespaceDb>
     {
+        private readonly ISymbolProcessors<INamespaceSymbol> _processors;
+
         public NamespaceSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
             IDocObjectTypeMapper docObjMapper,
+            ISymbolProcessors<INamespaceSymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolNamer, docObjMapper, logger )
         {
+            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -34,49 +38,50 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool FinalizeSink(ISyntaxWalker syntaxWalker)
         {
-            if (!base.FinalizeSink(syntaxWalker))
-                return false;
+            return base.FinalizeSink(syntaxWalker) && _processors.Process(Symbols);
+            //if (!base.FinalizeSink(syntaxWalker))
+            //    return false;
 
-            var allOkay = true;
+            //var allOkay = true;
 
-            foreach( var symbol in Symbols )
-            {
-                if( !GetByFullyQualifiedNameNG<AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
-                {
-                    allOkay = false;
-                    continue;
-                }
+            //foreach( var symbol in Symbols )
+            //{
+            //    if( !GetByFullyQualifiedNameNG<AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
+            //    {
+            //        allOkay = false;
+            //        continue;
+            //    }
 
-                if( !GetByFullyQualifiedNameNG<NamespaceDb>( symbol, out var dbSymbol, true ) )
-                {
-                    allOkay = false;
-                    continue;
-                }
+            //    if( !GetByFullyQualifiedNameNG<NamespaceDb>( symbol, out var dbSymbol, true ) )
+            //    {
+            //        allOkay = false;
+            //        continue;
+            //    }
 
-                // create the link between this namespace entity and the assembly entity to which it belongs
-                var assemblyNamespaces = GetDbSet<AssemblyNamespaceDb>();
+            //    // create the link between this namespace entity and the assembly entity to which it belongs
+            //    var assemblyNamespaces = GetDbSet<AssemblyNamespaceDb>();
 
-                var anDb = assemblyNamespaces
-                    .FirstOrDefault( x => x.AssemblyID == dbAssembly!.DocObjectID && x.NamespaceID == dbSymbol!.DocObjectID );
+            //    var anDb = assemblyNamespaces
+            //        .FirstOrDefault( x => x.AssemblyID == dbAssembly!.DocObjectID && x.NamespaceID == dbSymbol!.DocObjectID );
 
-                if( anDb == null )
-                {
-                    anDb = new AssemblyNamespaceDb()
-                    {
-                        AssemblyID = dbAssembly!.DocObjectID,
-                        Namespace = dbSymbol!
-                    };
+            //    if( anDb == null )
+            //    {
+            //        anDb = new AssemblyNamespaceDb()
+            //        {
+            //            AssemblyID = dbAssembly!.DocObjectID,
+            //            Namespace = dbSymbol!
+            //        };
 
-                    assemblyNamespaces.Add( anDb );
-                }
+            //        assemblyNamespaces.Add( anDb );
+            //    }
 
-                dbSymbol!.Synchronized = true;
-                dbSymbol.Name = symbol.Name;
-            }
+            //    dbSymbol!.Synchronized = true;
+            //    dbSymbol.Name = symbol.Name;
+            //}
 
-            SaveChanges();
+            //SaveChanges();
 
-            return allOkay;
+            //return allOkay;
         }
     }
 }

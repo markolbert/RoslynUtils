@@ -11,13 +11,14 @@ namespace J4JSoftware.Roslyn
 {
     [Table("Methods")]
     [EntityConfiguration( typeof( MethodBaseDbConfigurator ) )]
-    public class MethodBaseDb : IFullyQualifiedName, ISynchronized
+    public class MethodBaseDb : IDocObject, IFullyQualifiedName, ISynchronized
     {
         protected MethodBaseDb()
         {
         }
 
-        public int ID { get; set; }
+        public int DocObjectID { get; set; }
+        public DocObject DocObject { get; set; }
         public string FullyQualifiedName { get; set; }
         public bool Synchronized { get; set; }
 
@@ -28,6 +29,13 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<MethodBaseDb> builder )
         {
+            builder.HasKey(x => x.DocObjectID);
+
+            builder.HasOne(x => x.DocObject)
+                .WithOne(x => x.Method)
+                .HasPrincipalKey<DocObject>(x => x.ID)
+                .HasForeignKey<MethodBaseDb>(x => x.DocObjectID);
+
             builder.HasAlternateKey(x => x.FullyQualifiedName);
 
             builder.Property(x => x.FullyQualifiedName)

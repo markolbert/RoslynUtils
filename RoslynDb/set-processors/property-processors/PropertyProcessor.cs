@@ -13,9 +13,10 @@ namespace J4JSoftware.Roslyn
     {
         public PropertyProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolNamer symbolNamer, 
+            ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -59,8 +60,8 @@ namespace J4JSoftware.Roslyn
             propDb.GetAccessibility= symbol.GetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable;
             propDb.SetAccessibility = symbol.SetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable;
             propDb.DeclarationModifier = symbol.GetDeclarationModifier();
-            propDb.DefiningTypeID = typeDb!.ID;
-            propDb.PropertyTypeID = propTypeDb!.ID;
+            propDb.DefiningTypeID = typeDb!.DocObjectID;
+            propDb.PropertyTypeID = propTypeDb!.DocObjectID;
             propDb.ReturnsByRef = symbol.ReturnsByRef;
             propDb.ReturnsByRefReadOnly = symbol.ReturnsByRefReadonly;
             propDb.IsAbstract = symbol.IsAbstract;

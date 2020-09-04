@@ -10,9 +10,11 @@ namespace J4JSoftware.Roslyn
 {
     [Table("Properties")]
     [EntityConfiguration( typeof( PropertyConfigurator ) )]
-    public class PropertyDb : IFullyQualifiedName, ISynchronized
+    public class PropertyDb : IDocObject, IFullyQualifiedName, ISynchronized
     {
-        public int ID { get; set; }
+        public int DocObjectID { get; set; }
+        public DocObject DocObject { get; set; }
+
         public string FullyQualifiedName { get; set; } = null!;
         public string Name { get; set; } = null!;
         public bool Synchronized { get; set; }
@@ -58,14 +60,21 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<PropertyDb> builder )
         {
+            builder.HasKey( x => x.DocObjectID );
+
+            builder.HasOne(x => x.DocObject)
+                .WithOne(x => x.Property)
+                .HasPrincipalKey<DocObject>(x => x.ID)
+                .HasForeignKey<PropertyDb>(x => x.DocObjectID);
+
             builder.HasOne( x => x.DefiningType )
                 .WithMany( x => x.Properties )
                 .HasForeignKey( x => x.DefiningTypeID )
-                .HasPrincipalKey( x => x.ID );
+                .HasPrincipalKey( x => x.DocObjectID );
 
             builder.HasOne( x => x.PropertyType )
                 .WithMany( x => x.PropertyTypes )
-                .HasPrincipalKey( x => x.ID )
+                .HasPrincipalKey( x => x.DocObjectID )
                 .HasForeignKey( x => x.PropertyTypeID );
 
             builder.HasAlternateKey(x => x.FullyQualifiedName);

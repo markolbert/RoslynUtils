@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class BaseProcessorDb<TSource, TResult> : AtomicProcessor<IEnumerable<TSource>>
+    public abstract class BaseProcessorDb<TSource, TResult> : AtomicProcessor<TSource>
         where TResult : class, ISymbol
         where TSource : class, ISymbol
     {
@@ -18,15 +18,18 @@ namespace J4JSoftware.Roslyn
         protected BaseProcessorDb(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger
         )
         : base( logger )
         {
             _dbContext = dbContext;
+            DocObjectMapper = docObjMapper;
             SymbolNamer = symbolNamer;
         }
 
         protected ISymbolNamer SymbolNamer { get; }
+        protected IDocObjectTypeMapper DocObjectMapper { get; }
 
         protected abstract IEnumerable<TResult> ExtractSymbols( object item );
         protected abstract bool ProcessSymbol( TResult symbol );
@@ -57,43 +60,43 @@ namespace J4JSoftware.Roslyn
             where TRelated : class
             => _dbContext.Set<TRelated>();
 
-        protected bool GetByFullyQualifiedName<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false )
-            where TEntity : class, IFullyQualifiedName, new()
-        {
-            result = null;
+        //protected bool GetByFullyQualifiedName<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false )
+        //    where TEntity : class, IFullyQualifiedName, new()
+        //{
+        //    result = null;
 
-            var dbSet = _dbContext.Set<TEntity>();
+        //    var dbSet = _dbContext.Set<TEntity>();
 
-            var fqn = SymbolNamer.GetFullyQualifiedName( symbol );
+        //    var fqn = SymbolNamer.GetFullyQualifiedName( symbol );
 
-            result = dbSet.FirstOrDefault(x => x.FullyQualifiedName == fqn);
+        //    result = dbSet.FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
-            if (result == null)
-            {
-                if( createIfMissing )
-                {
-                    result = new TEntity { FullyQualifiedName = fqn };
-                    dbSet.Add( result );
-                }
-                else
-                {
-                    Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
-                    typeof(TEntity),
-                    fqn);
+        //    if (result == null)
+        //    {
+        //        if( createIfMissing )
+        //        {
+        //            result = new TEntity { FullyQualifiedName = fqn };
+        //            dbSet.Add( result );
+        //        }
+        //        else
+        //        {
+        //            Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
+        //            typeof(TEntity),
+        //            fqn);
 
-                    return false;
-                }
-            }
+        //            return false;
+        //        }
+        //    }
 
-            // special handling for AssemblyDb to force loading of InScopeInfo property,
-            // if it exists
-            if( result is AssemblyDb assemblyDb )
-                _dbContext.Entry(assemblyDb  )
-                    .Reference(x=>x.InScopeInfo)
-                    .Load();
+        //    // special handling for AssemblyDb to force loading of InScopeInfo property,
+        //    // if it exists
+        //    if( result is AssemblyDb assemblyDb )
+        //        _dbContext.Entry(assemblyDb  )
+        //            .Reference(x=>x.InScopeInfo)
+        //            .Load();
 
-            return true;
-        }
+        //    return true;
+        //}
 
         protected TypeDb? GetTypeByFullyQualifiedName( ITypeSymbol symbol, bool createIfMissing = false )
         {
@@ -108,39 +111,145 @@ namespace J4JSoftware.Roslyn
 
         protected void SaveChanges() => _dbContext.SaveChanges();
 
-        protected bool ValidateAssembly(ITypeSymbol symbol, out AssemblyDb? result)
+        protected DocObject? GetDocObject<TEntity>(ISymbol symbol, bool createIfNeeded = false )
+            where TEntity : class, IDocObject
+        {
+            var docObjType = DocObjectMapper.GetDocObjectType<TEntity>();
+
+            if (docObjType == DocObjectType.Unknown)
+            {
+                Logger.Error<Type>("Couldn't find DocObjectType for entity type '{0}'", typeof(TEntity));
+                return null;
+            }
+
+            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
+
+            var retVal = _dbContext.DocObjects.FirstOrDefault(x => x.DocObjectType == docObjType && x.FullyQualifiedName == fqn);
+
+            if( retVal == null )
+            {
+                if( createIfNeeded )
+                {
+                    if( retVal == null )
+                    {
+                        retVal = new DocObject
+                        {
+                            FullyQualifiedName = SymbolNamer.GetFullyQualifiedName( symbol )
+                        };
+
+                        _dbContext.DocObjects.Add( retVal );
+
+                        retVal!.Name = SymbolNamer.GetName( symbol );
+                        retVal.Synchronized = true;
+                        retVal.DocObjectType = DocObjectMapper.GetDocObjectType<TEntity>();
+                    }
+                }
+                else
+                    Logger.Information<Type, string>( "Couldn't find DocObject for entity type '{0}' ({1})",
+                        typeof(TEntity),
+                        fqn );
+            }
+
+            return retVal;
+        }
+
+        private void UpdateDocObjectReference( IDocObject target, DocObject docObj )
+        {
+            if (docObj.ID == 0)
+                target.DocObject = docObj;
+            else target.DocObjectID = docObj.ID;
+        }
+
+        protected bool GetByFullyQualifiedName<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false)
+            where TEntity : class, IDocObject, IFullyQualifiedName, new()
         {
             result = null;
 
-            if (symbol.ContainingAssembly == null)
-                return false;
+            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
-            if (!GetByFullyQualifiedName<AssemblyDb>(symbol.ContainingAssembly, out var dbResult))
-                return false;
+            var docObj = GetDocObject<TEntity>(symbol, true);
 
-            result = dbResult;
+            if( docObj == null )
+            {
+                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+                return false;
+            }
+
+            var dbSet = _dbContext.Set<TEntity>();
+
+            result = dbSet.FirstOrDefault(x => ((IDocObject)x).DocObjectID == docObj.ID);
+
+            if (result == null)
+            {
+                if (createIfMissing)
+                {
+                    result = new TEntity { FullyQualifiedName = fqn };
+
+                    UpdateDocObjectReference(result, docObj);
+                    
+                    dbSet.Add(result);
+                }
+                else
+                {
+                    Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
+                        typeof(TEntity),
+                        fqn);
+
+                    return false;
+                }
+            }
+
+            // special handling for AssemblyDb to force loading of InScopeInfo property,
+            // if it exists
+            if (result is AssemblyDb assemblyDb)
+                _dbContext.Entry(assemblyDb)
+                    .Reference(x => x.InScopeInfo)
+                    .Load();
 
             return true;
         }
 
-        protected bool ValidateNamespace(ITypeSymbol ntSymbol, out NamespaceDb? result)
-        {
-            result = null;
+        //protected bool ValidateAssembly(ITypeSymbol symbol, out AssemblyDb? result)
+        //{
+        //    result = null;
 
-            if (ntSymbol.ContainingNamespace == null)
-                return false;
+        //    if (symbol.ContainingAssembly == null)
+        //        return false;
 
-            if (!GetByFullyQualifiedName<NamespaceDb>(ntSymbol.ContainingNamespace, out var dbResult))
-                return false;
+        //    if (!GetByFullyQualifiedName<AssemblyDb>(symbol.ContainingAssembly, out var dbResult))
+        //        return false;
 
-            result = dbResult;
+        //    result = dbResult;
 
-            return true;
-        }
+        //    return true;
+        //}
+
+        //protected bool ValidateNamespace(ITypeSymbol ntSymbol, out NamespaceDb? result)
+        //{
+        //    result = null;
+
+        //    if (ntSymbol.ContainingNamespace == null)
+        //        return false;
+
+        //    if (!GetByFullyQualifiedName<NamespaceDb>(ntSymbol.ContainingNamespace, out var dbResult))
+        //        return false;
+
+        //    result = dbResult;
+
+        //    return true;
+        //}
 
         private TypeDb? GetFixedType( INamedTypeSymbol symbol, bool createIfMissing, string? fqn = null )
         {
-            fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
+            fqn ??= SymbolNamer.GetFullyQualifiedName(symbol);
+
+            var docObj = GetDocObject<FixedTypeDb>(symbol, true);
+
+            if (docObj == null)
+            {
+                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+                return null;
+            }
 
             if( symbol.IsGenericType )
             {
@@ -149,7 +258,11 @@ namespace J4JSoftware.Roslyn
                 if( genericDb == null && createIfMissing )
                 {
                     genericDb = new GenericTypeDb { FullyQualifiedName = fqn };
+
+                    UpdateDocObjectReference(genericDb, docObj);
+
                     var genericTypes = GetDbSet<GenericTypeDb>();
+
                     genericTypes.Add( genericDb );
                 }
 
@@ -161,7 +274,11 @@ namespace J4JSoftware.Roslyn
             if( fixedDb == null && createIfMissing )
             {
                 fixedDb = new FixedTypeDb { FullyQualifiedName = fqn };
+
+                UpdateDocObjectReference(fixedDb, docObj);
+
                 var fixedTypes = GetDbSet<FixedTypeDb>();
+
                 fixedTypes.Add(fixedDb);
             }
 
@@ -254,7 +371,7 @@ namespace J4JSoftware.Roslyn
         {
             fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
 
-            if( symbol.DeclaringType != null )
+            if ( symbol.DeclaringType != null )
                 return GetTypeParametricType( symbol, createIfMissing, fqn );
 
             if( symbol.DeclaringMethod != null )
@@ -270,12 +387,22 @@ namespace J4JSoftware.Roslyn
             bool createIfMissing,
             string fqn )
         {
+            var docObj = GetDocObject<FixedTypeDb>(symbol, true);
+
+            if (docObj == null)
+            {
+                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+                return null;
+            }
+
             var retVal = GetDbSet<ParametricTypeDb>().FirstOrDefault( x => x.FullyQualifiedName == fqn );
 
             if( retVal != null || !createIfMissing ) 
                 return retVal;
             
             retVal = new ParametricTypeDb { FullyQualifiedName = fqn };
+
+            UpdateDocObjectReference( retVal, docObj );
 
             var parametricTypes = GetDbSet<ParametricTypeDb>();
             parametricTypes.Add( retVal );
@@ -288,12 +415,22 @@ namespace J4JSoftware.Roslyn
             bool createIfMissing,
             string fqn )
         {
+            var docObj = GetDocObject<FixedTypeDb>(symbol, true);
+
+            if (docObj == null)
+            {
+                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+                return null;
+            }
+
             var retVal = GetDbSet<MethodParametricTypeDb>().FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
             if (retVal != null || !createIfMissing)
                 return retVal;
 
             retVal = new MethodParametricTypeDb { FullyQualifiedName = fqn };
+
+            UpdateDocObjectReference( retVal, docObj );
 
             var parametricTypes = GetDbSet<MethodParametricTypeDb>();
             parametricTypes.Add(retVal);

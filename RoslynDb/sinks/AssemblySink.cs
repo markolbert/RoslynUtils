@@ -12,13 +12,17 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class AssemblySink : RoslynDbSink<IAssemblySymbol, AssemblyDb>
     {
+        private readonly ISymbolProcessors<IAssemblySymbol> _processors;
+
         public AssemblySink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
             IDocObjectTypeMapper docObjMapper,
+            ISymbolProcessors<IAssemblySymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolNamer, docObjMapper, logger )
         {
+            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -34,25 +38,26 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !base.FinalizeSink( syntaxWalker ) )
-                return false;
+            return base.FinalizeSink(syntaxWalker) && _processors.Process(Symbols);
+            //if ( !base.FinalizeSink( syntaxWalker ) )
+            //    return false;
 
-            var allOkay = true;
+            //var allOkay = true;
 
-            foreach( var symbol in Symbols )
-            {
-                if( GetByFullyQualifiedNameNG<AssemblyDb>( symbol, out var dbSymbol, true ) )
-                {
-                    dbSymbol!.Synchronized = true;
-                    dbSymbol.Name = symbol.Name;
-                    dbSymbol.DotNetVersion = symbol.Identity.Version;
-                }
-                else allOkay = false;
-            }
+            //foreach( var symbol in Symbols )
+            //{
+            //    if( GetByFullyQualifiedNameNG<AssemblyDb>( symbol, out var dbSymbol, true ) )
+            //    {
+            //        dbSymbol!.Synchronized = true;
+            //        dbSymbol.Name = symbol.Name;
+            //        dbSymbol.DotNetVersion = symbol.Identity.Version;
+            //    }
+            //    else allOkay = false;
+            //}
 
-            SaveChanges();
+            //SaveChanges();
 
-            return allOkay;
+            //return allOkay;
         }
     }
 }

@@ -11,9 +11,10 @@ namespace J4JSoftware.Roslyn
         public TypeArgumentProcessor(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -45,10 +46,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            if( !ValidateAssembly( symbol, out var assemblyDb ) )
+            if( !GetByFullyQualifiedName<AssemblyDb>( symbol, out var assemblyDb ) )
                 return false;
 
-            if( !ValidateNamespace( symbol, out var nsDb ) )
+            if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var nsDb ) )
                 return false;
 
             var declaringDb = GetTypeByFullyQualifiedName( symbol );
@@ -76,7 +77,7 @@ namespace J4JSoftware.Roslyn
                     continue;
                 }
 
-                var typeArgDb = typeArgs.FirstOrDefault( ta => ta.ArgumentTypeID == typeDb.ID && ta.Ordinal == ordinal );
+                var typeArgDb = typeArgs.FirstOrDefault( ta => ta.ArgumentTypeID == typeDb.DocObjectID && ta.Ordinal == ordinal );
 
                 if( typeArgDb == null )
                 {
@@ -85,8 +86,8 @@ namespace J4JSoftware.Roslyn
                     typeArgs.Add( typeArgDb );
                 }
 
-                typeArgDb.DeclaringTypeID = declaringDb.ID;
-                typeArgDb.ArgumentTypeID = typeDb.ID;
+                typeArgDb.DeclaringTypeID = declaringDb.DocObjectID;
+                typeArgDb.ArgumentTypeID = typeDb.DocObjectID;
                 typeArgDb.Ordinal = ordinal;
                 typeArgDb.Synchronized = true;
             }

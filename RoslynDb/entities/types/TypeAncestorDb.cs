@@ -27,7 +27,7 @@ namespace J4JSoftware.Roslyn
             builder.HasOne( x => x.AncestorType )
                 .WithMany( x => x.AncestorTypes )
                 .HasForeignKey( x => x.AncestorTypeID )
-                .HasPrincipalKey( x => x.ID );
+                .HasPrincipalKey( x => x.DocObjectID );
 
             builder.HasKey( x => new { x.ChildTypeID, x.AncestorTypeID } );
         }

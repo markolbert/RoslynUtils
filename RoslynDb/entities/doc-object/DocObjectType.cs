@@ -4,7 +4,10 @@
     {
         Assembly,
         Namespace,
-        Relationship,
+        Type,
+        Method,
+        Property,
+
         Unknown
     }
 }

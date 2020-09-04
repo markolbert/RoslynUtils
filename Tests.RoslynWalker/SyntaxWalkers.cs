@@ -5,7 +5,7 @@ using J4JSoftware.Roslyn.walkers;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class SyntaxWalkers : TopologicallySortedCollection<ISyntaxWalker, AssemblyWalker>, ISyntaxWalkers
+    public sealed class SyntaxWalkers : TopologicallySortedCollection<ISyntaxWalker>, ISyntaxWalkers
     {
         public SyntaxWalkers(
             IEnumerable<ISyntaxWalker> syntaxWalkers,
@@ -27,12 +27,12 @@ namespace Tests.RoslynWalker
             return allOkay;
         }
 
-        protected override void SetPredecessors()
+        protected override bool SetPredecessors()
         {
-            SetPredecessor<NamespaceWalker, AssemblyWalker>();
-            SetPredecessor<TypeWalker, NamespaceWalker>();
-            SetPredecessor<MethodWalker, TypeWalker>();
-            SetPredecessor<PropertyWalker, TypeWalker>();
+            return SetPredecessor<NamespaceWalker, AssemblyWalker>()
+                   && SetPredecessor<TypeWalker, NamespaceWalker>()
+                   && SetPredecessor<MethodWalker, TypeWalker>()
+                   && SetPredecessor<PropertyWalker, TypeWalker>();
         }
     }
 }

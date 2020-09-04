@@ -28,12 +28,12 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasOne(x => x.ArgumentType)
                 .WithMany(x => x.TypeArgumentReferences)
-                .HasPrincipalKey(x => x.ID)
+                .HasPrincipalKey(x => x.DocObjectID)
                 .HasForeignKey(x => x.ArgumentTypeID);
 
             builder.HasOne( x => x.DeclaringType )
                 .WithMany( x => x.TypeArguments )
-                .HasPrincipalKey( x => x.ID )
+                .HasPrincipalKey( x => x.DocObjectID )
                 .HasForeignKey( x => x.DeclaringTypeID );
 
             builder.HasIndex(x => new { TypeDefinitionID = x.DeclaringTypeID, x.Ordinal })

@@ -68,7 +68,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
-            var retVal = _dbContext.DocObjects.FirstOrDefault( x => x.Type == docObjType && x.FullyQualifiedName == fqn );
+            var retVal = _dbContext.DocObjects.FirstOrDefault( x => x.DocObjectType == docObjType && x.FullyQualifiedName == fqn );
 
             if( retVal == null )
                 Logger.Information<Type, string>( "Couldn't find DocObject for entity type '{0}' ({1})", 
@@ -224,7 +224,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             docObj!.Name = SymbolNamer.GetName( symbol );
             docObj.Synchronized = true;
-            docObj.Type = DocObjectMapper.GetDocObjectType<TEntity>();
+            docObj.DocObjectType = DocObjectMapper.GetDocObjectType<TEntity>();
 
             // special handling for AssemblyDb to force loading of InScopeInfo property,
             // if it exists
@@ -248,7 +248,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             var docObjType = DocObjectMapper.GetDocObjectType<TEntity>();
 
-            _dbContext.DocObjects.Where( x => x.Type == docObjType )
+            _dbContext.DocObjects.Where( x => x.DocObjectType == docObjType )
                 .ForEachAsync( x => x.Synchronized = false );
         }
 

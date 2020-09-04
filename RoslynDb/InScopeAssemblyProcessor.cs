@@ -47,7 +47,8 @@ namespace J4JSoftware.Roslyn
             {
                 var dbAssembly = _dbContext.Assemblies
                     .Include(a => a.InScopeInfo)
-                    .FirstOrDefault(a => a.Name == library.AssemblyName);
+                    .Include(a=>a.DocObject )
+                    .FirstOrDefault(a => a.DocObject.Name == library.AssemblyName);
 
                 if (dbAssembly == null)
                 {

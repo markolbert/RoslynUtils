@@ -9,13 +9,13 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class TypeSink : RoslynDbSink<ITypeSymbol, FixedTypeDb>
     {
-        private readonly ISymbolSetProcessor<ITypeSymbol> _processors;
+        private readonly ISymbolProcessors<ITypeSymbol> _processors;
 
         public TypeSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
             IDocObjectTypeMapper docObjMapper,
-            ISymbolSetProcessor<ITypeSymbol> processors,
+            ISymbolProcessors<ITypeSymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolNamer, docObjMapper, logger )
         {
@@ -41,10 +41,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !base.FinalizeSink( syntaxWalker ) )
-                return false;
-
-            return _processors.Process( Symbols );
+            return base.FinalizeSink( syntaxWalker ) && _processors.Process( Symbols );
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )

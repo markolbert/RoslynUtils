@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.EFCoreUtilities;
+using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.Roslyn
@@ -14,17 +15,23 @@ namespace J4JSoftware.Roslyn
         public string FullyQualifiedName { get; set; }
         public string Name { get; set; }
         public bool Synchronized { get; set; }
-        public DocObjectType Type { get; set; } = DocObjectType.Unknown;
+        public DocObjectType DocObjectType { get; set; } = DocObjectType.Unknown;
 
-        public object? Entity => Type switch
+        public object? Entity => DocObjectType switch
         {
             DocObjectType.Assembly => Assembly,
             DocObjectType.Namespace => Namespace,
+            DocObjectType.Type => Type,
+            DocObjectType.Method => Method,
+            DocObjectType.Property => Property,
             _ => null
         };
 
         public AssemblyDb? Assembly { get; set; }
         public NamespaceDb? Namespace { get; set; }
+        public TypeDb? Type { get; set; }
+        public MethodBaseDb? Method { get; set; }
+        public PropertyDb? Property { get; set; }
     }
 
     internal class DocObjectConfigurator : EntityConfigurator<DocObject>
@@ -50,7 +57,7 @@ namespace J4JSoftware.Roslyn
             builder.Property(x => x.Name)
                 .IsRequired();
 
-            builder.Property( x => x.Type )
+            builder.Property( x => x.DocObjectType )
                 .HasConversion<string>();
         }
     }

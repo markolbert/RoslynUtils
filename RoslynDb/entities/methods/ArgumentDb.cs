@@ -34,12 +34,12 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasOne( x => x.ArgumentType )
                 .WithMany( x => x.MethodArguments )
-                .HasPrincipalKey( x => x.ID )
+                .HasPrincipalKey( x => x.DocObjectID )
                 .HasForeignKey( x => x.ArgumentTypeID );
 
             builder.HasOne( x => x.DeclaringMethod )
                 .WithMany( x => x.Arguments )
-                .HasPrincipalKey( x => x.ID )
+                .HasPrincipalKey( x => x.DocObjectID )
                 .HasForeignKey( x => x.DeclaringMethodID );
         }
     }

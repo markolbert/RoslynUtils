@@ -15,9 +15,10 @@ namespace J4JSoftware.Roslyn
 
         public MethodProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolNamer symbolNamer, 
+            ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -111,7 +112,7 @@ namespace J4JSoftware.Roslyn
                 SaveChanges();
 
                 methodParametricDbs.AddRange( methodTypeParameters
-                    .Where( mtp => mtp.ContainingMethodID == placeholderDb.ID ) );
+                    .Where( mtp => mtp.ContainingMethodID == placeholderDb.DocObjectID ) );
 
                 if( !methodParametricDbs.Any() )
                 {
@@ -127,8 +128,8 @@ namespace J4JSoftware.Roslyn
             methodDb.Accessibility = symbol.DeclaredAccessibility;
             methodDb.DeclarationModifier = symbol.GetDeclarationModifier();
             methodDb.Kind = symbol.MethodKind;
-            methodDb.DefiningTypeID = typeDb!.ID;
-            methodDb.ReturnTypeID = retValDb!.ID;
+            methodDb.DefiningTypeID = typeDb!.DocObjectID;
+            methodDb.ReturnTypeID = retValDb!.DocObjectID;
             methodDb.ReturnsByRef = symbol.ReturnsByRef;
             methodDb.ReturnsByRefReadOnly = symbol.ReturnsByRefReadonly;
             methodDb.IsAbstract = symbol.IsAbstract;
@@ -142,9 +143,9 @@ namespace J4JSoftware.Roslyn
             // replace placeholder referencing this method
             foreach ( var methodParametricDb in methodParametricDbs! )
             {
-                if( methodDb.ID == 0 )
+                if( methodDb.DocObjectID == 0 )
                     methodParametricDb.ContainingMethod = methodDb;
-                else methodParametricDb.ID = methodDb.ID;
+                else methodParametricDb.DocObjectID = methodDb.DocObjectID;
             }
 
             methodTypeParameters.RemoveRange( methodParametricDbs );

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using J4JSoftware.Logging;
 using Microsoft.Build.Logging.StructuredLogger;
+using Microsoft.Build.Utilities;
 
 namespace J4JSoftware.Roslyn
 {
@@ -17,16 +18,35 @@ namespace J4JSoftware.Roslyn
         )
             where TNode : class, ITopologicalSort<TNode>
         {
+            var available = items.ToList();
+
             result = null;
+
+            switch( available.Count( x => x.Predecessor == null ) )
+            {
+                case 0:
+                    // no root item
+                    return false;
+
+                case 1:
+                    // no op; expected case
+                    break;
+
+                default:
+                    // multiple root items
+                    return false;
+            }
 
             var nodes = new HashSet<TNode>();
             var edges = new HashSet<(TNode start, TNode end)>();
 
-            foreach( var item in items )
+            foreach( var item in available )
             {
                 nodes.Add( item );
 
-                var predecessor = nodes.FirstOrDefault( n => Equals( item, n.Predecessor ) );
+                var predecessor = item.Predecessor == null
+                    ? null
+                    : available.FirstOrDefault( x => item.Predecessor.Equals( x ) );
 
                 if( predecessor != null )
                     edges.Add( ( item, predecessor ) );
@@ -69,7 +89,7 @@ namespace J4JSoftware.Roslyn
             if( edges.Any() )
                 return false;
 
-            result = retVal.Reverse().ToList();
+            result = retVal.ToList();
 
             return true;
         }

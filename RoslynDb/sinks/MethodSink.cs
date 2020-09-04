@@ -7,13 +7,13 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class MethodSink : RoslynDbSink<IMethodSymbol, MethodDb>
     {
-        private readonly ISymbolSetProcessor<IMethodSymbol> _processors;
+        private readonly ISymbolProcessors<IMethodSymbol> _processors;
 
         public MethodSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
             IDocObjectTypeMapper docObjMapper,
-            ISymbolSetProcessor<IMethodSymbol> processors,
+            ISymbolProcessors<IMethodSymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolNamer, docObjMapper, logger )
         {

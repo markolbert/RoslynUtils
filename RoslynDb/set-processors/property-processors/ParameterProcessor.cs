@@ -13,9 +13,10 @@ namespace J4JSoftware.Roslyn
     {
         public ParameterProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolNamer symbolNamer, 
+            ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -50,13 +51,13 @@ namespace J4JSoftware.Roslyn
             var propParams = GetDbSet<PropertyParameterDb>();
 
             var propParamDb = propParams
-                .FirstOrDefault( pp => pp.PropertyID == propDb!.ID && pp.Ordinal == symbol.Ordinal );
+                .FirstOrDefault( pp => pp.PropertyID == propDb!.DocObjectID && pp.Ordinal == symbol.Ordinal );
 
             if( propParamDb == null )
             {
                 propParamDb = new PropertyParameterDb
                 {
-                    PropertyID = propDb!.ID,
+                    PropertyID = propDb!.DocObjectID,
                     Ordinal = symbol.Ordinal
                 };
 
@@ -65,7 +66,7 @@ namespace J4JSoftware.Roslyn
 
             propParamDb.Synchronized = true;
             propParamDb.Name = SymbolNamer.GetName( symbol );
-            propParamDb.ParameterTypeID = typeDb.ID;
+            propParamDb.ParameterTypeID = typeDb.DocObjectID;
             propParamDb.IsAbstract = symbol.IsAbstract;
             propParamDb.IsExtern = symbol.IsExtern;
             propParamDb.IsOverride = symbol.IsOverride;

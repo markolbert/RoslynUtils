@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     public abstract class TopologicallySortedCollection<T, TRoot> : ITopologicallySorted<T>
         where T : class, ITopologicalSort<T>

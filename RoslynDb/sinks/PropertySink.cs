@@ -7,13 +7,13 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class PropertySink : RoslynDbSink<IPropertySymbol, PropertyDb>
     {
-        private readonly ISymbolSetProcessor<IPropertySymbol> _processors;
+        private readonly ISymbolProcessors<IPropertySymbol> _processors;
 
         public PropertySink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
             IDocObjectTypeMapper docObjMapper,
-            ISymbolSetProcessor<IPropertySymbol> processors,
+            ISymbolProcessors<IPropertySymbol> processors,
             IJ4JLogger logger )
             : base( dbContext, symbolNamer, docObjMapper, logger )
         {

@@ -39,6 +39,11 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasKey(x => x.DocObjectID);
 
+            builder.HasOne( x => x.DocObject )
+                .WithOne( x => x.Assembly )
+                .HasPrincipalKey<DocObject>( x => x.ID )
+                .HasForeignKey<AssemblyDb>( x => x.DocObjectID );
+
             builder.Ignore( x => x.DotNetVersion );
 
             builder.HasMany(x => x.AssemblyNamespaces)

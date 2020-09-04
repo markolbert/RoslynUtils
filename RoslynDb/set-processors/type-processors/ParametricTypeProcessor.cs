@@ -11,9 +11,10 @@ namespace J4JSoftware.Roslyn
         public ParametricTypeProcessor(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -50,10 +51,10 @@ namespace J4JSoftware.Roslyn
         // symbol is guaranteed to be an ITypeParameterSymbol 
         protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
         {
-            if( !ValidateAssembly( symbol, out var assemblyDb ) )
+            if( !GetByFullyQualifiedName<AssemblyDb>( symbol, out var assemblyDb ) )
                 return false;
 
-            if( !ValidateNamespace( symbol, out var nsDb ) )
+            if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var nsDb ) )
                 return false;
 
             // Finding the container for the parametric type is complicated by the
@@ -88,18 +89,18 @@ namespace J4JSoftware.Roslyn
                 case ImplementableTypeDb implTypeDb:
                     var parametricTypeDb = (ParametricTypeDb)dbSymbol;
 
-                    if (implTypeDb.ID == 0)
+                    if (implTypeDb.DocObjectID == 0)
                         parametricTypeDb.ContainingType = implTypeDb;
-                    else parametricTypeDb.ContainingTypeID = implTypeDb.ID;
+                    else parametricTypeDb.ContainingTypeID = implTypeDb.DocObjectID;
 
                     break;
 
                 case MethodPlaceholderDb mpDb:
                     var methodParametricTypeDb = (MethodParametricTypeDb) dbSymbol;
 
-                    if (mpDb.ID == 0)
+                    if (mpDb.DocObjectID == 0)
                         methodParametricTypeDb.ContainingMethod = mpDb;
-                    else methodParametricTypeDb.ContainingMethodID = mpDb.ID;
+                    else methodParametricTypeDb.ContainingMethodID = mpDb.DocObjectID;
 
                     break;
 

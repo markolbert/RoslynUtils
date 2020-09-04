@@ -47,11 +47,11 @@ namespace J4JSoftware.Roslyn
             builder.HasOne( x => x.DefiningType )
                 .WithMany( x => x.Methods )
                 .HasForeignKey( x => x.DefiningTypeID )
-                .HasPrincipalKey( x => x.ID );
+                .HasPrincipalKey( x => x.DocObjectID );
 
             builder.HasOne( x => x.ReturnType )
                 .WithMany( x => x.ReturnTypes )
-                .HasPrincipalKey( x => x.ID )
+                .HasPrincipalKey( x => x.DocObjectID )
                 .HasForeignKey( x => x.ReturnTypeID );
 
             builder.Property( x => x.Accessibility )

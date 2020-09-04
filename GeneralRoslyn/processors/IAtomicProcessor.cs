@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
@@ -7,8 +9,9 @@ namespace J4JSoftware.Roslyn
         bool Process( object inputData );
     }
 
-    public interface IAtomicProcessor<TInput> : IAtomicProcessor, ITopologicalSort<IAtomicProcessor<TInput>>
+    public interface IAtomicProcessor<TSymbol> : IAtomicProcessor, ITopologicalSort<IAtomicProcessor<TSymbol>>
+        where TSymbol : ISymbol
     {
-        bool Process( TInput inputData );
+        bool Process( IEnumerable<TSymbol> inputData );
     }
 }

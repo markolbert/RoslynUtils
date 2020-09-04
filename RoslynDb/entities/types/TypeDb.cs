@@ -13,13 +13,14 @@ namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeDbConfigurator ) )]
     [Table("Types")]
-    public class TypeDb : IFullyQualifiedName, ISynchronized
+    public class TypeDb : IDocObject, IFullyQualifiedName, ISynchronized
     {
         protected TypeDb()
         {
         }
 
-        public int ID { get; set; }
+        public int DocObjectID { get; set; }
+        public DocObject DocObject { get; set; }
         public bool Synchronized { get; set; }
         public TypeKind Nature { get; set; }
         public string Name { get; set; }
@@ -53,6 +54,13 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<TypeDb> builder )
         {
+            builder.HasKey(x => x.DocObjectID);
+
+            builder.HasOne( x => x.DocObject )
+                .WithOne( x => x.Type )
+                .HasPrincipalKey<DocObject>( x => x.ID )
+                .HasForeignKey<TypeDb>( x => x.DocObjectID );
+
             builder.HasOne( x => x.Namespace )
                 .WithMany( x => x.Types )
                 .HasForeignKey( x => x.NamespaceId )
@@ -69,13 +77,16 @@ namespace J4JSoftware.Roslyn
                 .IsRequired();
 
             builder.Property( x => x.Accessibility )
-                .HasConversion( new EnumToNumberConverter<Accessibility, int>() );
+                .HasConversion( new EnumToStringConverter<Accessibility>() );
 
-            builder.Property(x => x.Nature)
-                .HasConversion(
-                    a => a.ToString(),
-                    b => Enum.Parse<TypeKind>(b, true)
-                );
+            builder.Property(x=>x.Nature  )
+                .HasConversion( new EnumToStringConverter<TypeKind>());
+
+            //builder.Property(x => x.Nature)
+            //    .HasConversion(
+            //        a => a.ToString(),
+            //        b => Enum.Parse<TypeKind>(b, true)
+            //    );
         }
     }
 }

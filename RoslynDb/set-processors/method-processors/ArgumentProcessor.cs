@@ -12,9 +12,10 @@ namespace J4JSoftware.Roslyn
     {
         public ArgumentProcessor( 
             RoslynDbContext dbContext, 
-            ISymbolNamer symbolNamer, 
+            ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -51,14 +52,14 @@ namespace J4JSoftware.Roslyn
             var arguments = GetDbSet<ArgumentDb>();
 
             var argDb = arguments
-                .FirstOrDefault( a => a.Ordinal == symbol.Ordinal && a.DeclaringMethodID == methodDb!.ID );
+                .FirstOrDefault( a => a.Ordinal == symbol.Ordinal && a.DeclaringMethodID == methodDb!.DocObjectID );
 
             if( argDb == null )
             {
                 argDb = new ArgumentDb()
                 {
                     Ordinal = symbol.Ordinal,
-                    DeclaringMethodID = methodDb!.ID
+                    DeclaringMethodID = methodDb!.DocObjectID
                 };
 
                 arguments.Add( argDb );
@@ -66,7 +67,7 @@ namespace J4JSoftware.Roslyn
 
             argDb.Name = SymbolNamer.GetName( symbol );
             argDb.Synchronized = true;
-            argDb.ArgumentTypeID = typeDb.ID;
+            argDb.ArgumentTypeID = typeDb.DocObjectID;
             argDb.IsDiscard = symbol.IsDiscard;
             argDb.IsOptional = symbol.IsOptional;
             argDb.IsParams = symbol.IsParams;

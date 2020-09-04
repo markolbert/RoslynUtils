@@ -11,9 +11,10 @@ namespace J4JSoftware.Roslyn
         public AncestorProcessor(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -85,14 +86,14 @@ namespace J4JSoftware.Roslyn
             var typeAncestors = GetDbSet<TypeAncestorDb>();
 
             var typeAncestorDb = typeAncestors
-                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.ID && ti.AncestorTypeID == ancestorDb!.ID );
+                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.DocObjectID && ti.AncestorTypeID == ancestorDb!.DocObjectID );
 
             if( typeAncestorDb == null )
             {
                 typeAncestorDb = new TypeAncestorDb
                 {
-                    AncestorTypeID = ancestorDb!.ID,
-                    ChildTypeID = typeDb!.ID
+                    AncestorTypeID = ancestorDb!.DocObjectID,
+                    ChildTypeID = typeDb!.DocObjectID
                 };
 
                 typeAncestors.Add( typeAncestorDb );

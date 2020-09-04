@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasOne( x => x.ContainingMethod )
                 .WithMany( x => x.ParametricTypes )
-                .HasPrincipalKey( x => x.ID )
+                .HasPrincipalKey( x => x.DocObjectID )
                 .HasForeignKey( x => x.ContainingMethodID );
         }
     }

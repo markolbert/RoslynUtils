@@ -6,14 +6,15 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class NamespaceProcessor : BaseProcessorDb<ITypeSymbol, INamespaceSymbol>
+    public class TypeNamespaceProcessor : NamespaceProcessorBase<ITypeSymbol>
     {
-        public NamespaceProcessor(
+        public TypeNamespaceProcessor(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
+            IDocObjectTypeMapper docObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, logger )
+            : base( dbContext, symbolNamer, docObjMapper, logger )
         {
         }
 
@@ -32,26 +33,6 @@ namespace J4JSoftware.Roslyn
             }
 
             yield return typeSymbol.ContainingNamespace!;
-        }
-
-        protected override bool ProcessSymbol( INamespaceSymbol symbol )
-        {
-            var namespaces = GetDbSet<NamespaceDb>();
-
-            if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbSymbol ) )
-            {
-                dbSymbol = new NamespaceDb
-                {
-                    FullyQualifiedName = SymbolNamer.GetFullyQualifiedName( symbol ),
-                    Name = SymbolNamer.GetName( symbol )
-                };
-
-                namespaces.Add( dbSymbol );
-            }
-
-            dbSymbol!.Synchronized = true;
-
-            return true;
         }
     }
 }
