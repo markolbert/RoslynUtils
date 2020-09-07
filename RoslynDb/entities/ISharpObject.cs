@@ -1,4 +1,5 @@
-﻿namespace J4JSoftware.Roslyn
+﻿
+namespace J4JSoftware.Roslyn
 {
     public interface ISharpObject
     {

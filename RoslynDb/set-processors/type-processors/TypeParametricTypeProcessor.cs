@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn
 {
@@ -59,10 +56,20 @@ namespace J4JSoftware.Roslyn
         protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
         {
             if( !EntityFactories.Retrieve<TypeDb>( symbol.DeclaringType!, out var containerDb ) )
+            {
+                Logger.Error<string>( "Couldn't retrieve TypeDb entity for DeclaringType of '{0}'",
+                    EntityFactories.GetFullyQualifiedName( symbol ) );
+
                 return false;
+            }
 
             if( !EntityFactories.Retrieve<TypeParametricTypeDb>( symbol, out var paramDb ) )
+            {
+                Logger.Error<string>("Couldn't retrieve TypeParametricTypeDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol));
+
                 return false;
+            }
 
             paramDb!.ContainingTypeID = containerDb!.SharpObjectID;
 

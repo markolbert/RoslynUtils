@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using J4JSoftware.Logging;
-using J4JSoftware.Roslyn;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn

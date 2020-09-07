@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Dynamic;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
-using Serilog;
 
 namespace J4JSoftware.Roslyn
 {

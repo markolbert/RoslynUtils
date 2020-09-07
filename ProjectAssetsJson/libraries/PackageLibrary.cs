@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
-using System.Linq;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 

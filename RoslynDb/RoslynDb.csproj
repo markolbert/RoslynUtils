@@ -36,6 +36,9 @@
 	  <Compile Remove="entities\types\TypeClosure.cs" />
 	  <Compile Remove="entities\types\TypeDefinitionTypeArgument.cs" />
 	  <Compile Remove="entities\types\TypeDefinitionTypeParameter.cs" />
+	  <Compile Remove="entity-factories\general\ISharpObjectFactory.cs" />
+	  <Compile Remove="entity-factories\general\SharpObjectFactory.cs" />
+	  <Compile Remove="entity-factories\general\SharpObjectInfo.cs" />
 	  <Compile Remove="set-processors\AssemblyProcessorBase.cs" />
 	  <Compile Remove="set-processors\method-processors\MethodDiscoveredMethodsProcessor.cs" />
 	  <Compile Remove="set-processors\method-processors\MethodParametricTypeProcessor.cs" />

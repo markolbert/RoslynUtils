@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using J4JSoftware.Logging;
-using J4JSoftware.Roslyn.entities;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
@@ -56,6 +51,50 @@ namespace J4JSoftware.Roslyn
             DbContext.SaveChanges();
 
             return true;
+        }
+
+        protected bool RetrieveAssembly( IAssemblySymbol symbol, out AssemblyDb? result )
+        {
+            result = null;
+
+            if (!EntityFactories.Retrieve<AssemblyDb>(symbol, out var retVal))
+            {
+                Logger.Error<string>("Couldn't retrieve AssemblyDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol.ContainingAssembly));
+
+                return false;
+            }
+
+            result = retVal;
+
+            return true;
+        }
+
+        protected bool RetrieveNamespace(INamespaceSymbol symbol, out NamespaceDb? result)
+        {
+            result = null;
+
+            if (!EntityFactories.Retrieve<NamespaceDb>(symbol, out var retVal))
+            {
+                Logger.Error<string>("Couldn't retrieve AssemblyDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol.ContainingAssembly));
+
+                return false;
+            }
+
+            result = retVal;
+
+            return true;
+        }
+
+        protected void MarkSynchronized<TEntity>( TEntity entity )
+            where TEntity : class, ISharpObject
+        {
+            DbContext.Entry( entity )
+                .Reference(x=>x.SharpObject)
+                .Load();
+
+            entity.SharpObject.Synchronized = true;
         }
 
         //protected DbSet<TRelated> GetDbSet<TRelated>()
@@ -266,7 +305,7 @@ namespace J4JSoftware.Roslyn
         //            result = new TEntity();
 
         //            UpdateDocObjectReference(result, docObj);
-                    
+
         //            dbSet.Add(result);
         //        }
         //        else
@@ -335,7 +374,7 @@ namespace J4JSoftware.Roslyn
 
         //    if( retVal != null || !createIfMissing ) 
         //        return retVal;
-            
+
         //    retVal = new GenericTypeDb();
 
         //    UpdateDocObjectReference( retVal, docObj );

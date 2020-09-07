@@ -1,12 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn

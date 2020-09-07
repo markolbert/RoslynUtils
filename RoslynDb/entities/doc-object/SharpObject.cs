@@ -1,10 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using J4JSoftware.EFCoreUtilities;
-using J4JSoftware.Roslyn.entities;
-using Microsoft.Build.Logging.StructuredLogger;
+﻿using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.Roslyn

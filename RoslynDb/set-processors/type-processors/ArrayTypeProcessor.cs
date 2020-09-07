@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -44,7 +42,28 @@ namespace J4JSoftware.Roslyn
                 yield return arraySymbol;
         }
 
-        protected override bool ProcessSymbol( IArrayTypeSymbol symbol ) =>
-            EntityFactories.Retrieve<TypeDb>( symbol, out _, true );
+        protected override bool ProcessSymbol( IArrayTypeSymbol symbol )
+        {
+            if (!RetrieveAssembly(symbol.ContainingAssembly, out var assemblyDb))
+                return false;
+
+            if (!RetrieveNamespace(symbol.ContainingNamespace, out var nsDb))
+                return false;
+
+            if( !EntityFactories.Retrieve<TypeDb>( symbol, out var dbSymbol, true ) )
+            {
+                Logger.Error<string>("Could not retrieve TypeDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol));
+
+                return false;
+            }
+
+            MarkSynchronized(dbSymbol!);
+
+            dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
+            dbSymbol.NamespaceID = nsDb!.SharpObjectID;
+
+            return true;
+        }
     }
 }

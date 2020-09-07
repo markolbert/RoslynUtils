@@ -36,9 +36,9 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected override bool PostProcessEntitySymbol( TSymbol symbol, TEntity newEntity )
+        protected override bool ConfigureEntity( TSymbol symbol, TEntity newEntity )
         {
-            if( !base.PostProcessEntitySymbol( symbol, newEntity ) )
+            if( !base.ConfigureEntity( symbol, newEntity ) )
                 return false;
 
             newEntity.Accessibility = symbol.DeclaredAccessibility;

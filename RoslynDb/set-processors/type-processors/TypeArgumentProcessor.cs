@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -48,10 +47,14 @@ namespace J4JSoftware.Roslyn
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
             if( !EntityFactories.Retrieve<ImplementableTypeDb>( symbol, out var declaringDb ) )
+            {
+                Logger.Error<string>( "Couldn't retrieve ImplementableTypeDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName( symbol ) );
+
                 return false;
+            }
 
             var allOkay = true;
-            //var typeArgs = GetDbSet<TypeArgumentDb>();
 
             for( var ordinal = 0; ordinal < symbol.TypeArguments.Length; ordinal++)
             {

@@ -26,7 +26,7 @@ namespace J4JSoftware.Roslyn
 
         public bool CanProcess( ISymbol symbol ) => GetEntitySymbol( symbol, out _ );
 
-        public bool Retrieve( ISymbol symbol, out EntityInfo<TEntity>? result, bool createIfMissing = false )
+        public bool Retrieve( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
         {
             result = null;
 
@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if ( !GetEntitySymbol( symbol, out var entitySymbol ) )
+            if( !GetEntitySymbol( symbol, out var entitySymbol ) )
             {
                 Logger.Error<string>( "Couldn't extract required symbol from '{0}'",
                     Factories.GetFullyQualifiedName( symbol ) );
@@ -44,55 +44,46 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var fqn = Factories.GetFullyQualifiedName(entitySymbol!);
+            var fqn = Factories.GetFullyQualifiedName( entitySymbol! );
 
-            if (!ValidateEntitySymbol(entitySymbol!))
+            if( !ValidateEntitySymbol( entitySymbol! ) )
                 return false;
 
-            var type = Factories.SharpObjectTypeMapper[entitySymbol!];
+            var type = Factories.SharpObjectTypeMapper[ entitySymbol! ];
 
-            if (type == SharpObjectType.Unknown)
+            if( type == SharpObjectType.Unknown )
             {
-                Logger.Error<string>("Unknown SharpObjectType '{0}'", fqn);
+                Logger.Error<string>( "Unknown SharpObjectType '{0}'", fqn );
                 return false;
             }
 
-            if ( !Factories.RetrieveSharpObject( entitySymbol!, out var sharpObjInfo, createIfMissing ) )
+            if( !Factories.RetrieveSharpObject( entitySymbol!, out var sharpObj, createIfMissing ) )
                 return false;
 
             var entities = Factories.DbContext.Set<TEntity>();
 
-            var entity = entities
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+            result = entities
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            var existing = entity != null;
+            if( result != null )
+                return true;
 
-            if (entity== null && createIfMissing && CreateNewEntity(entitySymbol!, out var newEntity))
-            {
-                entity = newEntity;
+            if( !createIfMissing || !CreateNewEntity( entitySymbol!, out var newEntity ) )
+                return false;
 
-                if( sharpObjInfo!.IsNew ) 
-                    entity!.SharpObject = sharpObjInfo.SharpObject;
-                else entity!.SharpObjectID = sharpObjInfo.SharpObject.ID;
+            result = newEntity;
 
-                if( !PostProcessEntitySymbol( entitySymbol!, entity ) )
-                    return false;
+            if( !ConfigureEntity( entitySymbol!, result! ) )
+                return false;
 
-                entities.Add(entity);
-            }
+            if (sharpObj!.ID == 0)
+                result!.SharpObject = sharpObj;
+            else result!.SharpObjectID = sharpObj.ID;
 
-            if (entity != null)
-                result = new EntityInfo<TEntity>()
-                {
-                    IsNew = !existing,
-                    Entity = entity,
-                    EntitySymbol = entitySymbol!,
-                    Symbol = symbol,
-                    Type = type
-                };
+            entities.Add( result );
 
-            return result != null;
+            return true;
         }
 
         protected abstract bool GetEntitySymbol( ISymbol symbol, out TSymbol? result );
@@ -100,9 +91,9 @@ namespace J4JSoftware.Roslyn
 
         protected virtual bool ValidateEntitySymbol( TSymbol symbol ) => true;
 
-        protected virtual bool PostProcessEntitySymbol( TSymbol symbol, TEntity newEntity ) => true;
+        protected virtual bool ConfigureEntity( TSymbol symbol, TEntity newEntity ) => true;
 
-        bool IEntityFactory.Retrieve( ISymbol symbol, out IEntityInfo? result, bool createIfMissing )
+        bool IEntityFactory.Retrieve( ISymbol symbol, out ISharpObject? result, bool createIfMissing )
         {
             result = null;
 

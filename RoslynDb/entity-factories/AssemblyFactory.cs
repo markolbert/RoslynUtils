@@ -1,9 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using J4JSoftware.Logging;
-using J4JSoftware.Roslyn.entities;
-using Microsoft.Build.Evaluation;
+﻿using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn

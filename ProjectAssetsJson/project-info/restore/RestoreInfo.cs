@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using J4JSoftware.Logging;
-using Microsoft.VisualBasic;
 
 namespace J4JSoftware.Roslyn
 {

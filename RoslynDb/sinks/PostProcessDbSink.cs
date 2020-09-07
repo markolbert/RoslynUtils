@@ -1,5 +1,4 @@
 ﻿using J4JSoftware.Logging;
-using J4JSoftware.Roslyn.entities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks

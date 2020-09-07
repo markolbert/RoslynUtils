@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -44,10 +42,38 @@ namespace J4JSoftware.Roslyn
                 yield return ntSymbol;
         }
 
-        protected override bool ProcessSymbol(INamedTypeSymbol symbol)
+        protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            return symbol.IsGenericType && EntityFactories.Retrieve<GenericTypeDb>( symbol, out _, true )
-                   || !symbol.IsGenericType && EntityFactories.Retrieve<FixedTypeDb>( symbol, out _, true );
+            if( !RetrieveAssembly( symbol.ContainingAssembly, out var assemblyDb ) )
+                return false;
+
+            if( !RetrieveNamespace( symbol.ContainingNamespace, out var nsDb ) )
+                return false;
+
+            ImplementableTypeDb? dbSymbol = null;
+
+            if( symbol.IsGenericType && EntityFactories.Retrieve<GenericTypeDb>( symbol, out var dbTemp, true ) )
+                dbSymbol = dbTemp;
+            else
+            {
+                if( EntityFactories.Retrieve<FixedTypeDb>( symbol, out var dbTemp2, true ) )
+                    dbSymbol = dbTemp2;
+            }
+
+            if( dbSymbol == null )
+            {
+                Logger.Error<string>( "Could not retrieve ImplementationTypeDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName( symbol ) );
+
+                return false;
+            }
+
+            MarkSynchronized( dbSymbol );
+
+            dbSymbol.AssemblyID = assemblyDb!.SharpObjectID;
+            dbSymbol.NamespaceID = nsDb!.SharpObjectID;
+
+            return true;
         }
     }
 }

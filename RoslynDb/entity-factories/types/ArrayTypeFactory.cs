@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using J4JSoftware.Logging;
+﻿using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.entityfactories
@@ -75,9 +70,9 @@ namespace J4JSoftware.Roslyn.entityfactories
             return result != null;
         }
 
-        protected override bool PostProcessEntitySymbol( IArrayTypeSymbol symbol, TypeDb newEntity )
+        protected override bool ConfigureEntity( IArrayTypeSymbol symbol, TypeDb newEntity )
         {
-            if (!base.PostProcessEntitySymbol(symbol, newEntity))
+            if (!base.ConfigureEntity(symbol, newEntity))
                 return false;
 
             if (!Factories!.Retrieve<AssemblyDb>(symbol.ElementType.ContainingAssembly, out var assemblyDb))

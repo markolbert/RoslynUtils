@@ -1,8 +1,6 @@
 ﻿using J4JSoftware.EFCoreUtilities;
-using J4JSoftware.Roslyn.entities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {

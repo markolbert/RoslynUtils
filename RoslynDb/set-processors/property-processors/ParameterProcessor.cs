@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
@@ -45,8 +41,6 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            //var propParams = GetDbSet<PropertyParameterDb>();
-
             var propParamDb = DbContext.PropertyParameters
                 .FirstOrDefault( pp => pp.PropertyID == propDb!.SharpObjectID && pp.Ordinal == symbol.Ordinal );
 
@@ -63,7 +57,7 @@ namespace J4JSoftware.Roslyn
 
             propParamDb.Synchronized = true;
             propParamDb.Name = SymbolNamer.GetName( symbol );
-            propParamDb.ParameterTypeID = typeDb.SharpObjectID;
+            propParamDb.ParameterTypeID = typeDb!.SharpObjectID;
             propParamDb.IsAbstract = symbol.IsAbstract;
             propParamDb.IsExtern = symbol.IsExtern;
             propParamDb.IsOverride = symbol.IsOverride;

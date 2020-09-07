@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Dynamic;
-using NuGet.Versioning;
+﻿using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {

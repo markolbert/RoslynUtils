@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.InteropServices.ComTypes;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -79,8 +78,6 @@ namespace J4JSoftware.Roslyn
 
                 return false;
             }
-
-            //var typeAncestors = GetDbSet<TypeAncestorDb>();
 
             var typeAncestorDb = DbContext.TypeAncestors
                 .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.SharpObjectID && ti.AncestorTypeID == ancestorDb!.SharpObjectID );

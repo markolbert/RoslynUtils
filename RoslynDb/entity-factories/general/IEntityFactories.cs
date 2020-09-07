@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
         bool CanProcess<TEntity>( ISymbol symbol )
             where TEntity : class, ISharpObject;
 
-        bool RetrieveSharpObject( ISymbol symbol, out SharpObjectInfo? result, bool createIfMissing = false );
+        bool RetrieveSharpObject( ISymbol symbol, out SharpObject? result, bool createIfMissing = false );
         bool Retrieve<TEntity>( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
             where TEntity : class, ISharpObject;
     }

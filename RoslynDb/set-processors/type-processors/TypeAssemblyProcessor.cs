@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -36,7 +34,19 @@ namespace J4JSoftware.Roslyn
             yield return typeSymbol.ContainingAssembly!;
         }
 
-        protected override bool ProcessSymbol(IAssemblySymbol symbol) =>
-            EntityFactories.Retrieve<AssemblyDb>(symbol, out _, true);
+        protected override bool ProcessSymbol(IAssemblySymbol symbol)
+        {
+            if( !EntityFactories.Retrieve<AssemblyDb>( symbol, out var assemblyDb, true ) )
+            {
+                Logger.Error<string>("Couldn't retrieve AssemblyDb for '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol));
+
+                return false;
+            }
+
+            MarkSynchronized( assemblyDb! );
+
+            return true;
+        }
     }
 }

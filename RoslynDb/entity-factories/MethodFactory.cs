@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using J4JSoftware.Logging;
+﻿using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -29,9 +24,9 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected override bool PostProcessEntitySymbol( IMethodSymbol symbol, MethodDb newEntity )
+        protected override bool ConfigureEntity( IMethodSymbol symbol, MethodDb newEntity )
         {
-            if( !base.PostProcessEntitySymbol( symbol, newEntity ) )
+            if( !base.ConfigureEntity( symbol, newEntity ) )
                 return false;
 
             newEntity!.Accessibility = symbol.DeclaredAccessibility;

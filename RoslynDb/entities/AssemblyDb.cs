@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using J4JSoftware.EFCoreUtilities;
-using J4JSoftware.Roslyn.entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
@@ -13,9 +10,6 @@ namespace J4JSoftware.Roslyn
     {
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
-        //public bool Synchronized { get; set; }
-        //public string Name { get; set; } = string.Empty;
-        //public string FullyQualifiedName { get; set; } = string.Empty;
 
         public string DotNetVersionText { get; set; } = "0.0.0.0";
         public Version DotNetVersion

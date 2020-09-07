@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn
 {
@@ -53,6 +48,8 @@ namespace J4JSoftware.Roslyn
 
             if( !EntityFactories.Retrieve<MethodDb>( symbol, out var methodDb, true ) )
                 return false;
+
+            MarkSynchronized( methodDb! );
 
             methodDb!.DefiningTypeID = typeDb!.SharpObjectID;
             methodDb.ReturnTypeID = retValDb!.SharpObjectID;

@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
-using J4JSoftware.Roslyn.Sinks;
 using J4JSoftware.Roslyn.walkers;
 using Microsoft.CodeAnalysis;
 using Serilog.Events;

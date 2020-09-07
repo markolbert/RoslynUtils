@@ -1,5 +1,4 @@
 ﻿using J4JSoftware.Logging;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn

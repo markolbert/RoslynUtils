@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
-using J4JSoftware.Roslyn.entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.Roslyn

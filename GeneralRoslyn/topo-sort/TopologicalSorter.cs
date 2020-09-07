@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using J4JSoftware.Logging;
-using Microsoft.Build.Logging.StructuredLogger;
-using Microsoft.Build.Utilities;
 
 namespace J4JSoftware.Roslyn
 {

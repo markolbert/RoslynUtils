@@ -70,12 +70,12 @@ namespace J4JSoftware.Roslyn
             if( !factory.Retrieve( symbol, out var innerResult, createIfMissing ) )
                 return false;
 
-            result = (TEntity) innerResult!.EntityObject;
+            result = (TEntity) innerResult!;
 
             return true;
         }
 
-        public bool RetrieveSharpObject(ISymbol symbol, out SharpObjectInfo? result, bool createIfMissing = false)
+        public bool RetrieveSharpObject(ISymbol symbol, out SharpObject? result, bool createIfMissing = false)
         {
             result = null;
 
@@ -88,32 +88,23 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var sharpObj = DbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
-            var existing = sharpObj != null;
+            result = DbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
-            if (sharpObj == null && createIfMissing)
+            if (result == null && createIfMissing)
             {
-                sharpObj = new SharpObject
-                {
-                    FullyQualifiedName = fqn,
-                    Name = _symbolNamer.GetName(symbol),
-                };
+                result = new SharpObject { FullyQualifiedName = fqn };
 
-                DbContext.SharpObjects.Add(sharpObj);
+                DbContext.SharpObjects.Add(result);
             }
 
-            if (sharpObj != null)
-                result = new SharpObjectInfo
-                {
-                    FullyQualifiedName = fqn,
-                    IsNew = !existing,
-                    Name = _symbolNamer.GetName(symbol),
-                    SharpObject = sharpObj,
-                    Symbol = symbol,
-                    Type = type
-                };
+            if( result == null ) 
+                return false;
 
-            return result != null;
+            result.Name = _symbolNamer.GetName( symbol );
+            result.SharpObjectType = type;
+            result.Synchronized = true;
+
+            return true;
         }
 
     }

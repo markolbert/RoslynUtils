@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -9,7 +8,6 @@ using System.Xml.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using NuGet.Versioning;
-using Serilog;
 
 namespace J4JSoftware.Roslyn
 {

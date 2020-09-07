@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn
 {
@@ -51,7 +48,28 @@ namespace J4JSoftware.Roslyn
         }
 
         // symbol is guaranteed to be an ITypeParameterSymbol 
-        protected override bool ProcessSymbol( ITypeParameterSymbol symbol ) =>
-            EntityFactories.Retrieve<ParametricTypeDb>( symbol, out var _, true );
+        protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
+        {
+            if (!RetrieveAssembly(symbol.ContainingAssembly, out var assemblyDb))
+                return false;
+
+            if (!RetrieveNamespace(symbol.ContainingNamespace, out var nsDb))
+                return false;
+
+            if( !EntityFactories.Retrieve<ParametricTypeDb>( symbol, out var dbSymbol, true ) )
+            {
+                Logger.Error<string>("Could not retrieve ParametricTypeDb entity for '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol));
+
+                return false;
+            }
+
+            MarkSynchronized( dbSymbol! );
+
+            dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
+            dbSymbol.NamespaceID = nsDb!.SharpObjectID;
+
+            return true;
+        }
     }
 }

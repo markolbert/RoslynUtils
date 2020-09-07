@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace J4JSoftware.Roslyn.Tests
+﻿namespace J4JSoftware.Roslyn.Tests
 {
     public interface IDummyInterface3<in T>
         where T : DummyAttribute

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using J4JSoftware.Logging;
+﻿using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks

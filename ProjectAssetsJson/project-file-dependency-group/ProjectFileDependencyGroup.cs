@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Dynamic;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis.Diagnostics;
 using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
