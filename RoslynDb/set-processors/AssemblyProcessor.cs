@@ -8,14 +8,15 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class AssemblyProcessor : AssemblyProcessorBase<IAssemblySymbol>
+    public class AssemblyProcessor : BaseProcessorDb<IAssemblySymbol, IAssemblySymbol>
     {
         public AssemblyProcessor( 
             RoslynDbContext dbContext, 
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -29,5 +30,8 @@ namespace J4JSoftware.Roslyn
 
             yield return assemblySymbol!;
         }
+
+        protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
+            EntityFactories.Retrieve<AssemblyDb>( symbol, out _, true );
     }
 }

@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn.Deprecated
 
         public Type ContainerType => typeof(PlaceholderTypeDb);
 
-        int IParametricTypeContainer.ContainerID => DocObjectID;
+        int IParametricTypeContainer.ContainerID => SharpObjectID;
         object IParametricTypeContainer.Container => this;
     }
 

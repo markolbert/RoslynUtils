@@ -13,10 +13,11 @@ namespace J4JSoftware.Roslyn
     {
         public ParameterProcessor( 
             RoslynDbContext dbContext, 
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -33,14 +34,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IParameterSymbol symbol )
         {
-            var propSymbol = (IPropertySymbol) symbol.ContainingSymbol;
-
-            if( !GetByFullyQualifiedName<PropertyDb>( propSymbol, out var propDb ) )
+            if( !EntityFactories.Retrieve<PropertyDb>(symbol.ContainingSymbol, out var propDb  ))
                 return false;
 
-            var typeDb = GetTypeByFullyQualifiedName( symbol.Type );
-
-            if( typeDb == null )
+            if( !EntityFactories.Retrieve<TypeDb>(symbol.Type, out var typeDb))
             {
                 Logger.Error<string>( "Couldn't find type for IParameterSymbol '{0}'",
                     SymbolNamer.GetFullyQualifiedName( symbol ) );
@@ -48,25 +45,25 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var propParams = GetDbSet<PropertyParameterDb>();
+            //var propParams = GetDbSet<PropertyParameterDb>();
 
-            var propParamDb = propParams
-                .FirstOrDefault( pp => pp.PropertyID == propDb!.DocObjectID && pp.Ordinal == symbol.Ordinal );
+            var propParamDb = DbContext.PropertyParameters
+                .FirstOrDefault( pp => pp.PropertyID == propDb!.SharpObjectID && pp.Ordinal == symbol.Ordinal );
 
             if( propParamDb == null )
             {
                 propParamDb = new PropertyParameterDb
                 {
-                    PropertyID = propDb!.DocObjectID,
+                    PropertyID = propDb!.SharpObjectID,
                     Ordinal = symbol.Ordinal
                 };
 
-                propParams.Add( propParamDb );
+                DbContext.PropertyParameters.Add( propParamDb );
             }
 
             propParamDb.Synchronized = true;
             propParamDb.Name = SymbolNamer.GetName( symbol );
-            propParamDb.ParameterTypeID = typeDb.DocObjectID;
+            propParamDb.ParameterTypeID = typeDb.SharpObjectID;
             propParamDb.IsAbstract = symbol.IsAbstract;
             propParamDb.IsExtern = symbol.IsExtern;
             propParamDb.IsOverride = symbol.IsOverride;

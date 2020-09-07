@@ -5,19 +5,16 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class PropertySink : RoslynDbSink<IPropertySymbol, PropertyDb>
+    public class PropertySink : PostProcessDbSink<IPropertySymbol, PropertyDb>
     {
-        private readonly ISymbolProcessors<IPropertySymbol> _processors;
-
         public PropertySink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
-            ISymbolProcessors<IPropertySymbol> processors,
-            IJ4JLogger logger )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            ISharpObjectTypeMapper sharpObjMapper,
+            IJ4JLogger logger,
+            ISymbolProcessors<IPropertySymbol>? processors = null )
+            : base( dbContext, symbolNamer, sharpObjMapper, logger, processors)
         {
-            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -31,11 +28,6 @@ namespace J4JSoftware.Roslyn.Sinks
             SaveChanges();
 
             return true;
-        }
-
-        public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
-        {
-            return base.FinalizeSink(syntaxWalker) && _processors.Process(Symbols);
         }
     }
 }

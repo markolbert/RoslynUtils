@@ -13,10 +13,11 @@ namespace J4JSoftware.Roslyn
     {
         public PropertyProcessor( 
             RoslynDbContext dbContext, 
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -33,9 +34,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IPropertySymbol symbol )
         {
-            var typeDb = GetTypeByFullyQualifiedName( symbol.ContainingType );
-
-            if( typeDb == null )
+            if( !EntityFactories.Retrieve<ImplementableTypeDb>(symbol.ContainingType, out var typeDb  ))
             {
                 Logger.Error<string>( "Couldn't find containing type for IProperty '{0}'",
                     SymbolNamer.GetFullyQualifiedName( symbol ) );
@@ -43,9 +42,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var propTypeDb = GetTypeByFullyQualifiedName( symbol.Type );
-
-            if( propTypeDb == null )
+            if(!EntityFactories.Retrieve<TypeDb>(symbol.Type, out var propTypeDb))
             {
                 Logger.Error<string, string>( "Couldn't find return type '{0}' in database for property '{1}'",
                     SymbolNamer.GetFullyQualifiedName( symbol.Type ),
@@ -54,25 +51,11 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            GetByFullyQualifiedName<PropertyDb>( symbol, out var propDb, true );
+            if( !EntityFactories.Retrieve<PropertyDb>( symbol, out var propDb, true ) )
+                return false;
 
-            propDb!.Name = symbol.Name;
-            propDb.GetAccessibility= symbol.GetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable;
-            propDb.SetAccessibility = symbol.SetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable;
-            propDb.DeclarationModifier = symbol.GetDeclarationModifier();
-            propDb.DefiningTypeID = typeDb!.DocObjectID;
-            propDb.PropertyTypeID = propTypeDb!.DocObjectID;
-            propDb.ReturnsByRef = symbol.ReturnsByRef;
-            propDb.ReturnsByRefReadOnly = symbol.ReturnsByRefReadonly;
-            propDb.IsAbstract = symbol.IsAbstract;
-            propDb.IsExtern = symbol.IsExtern;
-            propDb.IsIndexer = symbol.IsIndexer;
-            propDb.IsOverride = symbol.IsOverride;
-            propDb.IsReadOnly = symbol.IsReadOnly;
-            propDb.IsSealed = symbol.IsSealed;
-            propDb.IsStatic = symbol.IsStatic;
-            propDb.IsVirtual = symbol.IsVirtual;
-            propDb.IsWriteOnly = symbol.IsWriteOnly;
+            propDb!.DefiningTypeID = typeDb!.SharpObjectID;
+            propDb.PropertyTypeID = propTypeDb!.SharpObjectID;
 
             return true;
         }

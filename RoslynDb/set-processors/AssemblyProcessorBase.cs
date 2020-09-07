@@ -11,17 +11,18 @@ namespace J4JSoftware.Roslyn
     {
         protected AssemblyProcessorBase(
             RoslynDbContext dbContext,
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
         protected override bool ProcessSymbol(IAssemblySymbol symbol)
         {
-            return GetByFullyQualifiedName<AssemblyDb>( symbol, out var _, true );
+            return GetByFullyQualifiedName<IAssemblySymbol, AssemblyDb>( symbol, out var _, true );
             //var assemblies = GetDbSet<AssemblyDb>();
 
             //if (!GetByFullyQualifiedNameNG<AssemblyDb>(symbol, out var dbSymbol, true))

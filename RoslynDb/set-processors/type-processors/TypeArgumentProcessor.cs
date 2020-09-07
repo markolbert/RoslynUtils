@@ -10,11 +10,12 @@ namespace J4JSoftware.Roslyn
     {
         public TypeArgumentProcessor(
             RoslynDbContext dbContext,
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -46,27 +47,17 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            if( !GetByFullyQualifiedName<AssemblyDb>( symbol, out var assemblyDb ) )
-                return false;
-
-            if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var nsDb ) )
-                return false;
-
-            var declaringDb = GetTypeByFullyQualifiedName( symbol );
-
-            if( declaringDb == null )
+            if( !EntityFactories.Retrieve<ImplementableTypeDb>( symbol, out var declaringDb ) )
                 return false;
 
             var allOkay = true;
-            var typeArgs = GetDbSet<TypeArgumentDb>();
+            //var typeArgs = GetDbSet<TypeArgumentDb>();
 
             for( var ordinal = 0; ordinal < symbol.TypeArguments.Length; ordinal++)
             {
                 var typeArgSymbol = symbol.TypeArguments[ ordinal ];
 
-                var typeDb = GetTypeByFullyQualifiedName( typeArgSymbol );
-
-                if( typeDb == null )
+                if( !EntityFactories.Retrieve<TypeDb>(typeArgSymbol, out var typeDb))
                 {
                     Logger.Error<string, string>( "", 
                         SymbolNamer.GetFullyQualifiedName( typeArgSymbol ),
@@ -77,17 +68,18 @@ namespace J4JSoftware.Roslyn
                     continue;
                 }
 
-                var typeArgDb = typeArgs.FirstOrDefault( ta => ta.ArgumentTypeID == typeDb.DocObjectID && ta.Ordinal == ordinal );
+                var typeArgDb = DbContext.TypeArguments
+                    .FirstOrDefault( ta => ta.ArgumentTypeID == typeDb!.SharpObjectID && ta.Ordinal == ordinal );
 
                 if( typeArgDb == null )
                 {
                     typeArgDb = new TypeArgumentDb();
 
-                    typeArgs.Add( typeArgDb );
+                    DbContext.TypeArguments.Add( typeArgDb );
                 }
 
-                typeArgDb.DeclaringTypeID = declaringDb.DocObjectID;
-                typeArgDb.ArgumentTypeID = typeDb.DocObjectID;
+                typeArgDb.DeclaringTypeID = declaringDb!.SharpObjectID;
+                typeArgDb.ArgumentTypeID = typeDb!.SharpObjectID;
                 typeArgDb.Ordinal = ordinal;
                 typeArgDb.Synchronized = true;
             }

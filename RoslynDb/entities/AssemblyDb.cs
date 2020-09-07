@@ -9,13 +9,13 @@ using NuGet.Versioning;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(AssemblyConfigurator))]
-    public class AssemblyDb : IDocObject, IFullyQualifiedName, ISynchronized
+    public class AssemblyDb : ISharpObject //, IFullyQualifiedName, ISynchronized
     {
-        public int DocObjectID { get; set; }
-        public DocObject DocObject { get; set; }
-        public bool Synchronized { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string FullyQualifiedName { get; set; } = string.Empty;
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
+        //public bool Synchronized { get; set; }
+        //public string Name { get; set; } = string.Empty;
+        //public string FullyQualifiedName { get; set; } = string.Empty;
 
         public string DotNetVersionText { get; set; } = "0.0.0.0";
         public Version DotNetVersion
@@ -37,24 +37,24 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<AssemblyDb> builder )
         {
-            builder.HasKey(x => x.DocObjectID);
+            builder.HasKey(x => x.SharpObjectID);
 
-            builder.HasOne( x => x.DocObject )
+            builder.HasOne( x => x.SharpObject )
                 .WithOne( x => x.Assembly )
-                .HasPrincipalKey<DocObject>( x => x.ID )
-                .HasForeignKey<AssemblyDb>( x => x.DocObjectID );
+                .HasPrincipalKey<SharpObject>( x => x.ID )
+                .HasForeignKey<AssemblyDb>( x => x.SharpObjectID );
 
             builder.Ignore( x => x.DotNetVersion );
 
             builder.HasMany(x => x.AssemblyNamespaces)
                 .WithOne(x => x.Assembly)
                 .HasForeignKey(x => x.AssemblyID)
-                .HasPrincipalKey(x => x.DocObjectID);
+                .HasPrincipalKey(x => x.SharpObjectID);
 
-            builder.HasAlternateKey( x => x.FullyQualifiedName );
+            //builder.HasAlternateKey( x => x.FullyQualifiedName );
 
-            builder.Property( x => x.FullyQualifiedName )
-                .IsRequired();
+            //builder.Property( x => x.FullyQualifiedName )
+            //    .IsRequired();
 
             builder.HasOne( x => x.InScopeInfo )
                 .WithOne( x => x.Assembly );

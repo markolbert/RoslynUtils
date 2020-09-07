@@ -12,40 +12,37 @@ namespace J4JSoftware.Roslyn
         protected NamespaceProcessorBase(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, symbolNamer, sharpObjMapper, logger )
         {
         }
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )
         {
-            if( !GetByFullyQualifiedName<AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
+            if( !GetByFullyQualifiedName<IAssemblySymbol, AssemblyDb>( symbol.ContainingAssembly, out var dbAssembly ) )
                 return false;
 
-            if( !GetByFullyQualifiedName<NamespaceDb>( symbol, out var dbNS, true ) )
+            if( !GetByFullyQualifiedName<INamespaceSymbol, NamespaceDb>( symbol, out var dbNS, true ) )
                 return false;
 
             // create the link between this namespace entity and the assembly entity to which it belongs
             var assemblyNamespaces = GetDbSet<AssemblyNamespaceDb>();
 
             var anDb = assemblyNamespaces
-                .FirstOrDefault(x => x.AssemblyID == dbAssembly!.DocObjectID && x.NamespaceID == dbNS!.DocObjectID);
+                .FirstOrDefault(x => x.AssemblyID == dbAssembly!.SharpObjectID && x.NamespaceID == dbNS!.SharpObjectID);
 
-            if (anDb == null)
+            if( anDb != null ) 
+                return true;
+            
+            anDb = new AssemblyNamespaceDb()
             {
-                anDb = new AssemblyNamespaceDb()
-                {
-                    AssemblyID = dbAssembly!.DocObjectID,
-                    Namespace = dbNS!
-                };
+                AssemblyID = dbAssembly!.SharpObjectID,
+                Namespace = dbNS!
+            };
 
-                assemblyNamespaces.Add(anDb);
-            }
-
-            dbNS!.Synchronized = true;
-            dbNS.Name = symbol.Name;
+            assemblyNamespaces.Add(anDb);
 
             return true;
         }

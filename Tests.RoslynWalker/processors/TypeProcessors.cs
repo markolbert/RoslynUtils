@@ -21,6 +21,7 @@ namespace Tests.RoslynWalker
                 && SetPredecessor<NamedTypeProcessor, TypeNamespaceProcessor>()
                 && SetPredecessor<ParametricTypeProcessor, NamedTypeProcessor>()
                 && SetPredecessor<ArrayTypeProcessor, ParametricTypeProcessor>()
+                && SetPredecessor<TypeParametricTypeProcessor, ArrayTypeProcessor>()
                 && SetPredecessor<AncestorProcessor, ArrayTypeProcessor>()
                 && SetPredecessor<TypeArgumentProcessor, AncestorProcessor>();
         }

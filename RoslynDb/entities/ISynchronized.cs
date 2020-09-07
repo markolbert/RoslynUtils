@@ -6,16 +6,10 @@ using System.Threading.Tasks;
 
 namespace J4JSoftware.Roslyn.entities
 {
-    public interface IDocObject
-    {
-        public int DocObjectID { get; set; }
-        public DocObject DocObject { get; set; }
-    }
-
-    public interface IFullyQualifiedName
-    {
-        public string FullyQualifiedName { get; set; }
-    }
+    //public interface IFullyQualifiedName
+    //{
+    //    public string FullyQualifiedName { get; set; }
+    //}
 
     public interface ISynchronized
     {

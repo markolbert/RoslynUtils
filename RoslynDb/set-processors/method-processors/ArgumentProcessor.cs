@@ -12,10 +12,11 @@ namespace J4JSoftware.Roslyn
     {
         public ArgumentProcessor( 
             RoslynDbContext dbContext, 
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -35,12 +36,17 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IParameterSymbol symbol )
         {
-            if( !GetByFullyQualifiedName<MethodDb>( symbol.ContainingSymbol, out var methodDb ) )
+            var containerSymbol = symbol.ContainingSymbol as IMethodSymbol;
+
+            if ( containerSymbol == null || !EntityFactories.Retrieve<MethodDb>(containerSymbol, out var methodDb))
+            {
+                Logger.Error<string>("IParameterSymbol '{0}' is not contained withing an IMethodSymbol",
+                    SymbolNamer.GetFullyQualifiedName(symbol.ContainingSymbol));
+
                 return false;
+            }
 
-            var typeDb = GetTypeByFullyQualifiedName( symbol.Type );
-
-            if( typeDb == null )
+            if( !EntityFactories.Retrieve<TypeDb>( symbol.Type, out var typeDb) )
             {
                 Logger.Error<int, string>( "Couldn't find type in database for parameter {0} in method '{1}'",
                     symbol.Ordinal,
@@ -49,25 +55,23 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var arguments = GetDbSet<ArgumentDb>();
-
-            var argDb = arguments
-                .FirstOrDefault( a => a.Ordinal == symbol.Ordinal && a.DeclaringMethodID == methodDb!.DocObjectID );
+            var argDb = DbContext.MethodArguments
+                .FirstOrDefault( a => a.Ordinal == symbol.Ordinal && a.DeclaringMethodID == methodDb!.SharpObjectID );
 
             if( argDb == null )
             {
                 argDb = new ArgumentDb()
                 {
                     Ordinal = symbol.Ordinal,
-                    DeclaringMethodID = methodDb!.DocObjectID
+                    DeclaringMethodID = methodDb!.SharpObjectID
                 };
 
-                arguments.Add( argDb );
+                DbContext.MethodArguments.Add( argDb );
             }
 
             argDb.Name = SymbolNamer.GetName( symbol );
             argDb.Synchronized = true;
-            argDb.ArgumentTypeID = typeDb.DocObjectID;
+            argDb.ArgumentTypeID = typeDb!.SharpObjectID;
             argDb.IsDiscard = symbol.IsDiscard;
             argDb.IsOptional = symbol.IsOptional;
             argDb.IsParams = symbol.IsParams;

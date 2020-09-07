@@ -35,12 +35,12 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasOne( x => x.Property )
                 .WithMany( x => x.Parameters )
-                .HasPrincipalKey( x => x.DocObjectID )
+                .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.PropertyID );
 
             builder.HasOne( x => x.ParameterType )
                 .WithMany( x => x.PropertyParameters )
-                .HasPrincipalKey( x => x.DocObjectID )
+                .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.ParameterTypeID );
         }
     }

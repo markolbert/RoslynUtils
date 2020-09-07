@@ -7,19 +7,16 @@ using Serilog;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeSink : RoslynDbSink<ITypeSymbol, FixedTypeDb>
+    public class TypeSink : PostProcessDbSink<ITypeSymbol, FixedTypeDb>
     {
-        private readonly ISymbolProcessors<ITypeSymbol> _processors;
-
         public TypeSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
-            ISymbolProcessors<ITypeSymbol> processors,
-            IJ4JLogger logger )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            ISharpObjectTypeMapper sharpObjMapper,
+            IJ4JLogger logger,
+            ISymbolProcessors<ITypeSymbol>? processors = null )
+            : base( dbContext, symbolNamer, sharpObjMapper, logger, processors)
         {
-            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -29,19 +26,15 @@ namespace J4JSoftware.Roslyn.Sinks
 
             MarkUnsynchronized<FixedTypeDb>();
             MarkUnsynchronized<GenericTypeDb>();
+            MarkUnsynchronized<TypeParametricTypeDb>();
+            MarkUnsynchronized<MethodParametricTypeDb>();
             MarkUnsynchronized<ParametricTypeDb>();
             MarkUnsynchronized<TypeAncestorDb>();
             MarkUnsynchronized<TypeArgumentDb>();
-            MarkUnsynchronized<MethodPlaceholderDb>();
 
             SaveChanges();
 
             return true;
-        }
-
-        public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
-        {
-            return base.FinalizeSink( syntaxWalker ) && _processors.Process( Symbols );
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
@@ -93,48 +86,5 @@ namespace J4JSoftware.Roslyn.Sinks
                 baseSymbol = baseSymbol.BaseType;
             }
         }
-
-        //private bool ProcessSymbol( ITypeSymbol symbol )
-        //{
-        //    var symbolInfo = SymbolInfo.Create(symbol);
-
-        //    switch ( symbolInfo.TypeKind )
-        //    {
-        //        case TypeKind.Error:
-        //            Logger.Error<string>( "Unhandled or incorrect type error for named type '{0}'",
-        //                symbolInfo.SymbolName );
-
-        //            return false;
-
-        //        case TypeKind.Dynamic:
-        //        case TypeKind.Pointer:
-        //            Logger.Error<string, TypeKind>(
-        //                "named type '{0}' is a {1} and not supported",
-        //                symbolInfo.SymbolName,
-        //                symbolInfo.TypeKind );
-
-        //            return false;
-        //    }
-
-        //    if( !GetByFullyQualifiedName<Assembly>( symbolInfo.ContainingAssembly, out var dbAssembly ) )
-        //        return false;
-
-        //    if( !GetByFullyQualifiedName<Namespace>( symbolInfo.ContainingNamespace, out var dbNS ) )
-        //        return false;
-
-        //    if( !GetByFullyQualifiedName<TypeDefinition>(symbolInfo.Symbol, out var dbSymbol))
-        //        dbSymbol = AddEntity( symbolInfo.SymbolName );
-
-        //    dbSymbol!.Synchronized = true;
-        //    dbSymbol.Name = SymbolInfo.GetName( symbolInfo.Symbol );
-        //    dbSymbol.AssemblyID = dbAssembly!.ID;
-        //    dbSymbol.NamespaceId = dbNS!.ID;
-        //    dbSymbol.Accessibility = symbolInfo.Symbol.DeclaredAccessibility;
-        //    dbSymbol.DeclarationModifier = symbolInfo.Symbol.GetDeclarationModifier();
-        //    dbSymbol.Nature = symbolInfo.TypeKind;
-        //    dbSymbol.InDocumentationScope = dbAssembly.InScopeInfo != null;
-
-        //    return true;
-        //}
     }
 }

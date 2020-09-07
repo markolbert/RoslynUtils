@@ -10,19 +10,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class AssemblySink : RoslynDbSink<IAssemblySymbol, AssemblyDb>
+    public class AssemblySink : PostProcessDbSink<IAssemblySymbol, AssemblyDb>
     {
-        private readonly ISymbolProcessors<IAssemblySymbol> _processors;
-
         public AssemblySink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
-            ISymbolProcessors<IAssemblySymbol> processors,
-            IJ4JLogger logger )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            ISharpObjectTypeMapper sharpObjMapper,
+            IJ4JLogger logger,
+            ISymbolProcessors<IAssemblySymbol>? processors = null )
+            : base( dbContext, symbolNamer, sharpObjMapper, logger, processors )
         {
-            _processors = processors;
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
@@ -34,30 +31,6 @@ namespace J4JSoftware.Roslyn.Sinks
             SaveChanges();
 
             return true;
-        }
-
-        public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
-        {
-            return base.FinalizeSink(syntaxWalker) && _processors.Process(Symbols);
-            //if ( !base.FinalizeSink( syntaxWalker ) )
-            //    return false;
-
-            //var allOkay = true;
-
-            //foreach( var symbol in Symbols )
-            //{
-            //    if( GetByFullyQualifiedNameNG<AssemblyDb>( symbol, out var dbSymbol, true ) )
-            //    {
-            //        dbSymbol!.Synchronized = true;
-            //        dbSymbol.Name = symbol.Name;
-            //        dbSymbol.DotNetVersion = symbol.Identity.Version;
-            //    }
-            //    else allOkay = false;
-            //}
-
-            //SaveChanges();
-
-            //return allOkay;
         }
     }
 }

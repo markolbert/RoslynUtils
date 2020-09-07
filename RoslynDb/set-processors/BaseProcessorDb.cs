@@ -13,24 +13,26 @@ namespace J4JSoftware.Roslyn
         where TResult : class, ISymbol
         where TSource : class, ISymbol
     {
-        private readonly RoslynDbContext _dbContext;
-
         protected BaseProcessorDb(
             RoslynDbContext dbContext,
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
         : base( logger )
         {
-            _dbContext = dbContext;
-            DocObjectMapper = docObjMapper;
+            DbContext = dbContext;
+            EntityFactories = factories;
+            SharpObjectMapper = sharpObjMapper;
             SymbolNamer = symbolNamer;
         }
 
+        protected RoslynDbContext DbContext { get; }
         protected ISymbolNamer SymbolNamer { get; }
-        protected IDocObjectTypeMapper DocObjectMapper { get; }
-
+        protected ISharpObjectTypeMapper SharpObjectMapper { get; }
+        protected IEntityFactories EntityFactories { get; }
+        
         protected abstract IEnumerable<TResult> ExtractSymbols( object item );
         protected abstract bool ProcessSymbol( TResult symbol );
 
@@ -51,38 +53,227 @@ namespace J4JSoftware.Roslyn
             if (!base.FinalizeProcessor(inputData))
                 return false;
 
-            SaveChanges();
+            DbContext.SaveChanges();
 
             return true;
         }
 
-        protected DbSet<TRelated> GetDbSet<TRelated>()
-            where TRelated : class
-            => _dbContext.Set<TRelated>();
+        //protected DbSet<TRelated> GetDbSet<TRelated>()
+        //    where TRelated : class
+        //    => DbContext.Set<TRelated>();
 
-        //protected bool GetByFullyQualifiedName<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false )
-        //    where TEntity : class, IFullyQualifiedName, new()
+        //protected TypeDb? GetTypeByFullyQualifiedName( ITypeSymbol symbol, bool createIfMissing = false )
+        //{
+        //    return symbol switch
+        //    {
+        //        INamedTypeSymbol ntSymbol => ntSymbol.IsGenericType switch
+        //        {
+        //            true => GetGenericType( ntSymbol, createIfMissing ),
+        //            _ => GetFixedType( ntSymbol, createIfMissing )
+        //        },
+        //        IArrayTypeSymbol arraySymbol => GetTypeByFullyQualifiedName( arraySymbol, createIfMissing ),
+        //        ITypeParameterSymbol tpSymbol => GetTypeByFullyQualifiedName( tpSymbol, createIfMissing ),
+        //        _ => null
+        //    };
+        //}
+
+        //protected TypeDb? GetTypeByFullyQualifiedName( INamedTypeSymbol symbol, bool createIfMissing = false )
+        //{
+        //    return symbol.IsGenericType switch
+        //    {
+        //        true => GetGenericType( symbol, createIfMissing ),
+        //        _ => GetFixedType( symbol, createIfMissing )
+        //    };
+        //}
+
+        //protected TypeDb? GetTypeByFullyQualifiedName( 
+        //    IArrayTypeSymbol symbol, 
+        //    bool createIfMissing,
+        //    string? fqn = null )
+        //{
+        //    fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
+
+        //    return symbol.ElementType switch
+        //    {
+        //        INamedTypeSymbol ntSymbol => ntSymbol.IsGenericType switch
+        //        {
+        //            true => GetGenericType( ntSymbol, createIfMissing, fqn ),
+        //            _ => GetFixedType( ntSymbol, createIfMissing, fqn )
+        //        },
+        //        IArrayTypeSymbol arraySymbol => GetTypeByFullyQualifiedName( arraySymbol, createIfMissing, fqn ),
+        //        ITypeParameterSymbol tpSymbol => GetTypeByFullyQualifiedName( tpSymbol, createIfMissing, fqn ),
+        //        _ => unhandled()
+        //    };
+
+        //    TypeDb? unhandled()
+        //    {
+        //        Logger.Error<string, TypeKind>( "Unsupported array element type '{0}' ({1})",
+        //            symbol.Name,
+        //            symbol.TypeKind );
+
+        //        return null;
+        //    }
+        //}
+
+        //protected ParametricTypeDb? GetTypeByFullyQualifiedName(
+        //    ITypeParameterSymbol symbol,
+        //    bool createIfMissing,
+        //    string? fqn = null)
+        //{
+        //    fqn ??= SymbolNamer.GetFullyQualifiedName(symbol);
+
+        //    var sharpObj = GetDocObject(symbol, createIfMissing);
+
+        //    if (sharpObj == null)
+        //    {
+        //        Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+        //        return null;
+        //    }
+
+        //    var parametricTypes = GetDbSet<ParametricTypeDb>();
+
+        //    var retVal = parametricTypes
+        //        .FirstOrDefault(x => x.SharpObjectID == sharpObj.ID);
+
+        //    if (retVal != null || !createIfMissing)
+        //        return retVal;
+
+        //    if( symbol.DeclaringType != null )
+        //    {
+        //        var containingTypeDb = GetTypeByFullyQualifiedName( symbol.DeclaringType );
+
+        //        if( containingTypeDb == null )
+        //            return null;
+
+        //        if( !GetByFullyQualifiedName<ITypeParameterSymbol, TypeParametricTypeDb>( 
+        //            symbol, 
+        //            out var result,
+        //            true ) )
+        //            return null;
+
+        //        result!.ContainingTypeID = containingTypeDb.SharpObjectID;
+
+        //        retVal = result;
+        //    }
+
+        //    if( symbol.DeclaringMethod != null )
+        //        retVal = CreateMethodParametricType( symbol );
+
+        //    if( retVal != null )
+        //    {
+        //        parametricTypes.Add(retVal);
+
+        //        return retVal;
+        //    }
+
+        //    Logger.Error<string>("Unsupported parametric type container ({0})", fqn);
+
+        //    return null;
+        //}
+
+        //protected virtual ParametricTypeDb? CreateMethodParametricType( ITypeParameterSymbol symbol )
+        //{
+        //    if( symbol.DeclaringMethod == null )
+        //    {
+        //        Logger.Error<string>( "ITypeParameterSymbol '{0}' does not have a DeclaringMethod",
+        //            SymbolNamer.GetFullyQualifiedName( symbol ) );
+
+        //        return null;
+        //    }
+
+        //    if( !GetByFullyQualifiedName<IMethodSymbol, MethodDb>( symbol.DeclaringMethod, out var methodDb ) )
+        //        return null;
+
+        //    if( !GetByFullyQualifiedName<ITypeParameterSymbol, MethodParametricTypeDb>( symbol, out var retVal, true ) )
+        //        return null;
+
+        //    retVal!.ContainingMethodID = methodDb!.SharpObjectID;
+
+        //    return retVal;
+        //}
+
+        //protected void SaveChanges() => DbContext.SaveChanges();
+
+        //protected SharpObject? GetDocObject(ISymbol symbol, bool createIfNeeded = false )
+        //{
+        //    var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
+
+        //    var sharpType = SharpObjectMapper[symbol];
+
+        //    if (sharpType == SharpObjectType.Unknown)
+        //    {
+        //        Logger.Error<SharpObjectType>("Couldn't find DocObjectType for entity type '{0}'", sharpType);
+        //        return null;
+        //    }
+
+        //    var retVal = _dbContext.SharpObjects.FirstOrDefault(x => x.SharpObjectType == sharpType && x.FullyQualifiedName == fqn);
+
+        //    if( retVal == null )
+        //    {
+        //        if( createIfNeeded )
+        //        {
+        //            retVal = new SharpObject
+        //            {
+        //                FullyQualifiedName = SymbolNamer.GetFullyQualifiedName( symbol )
+        //            };
+
+        //            _dbContext.SharpObjects.Add( retVal );
+
+        //            retVal!.Name = SymbolNamer.GetName( symbol );
+        //            retVal.Synchronized = true;
+        //            retVal.SharpObjectType = sharpType;
+        //        }
+        //        else
+        //            Logger.Information<SharpObjectType, string>( "Couldn't find DocObject for entity type '{0}' ({1})",
+        //                sharpType,
+        //                fqn );
+        //    }
+
+        //    return retVal;
+        //}
+
+        //private void UpdateDocObjectReference( ISharpObject target, SharpObject sharpObj )
+        //{
+        //    if (sharpObj.ID == 0)
+        //        target.SharpObject = sharpObj;
+        //    else target.SharpObjectID = sharpObj.ID;
+        //}
+
+        //protected bool GetByFullyQualifiedName<TSymbol, TEntity>(TSymbol symbol, out TEntity? result, bool createIfMissing = false)
+        //    where TSymbol : ISymbol
+        //    where TEntity : class, ISharpObject, new()
         //{
         //    result = null;
 
+        //    var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
+
+        //    var docObj = GetDocObject(symbol, createIfMissing);
+
+        //    if( docObj == null )
+        //    {
+        //        Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+        //        return false;
+        //    }
+
         //    var dbSet = _dbContext.Set<TEntity>();
 
-        //    var fqn = SymbolNamer.GetFullyQualifiedName( symbol );
-
-        //    result = dbSet.FirstOrDefault(x => x.FullyQualifiedName == fqn);
+        //    result = dbSet.FirstOrDefault(x => x.SharpObjectID == docObj.ID);
 
         //    if (result == null)
         //    {
-        //        if( createIfMissing )
+        //        if (createIfMissing)
         //        {
-        //            result = new TEntity { FullyQualifiedName = fqn };
-        //            dbSet.Add( result );
+        //            result = new TEntity();
+
+        //            UpdateDocObjectReference(result, docObj);
+                    
+        //            dbSet.Add(result);
         //        }
         //        else
         //        {
         //            Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
-        //            typeof(TEntity),
-        //            fqn);
+        //                typeof(TEntity),
+        //                fqn);
 
         //            return false;
         //        }
@@ -90,353 +281,133 @@ namespace J4JSoftware.Roslyn
 
         //    // special handling for AssemblyDb to force loading of InScopeInfo property,
         //    // if it exists
-        //    if( result is AssemblyDb assemblyDb )
-        //        _dbContext.Entry(assemblyDb  )
-        //            .Reference(x=>x.InScopeInfo)
+        //    if (result is AssemblyDb assemblyDb)
+        //        _dbContext.Entry(assemblyDb)
+        //            .Reference(x => x.InScopeInfo)
         //            .Load();
 
         //    return true;
         //}
 
-        protected TypeDb? GetTypeByFullyQualifiedName( ITypeSymbol symbol, bool createIfMissing = false )
-        {
-            return symbol switch
-            {
-                INamedTypeSymbol ntSymbol => GetFixedType( ntSymbol, createIfMissing ),
-                IArrayTypeSymbol arraySymbol => GetArrayType( arraySymbol, createIfMissing ),
-                ITypeParameterSymbol tpSymbol => GetParametricType( tpSymbol, createIfMissing ),
-                _ => null
-            };
-        }
-
-        protected void SaveChanges() => _dbContext.SaveChanges();
-
-        protected DocObject? GetDocObject<TEntity>(ISymbol symbol, bool createIfNeeded = false )
-            where TEntity : class, IDocObject
-        {
-            var docObjType = DocObjectMapper.GetDocObjectType<TEntity>();
-
-            if (docObjType == DocObjectType.Unknown)
-            {
-                Logger.Error<Type>("Couldn't find DocObjectType for entity type '{0}'", typeof(TEntity));
-                return null;
-            }
-
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
-
-            var retVal = _dbContext.DocObjects.FirstOrDefault(x => x.DocObjectType == docObjType && x.FullyQualifiedName == fqn);
-
-            if( retVal == null )
-            {
-                if( createIfNeeded )
-                {
-                    if( retVal == null )
-                    {
-                        retVal = new DocObject
-                        {
-                            FullyQualifiedName = SymbolNamer.GetFullyQualifiedName( symbol )
-                        };
-
-                        _dbContext.DocObjects.Add( retVal );
-
-                        retVal!.Name = SymbolNamer.GetName( symbol );
-                        retVal.Synchronized = true;
-                        retVal.DocObjectType = DocObjectMapper.GetDocObjectType<TEntity>();
-                    }
-                }
-                else
-                    Logger.Information<Type, string>( "Couldn't find DocObject for entity type '{0}' ({1})",
-                        typeof(TEntity),
-                        fqn );
-            }
-
-            return retVal;
-        }
-
-        private void UpdateDocObjectReference( IDocObject target, DocObject docObj )
-        {
-            if (docObj.ID == 0)
-                target.DocObject = docObj;
-            else target.DocObjectID = docObj.ID;
-        }
-
-        protected bool GetByFullyQualifiedName<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false)
-            where TEntity : class, IDocObject, IFullyQualifiedName, new()
-        {
-            result = null;
-
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
-
-            var docObj = GetDocObject<TEntity>(symbol, true);
-
-            if( docObj == null )
-            {
-                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
-                return false;
-            }
-
-            var dbSet = _dbContext.Set<TEntity>();
-
-            result = dbSet.FirstOrDefault(x => ((IDocObject)x).DocObjectID == docObj.ID);
-
-            if (result == null)
-            {
-                if (createIfMissing)
-                {
-                    result = new TEntity { FullyQualifiedName = fqn };
-
-                    UpdateDocObjectReference(result, docObj);
-                    
-                    dbSet.Add(result);
-                }
-                else
-                {
-                    Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
-                        typeof(TEntity),
-                        fqn);
-
-                    return false;
-                }
-            }
-
-            // special handling for AssemblyDb to force loading of InScopeInfo property,
-            // if it exists
-            if (result is AssemblyDb assemblyDb)
-                _dbContext.Entry(assemblyDb)
-                    .Reference(x => x.InScopeInfo)
-                    .Load();
-
-            return true;
-        }
-
-        //protected bool ValidateAssembly(ITypeSymbol symbol, out AssemblyDb? result)
+        // symbol is assumed to be a non-generic type
+        //private FixedTypeDb? GetFixedType(INamedTypeSymbol symbol, bool createIfMissing, string? fqn = null)
         //{
-        //    result = null;
+        //    fqn ??= SymbolNamer.GetFullyQualifiedName(symbol);
 
-        //    if (symbol.ContainingAssembly == null)
-        //        return false;
+        //    var docObj = GetDocObject(symbol, true);
 
-        //    if (!GetByFullyQualifiedName<AssemblyDb>(symbol.ContainingAssembly, out var dbResult))
-        //        return false;
+        //    if (docObj == null)
+        //    {
+        //        Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
+        //        return null;
+        //    }
 
-        //    result = dbResult;
+        //    var retVal = GetDbSet<FixedTypeDb>().FirstOrDefault(x => x.SharpObjectID == docObj.ID);
 
-        //    return true;
+        //    if( retVal != null || !createIfMissing ) 
+        //        return retVal;
+
+        //    retVal = new FixedTypeDb();
+
+        //    UpdateDocObjectReference(retVal, docObj);
+
+        //    var fixedTypes = GetDbSet<FixedTypeDb>();
+
+        //    fixedTypes.Add(retVal);
+
+        //    return retVal;
         //}
 
-        //protected bool ValidateNamespace(ITypeSymbol ntSymbol, out NamespaceDb? result)
+        //// symbol is assumed to be a generic type
+        //private GenericTypeDb? GetGenericType( INamedTypeSymbol symbol, bool createIfMissing, string? fqn = null )
         //{
-        //    result = null;
+        //    fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
 
-        //    if (ntSymbol.ContainingNamespace == null)
-        //        return false;
+        //    var docObj = GetDocObject( symbol, true );
 
-        //    if (!GetByFullyQualifiedName<NamespaceDb>(ntSymbol.ContainingNamespace, out var dbResult))
-        //        return false;
+        //    if( docObj == null )
+        //    {
+        //        Logger.Error<string>( "Couldn't find or create DocObject for {0}", fqn );
+        //        return null;
+        //    }
 
-        //    result = dbResult;
+        //    var retVal = GetDbSet<GenericTypeDb>().FirstOrDefault( x => x.SharpObjectID == docObj.ID );
 
-        //    return true;
-        //}
-
-        private TypeDb? GetFixedType( INamedTypeSymbol symbol, bool createIfMissing, string? fqn = null )
-        {
-            fqn ??= SymbolNamer.GetFullyQualifiedName(symbol);
-
-            var docObj = GetDocObject<FixedTypeDb>(symbol, true);
-
-            if (docObj == null)
-            {
-                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
-                return null;
-            }
-
-            if( symbol.IsGenericType )
-            {
-                var genericDb = GetDbSet<GenericTypeDb>().FirstOrDefault(x => x.FullyQualifiedName == fqn);
-
-                if( genericDb == null && createIfMissing )
-                {
-                    genericDb = new GenericTypeDb { FullyQualifiedName = fqn };
-
-                    UpdateDocObjectReference(genericDb, docObj);
-
-                    var genericTypes = GetDbSet<GenericTypeDb>();
-
-                    genericTypes.Add( genericDb );
-                }
-
-                return genericDb;
-            }
-
-            var fixedDb = GetDbSet<FixedTypeDb>().FirstOrDefault(x => x.FullyQualifiedName == fqn);
-
-            if( fixedDb == null && createIfMissing )
-            {
-                fixedDb = new FixedTypeDb { FullyQualifiedName = fqn };
-
-                UpdateDocObjectReference(fixedDb, docObj);
-
-                var fixedTypes = GetDbSet<FixedTypeDb>();
-
-                fixedTypes.Add(fixedDb);
-            }
-
-            return fixedDb;
-        }
-
-        private TypeDb? GetArrayType( IArrayTypeSymbol symbol, bool createIfMissing, string? fqn = null )
-        {
-            fqn ??= SymbolNamer.GetFullyQualifiedName(symbol);
-
-            switch (symbol.ElementType)
-            {
-                case INamedTypeSymbol ntSymbol:
-                    return GetFixedType(ntSymbol, createIfMissing, fqn);
-
-                case IArrayTypeSymbol arraySymbol:
-                    return GetArrayType(arraySymbol, createIfMissing, fqn);
-
-                case ITypeParameterSymbol tpSymbol:
-                    return GetParametricType( tpSymbol, createIfMissing, fqn );
-
-                default:
-                    Logger.Error<string, TypeKind>("Unsupported array element type '{0}' ({1})",
-                        symbol.Name,
-                        symbol.TypeKind);
-
-                    return null;
-            }
-        }
-
-        protected object? GetParametricTypeContainer( ITypeParameterSymbol symbol )
-        {
-            object? retVal = null;
-
-            if (symbol.DeclaringType != null)
-                retVal = GetTypeContainer(symbol);
-            else
-            {
-                if (symbol.DeclaringMethod != null)
-                    retVal = GetMethodContainer(symbol);
-            }
-
-            // this error should only occur if we're contained by a type
-            // which somehow hasn't been processed into the database
-            if (retVal == null)
-                Logger.Error<string>("Could not find a container entity for ITypeParameterSymbol '{0}'",
-                    SymbolNamer.GetFullyQualifiedName(symbol));
-
-            return retVal;
-        }
-
-        private ImplementableTypeDb? GetTypeContainer(ITypeParameterSymbol symbol)
-        {
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
-
-            if (symbol.DeclaringType == null)
-                return null;
-
-            if (GetByFullyQualifiedName<GenericTypeDb>(symbol.DeclaringType, out var genericDb))
-                return genericDb!;
-            else
-            {
-                if (GetByFullyQualifiedName<FixedTypeDb>(symbol.DeclaringType, out var fixedDb))
-                    return fixedDb!;
-            }
-
-            Logger.Error<string>("DeclaringType of ITypeParameterSymbol '{0}' not found in the database", fqn);
-
-            return null;
-        }
-
-        private MethodPlaceholderDb? GetMethodContainer(ITypeParameterSymbol symbol)
-        {
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
-
-            if (symbol.DeclaringMethod == null)
-                return null;
-
-            if (GetByFullyQualifiedName<MethodPlaceholderDb>(symbol.DeclaringMethod, out var placeHolderDb, true))
-                return placeHolderDb!;
-
-            Logger.Error<string>("DeclaringMethod of ITypeParameterSymbol '{0}' not found in the database", fqn);
-            return null;
-        }
-
-        private ParametricTypeBaseDb? GetParametricType( 
-            ITypeParameterSymbol symbol, 
-            bool createIfMissing,
-            string? fqn = null )
-        {
-            fqn ??= SymbolNamer.GetFullyQualifiedName( symbol );
-
-            if ( symbol.DeclaringType != null )
-                return GetTypeParametricType( symbol, createIfMissing, fqn );
-
-            if( symbol.DeclaringMethod != null )
-                return GetMethodParametricType( symbol, createIfMissing, fqn );
-
-            Logger.Error<string>("Unsupported parametric type container ({0})", fqn  );
-
-            return null;
-        }
-
-        private ParametricTypeDb? GetTypeParametricType( 
-            ITypeParameterSymbol symbol, 
-            bool createIfMissing,
-            string fqn )
-        {
-            var docObj = GetDocObject<FixedTypeDb>(symbol, true);
-
-            if (docObj == null)
-            {
-                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
-                return null;
-            }
-
-            var retVal = GetDbSet<ParametricTypeDb>().FirstOrDefault( x => x.FullyQualifiedName == fqn );
-
-            if( retVal != null || !createIfMissing ) 
-                return retVal;
+        //    if( retVal != null || !createIfMissing ) 
+        //        return retVal;
             
-            retVal = new ParametricTypeDb { FullyQualifiedName = fqn };
+        //    retVal = new GenericTypeDb();
 
-            UpdateDocObjectReference( retVal, docObj );
+        //    UpdateDocObjectReference( retVal, docObj );
 
-            var parametricTypes = GetDbSet<ParametricTypeDb>();
-            parametricTypes.Add( retVal );
+        //    var genericTypes = GetDbSet<GenericTypeDb>();
 
-            return retVal;
-        }
+        //    genericTypes.Add( retVal );
 
-        private MethodParametricTypeDb? GetMethodParametricType( 
-            ITypeParameterSymbol symbol, 
-            bool createIfMissing,
-            string fqn )
-        {
-            var docObj = GetDocObject<FixedTypeDb>(symbol, true);
+        //    return retVal;
+        //}
 
-            if (docObj == null)
-            {
-                Logger.Error<string>("Couldn't find or create DocObject for {0}", fqn);
-                return null;
-            }
+        //protected object? GetParametricTypeContainer( ITypeParameterSymbol symbol )
+        //{
+        //    if( symbol.DeclaringType != null )
+        //        return GetTypeByFullyQualifiedName( symbol.DeclaringType );
+        //    else
+        //    {
+        //        if( symbol.DeclaringMethod != null
+        //            && GetByFullyQualifiedName<IMethodSymbol, MethodDb>( symbol.DeclaringMethod, out var result ) )
+        //            return result;
+        //    }
 
-            var retVal = GetDbSet<MethodParametricTypeDb>().FirstOrDefault(x => x.FullyQualifiedName == fqn);
+        //    return null;
+        //}
 
-            if (retVal != null || !createIfMissing)
-                return retVal;
+        //// symbol.DeclaringType is assumed to be non-null
+        //private ImplementableTypeDb? GetTypeContainer(ITypeParameterSymbol symbol)
+        //{
+        //    if (GetByFullyQualifiedName<INamedTypeSymbol, GenericTypeDb>(symbol.DeclaringType!, out var genericDb))
+        //        return genericDb!;
+        //    else
+        //    {
+        //        if (GetByFullyQualifiedName<INamedTypeSymbol, FixedTypeDb>(symbol.DeclaringType!, out var fixedDb))
+        //            return fixedDb!;
+        //    }
 
-            retVal = new MethodParametricTypeDb { FullyQualifiedName = fqn };
+        //    Logger.Error<string>( "DeclaringType of ITypeParameterSymbol '{0}' not found in the database",
+        //        SymbolNamer.GetFullyQualifiedName( symbol ) );
 
-            UpdateDocObjectReference( retVal, docObj );
+        //    return null;
+        //}
 
-            var parametricTypes = GetDbSet<MethodParametricTypeDb>();
-            parametricTypes.Add(retVal);
+        // symbol.DeclaringMethod is assumed to be non-null
+        //private MethodDb? GetMethodContainer(ITypeParameterSymbol symbol)
+        //{
+        //    if (GetByFullyQualifiedName<IMethodSymbol, MethodDb>(symbol.DeclaringMethod!, out var placeHolderDb, true))
+        //        return placeHolderDb!;
 
-            return retVal;
-        }
+        //    Logger.Error<string>( "DeclaringMethod of ITypeParameterSymbol '{0}' not found in the database",
+        //        SymbolNamer.GetFullyQualifiedName( symbol ) );
+
+        //    return null;
+        //}
+
+        //private TypeParametricTypeDb? CreateTypeParametricType( INamedTypeSymbol symbol )
+        //{
+        //    var parametricTypes = GetDbSet<TypeParametricTypeDb>();
+
+        //    var retVal = parametricTypes
+        //        .FirstOrDefault( x => x.SharpObjectID == sharpObj.ID );
+
+        //    if( retVal != null || !createIfMissing ) 
+        //        return retVal;
+
+        //    retVal = new TypeParametricTypeDb();
+
+        //    UpdateDocObjectReference( retVal, docObj );
+
+        //    parametricTypes.Add( retVal );
+
+        //    return retVal;
+        //}
 
         private IEnumerable<TResult> FilterSymbols(IEnumerable<TSource> source)
         {

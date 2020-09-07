@@ -10,11 +10,12 @@ namespace J4JSoftware.Roslyn
     {
         public NamedTypeProcessor(
             RoslynDbContext dbContext,
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -45,30 +46,8 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol(INamedTypeSymbol symbol)
         {
-            if( !GetByFullyQualifiedName<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
-                return false;
-
-            if (!GetByFullyQualifiedName<NamespaceDb>(symbol.ContainingNamespace, out var nsDb))
-                return false;
-
-            var dbSymbol = GetTypeByFullyQualifiedName(symbol, true);
-
-            if (dbSymbol == null)
-            {
-                Logger.Error<string, TypeKind>("Unsupported ITypeSymbol '{0}' ({1})", symbol.Name, symbol.TypeKind);
-                return false;
-            }
-
-            dbSymbol.Synchronized = true;
-            dbSymbol.Name = SymbolNamer.GetName(symbol);
-            dbSymbol.AssemblyID = assemblyDb!.DocObjectID;
-            dbSymbol.NamespaceId = nsDb!.DocObjectID;
-            dbSymbol.Accessibility = symbol.DeclaredAccessibility;
-            dbSymbol.Nature = symbol.TypeKind;
-            dbSymbol.InDocumentationScope = assemblyDb.InScopeInfo != null;
-            ((ImplementableTypeDb) dbSymbol).DeclarationModifier = symbol.GetDeclarationModifier();
-
-            return true;
+            return symbol.IsGenericType && EntityFactories.Retrieve<GenericTypeDb>( symbol, out _, true )
+                   || !symbol.IsGenericType && EntityFactories.Retrieve<FixedTypeDb>( symbol, out _, true );
         }
     }
 }

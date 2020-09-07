@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( NamespaceConfigurator ) )]
-    public class NamespaceDb : IDocObject, IFullyQualifiedName, ISynchronized
+    public class NamespaceDb : ISharpObject //, IFullyQualifiedName, ISynchronized
     {
-        public int DocObjectID { get; set; }
-        public DocObject DocObject { get; set; }
-        public bool Synchronized { get; set; }
-        public string Name { get; set; } = null!;
-        public string FullyQualifiedName { get; set; } = null!;
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
+        //public bool Synchronized { get; set; }
+        //public string Name { get; set; } = null!;
+        //public string FullyQualifiedName { get; set; } = null!;
 
         public List<AssemblyNamespaceDb>? AssemblyNamespaces { get; set; }
         public List<TypeDb>? Types { get; set; }
@@ -22,27 +22,27 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<NamespaceDb> builder )
         {
-            builder.HasKey( x => x.DocObjectID );
+            builder.HasKey( x => x.SharpObjectID );
 
-            builder.HasOne(x => x.DocObject)
+            builder.HasOne(x => x.SharpObject)
                 .WithOne(x => x.Namespace)
-                .HasPrincipalKey<DocObject>(x => x.ID)
-                .HasForeignKey<NamespaceDb>(x => x.DocObjectID);
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<NamespaceDb>(x => x.SharpObjectID);
 
             builder.HasMany( x => x.AssemblyNamespaces )
                 .WithOne( x => x.Namespace )
                 .HasForeignKey( x => x.NamespaceID )
-                .HasPrincipalKey( x => x.DocObjectID );
+                .HasPrincipalKey( x => x.SharpObjectID );
 
             builder.HasMany(x => x.Types)
                 .WithOne(x => x.Namespace)
-                .HasForeignKey(x => x.NamespaceId)
-                .HasPrincipalKey(x => x.DocObjectID);
+                .HasForeignKey(x => x.NamespaceID)
+                .HasPrincipalKey(x => x.SharpObjectID);
 
-            builder.HasAlternateKey(x => x.FullyQualifiedName);
+            //builder.HasAlternateKey(x => x.FullyQualifiedName);
 
-            builder.Property(x => x.FullyQualifiedName)
-                .IsRequired();
+            //builder.Property(x => x.FullyQualifiedName)
+            //    .IsRequired();
         }
     }
 }

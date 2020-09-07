@@ -11,16 +11,16 @@ namespace J4JSoftware.Roslyn
 {
     [Table("Methods")]
     [EntityConfiguration( typeof( MethodBaseDbConfigurator ) )]
-    public class MethodBaseDb : IDocObject, IFullyQualifiedName, ISynchronized
+    public class MethodBaseDb : ISharpObject //, IFullyQualifiedName, ISynchronized
     {
         protected MethodBaseDb()
         {
         }
 
-        public int DocObjectID { get; set; }
-        public DocObject DocObject { get; set; }
-        public string FullyQualifiedName { get; set; }
-        public bool Synchronized { get; set; }
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
+        //public string FullyQualifiedName { get; set; }
+        //public bool Synchronized { get; set; }
 
         public List<MethodParametricTypeDb> ParametricTypes { get; set; }
     }
@@ -29,17 +29,17 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<MethodBaseDb> builder )
         {
-            builder.HasKey(x => x.DocObjectID);
+            builder.HasKey(x => x.SharpObjectID);
 
-            builder.HasOne(x => x.DocObject)
-                .WithOne(x => x.Method)
-                .HasPrincipalKey<DocObject>(x => x.ID)
-                .HasForeignKey<MethodBaseDb>(x => x.DocObjectID);
+            //builder.HasOne( x => x.SharpObject )
+            //    .WithOne( x => x.Method )
+            //    .HasPrincipalKey<SharpObject>( x => x.ID )
+            //    .HasForeignKey<MethodBaseDb>( x => x.SharpObjectID );
 
-            builder.HasAlternateKey(x => x.FullyQualifiedName);
+            //builder.HasAlternateKey(x => x.FullyQualifiedName);
 
-            builder.Property(x => x.FullyQualifiedName)
-                .IsRequired();
+            //builder.Property(x => x.FullyQualifiedName)
+            //    .IsRequired();
         }
     }
 }

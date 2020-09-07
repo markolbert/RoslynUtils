@@ -13,29 +13,29 @@ namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeDbConfigurator ) )]
     [Table("Types")]
-    public class TypeDb : IDocObject, IFullyQualifiedName, ISynchronized
+    public class TypeDb : ISharpObject //, IFullyQualifiedName, ISynchronized
     {
         protected TypeDb()
         {
         }
 
-        public int DocObjectID { get; set; }
-        public DocObject DocObject { get; set; }
-        public bool Synchronized { get; set; }
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
+        //public bool Synchronized { get; set; }
         public TypeKind Nature { get; set; }
-        public string Name { get; set; }
-        public string FullyQualifiedName { get; set; }
+        //public string Name { get; set; }
+        //public string FullyQualifiedName { get; set; }
         public Accessibility Accessibility { get; set; }
         public bool InDocumentationScope { get; set; }
 
         // the namespace to which this entity belongs
-        public int NamespaceId { get; set; }
-        public NamespaceDb Namespace { get; set; }
+        public int NamespaceID { get; set; }
+        public NamespaceDb? Namespace { get; set; }
 
         // the assembly defining this type
         public int AssemblyID { get; set; }
-        public AssemblyDb Assembly { get; set; }
-        public List<ParametricTypeDb> ParametricTypes { get; set; }
+        public AssemblyDb? Assembly { get; set; }
+        public List<TypeParametricTypeDb> ParametricTypes { get; set; }
 
         // list of return types referencing this type definition
         public List<MethodDb> ReturnTypes { get; set; }
@@ -54,27 +54,27 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<TypeDb> builder )
         {
-            builder.HasKey(x => x.DocObjectID);
+            builder.HasKey(x => x.SharpObjectID);
 
-            builder.HasOne( x => x.DocObject )
+            builder.HasOne( x => x.SharpObject )
                 .WithOne( x => x.Type )
-                .HasPrincipalKey<DocObject>( x => x.ID )
-                .HasForeignKey<TypeDb>( x => x.DocObjectID );
+                .HasPrincipalKey<SharpObject>( x => x.ID )
+                .HasForeignKey<TypeDb>( x => x.SharpObjectID );
 
             builder.HasOne( x => x.Namespace )
                 .WithMany( x => x.Types )
-                .HasForeignKey( x => x.NamespaceId )
-                .HasPrincipalKey( x => x.DocObjectID );
+                .HasForeignKey( x => x.NamespaceID )
+                .HasPrincipalKey( x => x.SharpObjectID );
 
             builder.HasOne(x => x.Assembly)
                 .WithMany(x => x.Types)
                 .HasForeignKey(x => x.AssemblyID)
-                .HasPrincipalKey(x => x.DocObjectID);
+                .HasPrincipalKey(x => x.SharpObjectID);
 
-            builder.HasAlternateKey(x => x.FullyQualifiedName);
+            //builder.HasAlternateKey(x => x.FullyQualifiedName);
 
-            builder.Property(x => x.FullyQualifiedName)
-                .IsRequired();
+            //builder.Property(x => x.FullyQualifiedName)
+            //    .IsRequired();
 
             builder.Property( x => x.Accessibility )
                 .HasConversion( new EnumToStringConverter<Accessibility>() );

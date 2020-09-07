@@ -10,26 +10,26 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public abstract class RoslynDbSink<TSymbol, TSink> : SymbolSink<TSymbol, TSink>
         where TSymbol : class, ISymbol
-        where TSink : class, IFullyQualifiedName, new()
+        where TSink : class, ISharpObject, new()
     {
         private readonly RoslynDbContext _dbContext;
 
         protected RoslynDbSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
             : base( symbolNamer, logger )
         {
             _dbContext = dbContext;
-            DocObjectMapper = docObjMapper;
+            SharpObjectMapper = sharpObjMapper;
 
             Symbols = new UniqueSymbols<TSymbol>(symbolNamer);
         }
 
         protected UniqueSymbols<TSymbol> Symbols { get; }
-        protected IDocObjectTypeMapper DocObjectMapper { get; }
+        protected ISharpObjectTypeMapper SharpObjectMapper { get; }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
@@ -51,32 +51,32 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        protected DbSet<TRelated> GetDbSet<TRelated>()
-            where TRelated : class
-            => _dbContext.Set<TRelated>();
+        //protected DbSet<TRelated> GetDbSet<TRelated>()
+        //    where TRelated : class
+        //    => _dbContext.Set<TRelated>();
 
-        protected DocObject? GetDocObject<TEntity>( ISymbol symbol )
-            where TEntity : class, IDocObject
-        {
-            var docObjType = DocObjectMapper.GetDocObjectType<TEntity>();
+        //protected SharpObject? GetDocObject<TEntity>( ISymbol symbol )
+        //    where TEntity : class, ISharpObject
+        //{
+        //    var docObjType = DocObjectMapper.GetDocObjectType<TEntity>();
 
-            if( docObjType == DocObjectType.Unknown )
-            {
-                Logger.Error<Type>( "Couldn't find DocObjectType for entity type '{0}'", typeof(TEntity) );
-                return null;
-            }
+        //    if( docObjType == SharpObjectType.Unknown )
+        //    {
+        //        Logger.Error<Type>( "Couldn't find DocObjectType for entity type '{0}'", typeof(TEntity) );
+        //        return null;
+        //    }
 
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
+        //    var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
-            var retVal = _dbContext.DocObjects.FirstOrDefault( x => x.DocObjectType == docObjType && x.FullyQualifiedName == fqn );
+        //    var retVal = _dbContext.SharpObjects.FirstOrDefault( x => x.SharpObjectType == docObjType && x.FullyQualifiedName == fqn );
 
-            if( retVal == null )
-                Logger.Information<Type, string>( "Couldn't find DocObject for entity type '{0}' ({1})", 
-                    typeof(TEntity),
-                    fqn );
+        //    if( retVal == null )
+        //        Logger.Information<Type, string>( "Couldn't find DocObject for entity type '{0}' ({1})", 
+        //            typeof(TEntity),
+        //            fqn );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
         //protected RelationshipObject? GetRelationshipObject<TSideOne, TSideTwo>(
         //    TSideOne sideOne,
@@ -138,118 +138,133 @@ namespace J4JSoftware.Roslyn.Sinks
         //    return retVal;
         //}
 
-        protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
-            where TEntity : class, IFullyQualifiedName, new()
-        {
-            result = null;
+        //protected bool GetByFullyQualifiedName<TEntity>( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
+        //    where TEntity : class, IFullyQualifiedName, new()
+        //{
+        //    result = null;
 
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
+        //    var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
-            var dbSet = _dbContext.Set<TEntity>();
+        //    var dbSet = _dbContext.Set<TEntity>();
 
-            if( result == null )
-            {
-                if( createIfMissing )
-                {
-                    result = new TEntity { FullyQualifiedName = fqn };
+        //    if( result == null )
+        //    {
+        //        if( createIfMissing )
+        //        {
+        //            result = new TEntity { FullyQualifiedName = fqn };
 
-                    dbSet.Add(result);
-                }
-                else
-                {
-                    Logger.Error<Type, string>( "Couldn't find instance of {0} in database for symbol {1}", 
-                    typeof(TEntity),
-                    fqn );
+        //            dbSet.Add(result);
+        //        }
+        //        else
+        //        {
+        //            Logger.Error<Type, string>( "Couldn't find instance of {0} in database for symbol {1}", 
+        //            typeof(TEntity),
+        //            fqn );
 
-                    return false;
-                }
-            }
+        //            return false;
+        //        }
+        //    }
 
-            // special handling for AssemblyDb to force loading of InScopeInfo property,
-            // if it exists
-            if (result is AssemblyDb assemblyDb)
-                _dbContext.Entry(assemblyDb)
-                    .Reference(x => x.InScopeInfo)
-                    .Load();
+        //    // special handling for AssemblyDb to force loading of InScopeInfo property,
+        //    // if it exists
+        //    if (result is AssemblyDb assemblyDb)
+        //        _dbContext.Entry(assemblyDb)
+        //            .Reference(x => x.InScopeInfo)
+        //            .Load();
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        protected bool GetByFullyQualifiedNameNG<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false)
-            where TEntity : class, IDocObject, IFullyQualifiedName, new()
-        {
-            result = null;
+        //protected bool GetByFullyQualifiedNameNG<TEntity>(ISymbol symbol, out TEntity? result, bool createIfMissing = false)
+        //    where TEntity : class, IDocObject, IFullyQualifiedName, new()
+        //{
+        //    result = null;
 
-            var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
+        //    var fqn = SymbolNamer.GetFullyQualifiedName(symbol);
 
-            var docObj = GetDocObject<TEntity>(symbol);
+        //    var docObj = GetDocObject<TEntity>(symbol);
 
-            var dbSet = _dbContext.Set<TEntity>();
+        //    var dbSet = _dbContext.Set<TEntity>();
 
-            if (docObj != null)
-                result = dbSet.FirstOrDefault(x => ((IDocObject)x).DocObjectID == docObj.ID);
+        //    if (docObj != null)
+        //        result = dbSet.FirstOrDefault(x => ((IDocObject)x).SharpObjectID == docObj.ID);
 
-            if (result == null)
-            {
-                if (createIfMissing)
-                {
-                    // create the DocObject if we need to
-                    if (docObj == null)
-                    {
-                        docObj = new DocObject
-                        {
-                            FullyQualifiedName = SymbolNamer.GetFullyQualifiedName(symbol)
-                        };
+        //    if (result == null)
+        //    {
+        //        if (createIfMissing)
+        //        {
+        //            // create the DocObject if we need to
+        //            if (docObj == null)
+        //            {
+        //                docObj = new DocObject
+        //                {
+        //                    FullyQualifiedName = SymbolNamer.GetFullyQualifiedName(symbol)
+        //                };
 
-                        _dbContext.DocObjects.Add(docObj);
-                    }
+        //                _dbContext.DocObjects.Add(docObj);
+        //            }
 
-                    result = new TEntity { FullyQualifiedName = fqn };
+        //            result = new TEntity { FullyQualifiedName = fqn };
 
-                    if( docObj.ID == 0 )
-                        result.DocObject = docObj;
-                    else result.DocObjectID = docObj.ID;
+        //            if( docObj.ID == 0 )
+        //                result.DocObject = docObj;
+        //            else result.SharpObjectID = docObj.ID;
 
-                    dbSet.Add(result);
-                }
-                else
-                {
-                    Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
-                        typeof(TEntity),
-                        fqn);
+        //            dbSet.Add(result);
+        //        }
+        //        else
+        //        {
+        //            Logger.Error<Type, string>("Couldn't find instance of {0} in database for symbol {1}",
+        //                typeof(TEntity),
+        //                fqn);
 
-                    return false;
-                }
-            }
+        //            return false;
+        //        }
+        //    }
 
-            docObj!.Name = SymbolNamer.GetName( symbol );
-            docObj.Synchronized = true;
-            docObj.DocObjectType = DocObjectMapper.GetDocObjectType<TEntity>();
+        //    docObj!.Name = SymbolNamer.GetName( symbol );
+        //    docObj.Synchronized = true;
+        //    docObj.DocObjectType = DocObjectMapper.GetDocObjectType<TEntity>();
 
-            // special handling for AssemblyDb to force loading of InScopeInfo property,
-            // if it exists
-            if (result is AssemblyDb assemblyDb)
-                _dbContext.Entry(assemblyDb)
-                    .Reference(x => x.InScopeInfo)
-                    .Load();
+        //    // special handling for AssemblyDb to force loading of InScopeInfo property,
+        //    // if it exists
+        //    if (result is AssemblyDb assemblyDb)
+        //        _dbContext.Entry(assemblyDb)
+        //            .Reference(x => x.InScopeInfo)
+        //            .Load();
 
-            return true;
-        }
+        //    return true;
+        //}
 
         protected void MarkUnsynchronized<TEntity>()
-            where TEntity : class, ISynchronized
+            where TEntity : class
         {
-            if( !typeof(ISynchronized).IsAssignableFrom( typeof(TEntity) ) )
+            var entityType = typeof(TEntity);
+
+            if( typeof(ISharpObject).IsAssignableFrom( entityType ) )
+            {
+                // update the underlying DocObject
+                var docObjType = SharpObjectMapper[ typeof(TEntity) ];
+
+                _dbContext.SharpObjects.Where(x => x.SharpObjectType == docObjType)
+                    .ForEachAsync(x => x.Synchronized = false);
+
                 return;
+            }
 
-            var dbSet = GetDbSet<TEntity>().Cast<ISynchronized>();
+            if( typeof(ISynchronized).IsAssignableFrom( entityType ) )
+            {
+                // update the entities directly
+                var dbSet = _dbContext.Set<TEntity>().Cast<ISynchronized>();
 
-            dbSet.ForEachAsync(x => x.Synchronized = false);
+                dbSet.ForEachAsync(x => x.Synchronized = false);
 
-            var docObjType = DocObjectMapper.GetDocObjectType<TEntity>();
+                return;
+            }
 
-            _dbContext.DocObjects.Where( x => x.DocObjectType == docObjType )
-                .ForEachAsync( x => x.Synchronized = false );
+            Logger.Error(
+                "Attempting to mark as unsynchronized entities ({0}) that are neither an IDocObject nor an ISynchronized",
+                entityType );
         }
 
         protected virtual void SaveChanges() => _dbContext.SaveChanges();

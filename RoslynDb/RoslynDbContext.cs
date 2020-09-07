@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
             _config = config ?? throw new NullReferenceException(nameof(config));
         }
 
-        public DbSet<DocObject> DocObjects { get; set; }
+        public DbSet<SharpObject> SharpObjects { get; set; }
 
         // assemblies and namespaces
         public DbSet<AssemblyDb> Assemblies { get; set; }
@@ -30,14 +30,15 @@ namespace J4JSoftware.Roslyn
         // type definition and implementation
         public DbSet<FixedTypeDb> FixedTypes { get; set; }
         public DbSet<GenericTypeDb> GenericTypes { get; set; }
-        public DbSet<ParametricTypeDb> TypeParametricTypes { get; set; }
+        public DbSet<TypeParametricTypeDb> TypeParametricTypes { get; set; }
         public DbSet<MethodParametricTypeDb> MethodParametericTypes { get; set; }
+        public DbSet<ParametricTypeDb> AllParametricTypes { get; set; }
         public DbSet<TypeAncestorDb> TypeAncestors { get; set; }
         public DbSet<TypeArgumentDb> TypeArguments { get; set; }
 
         public DbSet<MethodDb> Methods { get; set; }
         public DbSet<ArgumentDb> MethodArguments { get; set; }
-        public DbSet<MethodPlaceholderDb> PlaceholderMethods { get; set; }
+        //public DbSet<MethodPlaceholderDb> PlaceholderMethods { get; set; }
 
         public DbSet<PropertyDb> Properties { get; set; }
         public DbSet<PropertyParameterDb> PropertyParameters { get; set; }

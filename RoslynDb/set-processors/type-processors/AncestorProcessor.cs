@@ -10,11 +10,12 @@ namespace J4JSoftware.Roslyn
     {
         public AncestorProcessor(
             RoslynDbContext dbContext,
+            IEntityFactories factories,
             ISymbolNamer symbolNamer,
-            IDocObjectTypeMapper docObjMapper,
+            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, symbolNamer, docObjMapper, logger )
+            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
         {
         }
 
@@ -43,9 +44,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            var typeDb = GetTypeByFullyQualifiedName( typeSymbol );
-
-            if( typeDb == null )
+            if( !EntityFactories.Retrieve<TypeDb>(typeSymbol, out var typeDb))
             {
                 Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
                     SymbolNamer.GetFullyQualifiedName( typeSymbol ), 
@@ -73,9 +72,7 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessAncestor( TypeDb typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            var ancestorDb = GetTypeByFullyQualifiedName( ancestorSymbol );
-
-            if( ancestorDb == null )
+            if( !EntityFactories.Retrieve<ImplementableTypeDb>( ancestorSymbol, out var ancestorDb ))
             {
                 Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
                     SymbolNamer.GetFullyQualifiedName( ancestorSymbol ) );
@@ -83,20 +80,20 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            var typeAncestors = GetDbSet<TypeAncestorDb>();
+            //var typeAncestors = GetDbSet<TypeAncestorDb>();
 
-            var typeAncestorDb = typeAncestors
-                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.DocObjectID && ti.AncestorTypeID == ancestorDb!.DocObjectID );
+            var typeAncestorDb = DbContext.TypeAncestors
+                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.SharpObjectID && ti.AncestorTypeID == ancestorDb!.SharpObjectID );
 
             if( typeAncestorDb == null )
             {
                 typeAncestorDb = new TypeAncestorDb
                 {
-                    AncestorTypeID = ancestorDb!.DocObjectID,
-                    ChildTypeID = typeDb!.DocObjectID
+                    AncestorTypeID = ancestorDb!.SharpObjectID,
+                    ChildTypeID = typeDb!.SharpObjectID
                 };
 
-                typeAncestors.Add( typeAncestorDb );
+                DbContext.TypeAncestors.Add( typeAncestorDb );
             }
 
             typeAncestorDb.Synchronized = true;

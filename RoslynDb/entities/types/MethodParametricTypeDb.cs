@@ -11,10 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( MethodParametricTypeDbConfigurator ) )]
-    public class MethodParametricTypeDb : ParametricTypeBaseDb
+    public class MethodParametricTypeDb : ParametricTypeDb
     {
         public int ContainingMethodID { get; set; }
-        public MethodBaseDb ContainingMethod { get; set; }
+        public MethodDb? ContainingMethod { get; set; }
     }
 
     internal class MethodParametricTypeDbConfigurator : EntityConfigurator<MethodParametricTypeDb>
@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasOne( x => x.ContainingMethod )
                 .WithMany( x => x.ParametricTypes )
-                .HasPrincipalKey( x => x.DocObjectID )
+                .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.ContainingMethodID );
         }
     }

@@ -10,14 +10,14 @@ namespace J4JSoftware.Roslyn
 {
     [Table("Properties")]
     [EntityConfiguration( typeof( PropertyConfigurator ) )]
-    public class PropertyDb : IDocObject, IFullyQualifiedName, ISynchronized
+    public class PropertyDb : ISharpObject //, IFullyQualifiedName, ISynchronized
     {
-        public int DocObjectID { get; set; }
-        public DocObject DocObject { get; set; }
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
 
-        public string FullyQualifiedName { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public bool Synchronized { get; set; }
+        //public string FullyQualifiedName { get; set; } = null!;
+        //public string Name { get; set; } = null!;
+        //public bool Synchronized { get; set; }
 
         public Accessibility Accessibility
         {
@@ -48,10 +48,10 @@ namespace J4JSoftware.Roslyn
         public bool IsWriteOnly { get; set; }
 
         public int DefiningTypeID { get; set; }
-        public FixedTypeDb DefiningType { get; set; } = null!;
+        public ImplementableTypeDb? DefiningType { get; set; } = null!;
 
         public int PropertyTypeID { get; set; }
-        public FixedTypeDb PropertyType { get; set; } = null!;
+        public TypeDb? PropertyType { get; set; } = null!;
 
         public List<PropertyParameterDb> Parameters { get; set; }
     }
@@ -60,29 +60,29 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<PropertyDb> builder )
         {
-            builder.HasKey( x => x.DocObjectID );
+            builder.HasKey( x => x.SharpObjectID );
 
-            builder.HasOne(x => x.DocObject)
+            builder.HasOne(x => x.SharpObject)
                 .WithOne(x => x.Property)
-                .HasPrincipalKey<DocObject>(x => x.ID)
-                .HasForeignKey<PropertyDb>(x => x.DocObjectID);
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<PropertyDb>(x => x.SharpObjectID);
 
             builder.HasOne( x => x.DefiningType )
                 .WithMany( x => x.Properties )
                 .HasForeignKey( x => x.DefiningTypeID )
-                .HasPrincipalKey( x => x.DocObjectID );
+                .HasPrincipalKey( x => x.SharpObjectID );
 
             builder.HasOne( x => x.PropertyType )
                 .WithMany( x => x.PropertyTypes )
-                .HasPrincipalKey( x => x.DocObjectID )
+                .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.PropertyTypeID );
 
-            builder.HasAlternateKey(x => x.FullyQualifiedName);
+            //builder.HasAlternateKey(x => x.FullyQualifiedName);
 
             builder.Ignore( x => x.Accessibility );
 
-            builder.Property(x => x.FullyQualifiedName)
-                .IsRequired();
+            //builder.Property(x => x.FullyQualifiedName)
+            //    .IsRequired();
 
             builder.Property(x => x.GetAccessibility)
                 .HasConversion(new EnumToNumberConverter<Accessibility, int>());

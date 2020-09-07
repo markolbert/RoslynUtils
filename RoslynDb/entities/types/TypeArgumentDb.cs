@@ -15,11 +15,11 @@ namespace J4JSoftware.Roslyn
         public bool Synchronized { get; set; }
 
         public int DeclaringTypeID { get; set; }
-        public ImplementableTypeDb DeclaringType { get; set; }
+        public ImplementableTypeDb? DeclaringType { get; set; }
 
         public int Ordinal { get; set; }
         public int ArgumentTypeID { get; set; }
-        public ImplementableTypeDb ArgumentType { get; set; }
+        public ImplementableTypeDb? ArgumentType { get; set; }
     }
 
     internal class TypeArgumentConfigurator : EntityConfigurator<TypeArgumentDb>
@@ -28,12 +28,12 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasOne(x => x.ArgumentType)
                 .WithMany(x => x.TypeArgumentReferences)
-                .HasPrincipalKey(x => x.DocObjectID)
+                .HasPrincipalKey(x => x.SharpObjectID)
                 .HasForeignKey(x => x.ArgumentTypeID);
 
             builder.HasOne( x => x.DeclaringType )
                 .WithMany( x => x.TypeArguments )
-                .HasPrincipalKey( x => x.DocObjectID )
+                .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.DeclaringTypeID );
 
             builder.HasIndex(x => new { TypeDefinitionID = x.DeclaringTypeID, x.Ordinal })
