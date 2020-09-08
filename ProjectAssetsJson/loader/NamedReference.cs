@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class NamedReference : CompilationReference
     {

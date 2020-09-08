@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using J4JSoftware.Logging;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class NugetRepositories : ProjectAssetsBase
     {

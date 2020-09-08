@@ -1,6 +1,6 @@
 ﻿using NuGet.Versioning;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public interface ILibraryInfo
     {

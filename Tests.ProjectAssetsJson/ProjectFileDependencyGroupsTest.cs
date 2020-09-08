@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using FluentAssertions;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Roslyn.ProjectAssets;
 using Xunit;
 
 namespace Tests.ProjectAssetsJson

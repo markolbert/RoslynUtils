@@ -5,7 +5,7 @@ using System.Linq;
 using J4JSoftware.Logging;
 using NuGet.Versioning;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class ProjectInfo : ProjectAssetsBase
     {

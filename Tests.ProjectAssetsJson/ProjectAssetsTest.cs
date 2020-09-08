@@ -1,5 +1,6 @@
 using FluentAssertions;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Roslyn.ProjectAssets;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

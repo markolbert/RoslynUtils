@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Roslyn.ProjectAssets;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.ProjectAssetsJson

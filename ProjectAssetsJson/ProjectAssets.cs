@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using J4JSoftware.Logging;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class ProjectAssets : ProjectAssetsBase
     {

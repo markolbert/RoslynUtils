@@ -1,6 +1,8 @@
 using System.Dynamic;
 using FluentAssertions;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Roslyn.ProjectAssets;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Tests.ProjectAssetsJson

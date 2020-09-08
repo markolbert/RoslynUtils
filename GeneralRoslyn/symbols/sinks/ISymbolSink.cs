@@ -16,7 +16,6 @@ namespace J4JSoftware.Roslyn
         where TSink : class
     {
         bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol );
-        //bool TryGetSunkValue( TSymbol symbol, out TSink? result );
     }
 
     public interface IDefaultSymbolSink : ISymbolSink

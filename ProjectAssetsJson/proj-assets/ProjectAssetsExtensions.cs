@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using NuGet.Versioning;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public static class ProjectAssetsExtensions
     {

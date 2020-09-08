@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public interface ITypedListCreator
     {

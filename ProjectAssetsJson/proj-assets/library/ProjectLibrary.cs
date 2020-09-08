@@ -9,7 +9,7 @@ using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using NuGet.Versioning;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class ProjectLibrary : ProjectAssetsBase, ILibraryInfo
     {
@@ -68,7 +68,7 @@ namespace J4JSoftware.Roslyn
             OutputType.Exe => OutputKind.ConsoleApplication,
             OutputType.Module => OutputKind.NetModule,
             OutputType.WinExe => OutputKind.WindowsRuntimeApplication,
-            _ => throw new ArgumentOutOfRangeException( $"Unhandled {nameof(Roslyn.OutputType)} '{OutputType}'" )
+            _ => throw new ArgumentOutOfRangeException( $"Unhandled {nameof(OutputType)} '{OutputType}'" )
         };
 
         public XDocument? Document { get; private set; }

@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using J4JSoftware.Logging;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class JsonProjectAssetsConverter : JsonConverter<ExpandoObject>
     {

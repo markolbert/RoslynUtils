@@ -2,7 +2,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class FilePathReference : CompilationReference
     {

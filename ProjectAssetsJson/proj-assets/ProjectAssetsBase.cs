@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using NuGet.Versioning;
 using J4JSoftware.Logging;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.ProjectAssets
 {
     public class ProjectAssetsBase
     {
