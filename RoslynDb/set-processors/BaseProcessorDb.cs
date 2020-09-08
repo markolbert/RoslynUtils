@@ -30,7 +30,7 @@ namespace J4JSoftware.Roslyn
             {
                 allOkay = ProcessSymbol( symbol );
 
-                if( !allOkay )
+                if( !allOkay && StopOnFirstError )
                     break;
             }
 

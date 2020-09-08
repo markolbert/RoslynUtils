@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn.walkers
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            if( !context.GetSymbol<IPropertySymbol>( node, out var typeSymbol ) )
+            if( !context.GetSymbol<IPropertySymbol>( node, out var symbol ) )
             {
                 Logger.Verbose<string, SyntaxKind>( "{0}: no IPropertySymbol found for node of kind {1}",
                     context.Container.AssemblyName,
@@ -45,7 +45,10 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            result = typeSymbol;
+            if( !InDocumentationScope( symbol!.ContainingAssembly ) )
+                return false;
+
+            result = symbol;
 
             return true;
         }

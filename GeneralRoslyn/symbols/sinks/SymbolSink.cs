@@ -22,11 +22,18 @@ namespace J4JSoftware.Roslyn
         protected IJ4JLogger Logger { get; }
         protected ISymbolNamer SymbolNamer { get; }
 
+        public bool StopOnFirstError { get; private set; } = false;
+
         public virtual bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) => true;
 
         public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol) == symbolType;
 
-        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker ) => true;
+        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
+        {
+            StopOnFirstError = stopOnFirstError;
+
+            return true;
+        }
 
         public virtual bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
 

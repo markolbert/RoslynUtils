@@ -41,7 +41,7 @@ namespace J4JSoftware.Roslyn.walkers
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            if( !context.GetSymbol<IMethodSymbol>( node, out var typeSymbol ) )
+            if( !context.GetSymbol<IMethodSymbol>( node, out var symbol ) )
             {
                 Logger.Verbose<string, SyntaxKind>( "{0}: no IMethodSymbol found for node of kind {1}",
                     context.Container.AssemblyName,
@@ -50,10 +50,10 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            if( !InDocumentationScope( typeSymbol!.ContainingAssembly ) )
+            if( !InDocumentationScope( symbol!.ContainingAssembly ) )
                 return false;
 
-            result = typeSymbol;
+            result = symbol;
 
             return true;
         }

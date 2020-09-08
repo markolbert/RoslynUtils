@@ -46,14 +46,14 @@ namespace J4JSoftware.Roslyn
         public bool InDocumentationScope(IAssemblySymbol toCheck)
             => DocumentationAssemblies.Any(ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
 
-        public virtual bool Process( List<CompiledProject> compResults )
+        public virtual bool Process( List<CompiledProject> compResults, bool stopOnFirstError = false )
         {
             _modelAssemblies.Clear();
             _modelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
 
             _visitedNodes.Clear();
 
-            if( !_symbolSink.InitializeSink(this) )
+            if( !_symbolSink.InitializeSink(this, stopOnFirstError) )
                 return false;
 
             foreach( var compResult in compResults.SelectMany(cr=>cr) )

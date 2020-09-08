@@ -14,9 +14,17 @@ namespace J4JSoftware.Roslyn
             _logger.SetLoggedType( this.GetType() );
         }
 
+        public bool StopOnFirstError { get; private set; } = false;
+
         public bool SupportsSymbol( Type symbolType ) => typeof(ISymbol).IsAssignableFrom( symbolType );
 
-        public bool InitializeSink( ISyntaxWalker syntaxWalker ) => true;
+        public bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
+        {
+            StopOnFirstError = stopOnFirstError;
+
+            return true;
+        }
+
         public bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
 
         public bool OutputSymbol( ISyntaxWalker syntaxWalker, ISymbol symbol )

@@ -10,6 +10,6 @@ namespace J4JSoftware.Roslyn
         Type SymbolType { get; }
         ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies { get; }
         bool InDocumentationScope( IAssemblySymbol assemblySymbol );
-        bool Process(List<CompiledProject> compiledProjects);
+        bool Process(List<CompiledProject> compiledProjects, bool stopOnFirstError = false );
     }
 }

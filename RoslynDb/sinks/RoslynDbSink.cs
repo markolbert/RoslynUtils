@@ -37,9 +37,9 @@ namespace J4JSoftware.Roslyn.Sinks
         protected UniqueSymbols<TSymbol> Symbols { get; }
         protected ISharpObjectTypeMapper SharpObjectMapper { get; }
 
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
         {
-            if( !base.InitializeSink( syntaxWalker ) )
+            if( !base.InitializeSink( syntaxWalker, stopOnFirstError ) )
                 return false;
 
             Symbols.Clear();
@@ -52,7 +52,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if (!base.FinalizeSink(syntaxWalker))
                 return false;
 
-            return _processors?.Process(Symbols) ?? true;
+            return _processors?.Process(Symbols, StopOnFirstError) ?? true;
         }
 
         public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)
@@ -250,36 +250,36 @@ namespace J4JSoftware.Roslyn.Sinks
         //    return true;
         //}
 
-        protected void MarkUnsynchronized<TEntity>()
-            where TEntity : class
-        {
-            var entityType = typeof(TEntity);
+        //protected void MarkUnsynchronized<TEntity>()
+        //    where TEntity : class
+        //{
+        //    var entityType = typeof(TEntity);
 
-            if( typeof(ISharpObject).IsAssignableFrom( entityType ) )
-            {
-                // update the underlying DocObject
-                var docObjType = SharpObjectMapper[ typeof(TEntity) ];
+        //    if( typeof(ISharpObject).IsAssignableFrom( entityType ) )
+        //    {
+        //        // update the underlying DocObject
+        //        var docObjType = SharpObjectMapper[ typeof(TEntity) ];
 
-                DbContext.SharpObjects.Where(x => x.SharpObjectType == docObjType)
-                    .ForEachAsync(x => x.Synchronized = false);
+        //        DbContext.SharpObjects.Where(x => x.SharpObjectType == docObjType)
+        //            .ForEachAsync(x => x.Synchronized = false);
 
-                return;
-            }
+        //        return;
+        //    }
 
-            if( typeof(ISynchronized).IsAssignableFrom( entityType ) )
-            {
-                // update the entities directly
-                var dbSet = DbContext.Set<TEntity>().Cast<ISynchronized>();
+        //    if( typeof(ISynchronized).IsAssignableFrom( entityType ) )
+        //    {
+        //        // update the entities directly
+        //        var dbSet = DbContext.Set<TEntity>().Cast<ISynchronized>();
 
-                dbSet.ForEachAsync(x => x.Synchronized = false);
+        //        dbSet.ForEachAsync(x => x.Synchronized = false);
 
-                return;
-            }
+        //        return;
+        //    }
 
-            Logger.Error(
-                "Attempting to mark as unsynchronized entities ({0}) that are neither an IDocObject nor an ISynchronized",
-                entityType );
-        }
+        //    Logger.Error(
+        //        "Attempting to mark as unsynchronized entities ({0}) that are neither an IDocObject nor an ISynchronized",
+        //        entityType );
+        //}
 
         //protected virtual void SaveChanges() => _dbContext.SaveChanges();
     }

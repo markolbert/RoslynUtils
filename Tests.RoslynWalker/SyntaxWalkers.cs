@@ -15,7 +15,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        public bool Process( List<CompiledProject> compResults )
+        public bool Process( List<CompiledProject> compResults, bool stopOnFirstError = false )
         {
             var allOkay = true;
 
@@ -23,7 +23,7 @@ namespace Tests.RoslynWalker
             {
                 allOkay &= walker.Process( compResults );
 
-                if( !allOkay )
+                if( !allOkay && !stopOnFirstError )
                     break;
             }
 

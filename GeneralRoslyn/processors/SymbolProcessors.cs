@@ -17,15 +17,15 @@ namespace J4JSoftware.Roslyn
 
         // ensure the context object is able to reset itself so it can 
         // handle multiple iterations
-        public bool Process( IEnumerable<TSymbol> context )
+        public bool Process( IEnumerable<TSymbol> context, bool stopOnFirstError = false )
         {
             var allOkay = true;
 
             foreach( var processor in ExecutionSequence )
             {
-                allOkay &= processor.Process( context );
+                allOkay &= processor.Process( context, stopOnFirstError );
 
-                if( !allOkay )
+                if( !allOkay && stopOnFirstError )
                     break;
             }
 

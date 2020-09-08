@@ -32,9 +32,9 @@ namespace J4JSoftware.Roslyn.walkers
 
         // override the Traverse() method to synchronize the project file based metadata
         // for assemblies that are within the scope of the documentation
-        public override bool Process( List<CompiledProject> compResults )
+        public override bool Process( List<CompiledProject> compResults, bool stopOnFirstError = false )
         {
-            if( !base.Process( compResults ) )
+            if( !base.Process( compResults, stopOnFirstError ) )
                 return false;
 
             if( !_inScopeProcessor.Initialize() )
@@ -54,18 +54,18 @@ namespace J4JSoftware.Roslyn.walkers
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            // SyntaxKind.CompilationUnit appears to represent the assembly level...but you can't
-            // retrieve its ISymbol from the node
-            if( node.IsKind( SyntaxKind.CompilationUnit ) )
-            {
-                Logger.Information<string, SyntaxKind>( "{0}: found {1}", 
-                    context.Container.AssemblyName,
-                    SyntaxKind.CompilationUnit );
+            //// SyntaxKind.CompilationUnit appears to represent the assembly level...but you can't
+            //// retrieve its ISymbol from the node
+            //if( node.IsKind( SyntaxKind.CompilationUnit ) )
+            //{
+            //    Logger.Information<string, SyntaxKind>( "{0}: found {1}", 
+            //        context.Container.AssemblyName,
+            //        SyntaxKind.CompilationUnit );
 
-                result = context.Container.AssemblySymbol;
+            //    result = context.Container.AssemblySymbol;
 
-                return true;
-            }
+            //    return true;
+            //}
 
             if( !context.GetSymbol<ISymbol>( node, out var otherSymbol ) )
             {
@@ -85,12 +85,12 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
-            if( InDocumentationScope( otherAssembly ) )
-            {
-                Logger.Verbose<string>("Assembly for symbol {0} is in scope", otherSymbol.ToDisplayString());
+            //if( InDocumentationScope( otherAssembly ) )
+            //{
+            //    Logger.Verbose<string>("Assembly for symbol {0} is in scope", otherSymbol.ToDisplayString());
 
-                return false;
-            }
+            //    return false;
+            //}
 
             result = otherAssembly;
 
