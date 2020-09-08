@@ -4,7 +4,7 @@ using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace J4JSoftware.Roslyn.walkers
+namespace J4JSoftware.Roslyn
 {
     public class NamespaceWalker : SyntaxWalker<INamespaceSymbol>
     {

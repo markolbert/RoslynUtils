@@ -6,17 +6,17 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
-    public class PropertyWalker : SyntaxWalker<IPropertySymbol>
+    public class FieldWalker : SyntaxWalker<IFieldSymbol>
     {
         private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
 
-        static PropertyWalker()
+        static FieldWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
         }
 
-        public PropertyWalker(
+        public FieldWalker(
             IEnumerable<ISymbolSink> symbolSinks,
             ISymbolNamer symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, 
             CompiledFile context,
-            out IPropertySymbol? result )
+            out IFieldSymbol? result )
         {
             result = null;
 
@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            if( !context.GetSymbol<IPropertySymbol>( node, out var symbol ) )
+            if( !context.GetSymbol<IFieldSymbol>( node, out var symbol ) )
                 return false;
 
             if( !InDocumentationScope( symbol!.ContainingAssembly ) )

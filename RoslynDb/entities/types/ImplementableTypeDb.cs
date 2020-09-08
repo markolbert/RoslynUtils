@@ -29,6 +29,9 @@ namespace J4JSoftware.Roslyn
 
         // list of property arguments referencing this type
         public List<PropertyParameterDb> PropertyParameters { get; set; }
+
+        // list of fields for this type
+        public List<FieldDb> Fields { get; set; }
     }
 
     internal class DefinedTypeDbConfigurator : EntityConfigurator<ImplementableTypeDb>

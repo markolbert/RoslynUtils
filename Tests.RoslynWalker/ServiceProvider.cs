@@ -3,7 +3,6 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
-using J4JSoftware.Roslyn.walkers;
 using Microsoft.CodeAnalysis;
 using Serilog.Events;
 
@@ -67,58 +66,15 @@ namespace Tests.RoslynWalker
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
 
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<IAssemblySymbol>).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
-                .AsImplementedInterfaces();
-
-            builder.RegisterType<AssemblyProcessors>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
-
             builder.RegisterType<InScopeAssemblyProcessor>()
                 .As<IInScopeAssemblyProcessor>();
 
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<INamespaceSymbol>).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
-                .AsImplementedInterfaces();
-
-            builder.RegisterType<NamespaceProcessors>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
-
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<ITypeSymbol>).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
-                .AsImplementedInterfaces();
-
-            builder.RegisterType<TypeProcessors>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
-            
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<IMethodSymbol>).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
-                .AsImplementedInterfaces();
-
-            builder.RegisterType<MethodProcessors>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
-
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<IPropertySymbol>).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
-                .AsImplementedInterfaces();
-
-            builder.RegisterType<PropertyProcessors>()
-                .AsImplementedInterfaces()
-                .SingleInstance();
+            RegisterSymbolProcessor<IAssemblySymbol, AssemblyProcessors>( builder );
+            RegisterSymbolProcessor<INamespaceSymbol, NamespaceProcessors>(builder);
+            RegisterSymbolProcessor<ITypeSymbol, TypeProcessors>(builder);
+            RegisterSymbolProcessor<IMethodSymbol, MethodProcessors>(builder);
+            RegisterSymbolProcessor<IPropertySymbol, PropertyProcessors>(builder);
+            RegisterSymbolProcessor<IFieldSymbol, FieldProcessors>(builder);
 
             builder.RegisterAssemblyTypes( typeof(RoslynDbContext).Assembly )
                 .Where( t => !t.IsAbstract
@@ -132,6 +88,21 @@ namespace Tests.RoslynWalker
                 .SingleInstance();
 
             Instance = new AutofacServiceProvider( builder.Build() );
+        }
+
+        private static void RegisterSymbolProcessor<TSymbol, TProcessors>( ContainerBuilder builder )
+            where TSymbol : ISymbol
+            where TProcessors : ISymbolProcessors<TSymbol>
+        {
+            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
+                .Where(t => !t.IsAbstract
+                            && typeof(IAtomicProcessor<TSymbol>).IsAssignableFrom(t)
+                            && t.GetConstructors().Length > 0)
+                .AsImplementedInterfaces();
+
+            builder.RegisterType<TProcessors>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
         }
     }
 }

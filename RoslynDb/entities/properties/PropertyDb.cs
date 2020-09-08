@@ -46,10 +46,10 @@ namespace J4JSoftware.Roslyn
         public bool IsWriteOnly { get; set; }
 
         public int DefiningTypeID { get; set; }
-        public ImplementableTypeDb? DefiningType { get; set; } = null!;
+        public ImplementableTypeDb DefiningType { get; set; } = null!;
 
         public int PropertyTypeID { get; set; }
-        public TypeDb? PropertyType { get; set; } = null!;
+        public TypeDb PropertyType { get; set; } = null!;
 
         public List<PropertyParameterDb> Parameters { get; set; }
     }

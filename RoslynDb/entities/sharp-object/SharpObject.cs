@@ -23,6 +23,7 @@ namespace J4JSoftware.Roslyn
             SharpObjectType.ParametricType => Type,
             SharpObjectType.Method => Method,
             SharpObjectType.Property => Property,
+            SharpObjectType.Field => Field,
             _ => null
         };
 
@@ -31,6 +32,7 @@ namespace J4JSoftware.Roslyn
         public TypeDb? Type { get; set; }
         public MethodDb? Method { get; set; }
         public PropertyDb? Property { get; set; }
+        public FieldDb? Field { get; set; }
     }
 
     internal class DocObjectConfigurator : EntityConfigurator<SharpObject>

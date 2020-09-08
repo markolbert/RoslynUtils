@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
         {
             if( !EntityFactories.Retrieve<ImplementableTypeDb>(symbol.ContainingType, out var typeDb  ))
             {
-                Logger.Error<string>( "Couldn't find containing type for IProperty '{0}'",
+                Logger.Error<string>( "Couldn't find containing type for IPropertySymbol '{0}'",
                     EntityFactories.GetFullyQualifiedName( symbol ) );
 
                 return false;

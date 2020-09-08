@@ -8,9 +8,8 @@
         GenericType,
         ParametricType,
         Method,
-        //MethodParametricType,
-        //PlaceholderMethod,
         Property,
+        Field,
 
         Unknown
     }

@@ -45,6 +45,9 @@ namespace J4JSoftware.Roslyn
 
         // list of types implemented by this type (including the type it is descended from)
         public List<TypeAncestorDb> AncestorTypes { get; set; }
+
+        // list of fields having this type
+        public List<FieldDb> FieldTypes { get; set; }
     }
 
     internal class TypeDbConfigurator : EntityConfigurator<TypeDb>

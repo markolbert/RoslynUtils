@@ -18,6 +18,7 @@ namespace J4JSoftware.Roslyn
                     ITypeParameterSymbol tpSymbol => SharpObjectType.ParametricType,
                     IPropertySymbol pSymbol => SharpObjectType.Property,
                     IArrayTypeSymbol arraySymbol => handle_array(arraySymbol),
+                    IFieldSymbol fieldSymbol => SharpObjectType.Field,
                     _ => SharpObjectType.Unknown
                 };
 

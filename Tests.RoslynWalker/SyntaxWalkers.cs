@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
-using J4JSoftware.Roslyn.walkers;
 
 namespace Tests.RoslynWalker
 {
@@ -35,7 +34,8 @@ namespace Tests.RoslynWalker
             return SetPredecessor<NamespaceWalker, AssemblyWalker>()
                    && SetPredecessor<TypeWalker, NamespaceWalker>()
                    && SetPredecessor<MethodWalker, TypeWalker>()
-                   && SetPredecessor<PropertyWalker, TypeWalker>();
+                   && SetPredecessor<PropertyWalker, TypeWalker>()
+                   && SetPredecessor<FieldWalker, TypeWalker>();
         }
     }
 }
