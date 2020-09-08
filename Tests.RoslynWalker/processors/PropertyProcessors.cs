@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 namespace Tests.RoslynWalker
 {
     public sealed class PropertyProcessors 
-        : SymbolProcessors<IPropertySymbol> // TopologicallySortedCollection<IAtomicProcessor<IEnumerable<IPropertySymbol>>, PropertyProcessor>, ISymbolSetProcessor<IPropertySymbol>
+        : SymbolProcessors<IPropertySymbol> 
     {
         public PropertyProcessors( 
             IEnumerable<IAtomicProcessor<IPropertySymbol>> items, 
@@ -19,19 +19,5 @@ namespace Tests.RoslynWalker
         {
             return SetPredecessor<ParameterProcessor, PropertyProcessor>();
         }
-
-        //// ensure the context object is able to reset itself so it can 
-        //// handle multiple iterations
-        //public bool Process( IEnumerable<IPropertySymbol> context )
-        //{
-        //    var allOkay = true;
-
-        //    foreach( var processor in ExecutionSequence )
-        //    {
-        //        allOkay &= processor.Process( context );
-        //    }
-
-        //    return allOkay;
-        //}
     }
 }

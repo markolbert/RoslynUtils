@@ -36,13 +36,7 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
 
             if( !context.GetSymbol<ISymbol>( node, out var symbol ) )
-            {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no ISymbol found for node of kind {1}",
-                    context.Container.AssemblyName,
-                    node.Kind() );
-
                 return false;
-            }
 
             // first check if the symbol is itself an INamespaceSymbol
             if( symbol is INamespaceSymbol nsSymbol )

@@ -49,13 +49,7 @@ namespace J4JSoftware.Roslyn.walkers
             }
 
             if( !context.GetSymbol<ITypeSymbol>( node, out var typeSymbol ) )
-            {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no ITypeSymbol found for node of kind {1}",
-                    context.Container.AssemblyName,
-                    node.Kind() );
-
                 return false;
-            }
 
             result = typeSymbol;
 

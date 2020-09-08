@@ -68,13 +68,7 @@ namespace J4JSoftware.Roslyn.walkers
             //}
 
             if( !context.GetSymbol<ISymbol>( node, out var otherSymbol ) )
-            {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no ISymbol found for node of kind {1}",
-                    context.Container.AssemblyName,
-                    node.Kind() );
-
                 return false;
-            }
 
             var otherAssembly = otherSymbol!.ContainingAssembly;
 

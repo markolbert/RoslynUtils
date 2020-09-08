@@ -110,15 +110,15 @@ namespace Tests.RoslynWalker
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
-            //builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-            //    .Where(t => !t.IsAbstract
-            //                && typeof(IAtomicProcessor<IPropertySymbol>).IsAssignableFrom(t)
-            //                && t.GetConstructors().Length > 0)
-            //    .AsImplementedInterfaces();
+            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
+                .Where(t => !t.IsAbstract
+                            && typeof(IAtomicProcessor<IPropertySymbol>).IsAssignableFrom(t)
+                            && t.GetConstructors().Length > 0)
+                .AsImplementedInterfaces();
 
-            //builder.RegisterType<PropertyProcessors>()
-            //    .AsImplementedInterfaces()
-            //    .SingleInstance();
+            builder.RegisterType<PropertyProcessors>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
 
             builder.RegisterAssemblyTypes( typeof(RoslynDbContext).Assembly )
                 .Where( t => !t.IsAbstract

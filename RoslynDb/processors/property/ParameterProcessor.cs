@@ -16,13 +16,18 @@ namespace J4JSoftware.Roslyn
 
         protected override IEnumerable<IParameterSymbol> ExtractSymbols( ISymbol item )
         {
-            if (!(item is IParameterSymbol propSymbol) )
+            if (!(item is IPropertySymbol propSymbol) )
             {
-                Logger.Error("Supplied item is not an IParameterSymbol");
+                Logger.Error<string>( "Supplied item is not an IPropertySymbol ({0})",
+                    EntityFactories.GetFullyQualifiedName( item ) );
+
                 yield break;
             }
 
-            yield return propSymbol;
+            foreach( var paramSymbol in propSymbol.Parameters )
+            {
+                yield return paramSymbol;
+            }
         }
 
         protected override bool ProcessSymbol( IParameterSymbol symbol )
@@ -53,7 +58,7 @@ namespace J4JSoftware.Roslyn
             }
 
             propParamDb.Synchronized = true;
-            propParamDb.Name = EntityFactories.GetName( symbol );
+            propParamDb.Name = symbol.Name;
             propParamDb.ParameterTypeID = typeDb!.SharpObjectID;
             propParamDb.IsAbstract = symbol.IsAbstract;
             propParamDb.IsExtern = symbol.IsExtern;

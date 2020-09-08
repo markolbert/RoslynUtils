@@ -42,13 +42,7 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
 
             if( !context.GetSymbol<IMethodSymbol>( node, out var symbol ) )
-            {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no IMethodSymbol found for node of kind {1}",
-                    context.Container.AssemblyName,
-                    node.Kind() );
-
                 return false;
-            }
 
             if( !InDocumentationScope( symbol!.ContainingAssembly ) )
                 return false;

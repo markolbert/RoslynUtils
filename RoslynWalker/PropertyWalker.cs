@@ -37,13 +37,7 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
 
             if( !context.GetSymbol<IPropertySymbol>( node, out var symbol ) )
-            {
-                Logger.Verbose<string, SyntaxKind>( "{0}: no IPropertySymbol found for node of kind {1}",
-                    context.Container.AssemblyName,
-                    node.Kind() );
-
                 return false;
-            }
 
             if( !InDocumentationScope( symbol!.ContainingAssembly ) )
                 return false;
