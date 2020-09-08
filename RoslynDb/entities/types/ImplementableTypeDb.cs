@@ -36,8 +36,7 @@ namespace J4JSoftware.Roslyn
         protected override void Configure( EntityTypeBuilder<ImplementableTypeDb> builder )
         {
             builder.Property(x => x.DeclarationModifier)
-                .HasConversion(new EnumToNumberConverter<DeclarationModifier, int>());
-
+                .HasConversion<string>();
         }
     }
 }

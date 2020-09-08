@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeDbConfigurator ) )]
     [Table("Types")]
-    public class TypeDb : ISharpObject //, IFullyQualifiedName, ISynchronized
+    public class TypeDb : ISharpObject
     {
         protected TypeDb()
         {
@@ -19,10 +19,8 @@ namespace J4JSoftware.Roslyn
 
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
-        //public bool Synchronized { get; set; }
+
         public TypeKind Nature { get; set; }
-        //public string Name { get; set; }
-        //public string FullyQualifiedName { get; set; }
         public Accessibility Accessibility { get; set; }
         public bool InDocumentationScope { get; set; }
 
@@ -33,6 +31,7 @@ namespace J4JSoftware.Roslyn
         // the assembly defining this type
         public int AssemblyID { get; set; }
         public AssemblyDb Assembly { get; set; }
+
         public List<TypeParametricTypeDb> ParametricTypes { get; set; }
 
         // list of return types referencing this type definition
@@ -69,22 +68,11 @@ namespace J4JSoftware.Roslyn
                 .HasForeignKey(x => x.AssemblyID)
                 .HasPrincipalKey(x => x.SharpObjectID);
 
-            //builder.HasAlternateKey(x => x.FullyQualifiedName);
-
-            //builder.Property(x => x.FullyQualifiedName)
-            //    .IsRequired();
-
             builder.Property( x => x.Accessibility )
-                .HasConversion( new EnumToStringConverter<Accessibility>() );
+                .HasConversion<string>();
 
             builder.Property(x=>x.Nature  )
-                .HasConversion( new EnumToStringConverter<TypeKind>());
-
-            //builder.Property(x => x.Nature)
-            //    .HasConversion(
-            //        a => a.ToString(),
-            //        b => Enum.Parse<TypeKind>(b, true)
-            //    );
+                .HasConversion<string>();
         }
     }
 }

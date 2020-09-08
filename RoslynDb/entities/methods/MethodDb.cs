@@ -63,13 +63,13 @@ namespace J4JSoftware.Roslyn
                 .HasForeignKey<MethodDb>(x => x.SharpObjectID);
 
             builder.Property( x => x.Accessibility )
-                .HasConversion( new EnumToNumberConverter<Accessibility, int>() );
+                .HasConversion<string>();
 
             builder.Property( x => x.DeclarationModifier )
-                .HasConversion( new EnumToNumberConverter<DeclarationModifier, int>() );
+                .HasConversion<string>();
 
             builder.Property( x => x.Kind )
-                .HasConversion( new EnumToNumberConverter<MethodKind, int>() );
+                .HasConversion<string>();
         }
     }
 }

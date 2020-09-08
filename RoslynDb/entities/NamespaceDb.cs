@@ -7,13 +7,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( NamespaceConfigurator ) )]
-    public class NamespaceDb : ISharpObject //, IFullyQualifiedName, ISynchronized
+    public class NamespaceDb : ISharpObject
     {
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
-        //public bool Synchronized { get; set; }
-        //public string Name { get; set; } = null!;
-        //public string FullyQualifiedName { get; set; } = null!;
 
         public List<AssemblyNamespaceDb>? AssemblyNamespaces { get; set; }
         public List<TypeDb>? Types { get; set; }
@@ -39,11 +36,6 @@ namespace J4JSoftware.Roslyn
                 .WithOne(x => x.Namespace)
                 .HasForeignKey(x => x.NamespaceID)
                 .HasPrincipalKey(x => x.SharpObjectID);
-
-            //builder.HasAlternateKey(x => x.FullyQualifiedName);
-
-            //builder.Property(x => x.FullyQualifiedName)
-            //    .IsRequired();
         }
     }
 }

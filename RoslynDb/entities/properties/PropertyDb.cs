@@ -12,14 +12,10 @@ namespace J4JSoftware.Roslyn
 {
     [Table("Properties")]
     [EntityConfiguration( typeof( PropertyConfigurator ) )]
-    public class PropertyDb : ISharpObject //, IFullyQualifiedName, ISynchronized
+    public class PropertyDb : ISharpObject
     {
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
-
-        //public string FullyQualifiedName { get; set; } = null!;
-        //public string Name { get; set; } = null!;
-        //public bool Synchronized { get; set; }
 
         public Accessibility Accessibility
         {
@@ -79,21 +75,16 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.PropertyTypeID );
 
-            //builder.HasAlternateKey(x => x.FullyQualifiedName);
-
             builder.Ignore( x => x.Accessibility );
 
-            //builder.Property(x => x.FullyQualifiedName)
-            //    .IsRequired();
-
             builder.Property(x => x.GetAccessibility)
-                .HasConversion(new EnumToNumberConverter<Accessibility, int>());
+                .HasConversion<string>();
 
             builder.Property(x => x.SetAccessibility)
-                .HasConversion(new EnumToNumberConverter<Accessibility, int>());
+                .HasConversion<string>();
 
             builder.Property(x => x.DeclarationModifier)
-                .HasConversion(new EnumToNumberConverter<DeclarationModifier, int>());
+                .HasConversion<string>();
         }
     }
 }

@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
         protected override void Configure(EntityTypeBuilder<ParametricTypeDb> builder)
         {
             builder.Property(x => x.Constraints)
-                .HasConversion(new EnumToNumberConverter<ParametricTypeConstraint, int>());
+                .HasConversion<string>();
         }
     }
 

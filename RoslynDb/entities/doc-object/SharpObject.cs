@@ -30,7 +30,6 @@ namespace J4JSoftware.Roslyn
         public NamespaceDb? Namespace { get; set; }
         public TypeDb? Type { get; set; }
         public MethodDb? Method { get; set; }
-        //public MethodPlaceholderDb? PlaceholderMethod { get; set; }
         public PropertyDb? Property { get; set; }
     }
 
