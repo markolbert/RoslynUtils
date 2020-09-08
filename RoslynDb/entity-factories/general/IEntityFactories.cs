@@ -10,7 +10,13 @@ namespace J4JSoftware.Roslyn
         string GetFullyQualifiedName( ISymbol symbol );
         string GetName( ISymbol symbol );
 
-        bool CanProcess<TEntity>( ISymbol symbol )
+        bool CanProcess<TEntity>( ISymbol symbol, bool createIfMissing )
+            where TEntity : class, ISharpObject;
+
+        void MarkUnsynchronized<TEntity>( bool saveChanges = false )
+            where TEntity : class;
+
+        void MarkSynchronized<TEntity>( TEntity entity )
             where TEntity : class, ISharpObject;
 
         bool RetrieveSharpObject( ISymbol symbol, out SharpObject? result, bool createIfMissing = false );

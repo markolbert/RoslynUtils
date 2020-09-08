@@ -2,6 +2,7 @@
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+#pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn
 {

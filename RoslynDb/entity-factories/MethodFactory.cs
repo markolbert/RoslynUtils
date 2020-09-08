@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool GetEntitySymbol( ISymbol symbol, out IMethodSymbol? result )
+        protected override bool GetEntitySymbol( ISymbol? symbol, out IMethodSymbol? result )
         {
             result = symbol as IMethodSymbol;
 

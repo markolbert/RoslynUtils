@@ -8,17 +8,14 @@ namespace J4JSoftware.Roslyn
     public class AncestorProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
     {
         public AncestorProcessor(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<ITypeSymbol> ExtractSymbols( object item )
+        protected override IEnumerable<ITypeSymbol> ExtractSymbols( ISymbol item )
         {
             if (!(item is ITypeSymbol typeSymbol))
             {
@@ -46,7 +43,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<TypeDb>(typeSymbol, out var typeDb))
             {
                 Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
-                    SymbolNamer.GetFullyQualifiedName( typeSymbol ), 
+                    EntityFactories.GetFullyQualifiedName( typeSymbol ), 
                     typeSymbol.TypeKind );
 
                 return false;
@@ -74,12 +71,12 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ImplementableTypeDb>( ancestorSymbol, out var ancestorDb ))
             {
                 Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
-                    SymbolNamer.GetFullyQualifiedName( ancestorSymbol ) );
+                    EntityFactories.GetFullyQualifiedName( ancestorSymbol ) );
 
                 return false;
             }
 
-            var typeAncestorDb = DbContext.TypeAncestors
+            var typeAncestorDb = EntityFactories.DbContext.TypeAncestors
                 .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.SharpObjectID && ti.AncestorTypeID == ancestorDb!.SharpObjectID );
 
             if( typeAncestorDb == null )
@@ -90,7 +87,7 @@ namespace J4JSoftware.Roslyn
                     ChildTypeID = typeDb!.SharpObjectID
                 };
 
-                DbContext.TypeAncestors.Add( typeAncestorDb );
+                EntityFactories.DbContext.TypeAncestors.Add( typeAncestorDb );
             }
 
             typeAncestorDb.Synchronized = true;

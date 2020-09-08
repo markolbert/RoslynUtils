@@ -7,17 +7,14 @@ namespace J4JSoftware.Roslyn
     public class ParametricTypeProcessor : BaseProcessorDb<ITypeSymbol, ITypeParameterSymbol>
     {
         public ParametricTypeProcessor(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<ITypeParameterSymbol> ExtractSymbols( object item )
+        protected override IEnumerable<ITypeParameterSymbol> ExtractSymbols( ISymbol item )
         {
             if( !( item is ITypeSymbol typeSymbol ) )
             {
@@ -64,7 +61,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            MarkSynchronized( dbSymbol! );
+            EntityFactories.MarkSynchronized( dbSymbol! );
 
             dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
             dbSymbol.NamespaceID = nsDb!.SharpObjectID;

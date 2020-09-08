@@ -4,6 +4,8 @@ using J4JSoftware.EFCoreUtilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+#pragma warning disable 8618
+#pragma warning disable 8603
 
 namespace J4JSoftware.Roslyn
 {
@@ -26,11 +28,11 @@ namespace J4JSoftware.Roslyn
 
         // the namespace to which this entity belongs
         public int NamespaceID { get; set; }
-        public NamespaceDb? Namespace { get; set; }
+        public NamespaceDb Namespace { get; set; }
 
         // the assembly defining this type
         public int AssemblyID { get; set; }
-        public AssemblyDb? Assembly { get; set; }
+        public AssemblyDb Assembly { get; set; }
         public List<TypeParametricTypeDb> ParametricTypes { get; set; }
 
         // list of return types referencing this type definition

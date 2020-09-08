@@ -7,16 +7,23 @@ namespace J4JSoftware.Roslyn
     public class AssemblyProcessor : BaseProcessorDb<IAssemblySymbol, IAssemblySymbol>
     {
         public AssemblyProcessor( 
-            RoslynDbContext dbContext, 
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<IAssemblySymbol> ExtractSymbols( object item )
+        protected override bool InitializeProcessor( IEnumerable<IAssemblySymbol> inputData )
+        {
+            if( !base.InitializeProcessor( inputData ) )
+                return false;
+
+            EntityFactories.MarkUnsynchronized<AssemblyDb>( true );
+
+            return true;
+        }
+
+        protected override IEnumerable<IAssemblySymbol> ExtractSymbols( ISymbol item )
         {
             if (!(item is IAssemblySymbol assemblySymbol ))
             {
@@ -37,7 +44,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            MarkSynchronized( assemblyDb! );
+            EntityFactories.MarkSynchronized( assemblyDb! );
 
             return true;
         }

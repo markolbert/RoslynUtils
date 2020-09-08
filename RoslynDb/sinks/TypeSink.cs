@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class TypeSink : PostProcessDbSink<ITypeSymbol, FixedTypeDb>
+    public class TypeSink : RoslynDbSink<ITypeSymbol, FixedTypeDb>
     {
         public TypeSink(
             RoslynDbContext dbContext,
@@ -14,24 +14,6 @@ namespace J4JSoftware.Roslyn.Sinks
             ISymbolProcessors<ITypeSymbol>? processors = null )
             : base( dbContext, symbolNamer, sharpObjMapper, logger, processors)
         {
-        }
-
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
-        {
-            if (!base.InitializeSink(syntaxWalker))
-                return false;
-
-            MarkUnsynchronized<FixedTypeDb>();
-            MarkUnsynchronized<GenericTypeDb>();
-            MarkUnsynchronized<TypeParametricTypeDb>();
-            MarkUnsynchronized<MethodParametricTypeDb>();
-            MarkUnsynchronized<ParametricTypeDb>();
-            MarkUnsynchronized<TypeAncestorDb>();
-            MarkUnsynchronized<TypeArgumentDb>();
-
-            SaveChanges();
-
-            return true;
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )

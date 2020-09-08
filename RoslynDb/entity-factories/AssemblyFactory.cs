@@ -10,9 +10,12 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool GetEntitySymbol( ISymbol symbol, out IAssemblySymbol? result )
+        protected override bool GetEntitySymbol( ISymbol? symbol, out IAssemblySymbol? result )
         {
             result = null;
+
+            if( symbol == null )
+                return false;
 
             if( symbol is IAssemblySymbol assemblySymbol )
                 result = assemblySymbol;

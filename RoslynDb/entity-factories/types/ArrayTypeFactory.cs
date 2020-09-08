@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn.entityfactories
         {
         }
 
-        protected override bool GetEntitySymbol( ISymbol symbol, out IArrayTypeSymbol? result )
+        protected override bool GetEntitySymbol( ISymbol? symbol, out IArrayTypeSymbol? result )
         {
             result = symbol as IArrayTypeSymbol;
 
@@ -22,7 +22,7 @@ namespace J4JSoftware.Roslyn.entityfactories
             if (!base.ValidateEntitySymbol(symbol))
                 return false;
 
-            if (!Factories!.Retrieve<AssemblyDb>(symbol.ContainingAssembly, out _))
+            if (!Factories!.Retrieve<AssemblyDb>(symbol.ElementType.ContainingAssembly, out _))
             {
                 Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
                     Factories!.GetFullyQualifiedName(symbol));
@@ -30,7 +30,7 @@ namespace J4JSoftware.Roslyn.entityfactories
                 return false;
             }
 
-            if (!Factories!.Retrieve<NamespaceDb>(symbol.ContainingNamespace, out _))
+            if (!Factories!.Retrieve<NamespaceDb>(symbol.ElementType.ContainingNamespace, out _))
             {
                 Logger.Error<string>("Couldn't find NamespaceDb entity in database for '{0}'",
                     Factories!.GetFullyQualifiedName(symbol));

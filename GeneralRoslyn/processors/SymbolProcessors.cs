@@ -24,6 +24,9 @@ namespace J4JSoftware.Roslyn
             foreach( var processor in ExecutionSequence )
             {
                 allOkay &= processor.Process( context );
+
+                if( !allOkay )
+                    break;
             }
 
             return allOkay;

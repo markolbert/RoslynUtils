@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8618
+#pragma warning disable 8602
+#pragma warning disable 8603
 
 namespace J4JSoftware.Roslyn
 {

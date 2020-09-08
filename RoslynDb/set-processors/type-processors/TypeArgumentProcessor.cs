@@ -8,38 +8,35 @@ namespace J4JSoftware.Roslyn
     public class TypeArgumentProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public TypeArgumentProcessor(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<INamedTypeSymbol> ExtractSymbols(object item)
+        protected override IEnumerable<INamedTypeSymbol> ExtractSymbols( ISymbol item )
         {
-            if (!(item is ITypeSymbol typeSymbol))
+            if( !( item is ITypeSymbol typeSymbol ) )
             {
-                Logger.Error("Supplied item is not an ITypeSymbol");
+                Logger.Error( "Supplied item is not an ITypeSymbol" );
                 yield break;
             }
 
-            if (typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol)
+            if( typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol )
             {
-                Logger.Error<string>("Unhandled ITypeSymbol '{0}'", typeSymbol.Name);
+                Logger.Error<string>( "Unhandled ITypeSymbol '{0}'", typeSymbol.Name );
                 yield break;
             }
 
-            if (typeSymbol is IErrorTypeSymbol)
+            if( typeSymbol is IErrorTypeSymbol )
             {
-                Logger.Error("ITypeSymbol is an IErrorTypeSymbol, ignored");
+                Logger.Error( "ITypeSymbol is an IErrorTypeSymbol, ignored" );
                 yield break;
             }
 
             // we handle INamedTypeSymbols that have TypeArguments that aren't ITypeParameterSymbols
-            if( typeSymbol is INamedTypeSymbol ntSymbol 
+            if( typeSymbol is INamedTypeSymbol ntSymbol
                 && ntSymbol.TypeArguments.Any( x => !( x is ITypeParameterSymbol ) ) )
                 yield return ntSymbol;
         }
@@ -63,22 +60,22 @@ namespace J4JSoftware.Roslyn
                 if( !EntityFactories.Retrieve<TypeDb>(typeArgSymbol, out var typeDb))
                 {
                     Logger.Error<string, string>( "", 
-                        SymbolNamer.GetFullyQualifiedName( typeArgSymbol ),
-                        SymbolNamer.GetFullyQualifiedName( symbol ) );
+                        EntityFactories.GetFullyQualifiedName( typeArgSymbol ),
+                        EntityFactories.GetFullyQualifiedName( symbol ) );
 
                     allOkay = false;
 
                     continue;
                 }
 
-                var typeArgDb = DbContext.TypeArguments
+                var typeArgDb = EntityFactories.DbContext.TypeArguments
                     .FirstOrDefault( ta => ta.ArgumentTypeID == typeDb!.SharpObjectID && ta.Ordinal == ordinal );
 
                 if( typeArgDb == null )
                 {
                     typeArgDb = new TypeArgumentDb();
 
-                    DbContext.TypeArguments.Add( typeArgDb );
+                    EntityFactories.DbContext.TypeArguments.Add( typeArgDb );
                 }
 
                 typeArgDb.DeclaringTypeID = declaringDb!.SharpObjectID;

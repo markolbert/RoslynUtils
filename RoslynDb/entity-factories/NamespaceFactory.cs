@@ -10,9 +10,12 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool GetEntitySymbol(ISymbol symbol, out INamespaceSymbol? result )
+        protected override bool GetEntitySymbol(ISymbol? symbol, out INamespaceSymbol? result )
         {
             result = null;
+
+            if( symbol == null )
+                return false;
 
             if (symbol is INamespaceSymbol nsSymbol)
                 result = nsSymbol;
@@ -20,7 +23,7 @@ namespace J4JSoftware.Roslyn
             if (symbol is IArrayTypeSymbol arraySymbol)
                 result = arraySymbol.ElementType.ContainingNamespace;
 
-            result = symbol.ContainingNamespace;
+            result ??= symbol.ContainingNamespace;
 
             return result != null;
         }

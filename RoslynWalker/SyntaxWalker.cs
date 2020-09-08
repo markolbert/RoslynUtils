@@ -38,7 +38,7 @@ namespace J4JSoftware.Roslyn
         protected IJ4JLogger Logger { get; }
         protected ISymbolNamer SymbolInfo { get; }
 
-        public ISyntaxWalker Predecessor { get; set; }
+        public ISyntaxWalker? Predecessor { get; set; }
         public Type SymbolType { get; }
 
         public ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies => _modelAssemblies.AsReadOnly();

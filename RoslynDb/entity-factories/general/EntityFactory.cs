@@ -24,11 +24,14 @@ namespace J4JSoftware.Roslyn
         public IEntityFactories? Factories { get; set; }
         public Type EntityType => typeof(TEntity);
 
-        public bool CanProcess( ISymbol symbol ) => GetEntitySymbol( symbol, out _ );
+        public bool CanProcess( ISymbol? symbol ) => GetEntitySymbol( symbol, out _ );
 
-        public bool Retrieve( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
+        public bool Retrieve( ISymbol? symbol, out TEntity? result, bool createIfMissing = false )
         {
             result = null;
+
+            if( symbol == null )
+                return false;
 
             if( Factories == null )
             {
@@ -86,16 +89,19 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        protected abstract bool GetEntitySymbol( ISymbol symbol, out TSymbol? result );
+        protected abstract bool GetEntitySymbol( ISymbol? symbol, out TSymbol? result );
         protected abstract bool CreateNewEntity( TSymbol symbol, out TEntity? result );
 
         protected virtual bool ValidateEntitySymbol( TSymbol symbol ) => true;
 
         protected virtual bool ConfigureEntity( TSymbol symbol, TEntity newEntity ) => true;
 
-        bool IEntityFactory.Retrieve( ISymbol symbol, out ISharpObject? result, bool createIfMissing )
+        bool IEntityFactory.Retrieve( ISymbol? symbol, out ISharpObject? result, bool createIfMissing )
         {
             result = null;
+
+            if( symbol == null )
+                return false;
 
             if( !Retrieve( symbol, out var innerResult, createIfMissing ) )
                 return false;

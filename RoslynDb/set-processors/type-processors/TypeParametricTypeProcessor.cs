@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -7,17 +8,14 @@ namespace J4JSoftware.Roslyn
     public class TypeParametricTypeProcessor : BaseProcessorDb<ITypeSymbol, ITypeParameterSymbol>
     {
         public TypeParametricTypeProcessor(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<ITypeParameterSymbol> ExtractSymbols( object item )
+        protected override IEnumerable<ITypeParameterSymbol> ExtractSymbols( ISymbol item )
         {
             if( !( item is ITypeSymbol typeSymbol ) )
             {
@@ -63,7 +61,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !EntityFactories.Retrieve<TypeParametricTypeDb>( symbol, out var paramDb ) )
+            if( !EntityFactories.Retrieve<ParametricTypeDb>( symbol, out var paramDb ) )
             {
                 Logger.Error<string>("Couldn't retrieve TypeParametricTypeDb entity for '{0}'",
                     EntityFactories.GetFullyQualifiedName(symbol));
@@ -71,7 +69,16 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            paramDb!.ContainingTypeID = containerDb!.SharpObjectID;
+            if( !(paramDb is TypeParametricTypeDb tParamDb) )
+            {
+                Logger.Error<Type, string>("Retrieved a {0} instead of a TypeParametricTypeDb entity for '{1}'",
+                    paramDb!.GetType(),
+                    EntityFactories.GetFullyQualifiedName(symbol));
+
+                return false;
+            }
+
+            tParamDb!.ContainingTypeID = containerDb!.SharpObjectID;
 
             return true;
         }

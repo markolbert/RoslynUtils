@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class NamespaceSink : PostProcessDbSink<INamespaceSymbol, NamespaceDb>
+    public class NamespaceSink : RoslynDbSink<INamespaceSymbol, NamespaceDb>
     {
         public NamespaceSink(
             RoslynDbContext dbContext,
@@ -13,17 +13,6 @@ namespace J4JSoftware.Roslyn.Sinks
             ISymbolProcessors<INamespaceSymbol>? processors = null )
             : base( dbContext, symbolNamer, sharpObjMapper, logger, processors )
         {
-        }
-
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
-        {
-            if (!base.InitializeSink(syntaxWalker))
-                return false;
-
-            MarkUnsynchronized<NamespaceDb>();
-            SaveChanges();
-
-            return true;
         }
     }
 }

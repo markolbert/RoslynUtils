@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
 
-        public IAtomicProcessor<TSymbol> Predecessor { get; set; }
+        public IAtomicProcessor<TSymbol>? Predecessor { get; set; }
 
         public bool Process( IEnumerable<TSymbol> inputData )
         {

@@ -17,8 +17,20 @@ namespace J4JSoftware.Roslyn
                     IMethodSymbol mSymbol => SharpObjectType.Method,
                     ITypeParameterSymbol tpSymbol => SharpObjectType.ParametricType,
                     IPropertySymbol pSymbol => SharpObjectType.Property,
+                    IArrayTypeSymbol arraySymbol => handle_array(arraySymbol),
                     _ => SharpObjectType.Unknown
                 };
+
+                SharpObjectType handle_array( IArrayTypeSymbol atSymbol )
+                {
+                    if( atSymbol.ElementType is ITypeParameterSymbol )
+                        return SharpObjectType.ParametricType;
+
+                    if( atSymbol.ElementType is INamedTypeSymbol ntSymbol )
+                        return ntSymbol.IsGenericType ? SharpObjectType.GenericType : SharpObjectType.FixedType;
+
+                    return SharpObjectType.Unknown;
+                }
             }
         }
 

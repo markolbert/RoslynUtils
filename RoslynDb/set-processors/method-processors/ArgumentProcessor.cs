@@ -8,16 +8,13 @@ namespace J4JSoftware.Roslyn
     public class ArgumentProcessor : BaseProcessorDb<IMethodSymbol, IParameterSymbol>
     {
         public ArgumentProcessor( 
-            RoslynDbContext dbContext, 
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<IParameterSymbol> ExtractSymbols( object item )
+        protected override IEnumerable<IParameterSymbol> ExtractSymbols( ISymbol item )
         {
             if (!(item is IMethodSymbol methodSymbol) )
             {
@@ -38,7 +35,7 @@ namespace J4JSoftware.Roslyn
             if ( containerSymbol == null || !EntityFactories.Retrieve<MethodDb>(containerSymbol, out var methodDb))
             {
                 Logger.Error<string>("IParameterSymbol '{0}' is not contained withing an IMethodSymbol",
-                    SymbolNamer.GetFullyQualifiedName(symbol.ContainingSymbol));
+                    EntityFactories.GetFullyQualifiedName(symbol.ContainingSymbol));
 
                 return false;
             }
@@ -47,12 +44,12 @@ namespace J4JSoftware.Roslyn
             {
                 Logger.Error<int, string>( "Couldn't find type in database for parameter {0} in method '{1}'",
                     symbol.Ordinal,
-                    SymbolNamer.GetFullyQualifiedName( symbol.ContainingSymbol ) );
+                    EntityFactories.GetFullyQualifiedName( symbol.ContainingSymbol ) );
 
                 return false;
             }
 
-            var argDb = DbContext.MethodArguments
+            var argDb = EntityFactories.DbContext.MethodArguments
                 .FirstOrDefault( a => a.Ordinal == symbol.Ordinal && a.DeclaringMethodID == methodDb!.SharpObjectID );
 
             if( argDb == null )
@@ -63,10 +60,10 @@ namespace J4JSoftware.Roslyn
                     DeclaringMethodID = methodDb!.SharpObjectID
                 };
 
-                DbContext.MethodArguments.Add( argDb );
+                EntityFactories.DbContext.MethodArguments.Add( argDb );
             }
 
-            argDb.Name = SymbolNamer.GetName( symbol );
+            argDb.Name = EntityFactories.GetName( symbol );
             argDb.Synchronized = true;
             argDb.ArgumentTypeID = typeDb!.SharpObjectID;
             argDb.IsDiscard = symbol.IsDiscard;

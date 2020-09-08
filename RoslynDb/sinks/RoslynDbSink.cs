@@ -9,22 +9,31 @@ namespace J4JSoftware.Roslyn.Sinks
         where TSymbol : class, ISymbol
         where TSink : class, ISharpObject, new()
     {
-        private readonly RoslynDbContext _dbContext;
+        private readonly ISymbolProcessors<TSymbol>? _processors;
 
         protected RoslynDbSink(
             RoslynDbContext dbContext,
             ISymbolNamer symbolNamer,
             ISharpObjectTypeMapper sharpObjMapper,
-            IJ4JLogger logger
+            IJ4JLogger logger,
+            ISymbolProcessors<TSymbol>? processors = null
         )
             : base( symbolNamer, logger )
         {
-            _dbContext = dbContext;
+            DbContext = dbContext;
             SharpObjectMapper = sharpObjMapper;
 
-            Symbols = new UniqueSymbols<TSymbol>(symbolNamer);
+            Symbols = new UniqueSymbols<TSymbol>( symbolNamer );
+
+            _processors = processors;
+
+            if (_processors == null)
+                Logger.Error("No {0} processors defined for symbol {1}",
+                    typeof(ISymbolProcessors<TSymbol>),
+                    typeof(TSymbol));
         }
 
+        protected RoslynDbContext DbContext { get; }
         protected UniqueSymbols<TSymbol> Symbols { get; }
         protected ISharpObjectTypeMapper SharpObjectMapper { get; }
 
@@ -36,6 +45,14 @@ namespace J4JSoftware.Roslyn.Sinks
             Symbols.Clear();
 
             return true;
+        }
+
+        public override bool FinalizeSink(ISyntaxWalker syntaxWalker)
+        {
+            if (!base.FinalizeSink(syntaxWalker))
+                return false;
+
+            return _processors?.Process(Symbols) ?? true;
         }
 
         public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)
@@ -243,7 +260,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 // update the underlying DocObject
                 var docObjType = SharpObjectMapper[ typeof(TEntity) ];
 
-                _dbContext.SharpObjects.Where(x => x.SharpObjectType == docObjType)
+                DbContext.SharpObjects.Where(x => x.SharpObjectType == docObjType)
                     .ForEachAsync(x => x.Synchronized = false);
 
                 return;
@@ -252,7 +269,7 @@ namespace J4JSoftware.Roslyn.Sinks
             if( typeof(ISynchronized).IsAssignableFrom( entityType ) )
             {
                 // update the entities directly
-                var dbSet = _dbContext.Set<TEntity>().Cast<ISynchronized>();
+                var dbSet = DbContext.Set<TEntity>().Cast<ISynchronized>();
 
                 dbSet.ForEachAsync(x => x.Synchronized = false);
 
@@ -264,6 +281,6 @@ namespace J4JSoftware.Roslyn.Sinks
                 entityType );
         }
 
-        protected virtual void SaveChanges() => _dbContext.SaveChanges();
+        //protected virtual void SaveChanges() => _dbContext.SaveChanges();
     }
 }

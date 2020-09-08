@@ -7,16 +7,13 @@ namespace J4JSoftware.Roslyn
     public class MethodProcessor : BaseProcessorDb<IMethodSymbol, IMethodSymbol>
     {
         public MethodProcessor( 
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<IMethodSymbol> ExtractSymbols( object item )
+        protected override IEnumerable<IMethodSymbol> ExtractSymbols( ISymbol item )
         {
             if (!(item is IMethodSymbol methodSymbol) )
             {
@@ -27,21 +24,33 @@ namespace J4JSoftware.Roslyn
             yield return methodSymbol;
         }
 
+        protected override bool InitializeProcessor( IEnumerable<IMethodSymbol> inputData )
+        {
+            if( !base.InitializeProcessor( inputData ) )
+                return false;
+
+            EntityFactories.MarkUnsynchronized<MethodDb>();
+            EntityFactories.MarkUnsynchronized<ArgumentDb>();
+            EntityFactories.MarkUnsynchronized<MethodParametricTypeDb>(true);
+
+            return true;
+        }
+
         protected override bool ProcessSymbol( IMethodSymbol symbol )
         {
             if( !EntityFactories.Retrieve<ImplementableTypeDb>( symbol.ContainingType, out var typeDb ) )
             {
-                Logger.Error<string>("Couldn't find containing type for IMethod '{0}'",
-                    SymbolNamer.GetFullyQualifiedName(symbol));
+                Logger.Error<string>("Couldn't find containing type for IMethodSymbol '{0}'",
+                    EntityFactories.GetFullyQualifiedName(symbol));
 
                 return false;
             }
 
             if( !EntityFactories.Retrieve<TypeDb>(symbol.ReturnType, out var retValDb  ))
             {
-                Logger.Error<string, string>("Couldn't find return type '{0}' in database for method '{1}'",
-                    SymbolNamer.GetFullyQualifiedName(symbol.ReturnType),
-                    SymbolNamer.GetFullyQualifiedName(symbol));
+                Logger.Error<string, string>("Couldn't find return type '{0}' in database for IMethodSymbol '{1}'",
+                    EntityFactories.GetFullyQualifiedName(symbol.ReturnType),
+                    EntityFactories.GetFullyQualifiedName(symbol));
 
                 return false;
             }
@@ -49,7 +58,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<MethodDb>( symbol, out var methodDb, true ) )
                 return false;
 
-            MarkSynchronized( methodDb! );
+            EntityFactories.MarkSynchronized( methodDb! );
 
             methodDb!.DefiningTypeID = typeDb!.SharpObjectID;
             methodDb.ReturnTypeID = retValDb!.SharpObjectID;

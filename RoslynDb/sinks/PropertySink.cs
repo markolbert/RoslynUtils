@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class PropertySink : PostProcessDbSink<IPropertySymbol, PropertyDb>
+    public class PropertySink : RoslynDbSink<IPropertySymbol, PropertyDb>
     {
         public PropertySink(
             RoslynDbContext dbContext,
@@ -13,19 +13,6 @@ namespace J4JSoftware.Roslyn.Sinks
             ISymbolProcessors<IPropertySymbol>? processors = null )
             : base( dbContext, symbolNamer, sharpObjMapper, logger, processors)
         {
-        }
-
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
-        {
-            if (!base.InitializeSink(syntaxWalker))
-                return false;
-
-            MarkUnsynchronized<PropertyDb>();
-            MarkUnsynchronized<PropertyParameterDb>();
-
-            SaveChanges();
-
-            return true;
         }
     }
 }

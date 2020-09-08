@@ -24,15 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="DependencyInfoBase.cs" />
-    <Compile Remove="IInitializeFromNamed.cs" />
-    <Compile Remove="libraries\LibraryInfo.cs" />
-    <Compile Remove="project-info\FrameworkBase.cs" />
-    <Compile Remove="project-info\FrameworkDependencies.cs" />
-    <Compile Remove="ProjectAssetsContext.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis" Version="3.6.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.6.0" />
     <PackageReference Include="NuGet.Versioning" Version="5.6.0" />

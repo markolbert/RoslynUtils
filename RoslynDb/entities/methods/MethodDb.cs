@@ -3,6 +3,8 @@ using J4JSoftware.EFCoreUtilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+#pragma warning disable 8618
+#pragma warning disable 8603
 
 namespace J4JSoftware.Roslyn
 {
@@ -16,10 +18,10 @@ namespace J4JSoftware.Roslyn
         public DeclarationModifier DeclarationModifier { get; set; }
 
         public int DefiningTypeID { get; set; }
-        public FixedTypeDb? DefiningType { get; set; }
+        public FixedTypeDb DefiningType { get; set; }
 
         public int ReturnTypeID { get; set; }
-        public FixedTypeDb? ReturnType { get; set; }
+        public FixedTypeDb ReturnType { get; set; }
 
         public bool ReturnsByRef { get; set; }
         public bool ReturnsByRefReadOnly { get; set; }

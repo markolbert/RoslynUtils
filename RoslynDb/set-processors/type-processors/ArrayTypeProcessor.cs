@@ -7,47 +7,46 @@ namespace J4JSoftware.Roslyn
     public class ArrayTypeProcessor : BaseProcessorDb<ITypeSymbol, IArrayTypeSymbol>
     {
         public ArrayTypeProcessor(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<IArrayTypeSymbol> ExtractSymbols(object item)
+        protected override IEnumerable<IArrayTypeSymbol> ExtractSymbols( ISymbol item )
         {
-            if (!(item is ITypeSymbol typeSymbol))
+            if( !( item is ITypeSymbol typeSymbol ) )
             {
-                Logger.Error("Supplied item is not an ITypeSymbol");
+                Logger.Error( "Supplied item is not an ITypeSymbol" );
                 yield break;
             }
 
-            if (typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol)
+            if( typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol )
             {
-                Logger.Error<string>("Unhandled ITypeSymbol '{0}'", typeSymbol.Name);
+                Logger.Error<string>( "Unhandled ITypeSymbol '{0}'", typeSymbol.Name );
                 yield break;
             }
 
-            if (typeSymbol is IErrorTypeSymbol)
+            if( typeSymbol is IErrorTypeSymbol )
             {
-                Logger.Error("ITypeSymbol is an IErrorTypeSymbol, ignored");
+                Logger.Error( "ITypeSymbol is an IErrorTypeSymbol, ignored" );
                 yield break;
             }
 
             // we handle IArrayTypeSymbols, provided they aren't based on an ITypeParameterSymbol
-            if (typeSymbol is IArrayTypeSymbol arraySymbol )
+            if( typeSymbol is IArrayTypeSymbol arraySymbol )
                 yield return arraySymbol;
         }
 
         protected override bool ProcessSymbol( IArrayTypeSymbol symbol )
         {
-            if (!RetrieveAssembly(symbol.ContainingAssembly, out var assemblyDb))
+            var fqn = EntityFactories.GetFullyQualifiedName( symbol );
+
+            if (!RetrieveAssembly(symbol.ElementType.ContainingAssembly, out var assemblyDb))
                 return false;
 
-            if (!RetrieveNamespace(symbol.ContainingNamespace, out var nsDb))
+            if (!RetrieveNamespace(symbol.ElementType.ContainingNamespace, out var nsDb))
                 return false;
 
             if( !EntityFactories.Retrieve<TypeDb>( symbol, out var dbSymbol, true ) )
@@ -58,7 +57,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            MarkSynchronized(dbSymbol!);
+            EntityFactories.MarkSynchronized(dbSymbol!);
 
             dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
             dbSymbol.NamespaceID = nsDb!.SharpObjectID;

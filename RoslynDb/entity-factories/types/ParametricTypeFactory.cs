@@ -10,7 +10,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool GetEntitySymbol( ISymbol symbol, out ITypeParameterSymbol? result )
+        protected override bool GetEntitySymbol( ISymbol? symbol, out ITypeParameterSymbol? result )
         {
             result = symbol as ITypeParameterSymbol;
 

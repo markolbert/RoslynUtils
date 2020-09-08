@@ -8,17 +8,14 @@ namespace J4JSoftware.Roslyn
     public class TypeNamespaceProcessor : BaseProcessorDb<ITypeSymbol, INamespaceSymbol>
     {
         public TypeNamespaceProcessor(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<INamespaceSymbol> ExtractSymbols( object item )
+        protected override IEnumerable<INamespaceSymbol> ExtractSymbols( ISymbol item )
         {
             if (!(item is ITypeSymbol typeSymbol))
             {
@@ -43,9 +40,9 @@ namespace J4JSoftware.Roslyn
             if (!EntityFactories.Retrieve<NamespaceDb>(symbol, out var nsDb, true))
                 return false;
 
-            MarkSynchronized(nsDb!);
+            EntityFactories.MarkSynchronized(nsDb!);
 
-            var m2mDb = DbContext.AssemblyNamespaces
+            var m2mDb = EntityFactories.DbContext.AssemblyNamespaces
                 .FirstOrDefault(x => x.AssemblyID == assemblyDb!.SharpObjectID && x.NamespaceID == nsDb!.SharpObjectID);
 
             if (m2mDb != null)
@@ -57,7 +54,7 @@ namespace J4JSoftware.Roslyn
                 Namespace = nsDb!
             };
 
-            DbContext.AssemblyNamespaces.Add(m2mDb);
+            EntityFactories.DbContext.AssemblyNamespaces.Add(m2mDb);
 
             return true;
         }

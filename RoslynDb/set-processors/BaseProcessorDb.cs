@@ -9,26 +9,17 @@ namespace J4JSoftware.Roslyn
         where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
-            RoslynDbContext dbContext,
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger
         )
         : base( logger )
         {
-            DbContext = dbContext;
             EntityFactories = factories;
-            SharpObjectMapper = sharpObjMapper;
-            SymbolNamer = symbolNamer;
         }
 
-        protected RoslynDbContext DbContext { get; }
-        protected ISymbolNamer SymbolNamer { get; }
-        protected ISharpObjectTypeMapper SharpObjectMapper { get; }
         protected IEntityFactories EntityFactories { get; }
         
-        protected abstract IEnumerable<TResult> ExtractSymbols( object item );
+        protected abstract IEnumerable<TResult> ExtractSymbols( ISymbol item );
         protected abstract bool ProcessSymbol( TResult symbol );
 
         protected override bool ProcessInternal( IEnumerable<TSource> inputData )
@@ -38,6 +29,9 @@ namespace J4JSoftware.Roslyn
             foreach( var symbol in FilterSymbols( inputData ) )
             {
                 allOkay = ProcessSymbol( symbol );
+
+                if( !allOkay )
+                    break;
             }
 
             return allOkay;
@@ -48,7 +42,7 @@ namespace J4JSoftware.Roslyn
             if (!base.FinalizeProcessor(inputData))
                 return false;
 
-            DbContext.SaveChanges();
+            EntityFactories.DbContext.SaveChanges();
 
             return true;
         }
@@ -85,16 +79,6 @@ namespace J4JSoftware.Roslyn
             result = retVal;
 
             return true;
-        }
-
-        protected void MarkSynchronized<TEntity>( TEntity entity )
-            where TEntity : class, ISharpObject
-        {
-            DbContext.Entry( entity )
-                .Reference(x=>x.SharpObject)
-                .Load();
-
-            entity.SharpObject.Synchronized = true;
         }
 
         //protected DbSet<TRelated> GetDbSet<TRelated>()
@@ -459,7 +443,7 @@ namespace J4JSoftware.Roslyn
 
                 foreach( var symbol in ExtractSymbols(item) )
                 {
-                    var fqn = SymbolNamer.GetFullyQualifiedName(symbol!);
+                    var fqn = EntityFactories.GetFullyQualifiedName(symbol!);
 
                     if (processed.ContainsKey(fqn))
                         continue;

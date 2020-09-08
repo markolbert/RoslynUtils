@@ -14,41 +14,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="entities\doc-object\RelationshipObject.cs" />
-	  <Compile Remove="entities\generics\TypeArgument.cs" />
-	  <Compile Remove="entities\generics\TypeConstraint.cs" />
-	  <Compile Remove="entities\generics\TypeParameter.cs" />
-	  <Compile Remove="entities\generics\TypeParameterBase.cs" />
-	  <Compile Remove="entities\generics\TypeParameterUsage.cs" />
-	  <Compile Remove="entities\methods\ClosedMethodParameter.cs" />
-	  <Compile Remove="entities\methods\GenericMethodParameter.cs" />
-	  <Compile Remove="entities\methods\MethodArgumentBase.cs" />
-	  <Compile Remove="entities\methods\MethodBaseDb.cs" />
-	  <Compile Remove="entities\methods\MethodPlaceholderDb.cs" />
-	  <Compile Remove="entities\methods\MethodTypeArgument.cs" />
-	  <Compile Remove="entities\methods\MethodTypeConstraint.cs" />
-	  <Compile Remove="entities\methods\MethodTypeParameter.cs" />
-	  <Compile Remove="entities\methods\TypeDefinitionMethodArgument.cs" />
-	  <Compile Remove="entities\methods\TypeParameterMethodArgument.cs" />
-	  <Compile Remove="entities\types\ClosedTypeParameter.cs" />
-	  <Compile Remove="entities\types\IParametricTypeContainer.cs" />
-	  <Compile Remove="entities\types\PlaceholderTypeDb.cs" />
-	  <Compile Remove="entities\types\TypeClosure.cs" />
-	  <Compile Remove="entities\types\TypeDefinitionTypeArgument.cs" />
-	  <Compile Remove="entities\types\TypeDefinitionTypeParameter.cs" />
-	  <Compile Remove="entity-factories\general\ISharpObjectFactory.cs" />
-	  <Compile Remove="entity-factories\general\SharpObjectFactory.cs" />
-	  <Compile Remove="entity-factories\general\SharpObjectInfo.cs" />
-	  <Compile Remove="set-processors\AssemblyProcessorBase.cs" />
-	  <Compile Remove="set-processors\method-processors\MethodDiscoveredMethodsProcessor.cs" />
-	  <Compile Remove="set-processors\method-processors\MethodParametricTypeProcessor.cs" />
-	  <Compile Remove="set-processors\NamespaceProcessorBase.cs" />
-	  <Compile Remove="set-processors\type-processors\GenericTypesProcessor.cs" />
-	  <Compile Remove="set-processors\type-processors\TypeProcessor.cs" />
-	  <Compile Remove="set-processors\type-processors\TypeProcessorContext.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="NuGet.Versioning" Version="5.6.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.6" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.6">
@@ -62,10 +27,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\EFCoreUtilities\EFCoreUtilities\EFCoreUtilities.csproj" />
 		<ProjectReference Include="..\GeneralRoslyn\GeneralRoslyn.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="entities\generics\" />
 	</ItemGroup>
 
 </Project>

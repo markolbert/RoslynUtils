@@ -1,12 +1,13 @@
 ﻿using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8602
 
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeParametricTypeDbConfigurator ) )]
     public class TypeParametricTypeDb : ParametricTypeDb
     {
-        public int ContainingTypeID { get; set; }
+        public int? ContainingTypeID { get; set; }
         public TypeDb? ContainingType { get; set; }
     }
 

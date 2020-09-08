@@ -22,6 +22,9 @@ namespace Tests.RoslynWalker
             foreach( var walker in ExecutionSequence )
             {
                 allOkay &= walker.Process( compResults );
+
+                if( !allOkay )
+                    break;
             }
 
             return allOkay;

@@ -1,12 +1,13 @@
 ﻿using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8602
 
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( MethodParametricTypeDbConfigurator ) )]
     public class MethodParametricTypeDb : ParametricTypeDb
     {
-        public int ContainingMethodID { get; set; }
+        public int? ContainingMethodID { get; set; }
         public MethodDb? ContainingMethod { get; set; }
     }
 

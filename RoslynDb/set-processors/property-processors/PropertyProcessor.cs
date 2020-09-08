@@ -7,16 +7,13 @@ namespace J4JSoftware.Roslyn
     public class PropertyProcessor : BaseProcessorDb<IPropertySymbol, IPropertySymbol>
     {
         public PropertyProcessor( 
-            RoslynDbContext dbContext, 
             IEntityFactories factories,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
             IJ4JLogger logger ) 
-            : base( dbContext, factories, symbolNamer, sharpObjMapper, logger )
+            : base( factories, logger )
         {
         }
 
-        protected override IEnumerable<IPropertySymbol> ExtractSymbols( object item )
+        protected override IEnumerable<IPropertySymbol> ExtractSymbols( ISymbol item )
         {
             if (!(item is IPropertySymbol propSymbol) )
             {
@@ -27,12 +24,23 @@ namespace J4JSoftware.Roslyn
             yield return propSymbol;
         }
 
+        protected override bool InitializeProcessor( IEnumerable<IPropertySymbol> inputData )
+        {
+            if( !base.InitializeProcessor( inputData ) )
+                return false;
+
+            EntityFactories.MarkUnsynchronized<PropertyDb>();
+            EntityFactories.MarkUnsynchronized<PropertyParameterDb>( true );
+
+            return true;
+        }
+
         protected override bool ProcessSymbol( IPropertySymbol symbol )
         {
             if( !EntityFactories.Retrieve<ImplementableTypeDb>(symbol.ContainingType, out var typeDb  ))
             {
                 Logger.Error<string>( "Couldn't find containing type for IProperty '{0}'",
-                    SymbolNamer.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullyQualifiedName( symbol ) );
 
                 return false;
             }
@@ -40,8 +48,8 @@ namespace J4JSoftware.Roslyn
             if(!EntityFactories.Retrieve<TypeDb>(symbol.Type, out var propTypeDb))
             {
                 Logger.Error<string, string>( "Couldn't find return type '{0}' in database for property '{1}'",
-                    SymbolNamer.GetFullyQualifiedName( symbol.Type ),
-                    SymbolNamer.GetFullyQualifiedName(symbol) );
+                    EntityFactories.GetFullyQualifiedName( symbol.Type ),
+                    EntityFactories.GetFullyQualifiedName(symbol) );
 
                 return false;
             }
@@ -49,7 +57,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<PropertyDb>( symbol, out var propDb, true ) )
                 return false;
 
-            MarkSynchronized( propDb! );
+            EntityFactories.MarkSynchronized( propDb! );
 
             propDb!.DefiningTypeID = typeDb!.SharpObjectID;
             propDb.PropertyTypeID = propTypeDb!.SharpObjectID;

@@ -10,9 +10,12 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool GetEntitySymbol(ISymbol symbol, out INamedTypeSymbol? result)
+        protected override bool GetEntitySymbol(ISymbol? symbol, out INamedTypeSymbol? result)
         {
             result = null;
+
+            if( symbol == null )
+                return false;
 
             if (symbol is INamedTypeSymbol ntSymbol && ntSymbol.IsGenericType)
                 result = ntSymbol;

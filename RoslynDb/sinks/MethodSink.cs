@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class MethodSink : PostProcessDbSink<IMethodSymbol, MethodDb>
+    public class MethodSink : RoslynDbSink<IMethodSymbol, MethodDb>
     {
         public MethodSink(
             RoslynDbContext dbContext,
@@ -13,20 +13,6 @@ namespace J4JSoftware.Roslyn.Sinks
             ISymbolProcessors<IMethodSymbol>? processors = null )
             : base( dbContext, symbolNamer, sharpObjMapper, logger, processors )
         {
-        }
-
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
-        {
-            if (!base.InitializeSink(syntaxWalker))
-                return false;
-
-            MarkUnsynchronized<MethodDb>();
-            MarkUnsynchronized<ArgumentDb>();
-            MarkUnsynchronized<MethodParametricTypeDb>();
-
-            SaveChanges();
-
-            return true;
         }
     }
 }

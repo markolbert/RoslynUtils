@@ -50,6 +50,9 @@ namespace J4JSoftware.Roslyn.walkers
                 return false;
             }
 
+            if( !InDocumentationScope( typeSymbol!.ContainingAssembly ) )
+                return false;
+
             result = typeSymbol;
 
             return true;
