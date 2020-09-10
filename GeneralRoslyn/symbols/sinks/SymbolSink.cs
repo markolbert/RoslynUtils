@@ -4,23 +4,18 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class SymbolSink<TSymbol, TSink> : ISymbolSink<TSymbol, TSink>
+    public class SymbolSink<TSymbol> : ISymbolSink<TSymbol>
         where TSymbol : ISymbol
-        where TSink : class
     {
         protected SymbolSink(
-            ISymbolNamer symbolNamer,
             IJ4JLogger logger
             )
         {
-            SymbolNamer = symbolNamer;
-
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
         }
 
         protected IJ4JLogger Logger { get; }
-        protected ISymbolNamer SymbolNamer { get; }
 
         public bool StopOnFirstError { get; private set; } = false;
 

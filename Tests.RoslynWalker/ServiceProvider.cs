@@ -37,8 +37,8 @@ namespace Tests.RoslynWalker
                 .As<ISharpObjectTypeMapper>()
                 .SingleInstance();
 
-            builder.RegisterType<SymbolNamer>()
-                .As<ISymbolNamer>()
+            builder.RegisterType<SymbolFullName>()
+                .As<ISymbolFullName>()
                 .SingleInstance();
 
             builder.RegisterType<RoslynDbContextFactoryConfiguration>()
@@ -65,6 +65,9 @@ namespace Tests.RoslynWalker
 
             builder.RegisterType<DefaultSymbolSink>()
                 .AsImplementedInterfaces();
+
+            builder.RegisterGeneric( typeof(UniqueSymbols<>) )
+                .AsSelf();
 
             builder.RegisterType<InScopeAssemblyProcessor>()
                 .As<IInScopeAssemblyProcessor>();

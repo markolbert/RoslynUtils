@@ -56,7 +56,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<TypeDb>( symbol.DeclaringType!, out var containerDb ) )
             {
                 Logger.Error<string>( "Couldn't retrieve TypeDb entity for DeclaringType of '{0}'",
-                    EntityFactories.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }
@@ -64,7 +64,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ParametricTypeDb>( symbol, out var paramDb ) )
             {
                 Logger.Error<string>("Couldn't retrieve TypeParametricTypeDb entity for '{0}'",
-                    EntityFactories.GetFullyQualifiedName(symbol));
+                    EntityFactories.GetFullName(symbol));
 
                 return false;
             }
@@ -73,7 +73,7 @@ namespace J4JSoftware.Roslyn
             {
                 Logger.Error<Type, string>("Retrieved a {0} instead of a TypeParametricTypeDb entity for '{1}'",
                     paramDb!.GetType(),
-                    EntityFactories.GetFullyQualifiedName(symbol));
+                    EntityFactories.GetFullName(symbol));
 
                 return false;
             }

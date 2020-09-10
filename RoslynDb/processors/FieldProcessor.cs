@@ -29,7 +29,7 @@ namespace J4JSoftware.Roslyn
             if( !base.InitializeProcessor( inputData ) )
                 return false;
 
-            EntityFactories.MarkUnsynchronized<FieldDb>();
+            EntityFactories.MarkSharpObjectUnsynchronized<FieldDb>();
 
             return true;
         }
@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ImplementableTypeDb>(symbol.ContainingType, out var typeDb  ))
             {
                 Logger.Error<string>( "Couldn't find containing type for IFieldSymbol '{0}'",
-                    EntityFactories.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }
@@ -47,8 +47,8 @@ namespace J4JSoftware.Roslyn
             if(!EntityFactories.Retrieve<TypeDb>(symbol.Type, out var fieldTypeDb))
             {
                 Logger.Error<string, string>( "Couldn't find return type '{0}' in database for field '{1}'",
-                    EntityFactories.GetFullyQualifiedName( symbol.Type ),
-                    EntityFactories.GetFullyQualifiedName(symbol) );
+                    EntityFactories.GetFullName( symbol.Type ),
+                    EntityFactories.GetFullName(symbol) );
 
                 return false;
             }

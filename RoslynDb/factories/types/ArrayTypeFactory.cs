@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn.entityfactories
             if (!Factories!.Retrieve<AssemblyDb>(symbol.ElementType.ContainingAssembly, out _))
             {
                 Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
-                    Factories!.GetFullyQualifiedName(symbol));
+                    Factories!.GetFullName(symbol));
 
                 return false;
             }
@@ -33,7 +33,7 @@ namespace J4JSoftware.Roslyn.entityfactories
             if (!Factories!.Retrieve<NamespaceDb>(symbol.ElementType.ContainingNamespace, out _))
             {
                 Logger.Error<string>("Couldn't find NamespaceDb entity in database for '{0}'",
-                    Factories!.GetFullyQualifiedName(symbol));
+                    Factories!.GetFullName(symbol));
 
                 return false;
             }
@@ -61,7 +61,7 @@ namespace J4JSoftware.Roslyn.entityfactories
                         else
                             Logger.Error<string>(
                                 "ITypeParameterSymbol is contained by neither an IMethodSymbol nor an INamedTypeSymbol",
-                                Factories!.GetFullyQualifiedName( symbol.ElementType ) );
+                                Factories!.GetFullName( symbol.ElementType ) );
                     }
 
                     break;

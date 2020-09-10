@@ -3,15 +3,13 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class PropertySink : RoslynDbSink<IPropertySymbol, PropertyDb>
+    public class PropertySink : RoslynDbSink<IPropertySymbol>
     {
         public PropertySink(
-            RoslynDbContext dbContext,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
+            UniqueSymbols<IPropertySymbol> uniqueSymbols,
             IJ4JLogger logger,
             ISymbolProcessors<IPropertySymbol>? processors = null )
-            : base( dbContext, symbolNamer, sharpObjMapper, logger, processors)
+            : base( uniqueSymbols, logger, processors)
         {
         }
     }

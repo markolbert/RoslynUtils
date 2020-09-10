@@ -29,7 +29,7 @@ namespace J4JSoftware.Roslyn
 
             if( result == null )
                 Logger.Error<string>( "'{0}' is not contained by either an IMethodSymbol or an INamedTypeSymbol",
-                    Factories!.GetFullyQualifiedName( symbol ) );
+                    Factories!.GetFullName( symbol ) );
             else 
                 result.Constraints = symbol.GetParametricTypeConstraint();
 

@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class NamedTypeProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
+    public class FinalNamedTypeProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
-        public NamedTypeProcessor(
+        public FinalNamedTypeProcessor(
             IEntityFactories factories,
             IJ4JLogger logger
         )
@@ -34,27 +35,21 @@ namespace J4JSoftware.Roslyn
                 yield break;
             }
 
-            // we handle INamedTypeSymbols
-            if( typeSymbol is INamedTypeSymbol ntSymbol )
+            if( !( typeSymbol is INamedTypeSymbol ntSymbol ) )
+                yield break;
+
+            // we handle INamedTypeSymbols provided they have a named type argument that
+            // is a parametric type somewhere in their family tree
+            var visitedNames = new List<string>();
+
+            var crap = EntityFactories.GetFullName( ntSymbol );
+
+            if (HasParametricTypes(ntSymbol, ref visitedNames))
                 yield return ntSymbol;
         }
 
-        protected override bool InitializeProcessor( IEnumerable<ITypeSymbol> inputData )
-        {
-            if( !base.InitializeProcessor( inputData ) )
-                return false;
-
-            EntityFactories.MarkUnsynchronized<FixedTypeDb>();
-            EntityFactories.MarkUnsynchronized<GenericTypeDb>();
-            EntityFactories.MarkUnsynchronized<TypeParametricTypeDb>();
-            EntityFactories.MarkUnsynchronized<MethodParametricTypeDb>();
-            EntityFactories.MarkUnsynchronized<ParametricTypeDb>();
-            EntityFactories.MarkUnsynchronized<TypeAncestorDb>();
-            EntityFactories.MarkUnsynchronized<TypeArgumentDb>( true );
-
-            return true;
-        }
-
+        // INamedTypeSymbol is guaranteed to have parametric types in its
+        // type arguments
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
             if( !RetrieveAssembly( symbol.ContainingAssembly, out var assemblyDb ) )
@@ -76,7 +71,7 @@ namespace J4JSoftware.Roslyn
             if( dbSymbol == null )
             {
                 Logger.Error<string>( "Could not retrieve ImplementationTypeDb entity for '{0}'",
-                    EntityFactories.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }

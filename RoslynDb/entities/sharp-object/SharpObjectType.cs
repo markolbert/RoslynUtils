@@ -4,6 +4,7 @@
     {
         Assembly,
         Namespace,
+        ArrayType,
         FixedType,
         GenericType,
         ParametricType,

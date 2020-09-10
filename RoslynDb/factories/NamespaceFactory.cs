@@ -44,7 +44,7 @@ namespace J4JSoftware.Roslyn
                 return true;
             
             Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
-                Factories!.GetFullyQualifiedName(symbol));
+                Factories!.GetFullName(symbol));
 
             return false;
         }

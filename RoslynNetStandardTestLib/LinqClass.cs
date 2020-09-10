@@ -19,9 +19,9 @@ namespace J4JSoftware.Roslyn.Tests
             get => -1;
         }
 
-        public SimpleGeneric<string, int> GenericProperty { get; protected set; }
+        public SimpleGeneric<int, int> GenericProperty { get; protected set; }
 
-        public int this[ SimpleGeneric<string, int> key ]
+        public int this[ SimpleGeneric<int, int> key ]
         {
             get => -1;
         }

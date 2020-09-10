@@ -39,26 +39,30 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !GetEntitySymbol( symbol, out var entitySymbol ) )
-            {
-                Logger.Error<string>( "Couldn't extract required symbol from '{0}'",
-                    Factories.GetFullyQualifiedName( symbol ) );
+            var type = Factories.GetSharpObjectType<TEntity>();
 
+            if (type == SharpObjectType.Unknown)
+            {
+                Logger.Error<Type>( "Unknown SharpObjectType ({0})", typeof(TEntity) );
                 return false;
             }
 
-            var fqn = Factories.GetFullyQualifiedName( entitySymbol! );
+            if ( !GetEntitySymbol( symbol, out var entitySymbol ) )
+            {
+                Logger.Error<string>( "Couldn't extract required symbol from '{0}'", Factories.GetFullName(symbol) );
+                return false;
+            }
+
+            if( !Factories.GetUniqueName( entitySymbol!, out var uniqueName ) )
+            {
+                Logger.Error<string>( "Couldn't create unique name for '{0}'",
+                    Factories.GetFullName( entitySymbol ) );
+
+                return false;
+            }
 
             if( !ValidateEntitySymbol( entitySymbol! ) )
                 return false;
-
-            var type = Factories.SharpObjectTypeMapper[ entitySymbol! ];
-
-            if( type == SharpObjectType.Unknown )
-            {
-                Logger.Error<string>( "Unknown SharpObjectType '{0}'", fqn );
-                return false;
-            }
 
             if( !Factories.RetrieveSharpObject( entitySymbol!, out var sharpObj, createIfMissing ) )
                 return false;
@@ -67,7 +71,7 @@ namespace J4JSoftware.Roslyn
 
             result = entities
                 .Include( x => x.SharpObject )
-                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == uniqueName );
 
             if( result != null )
                 return true;

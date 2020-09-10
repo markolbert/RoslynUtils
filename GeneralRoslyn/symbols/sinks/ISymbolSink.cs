@@ -11,9 +11,8 @@ namespace J4JSoftware.Roslyn
         bool OutputSymbol(ISyntaxWalker syntaxWalker, ISymbol symbol );
     }
 
-    public interface ISymbolSink<in TSymbol, TSink> : ISymbolSink
+    public interface ISymbolSink<in TSymbol> : ISymbolSink
         where TSymbol : ISymbol
-        where TSink : class
     {
         bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol );
     }

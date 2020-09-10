@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
             if( !base.InitializeProcessor( inputData ) )
                 return false;
 
-            EntityFactories.MarkUnsynchronized<AssemblyDb>( true );
+            EntityFactories.MarkSharpObjectUnsynchronized<AssemblyDb>( true );
 
             return true;
         }
@@ -39,7 +39,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<AssemblyDb>( symbol, out var assemblyDb, true ) )
             {
                 Logger.Error<string>( "Couldn't retrieve AssemblyDb for '{0}'",
-                    EntityFactories.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }

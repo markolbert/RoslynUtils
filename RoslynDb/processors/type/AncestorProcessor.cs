@@ -43,7 +43,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<TypeDb>(typeSymbol, out var typeDb))
             {
                 Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
-                    EntityFactories.GetFullyQualifiedName( typeSymbol ), 
+                    EntityFactories.GetFullName( typeSymbol ), 
                     typeSymbol.TypeKind );
 
                 return false;
@@ -71,7 +71,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ImplementableTypeDb>( ancestorSymbol, out var ancestorDb ))
             {
                 Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
-                    EntityFactories.GetFullyQualifiedName( ancestorSymbol ) );
+                    EntityFactories.GetFullName( ancestorSymbol ) );
 
                 return false;
             }

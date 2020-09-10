@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -6,6 +8,8 @@ namespace J4JSoftware.Roslyn
 {
     public class ParametricTypeProcessor : BaseProcessorDb<ITypeSymbol, ITypeParameterSymbol>
     {
+        private readonly List<string> _visitedNames = new List<string>();
+
         public ParametricTypeProcessor(
             IEntityFactories factories,
             IJ4JLogger logger
@@ -39,9 +43,80 @@ namespace J4JSoftware.Roslyn
             if( typeSymbol is ITypeParameterSymbol tpSymbol )
                 yield return tpSymbol;
 
-            if( typeSymbol is IArrayTypeSymbol arraySymbol 
+            if( typeSymbol is IArrayTypeSymbol arraySymbol
                 && arraySymbol.ElementType is ITypeParameterSymbol atpSymbol )
                 yield return atpSymbol;
+
+            if( !( typeSymbol is INamedTypeSymbol ntSymbol ) )
+                yield break;
+
+            var visitedNames = new List<string>();
+
+            if( !HasParametricTypes( ntSymbol, ref visitedNames ) )
+                yield break;
+
+            _visitedNames.Clear();
+
+            foreach( var buried in GetBuriedTypeParameterSymbols( ntSymbol ) )
+            {
+                yield return buried;
+            }
+        }
+
+        private IEnumerable<ITypeParameterSymbol> GetBuriedTypeParameterSymbols( INamedTypeSymbol symbol )
+        {
+            INamedTypeSymbol? curSymbol = symbol;
+
+            while( curSymbol != null )
+            {
+                foreach( var typeArg in curSymbol.TypeArguments
+                    .Where( ta => ta is ITypeParameterSymbol )
+                    .Cast<ITypeParameterSymbol>() )
+                {
+                    yield return typeArg;
+                }
+
+                curSymbol = curSymbol!.BaseType;
+            }
+
+            foreach( var typeArg in symbol.TypeArguments )
+            {
+                switch( typeArg )
+                {
+                    case null:
+                        continue;
+
+                    case ITypeParameterSymbol tpSymbol:
+                        yield return tpSymbol;
+                        continue;
+
+                    case INamedTypeSymbol ntTypeArg
+                        when !_visitedNames.Any( n => n.Equals( typeArg.Name, StringComparison.Ordinal ) ):
+                    {
+                        _visitedNames.Add( typeArg.Name );
+
+                        foreach( var buried in GetBuriedTypeParameterSymbols( ntTypeArg ) )
+                        {
+                            yield return buried;
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            foreach( var interfaceSymbol in symbol.Interfaces )
+            {
+                if( !_visitedNames.Any( n => n.Equals( interfaceSymbol.Name, StringComparison.Ordinal ) ) )
+                {
+                    _visitedNames.Add( interfaceSymbol.Name );
+
+                    foreach( var buried in GetBuriedTypeParameterSymbols( interfaceSymbol ) )
+                    {
+                        yield return buried;
+                    }
+                }
+            }
         }
 
         // symbol is guaranteed to be an ITypeParameterSymbol 
@@ -56,7 +131,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ParametricTypeDb>( symbol, out var dbSymbol, true ) )
             {
                 Logger.Error<string>("Could not retrieve ParametricTypeDb entity for '{0}'",
-                    EntityFactories.GetFullyQualifiedName(symbol));
+                    EntityFactories.GetFullName(symbol));
 
                 return false;
             }

@@ -29,9 +29,9 @@ namespace J4JSoftware.Roslyn
             if( !base.InitializeProcessor( inputData ) )
                 return false;
 
-            EntityFactories.MarkUnsynchronized<MethodDb>();
+            EntityFactories.MarkSharpObjectUnsynchronized<MethodDb>();
             EntityFactories.MarkUnsynchronized<ArgumentDb>();
-            EntityFactories.MarkUnsynchronized<MethodParametricTypeDb>(true);
+            EntityFactories.MarkSharpObjectUnsynchronized<MethodParametricTypeDb>(true);
 
             return true;
         }
@@ -41,7 +41,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ImplementableTypeDb>( symbol.ContainingType, out var typeDb ) )
             {
                 Logger.Error<string>("Couldn't find containing type for IMethodSymbol '{0}'",
-                    EntityFactories.GetFullyQualifiedName(symbol));
+                    EntityFactories.GetFullName(symbol));
 
                 return false;
             }
@@ -49,8 +49,8 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<TypeDb>(symbol.ReturnType, out var retValDb  ))
             {
                 Logger.Error<string, string>("Couldn't find return type '{0}' in database for IMethodSymbol '{1}'",
-                    EntityFactories.GetFullyQualifiedName(symbol.ReturnType),
-                    EntityFactories.GetFullyQualifiedName(symbol));
+                    EntityFactories.GetFullName(symbol.ReturnType),
+                    EntityFactories.GetFullName(symbol));
 
                 return false;
             }

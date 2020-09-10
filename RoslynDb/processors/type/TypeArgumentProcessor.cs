@@ -46,7 +46,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<ImplementableTypeDb>( symbol, out var declaringDb ) )
             {
                 Logger.Error<string>( "Couldn't retrieve ImplementableTypeDb entity for '{0}'",
-                    EntityFactories.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }
@@ -60,8 +60,8 @@ namespace J4JSoftware.Roslyn
                 if( !EntityFactories.Retrieve<TypeDb>(typeArgSymbol, out var typeDb))
                 {
                     Logger.Error<string, string>( "", 
-                        EntityFactories.GetFullyQualifiedName( typeArgSymbol ),
-                        EntityFactories.GetFullyQualifiedName( symbol ) );
+                        EntityFactories.GetFullName( typeArgSymbol ),
+                        EntityFactories.GetFullName( symbol ) );
 
                     allOkay = false;
 

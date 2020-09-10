@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
 
         public MethodWalker(
             IEnumerable<ISymbolSink> symbolSinks,
-            ISymbolNamer symbolInfo,
+            ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger
         )

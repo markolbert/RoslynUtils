@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
             if( !base.InitializeProcessor( inputData ) )
                 return false;
 
-            EntityFactories.MarkUnsynchronized<NamespaceDb>( true );
+            EntityFactories.MarkSharpObjectUnsynchronized<NamespaceDb>( true );
 
             return true;
         }

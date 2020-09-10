@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
 
         public AssemblyWalker( 
             IEnumerable<ISymbolSink> symbolSinks,
-            ISymbolNamer symbolInfo,
+            ISymbolFullName symbolInfo,
             IInScopeAssemblyProcessor inScopeProcessor,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger 

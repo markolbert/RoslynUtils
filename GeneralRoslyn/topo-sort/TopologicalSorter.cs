@@ -52,31 +52,31 @@ namespace J4JSoftware.Roslyn
 
             // Set of all nodes with no incoming edges
             var noIncomingEdges =
-                new HashSet<TNode>(nodes.Where(n => edges.All(e => e.end.Equals(n) == false)));
+                new HashSet<TNode>( nodes.Where( n => edges.All( e => e.end.Equals( n ) == false ) ) );
 
             // while noIncomingEdges is non-empty do
-            while (noIncomingEdges.Any())
+            while( noIncomingEdges.Any() )
             {
                 //  remove a node from noIncomingEdges
                 var nodeToRemove = noIncomingEdges.First();
-                noIncomingEdges.Remove(nodeToRemove);
+                noIncomingEdges.Remove( nodeToRemove );
 
                 // add removed node to stack
-                retVal.Push(nodeToRemove);
+                retVal.Push( nodeToRemove );
 
                 // for each targetNode with an edge from nodeToRemove to targetNode do
-                foreach (var edge in edges.Where(e => e.start.Equals(nodeToRemove)).ToList())
+                foreach( var edge in edges.Where( e => e.start.Equals( nodeToRemove ) ).ToList() )
                 {
                     var targetNode = edge.end;
 
                     // remove edge from the graph
-                    edges.Remove(edge);
+                    edges.Remove( edge );
 
                     // if targetNode has no other incoming edges then
-                    if (edges.All(me => me.end.Equals(targetNode) == false))
+                    if( edges.All( me => me.end.Equals( targetNode ) == false ) )
                     {
                         // insert targetNode into noIncomingEdges
-                        noIncomingEdges.Add(targetNode);
+                        noIncomingEdges.Add( targetNode );
                     }
                 }
             }

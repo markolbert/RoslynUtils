@@ -3,15 +3,13 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class NamespaceSink : RoslynDbSink<INamespaceSymbol, NamespaceDb>
+    public class NamespaceSink : RoslynDbSink<INamespaceSymbol>
     {
         public NamespaceSink(
-            RoslynDbContext dbContext,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
+            UniqueSymbols<INamespaceSymbol> uniqueSymbols,
             IJ4JLogger logger,
             ISymbolProcessors<INamespaceSymbol>? processors = null )
-            : base( dbContext, symbolNamer, sharpObjMapper, logger, processors )
+            : base( uniqueSymbols, logger, processors )
         {
         }
     }

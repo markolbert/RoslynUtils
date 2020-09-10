@@ -5,8 +5,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class TypeProcessors 
-        : SymbolProcessors<ITypeSymbol> // TopologicallySortedCollection<IAtomicProcessor<IEnumerable<ITypeSymbol>>, TypeAssemblyProcessor>, ISymbolSetProcessor<ITypeSymbol>
+    public sealed class TypeProcessors : SymbolProcessors<ITypeSymbol> 
     {
         public TypeProcessors( 
             IEnumerable<IAtomicProcessor<ITypeSymbol>> items, 
@@ -18,26 +17,14 @@ namespace Tests.RoslynWalker
         protected override bool SetPredecessors()
         {
             return SetPredecessor<TypeNamespaceProcessor, TypeAssemblyProcessor>()
-                && SetPredecessor<NamedTypeProcessor, TypeNamespaceProcessor>()
-                && SetPredecessor<ParametricTypeProcessor, NamedTypeProcessor>()
-                && SetPredecessor<ArrayTypeProcessor, ParametricTypeProcessor>()
-                && SetPredecessor<TypeParametricTypeProcessor, ArrayTypeProcessor>()
-                && SetPredecessor<AncestorProcessor, ArrayTypeProcessor>()
-                && SetPredecessor<TypeArgumentProcessor, AncestorProcessor>();
+                   && SetPredecessor<NonGenericTypeProcessor, TypeNamespaceProcessor>()
+                   && SetPredecessor<NonParametricTypeProcessor, NonGenericTypeProcessor>()
+                   && SetPredecessor<ParametricTypeProcessor, NonParametricTypeProcessor>()
+                   && SetPredecessor<FinalNamedTypeProcessor, ParametricTypeProcessor>()
+                   && SetPredecessor<ArrayTypeProcessor, FinalNamedTypeProcessor>()
+                   && SetPredecessor<TypeParametricTypeProcessor, ArrayTypeProcessor>()
+                   && SetPredecessor<AncestorProcessor, ArrayTypeProcessor>()
+                   && SetPredecessor<TypeArgumentProcessor, AncestorProcessor>();
         }
-
-        //// ensure the context object is able to reset itself so it can 
-        //// handle multiple iterations
-        //public bool Process( IEnumerable<ITypeSymbol> context )
-        //{
-        //    var allOkay = true;
-
-        //    foreach( var processor in ExecutionSequence )
-        //    {
-        //        allOkay &= processor.Process( context );
-        //    }
-
-        //    return allOkay;
-        //}
     }
 }

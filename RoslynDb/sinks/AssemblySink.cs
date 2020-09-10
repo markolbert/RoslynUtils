@@ -3,15 +3,13 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
-    public class AssemblySink : RoslynDbSink<IAssemblySymbol, AssemblyDb>
+    public class AssemblySink : RoslynDbSink<IAssemblySymbol>
     {
         public AssemblySink(
-            RoslynDbContext dbContext,
-            ISymbolNamer symbolNamer,
-            ISharpObjectTypeMapper sharpObjMapper,
+            UniqueSymbols<IAssemblySymbol> uniqueSymbols,
             IJ4JLogger logger,
             ISymbolProcessors<IAssemblySymbol>? processors = null )
-            : base( dbContext, symbolNamer, sharpObjMapper, logger, processors )
+            : base( uniqueSymbols, logger, processors )
         {
         }
     }

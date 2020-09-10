@@ -4,9 +4,9 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ArrayTypeProcessor : BaseProcessorDb<ITypeSymbol, IArrayTypeSymbol>
+    public class NonGenericTypeProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
-        public ArrayTypeProcessor(
+        public NonGenericTypeProcessor(
             IEntityFactories factories,
             IJ4JLogger logger
         )
@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override IEnumerable<IArrayTypeSymbol> ExtractSymbols( ISymbol item )
+        protected override IEnumerable<INamedTypeSymbol> ExtractSymbols( ISymbol item )
         {
             if( !( item is ITypeSymbol typeSymbol ) )
             {
@@ -34,30 +34,31 @@ namespace J4JSoftware.Roslyn
                 yield break;
             }
 
-            // we handle IArrayTypeSymbols, provided they aren't based on an ITypeParameterSymbol
-            if( typeSymbol is IArrayTypeSymbol arraySymbol )
-                yield return arraySymbol;
+            // we handle INamedTypeSymbols that have no type arguments
+            if( typeSymbol is INamedTypeSymbol ntSymbol
+                && !ntSymbol.IsGenericType
+                && ntSymbol.TypeArguments.Length == 0 )
+                yield return ntSymbol;
         }
 
-        protected override bool ProcessSymbol( IArrayTypeSymbol symbol )
+        // INamedTypeSymbol is guaranteed not to have any TypeArguments and to not be a generic type
+        protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            var fqn = EntityFactories.GetFullName( symbol );
-
-            if (!RetrieveAssembly(symbol.ElementType.ContainingAssembly, out var assemblyDb))
+            if( !RetrieveAssembly( symbol.ContainingAssembly, out var assemblyDb ) )
                 return false;
 
-            if (!RetrieveNamespace(symbol.ElementType.ContainingNamespace, out var nsDb))
+            if( !RetrieveNamespace( symbol.ContainingNamespace, out var nsDb ) )
                 return false;
 
-            if( !EntityFactories.Retrieve<TypeDb>( symbol, out var dbSymbol, true ) )
+            if( !EntityFactories.Retrieve<FixedTypeDb>( symbol, out var dbSymbol, true ) )
             {
-                Logger.Error<string>("Could not retrieve TypeDb entity for '{0}'",
-                    EntityFactories.GetFullName(symbol));
+                Logger.Error<string>( "Could not create entity for '{0}'",
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }
 
-            EntityFactories.MarkSynchronized(dbSymbol!);
+            EntityFactories.MarkSynchronized( dbSymbol! );
 
             dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
             dbSymbol.NamespaceID = nsDb!.SharpObjectID;

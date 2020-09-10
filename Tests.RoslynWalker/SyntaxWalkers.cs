@@ -20,9 +20,9 @@ namespace Tests.RoslynWalker
 
             foreach( var walker in ExecutionSequence )
             {
-                allOkay &= walker.Process( compResults );
+                allOkay &= walker.Process( compResults, stopOnFirstError );
 
-                if( !allOkay && !stopOnFirstError )
+                if( !allOkay && stopOnFirstError )
                     break;
             }
 

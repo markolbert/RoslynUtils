@@ -2,19 +2,26 @@
 
 namespace J4JSoftware.Roslyn
 {
-    public interface IEntityFactories
+    public interface IEntityFactories : ISymbolFullName
     {
-        ISharpObjectTypeMapper SharpObjectTypeMapper { get; }
         RoslynDbContext DbContext { get; }
 
-        string GetFullyQualifiedName( ISymbol symbol );
+        bool GetUniqueName( ISymbol? symbol, out string result );
         string GetName( ISymbol symbol );
+
+        SharpObjectType GetSharpObjectType(ISymbol symbol);
+
+        SharpObjectType GetSharpObjectType<TEntity>()
+            where TEntity : ISharpObject;
 
         bool CanProcess<TEntity>( ISymbol symbol, bool createIfMissing )
             where TEntity : class, ISharpObject;
 
-        void MarkUnsynchronized<TEntity>( bool saveChanges = false )
-            where TEntity : class;
+        void MarkSharpObjectUnsynchronized<TEntity>( bool saveChanges = false )
+            where TEntity : class, ISharpObject;
+
+        void MarkUnsynchronized<TEntity>(bool saveChanges = false)
+            where TEntity : class, ISynchronized;
 
         void MarkSynchronized<TEntity>( TEntity entity )
             where TEntity : class, ISharpObject;

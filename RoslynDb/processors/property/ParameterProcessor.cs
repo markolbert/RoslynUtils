@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
             if (!(item is IPropertySymbol propSymbol) )
             {
                 Logger.Error<string>( "Supplied item is not an IPropertySymbol ({0})",
-                    EntityFactories.GetFullyQualifiedName( item ) );
+                    EntityFactories.GetFullName( item ) );
 
                 yield break;
             }
@@ -38,7 +38,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<TypeDb>(symbol.Type, out var typeDb))
             {
                 Logger.Error<string>( "Couldn't find type for IParameterSymbol '{0}'",
-                    EntityFactories.GetFullyQualifiedName( symbol ) );
+                    EntityFactories.GetFullName( symbol ) );
 
                 return false;
             }

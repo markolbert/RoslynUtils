@@ -35,7 +35,7 @@ namespace J4JSoftware.Roslyn
             if ( containerSymbol == null || !EntityFactories.Retrieve<MethodDb>(containerSymbol, out var methodDb))
             {
                 Logger.Error<string>("IParameterSymbol '{0}' is not contained withing an IMethodSymbol",
-                    EntityFactories.GetFullyQualifiedName(symbol.ContainingSymbol));
+                    EntityFactories.GetFullName(symbol.ContainingSymbol));
 
                 return false;
             }
@@ -44,7 +44,7 @@ namespace J4JSoftware.Roslyn
             {
                 Logger.Error<int, string>( "Couldn't find type in database for parameter {0} in method '{1}'",
                     symbol.Ordinal,
-                    EntityFactories.GetFullyQualifiedName( symbol.ContainingSymbol ) );
+                    EntityFactories.GetFullName( symbol.ContainingSymbol ) );
 
                 return false;
             }

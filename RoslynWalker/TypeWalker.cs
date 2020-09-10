@@ -18,7 +18,7 @@ namespace J4JSoftware.Roslyn
 
         public TypeWalker(
             IEnumerable<ISymbolSink> symbolSinks,
-            ISymbolNamer symbolInfo,
+            ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             IJ4JLogger logger
         )

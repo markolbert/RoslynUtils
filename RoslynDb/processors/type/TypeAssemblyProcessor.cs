@@ -14,6 +14,22 @@ namespace J4JSoftware.Roslyn
         {
         }
 
+        protected override bool InitializeProcessor(IEnumerable<ITypeSymbol> inputData)
+        {
+            if (!base.InitializeProcessor(inputData))
+                return false;
+
+            EntityFactories.MarkSharpObjectUnsynchronized<FixedTypeDb>();
+            EntityFactories.MarkSharpObjectUnsynchronized<GenericTypeDb>();
+            EntityFactories.MarkSharpObjectUnsynchronized<TypeParametricTypeDb>();
+            EntityFactories.MarkSharpObjectUnsynchronized<MethodParametricTypeDb>();
+            EntityFactories.MarkSharpObjectUnsynchronized<ParametricTypeDb>();
+            EntityFactories.MarkUnsynchronized<TypeAncestorDb>();
+            EntityFactories.MarkUnsynchronized<TypeArgumentDb>(true);
+
+            return true;
+        }
+
         protected override IEnumerable<IAssemblySymbol> ExtractSymbols( ISymbol item )
         {
             if( !( item is ITypeSymbol typeSymbol ) )
@@ -36,7 +52,7 @@ namespace J4JSoftware.Roslyn
             if( !EntityFactories.Retrieve<AssemblyDb>( symbol, out var assemblyDb, true ) )
             {
                 Logger.Error<string>("Couldn't retrieve AssemblyDb for '{0}'",
-                    EntityFactories.GetFullyQualifiedName(symbol));
+                    EntityFactories.GetFullName(symbol));
 
                 return false;
             }
