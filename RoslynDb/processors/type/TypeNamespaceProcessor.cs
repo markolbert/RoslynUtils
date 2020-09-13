@@ -8,7 +8,7 @@ namespace J4JSoftware.Roslyn
     public class TypeNamespaceProcessor : BaseProcessorDb<ITypeSymbol, INamespaceSymbol>
     {
         public TypeNamespaceProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -17,9 +17,9 @@ namespace J4JSoftware.Roslyn
 
         protected override IEnumerable<INamespaceSymbol> ExtractSymbols( ISymbol item )
         {
-            if (!(item is ITypeSymbol typeSymbol))
+            if( !( item is ITypeSymbol typeSymbol ) )
             {
-                Logger.Error("Supplied item is not an ITypeSymbol");
+                Logger.Error( "Supplied item is not an ITypeSymbol" );
                 yield break;
             }
 
@@ -29,15 +29,17 @@ namespace J4JSoftware.Roslyn
                 yield break;
             }
 
-            yield return typeSymbol.ContainingNamespace!;
+            // ignore any namespaces already on file
+            if( !EntityFactories.Get<NamespaceDb>( typeSymbol.ContainingNamespace, out _ ) )
+                yield return typeSymbol.ContainingNamespace!;
         }
 
         protected override bool ProcessSymbol(INamespaceSymbol symbol)
         {
-            if (!RetrieveAssembly(symbol.ContainingAssembly, out var assemblyDb))
+            if (!EntityFactories.Get<AssemblyDb>(symbol.ContainingAssembly, out var assemblyDb))
                 return false;
 
-            if (!EntityFactories.Retrieve<NamespaceDb>(symbol, out var nsDb, true))
+            if (!EntityFactories.Create<NamespaceDb>(symbol, out var nsDb))
                 return false;
 
             EntityFactories.MarkSynchronized(nsDb!);

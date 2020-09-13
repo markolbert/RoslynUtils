@@ -8,7 +8,7 @@ namespace J4JSoftware.Roslyn
     public class AncestorProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
     {
         public AncestorProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            if( !EntityFactories.Retrieve<TypeDb>(typeSymbol, out var typeDb))
+            if( !EntityFactories.Get<TypeDb>(typeSymbol, out var typeDb))
             {
                 Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
                     EntityFactories.GetFullName( typeSymbol ), 
@@ -68,7 +68,7 @@ namespace J4JSoftware.Roslyn
 
         private bool ProcessAncestor( TypeDb typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            if( !EntityFactories.Retrieve<ImplementableTypeDb>( ancestorSymbol, out var ancestorDb ))
+            if( !EntityFactories.Get<ImplementableTypeDb>( ancestorSymbol, out var ancestorDb ))
             {
                 Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
                     EntityFactories.GetFullName( ancestorSymbol ) );

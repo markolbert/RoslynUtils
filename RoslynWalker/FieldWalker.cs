@@ -17,12 +17,12 @@ namespace J4JSoftware.Roslyn
         }
 
         public FieldWalker(
-            IEnumerable<ISymbolSink> symbolSinks,
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            IJ4JLogger logger
+            IJ4JLogger logger,
+            ISymbolSink<IFieldSymbol>? symbolSink = null
         )
-            : base( symbolSinks, defaultSymbolSink, symbolInfo, logger )
+            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
         {
         }
 

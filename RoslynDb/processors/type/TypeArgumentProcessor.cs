@@ -8,7 +8,7 @@ namespace J4JSoftware.Roslyn
     public class TypeArgumentProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public TypeArgumentProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -43,7 +43,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            if( !EntityFactories.Retrieve<ImplementableTypeDb>( symbol, out var declaringDb ) )
+            if( !EntityFactories.Get<ImplementableTypeDb>( symbol, out var declaringDb ) )
             {
                 Logger.Error<string>( "Couldn't retrieve ImplementableTypeDb entity for '{0}'",
                     EntityFactories.GetFullName( symbol ) );
@@ -57,7 +57,7 @@ namespace J4JSoftware.Roslyn
             {
                 var typeArgSymbol = symbol.TypeArguments[ ordinal ];
 
-                if( !EntityFactories.Retrieve<TypeDb>(typeArgSymbol, out var typeDb))
+                if( !EntityFactories.Get<TypeDb>(typeArgSymbol, out var typeDb))
                 {
                     Logger.Error<string, string>( "", 
                         EntityFactories.GetFullName( typeArgSymbol ),

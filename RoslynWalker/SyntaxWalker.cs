@@ -7,32 +7,32 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SyntaxWalker<TTarget> : ISyntaxWalker
-        where TTarget : class, ISymbol
+    public abstract class SyntaxWalker<TSymbol> : ISyntaxWalker<TSymbol>
+        where TSymbol : class, ISymbol
     {
         private readonly ISymbolSink _symbolSink;
         private readonly List<IAssemblySymbol> _modelAssemblies = new List<IAssemblySymbol>();
         private readonly List<SyntaxNode> _visitedNodes = new List<SyntaxNode>();
 
         protected SyntaxWalker(
-            IEnumerable<ISymbolSink> symbolSinks,
-            IDefaultSymbolSink defaultSymbolSink,
             ISymbolFullName symbolInfo,
-            IJ4JLogger logger
+            IDefaultSymbolSink defaultSymbolSink,
+            IJ4JLogger logger,
+            ISymbolSink<TSymbol>? symbolSink = null
         )
         {
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
 
             SymbolInfo = symbolInfo;
-            SymbolType = typeof(TTarget);
+            SymbolType = typeof(TSymbol);
 
-            var sink = symbolSinks.FirstOrDefault( s => s.SupportsSymbol( SymbolType ) && !( s is IDefaultSymbolSink ) );
-
-            if( sink == null )
-                Logger.Error<Type>( "Couldn't find an ISymbolSink for type {0}", SymbolType );
-
-            _symbolSink = sink ?? defaultSymbolSink;
+            if( symbolSink == null )
+            {
+                Logger.Error( "No ISymbolSink defined for symbol type '{0}'", typeof(TSymbol) );
+                _symbolSink = defaultSymbolSink;
+            }
+            else _symbolSink = symbolSink;
         }
 
         protected IJ4JLogger Logger { get; }
@@ -46,7 +46,7 @@ namespace J4JSoftware.Roslyn
         public bool InDocumentationScope(IAssemblySymbol toCheck)
             => DocumentationAssemblies.Any(ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
 
-        public virtual bool Process( List<CompiledProject> compResults, bool stopOnFirstError = false )
+        public virtual bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
         {
             _modelAssemblies.Clear();
             _modelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
@@ -86,7 +86,7 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        protected abstract bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out TTarget? result );
+        protected abstract bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out TSymbol? result );
         protected abstract bool GetChildNodesToVisit( SyntaxNode node, out List<SyntaxNode>? result );
 
         public bool Equals( ISyntaxWalker? other )

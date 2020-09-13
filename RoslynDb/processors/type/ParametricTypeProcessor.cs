@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
         private readonly List<string> _visitedNames = new List<string>();
 
         public ParametricTypeProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -122,13 +122,13 @@ namespace J4JSoftware.Roslyn
         // symbol is guaranteed to be an ITypeParameterSymbol 
         protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
         {
-            if (!RetrieveAssembly(symbol.ContainingAssembly, out var assemblyDb))
+            if (!EntityFactories.Get<AssemblyDb>(symbol.ContainingAssembly, out var assemblyDb))
                 return false;
 
-            if (!RetrieveNamespace(symbol.ContainingNamespace, out var nsDb))
+            if (!EntityFactories.Get<NamespaceDb>(symbol.ContainingNamespace, out var nsDb))
                 return false;
 
-            if( !EntityFactories.Retrieve<ParametricTypeDb>( symbol, out var dbSymbol, true ) )
+            if( !EntityFactories.Create<ParametricTypeDb>( symbol, out var dbSymbol ) )
             {
                 Logger.Error<string>("Could not retrieve ParametricTypeDb entity for '{0}'",
                     EntityFactories.GetFullName(symbol));

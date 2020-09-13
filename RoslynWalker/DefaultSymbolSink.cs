@@ -16,7 +16,9 @@ namespace J4JSoftware.Roslyn
 
         public bool StopOnFirstError { get; private set; } = false;
 
-        public bool SupportsSymbol( Type symbolType ) => typeof(ISymbol).IsAssignableFrom( symbolType );
+        // even though we support all ISymbols we deny it because we don't want
+        // to be selected before a non-default sink can be selected
+        public bool SupportsSymbol( Type symbolType ) => false;
 
         public bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
         {

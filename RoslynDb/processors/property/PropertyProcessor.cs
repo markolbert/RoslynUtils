@@ -7,7 +7,7 @@ namespace J4JSoftware.Roslyn
     public class PropertyProcessor : BaseProcessorDb<IPropertySymbol, IPropertySymbol>
     {
         public PropertyProcessor( 
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger ) 
             : base( factories, logger )
         {
@@ -24,20 +24,9 @@ namespace J4JSoftware.Roslyn
             yield return propSymbol;
         }
 
-        protected override bool InitializeProcessor( IEnumerable<IPropertySymbol> inputData )
-        {
-            if( !base.InitializeProcessor( inputData ) )
-                return false;
-
-            EntityFactories.MarkSharpObjectUnsynchronized<PropertyDb>();
-            EntityFactories.MarkUnsynchronized<PropertyParameterDb>( true );
-
-            return true;
-        }
-
         protected override bool ProcessSymbol( IPropertySymbol symbol )
         {
-            if( !EntityFactories.Retrieve<ImplementableTypeDb>(symbol.ContainingType, out var typeDb  ))
+            if( !EntityFactories.Get<ImplementableTypeDb>(symbol.ContainingType, out var typeDb  ))
             {
                 Logger.Error<string>( "Couldn't find containing type for IPropertySymbol '{0}'",
                     EntityFactories.GetFullName( symbol ) );
@@ -45,7 +34,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if(!EntityFactories.Retrieve<TypeDb>(symbol.Type, out var propTypeDb))
+            if(!EntityFactories.Get<TypeDb>(symbol.Type, out var propTypeDb))
             {
                 Logger.Error<string, string>( "Couldn't find return type '{0}' in database for property '{1}'",
                     EntityFactories.GetFullName( symbol.Type ),
@@ -54,7 +43,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !EntityFactories.Retrieve<PropertyDb>( symbol, out var propDb, true ) )
+            if( !EntityFactories.Create<PropertyDb>( symbol, out var propDb ) )
                 return false;
 
             EntityFactories.MarkSynchronized( propDb! );

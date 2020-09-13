@@ -5,7 +5,6 @@ namespace J4JSoftware.Roslyn
     public interface IInScopeAssemblyProcessor
     {
         bool Initialize();
-        bool Synchronize( List<CompiledProject> projects );
-        bool Cleanup();
+        bool Synchronize( IEnumerable<CompiledProject> projects );
     }
 }

@@ -7,15 +7,15 @@ namespace J4JSoftware.Roslyn
 {
     public class InScopeAssemblyProcessor : IInScopeAssemblyProcessor
     {
-        private readonly RoslynDbContext _dbContext;
+        private readonly EntityFactories _factories;
         private readonly IJ4JLogger _logger;
 
         public InScopeAssemblyProcessor(
-            RoslynDbContext dbContext,
+            EntityFactories factories,
             IJ4JLogger logger
         )
         {
-            _dbContext = dbContext;
+            _factories = factories;
 
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
@@ -23,26 +23,18 @@ namespace J4JSoftware.Roslyn
 
         public bool Initialize()
         {
-            // reset all InScopeInfo objects to unsync'd
-            foreach( var inScope in _dbContext.InScopeInfo )
-            {
-                inScope.Synchronized = false;
-            }
-
-            _dbContext.SaveChanges();
+            _factories.MarkUnsynchronized<InScopeAssemblyInfo>( true );
 
             return true;
         }
 
-        public bool Cleanup() => true;
-
-        public bool Synchronize( List<CompiledProject> projects )
+        public bool Synchronize( IEnumerable<CompiledProject> projects )
         {
             var allOkay = true;
 
             foreach( var library in projects )
             {
-                var dbAssembly = _dbContext.Assemblies
+                var dbAssembly = _factories.DbContext.Assemblies
                     .Include(a => a.InScopeInfo)
                     .Include(a=>a.SharpObject )
                     .FirstOrDefault(a => a.SharpObject.Name == library.AssemblyName);
@@ -67,7 +59,7 @@ namespace J4JSoftware.Roslyn
                 dbAssembly.InScopeInfo.RootNamespace = library.RootNamespace;
             }
 
-            _dbContext.SaveChanges();
+            _factories.DbContext.SaveChanges();
 
             return allOkay;
         }

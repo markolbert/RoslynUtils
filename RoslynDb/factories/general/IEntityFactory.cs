@@ -5,15 +5,24 @@ namespace J4JSoftware.Roslyn
 {
     public interface IEntityFactory
     {
-        Type EntityType { get; }
-        IEntityFactories? Factories { get; set; }
+        EntityFactories Factories { get; set; }
+
         bool CanProcess( ISymbol? symbol );
-        bool Retrieve( ISymbol? symbol, out ISharpObject? result, bool createIfMissing = false );
+
+        bool CanCreate<T>()
+            where T : ISharpObject;
+
+        bool IsAssignableTo<T>()
+            where T : ISharpObject;
+
+        bool Get( ISymbol? symbol, out ISharpObject? result );
+        bool Create( ISymbol? symbol, out ISharpObject? result );
     }
 
     public interface IEntityFactory<TEntity> : IEntityFactory
         where TEntity : class, ISharpObject
     {
-        bool Retrieve( ISymbol? symbol, out TEntity? result, bool createIfMissing = false );
+        bool Get( ISymbol? symbol, out TEntity? result );
+        bool Create( ISymbol? symbol, out TEntity? result );
     }
 }

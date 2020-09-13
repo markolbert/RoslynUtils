@@ -18,7 +18,6 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
 
-        public IAtomicProcessor<TSymbol>? Predecessor { get; set; }
         public bool StopOnFirstError { get; private set; } = false;
 
         public bool Process( IEnumerable<TSymbol> inputData, bool stopOnFirstError = false )
@@ -40,15 +39,15 @@ namespace J4JSoftware.Roslyn
 
         protected abstract bool ProcessInternal(IEnumerable<TSymbol> inputData);
 
-        bool IAtomicProcessor.Process( object inputData, bool stopOnFirstError )
-        {
-            if( inputData is IEnumerable<TSymbol> castData )
-                return Process( castData, stopOnFirstError );
+        //bool IAtomicProcessor.Process( object inputData, bool stopOnFirstError )
+        //{
+        //    if( inputData is IEnumerable<TSymbol> castData )
+        //        return Process( castData, stopOnFirstError );
 
-            Logger.Error<Type, Type>( "Expected a {0} but got a {1}", typeof(IEnumerable<TSymbol>), inputData.GetType() );
+        //    Logger.Error<Type, Type>( "Expected a {0} but got a {1}", typeof(IEnumerable<TSymbol>), inputData.GetType() );
 
-            return false;
-        }
+        //    return false;
+        //}
 
         // processors are equal if they are the same type, so duplicate instances of the 
         // same type are always equal (and shouldn't be present in the processing set)

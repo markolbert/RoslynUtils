@@ -28,25 +28,25 @@ namespace J4JSoftware.Roslyn
             return result != null;
         }
 
+        protected override bool ValidateEntitySymbol(INamespaceSymbol symbol)
+        {
+            if (!base.ValidateEntitySymbol(symbol))
+                return false;
+
+            if (Factories!.Get<AssemblyDb>(symbol.ContainingAssembly, out _))
+                return true;
+
+            Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
+                Factories!.GetFullName(symbol));
+
+            return false;
+        }
+
         protected override bool CreateNewEntity( INamespaceSymbol symbol, out NamespaceDb? result )
         {
             result = new NamespaceDb();
 
             return true;
-        }
-
-        protected override bool ValidateEntitySymbol( INamespaceSymbol symbol )
-        {
-            if( !base.ValidateEntitySymbol( symbol ) )
-                return false;
-
-            if( Factories!.Retrieve<AssemblyDb>( symbol.ContainingAssembly, out _ ) ) 
-                return true;
-            
-            Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
-                Factories!.GetFullName(symbol));
-
-            return false;
         }
     }
 }

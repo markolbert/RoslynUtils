@@ -1,24 +1,82 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class SyntaxWalkers : TopologicallySortedCollection<ISyntaxWalker>, ISyntaxWalkers
+    public sealed class SyntaxWalkers : TopologicallySortableCollection<ISyntaxWalker>, IProcessorCollection<CompiledProject>
     {
+        private readonly List<ISymbolSink> _sinks;
+        private readonly IJ4JLogger _logger;
+
         public SyntaxWalkers(
-            IEnumerable<ISyntaxWalker> syntaxWalkers,
-            IJ4JLogger logger
+            ISymbolFullName symbolNamer,
+            IDefaultSymbolSink defaultSymbolSink,
+            IInScopeAssemblyProcessor inScopeAssemblyProcessor,
+            IEnumerable<ISymbolSink> symbolSinks,
+            Func<IJ4JLogger> loggerFactory
         )
-        : base( syntaxWalkers, logger )
         {
+            _sinks = symbolSinks.ToList();
+
+            _logger = loggerFactory();
+            _logger.SetLoggedType( this.GetType() );
+
+            var node = Add( new AssemblyWalker( symbolNamer,
+                defaultSymbolSink,
+                inScopeAssemblyProcessor,
+                loggerFactory(),
+                GetSink<IAssemblySymbol>() ) );
+
+            node = Add( new NamespaceWalker( symbolNamer,
+                defaultSymbolSink,
+                loggerFactory(),
+                GetSink<INamespaceSymbol>() ), node );
+
+            node = Add(new TypeWalker(symbolNamer,
+                defaultSymbolSink,
+                loggerFactory(),
+                GetSink<ITypeSymbol>()), node);
         }
 
-        public bool Process( List<CompiledProject> compResults, bool stopOnFirstError = false )
+        private ISymbolSink<TSymbol> GetSink<TSymbol>()
+            where TSymbol : ISymbol =>
+            _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
+                as ISymbolSink<TSymbol>;
+
+        public bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
         {
+            var numRoots = Edges().Count;
+
+            switch( numRoots )
+            {
+                case 0:
+                    _logger.Error("No initial ISyntaxWalker defined");
+                    return false;
+
+                case 1:
+                    // no op; desired situation
+                    break;
+
+                default:
+                    _logger.Error("Multiple initial ISyntaxWalkers ({0}) defined", numRoots);
+                    return false;
+
+            }
+
+            if( !Sort( out var walkers, out var remainingEdges ) )
+            {
+                _logger.Error("Couldn't topologically sort ISyntaxWalkers"  );
+                return false;
+            }
+
             var allOkay = true;
 
-            foreach( var walker in ExecutionSequence )
+            foreach( var walker in walkers! )
             {
                 allOkay &= walker.Process( compResults, stopOnFirstError );
 
@@ -29,13 +87,13 @@ namespace Tests.RoslynWalker
             return allOkay;
         }
 
-        protected override bool SetPredecessors()
-        {
-            return SetPredecessor<NamespaceWalker, AssemblyWalker>()
-                   && SetPredecessor<TypeWalker, NamespaceWalker>()
-                   && SetPredecessor<MethodWalker, TypeWalker>()
-                   && SetPredecessor<PropertyWalker, TypeWalker>()
-                   && SetPredecessor<FieldWalker, TypeWalker>();
-        }
+        //protected override bool SetPredecessors()
+        //{
+        //    return SetPredecessor<NamespaceWalker, AssemblyWalker>()
+        //           && SetPredecessor<TypeWalker, NamespaceWalker>();
+        //           //&& SetPredecessor<MethodWalker, TypeWalker>()
+        //           //&& SetPredecessor<PropertyWalker, TypeWalker>()
+        //           //&& SetPredecessor<FieldWalker, TypeWalker>();
+        //}
     }
 }

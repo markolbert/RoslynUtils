@@ -22,7 +22,7 @@ namespace J4JSoftware.Roslyn.entityfactories
             if (!base.ValidateEntitySymbol(symbol))
                 return false;
 
-            if (!Factories!.Retrieve<AssemblyDb>(symbol.ElementType.ContainingAssembly, out _))
+            if (!Factories!.Get<AssemblyDb>(symbol.ElementType.ContainingAssembly, out _))
             {
                 Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
                     Factories!.GetFullName(symbol));
@@ -30,7 +30,7 @@ namespace J4JSoftware.Roslyn.entityfactories
                 return false;
             }
 
-            if (!Factories!.Retrieve<NamespaceDb>(symbol.ElementType.ContainingNamespace, out _))
+            if (!Factories!.Get<NamespaceDb>(symbol.ElementType.ContainingNamespace, out _))
             {
                 Logger.Error<string>("Couldn't find NamespaceDb entity in database for '{0}'",
                     Factories!.GetFullName(symbol));
@@ -75,10 +75,10 @@ namespace J4JSoftware.Roslyn.entityfactories
             if (!base.ConfigureEntity(symbol, newEntity))
                 return false;
 
-            if (!Factories!.Retrieve<AssemblyDb>(symbol.ElementType.ContainingAssembly, out var assemblyDb))
+            if (!Factories!.Get<AssemblyDb>(symbol.ElementType.ContainingAssembly, out var assemblyDb))
                 return false;
 
-            if (!Factories!.Retrieve<NamespaceDb>(symbol.ElementType.ContainingNamespace, out var nsDb))
+            if (!Factories!.Get<NamespaceDb>(symbol.ElementType.ContainingNamespace, out var nsDb))
                 return false;
 
             if (assemblyDb!.SharpObjectID == 0)

@@ -5,11 +5,15 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ISyntaxWalker : ITopologicalSort<ISyntaxWalker>
+    public interface ISyntaxWalker : ITopologicalAction<CompiledProject>, IEquatable<ISyntaxWalker> //ITopologicalSort<ISyntaxWalker>
     {
         Type SymbolType { get; }
         ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies { get; }
         bool InDocumentationScope( IAssemblySymbol assemblySymbol );
-        bool Process(List<CompiledProject> compiledProjects, bool stopOnFirstError = false );
+    }
+
+    public interface ISyntaxWalker<TSymbol> : ISyntaxWalker
+        where TSymbol : ISymbol
+    {
     }
 }

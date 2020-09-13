@@ -8,21 +8,11 @@ namespace J4JSoftware.Roslyn
     public class NamespaceProcessor : BaseProcessorDb<INamespaceSymbol, INamespaceSymbol>
     {
         public NamespaceProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
         {
-        }
-
-        protected override bool InitializeProcessor( IEnumerable<INamespaceSymbol> inputData )
-        {
-            if( !base.InitializeProcessor( inputData ) )
-                return false;
-
-            EntityFactories.MarkSharpObjectUnsynchronized<NamespaceDb>( true );
-
-            return true;
         }
 
         protected override IEnumerable<INamespaceSymbol> ExtractSymbols( ISymbol item )
@@ -38,10 +28,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )
         {
-            if( !RetrieveAssembly( symbol.ContainingAssembly, out var assemblyDb ) )
+            if ( !EntityFactories.Get<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
                 return false;
 
-            if ( !EntityFactories.Retrieve<NamespaceDb>( symbol, out var nsDb, true ) )
+            if ( !EntityFactories.Create<NamespaceDb>( symbol, out var nsDb ) )
                 return false;
 
             EntityFactories.MarkSynchronized( nsDb! );
@@ -59,6 +49,8 @@ namespace J4JSoftware.Roslyn
             };
 
             EntityFactories.DbContext.AssemblyNamespaces.Add( m2mDb );
+
+            EntityFactories.DbContext.SaveChanges();
 
             return true;
         }

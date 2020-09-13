@@ -19,20 +19,20 @@ namespace J4JSoftware.Roslyn
         private readonly IInScopeAssemblyProcessor _inScopeProcessor;
 
         public AssemblyWalker( 
-            IEnumerable<ISymbolSink> symbolSinks,
             ISymbolFullName symbolInfo,
-            IInScopeAssemblyProcessor inScopeProcessor,
             IDefaultSymbolSink defaultSymbolSink,
-            IJ4JLogger logger 
+            IInScopeAssemblyProcessor inScopeProcessor,
+            IJ4JLogger logger,
+            ISymbolSink<IAssemblySymbol>? symbolSink = null
             ) 
-            : base( symbolSinks, defaultSymbolSink, symbolInfo, logger )
+            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
         {
             _inScopeProcessor = inScopeProcessor;
         }
 
         // override the Traverse() method to synchronize the project file based metadata
         // for assemblies that are within the scope of the documentation
-        public override bool Process( List<CompiledProject> compResults, bool stopOnFirstError = false )
+        public override bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
         {
             if( !base.Process( compResults, stopOnFirstError ) )
                 return false;
@@ -40,10 +40,7 @@ namespace J4JSoftware.Roslyn
             if( !_inScopeProcessor.Initialize() )
                 return false;
 
-            if( !_inScopeProcessor.Synchronize( compResults ) )
-                return false;
-
-            return _inScopeProcessor.Cleanup();
+            return _inScopeProcessor.Synchronize( compResults );
         }
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out IAssemblySymbol? result )

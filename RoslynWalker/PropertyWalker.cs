@@ -17,12 +17,12 @@ namespace J4JSoftware.Roslyn
         }
 
         public PropertyWalker(
-            IEnumerable<ISymbolSink> symbolSinks,
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            IJ4JLogger logger
+            IJ4JLogger logger,
+            ISymbolSink<IPropertySymbol>? symbolSink = null
         )
-            : base( symbolSinks, defaultSymbolSink, symbolInfo, logger )
+            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
         {
         }
 

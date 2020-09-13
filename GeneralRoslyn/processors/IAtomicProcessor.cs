@@ -1,16 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface IAtomicProcessor
-    {
-        bool Process( object inputData, bool stopOnFirstError = false);
-    }
+    //public interface IAtomicProcessor
+    //{
+    //    bool Process( object inputData, bool stopOnFirstError = false);
+    //}
 
-    public interface IAtomicProcessor<TSymbol> : IAtomicProcessor, ITopologicalSort<IAtomicProcessor<TSymbol>>
+    public interface IAtomicProcessor<TSymbol> : ITopologicalAction<TSymbol>, IEquatable<IAtomicProcessor<TSymbol>>
         where TSymbol : ISymbol
     {
-        bool Process( IEnumerable<TSymbol> inputData, bool stopOnFirstError = false );
+    }
+
+    public interface IProcessorCollection<in T>
+    {
+        bool Process( IEnumerable<T> items, bool stopOnFirstError = false );
     }
 }

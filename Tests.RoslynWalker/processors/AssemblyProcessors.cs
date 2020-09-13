@@ -1,21 +1,29 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
 using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class AssemblyProcessors 
-        : SymbolProcessors<IAssemblySymbol>
+    public sealed class AssemblyProcessors : RoslynDbProcessors<IAssemblySymbol>
     {
         public AssemblyProcessors( 
-            IEnumerable<IAtomicProcessor<IAssemblySymbol>> items, 
-            IJ4JLogger logger 
-        ) : base( items, logger )
+            EntityFactories factories,
+            Func<IJ4JLogger> loggerFactory 
+        ) : base( factories, loggerFactory() )
         {
+            Add( new AssemblyProcessor( factories, loggerFactory() ) );
         }
 
-        // there's only one processor for assemblies
-        protected override bool SetPredecessors() => true;
+        protected override bool Initialize( IEnumerable<IAssemblySymbol> symbols )
+        {
+            if( !base.Initialize( symbols ) )
+                return false;
+
+            EntityFactories.MarkSharpObjectUnsynchronized<AssemblyDb>(true);
+
+            return true;
+        }
     }
 }

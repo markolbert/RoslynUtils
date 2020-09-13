@@ -9,9 +9,9 @@ namespace J4JSoftware.Roslyn
         where TSymbol : ISymbol
     {
         private readonly Dictionary<string, TSymbol> _symbols = new Dictionary<string, TSymbol>();
-        private readonly IEntityFactories _factories;
+        private readonly EntityFactories _factories;
 
-        public UniqueSymbols( IEntityFactories factories )
+        public UniqueSymbols( EntityFactories factories )
         {
             _factories = factories;
         }

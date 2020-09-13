@@ -7,7 +7,7 @@ namespace J4JSoftware.Roslyn
     public class ArrayTypeProcessor : BaseProcessorDb<ITypeSymbol, IArrayTypeSymbol>
     {
         public ArrayTypeProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -43,13 +43,13 @@ namespace J4JSoftware.Roslyn
         {
             var fqn = EntityFactories.GetFullName( symbol );
 
-            if (!RetrieveAssembly(symbol.ElementType.ContainingAssembly, out var assemblyDb))
+            if (!EntityFactories.Get<AssemblyDb>(symbol.ElementType.ContainingAssembly, out var assemblyDb))
                 return false;
 
-            if (!RetrieveNamespace(symbol.ElementType.ContainingNamespace, out var nsDb))
+            if (!EntityFactories.Get<NamespaceDb>(symbol.ElementType.ContainingNamespace, out var nsDb))
                 return false;
 
-            if( !EntityFactories.Retrieve<TypeDb>( symbol, out var dbSymbol, true ) )
+            if( !EntityFactories.Create<TypeDb>( symbol, out var dbSymbol ) )
             {
                 Logger.Error<string>("Could not retrieve TypeDb entity for '{0}'",
                     EntityFactories.GetFullName(symbol));

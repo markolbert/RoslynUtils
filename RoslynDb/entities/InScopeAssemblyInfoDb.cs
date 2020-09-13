@@ -8,7 +8,7 @@ using NuGet.Versioning;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(InScopeAssemblyInfoConfigurator))]
-    public class InScopeAssemblyInfo
+    public class InScopeAssemblyInfo : ISynchronized
     {
         private readonly List<TargetFramework> _tgtFrameworks = new List<TargetFramework>();
 

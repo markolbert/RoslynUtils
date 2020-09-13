@@ -8,7 +8,7 @@ namespace J4JSoftware.Roslyn
     public class ArgumentProcessor : BaseProcessorDb<IMethodSymbol, IParameterSymbol>
     {
         public ArgumentProcessor( 
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger ) 
             : base( factories, logger )
         {
@@ -32,7 +32,7 @@ namespace J4JSoftware.Roslyn
         {
             var containerSymbol = symbol.ContainingSymbol as IMethodSymbol;
 
-            if ( containerSymbol == null || !EntityFactories.Retrieve<MethodDb>(containerSymbol, out var methodDb))
+            if ( containerSymbol == null || !EntityFactories.Get<MethodDb>(containerSymbol, out var methodDb))
             {
                 Logger.Error<string>("IParameterSymbol '{0}' is not contained withing an IMethodSymbol",
                     EntityFactories.GetFullName(symbol.ContainingSymbol));
@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if( !EntityFactories.Retrieve<TypeDb>( symbol.Type, out var typeDb) )
+            if( !EntityFactories.Get<TypeDb>( symbol.Type, out var typeDb) )
             {
                 Logger.Error<int, string>( "Couldn't find type in database for parameter {0} in method '{1}'",
                     symbol.Ordinal,

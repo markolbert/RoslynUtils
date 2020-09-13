@@ -8,7 +8,7 @@ namespace J4JSoftware.Roslyn
     public class ParameterProcessor : BaseProcessorDb<IPropertySymbol, IParameterSymbol>
     {
         public ParameterProcessor( 
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger ) 
             : base( factories, logger )
         {
@@ -32,10 +32,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IParameterSymbol symbol )
         {
-            if( !EntityFactories.Retrieve<PropertyDb>(symbol.ContainingSymbol, out var propDb  ))
+            if( !EntityFactories.Get<PropertyDb>(symbol.ContainingSymbol, out var propDb  ))
                 return false;
 
-            if( !EntityFactories.Retrieve<TypeDb>(symbol.Type, out var typeDb))
+            if( !EntityFactories.Get<TypeDb>(symbol.Type, out var typeDb))
             {
                 Logger.Error<string>( "Couldn't find type for IParameterSymbol '{0}'",
                     EntityFactories.GetFullName( symbol ) );

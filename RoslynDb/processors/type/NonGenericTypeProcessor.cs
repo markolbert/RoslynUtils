@@ -7,7 +7,7 @@ namespace J4JSoftware.Roslyn
     public class NonGenericTypeProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public NonGenericTypeProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -44,13 +44,13 @@ namespace J4JSoftware.Roslyn
         // INamedTypeSymbol is guaranteed not to have any TypeArguments and to not be a generic type
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            if( !RetrieveAssembly( symbol.ContainingAssembly, out var assemblyDb ) )
+            if( !EntityFactories.Get<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
                 return false;
 
-            if( !RetrieveNamespace( symbol.ContainingNamespace, out var nsDb ) )
+            if( !EntityFactories.Get<NamespaceDb>( symbol.ContainingNamespace, out var nsDb ) )
                 return false;
 
-            if( !EntityFactories.Retrieve<FixedTypeDb>( symbol, out var dbSymbol, true ) )
+            if( !EntityFactories.Create<FixedTypeDb>( symbol, out var dbSymbol ) )
             {
                 Logger.Error<string>( "Could not create entity for '{0}'",
                     EntityFactories.GetFullName( symbol ) );

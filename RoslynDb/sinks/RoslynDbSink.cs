@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
@@ -8,12 +10,12 @@ namespace J4JSoftware.Roslyn.Sinks
     public abstract class RoslynDbSink<TSymbol> : SymbolSink<TSymbol>
         where TSymbol : class, ISymbol
     {
-        private readonly ISymbolProcessors<TSymbol>? _processors;
+        protected readonly IProcessorCollection<TSymbol>? _processors;
 
         protected RoslynDbSink(
             UniqueSymbols<TSymbol> uniqueSymbols,
             IJ4JLogger logger,
-            ISymbolProcessors<TSymbol>? processors = null
+            IProcessorCollection<TSymbol>? processors = null
         )
             : base( logger )
         {
@@ -21,10 +23,10 @@ namespace J4JSoftware.Roslyn.Sinks
 
             _processors = processors;
 
-            if (_processors == null)
-                Logger.Error("No {0} processors defined for symbol {1}",
-                    typeof(ISymbolProcessors<TSymbol>),
-                    typeof(TSymbol));
+            if( _processors == null )
+                Logger.Error( "No {0} processors defined for symbol {1}",
+                    typeof(IAtomicProcessor<TSymbol>),
+                    typeof(TSymbol) );
         }
 
         protected UniqueSymbols<TSymbol> Symbols { get; }
@@ -44,7 +46,13 @@ namespace J4JSoftware.Roslyn.Sinks
             if (!base.FinalizeSink(syntaxWalker))
                 return false;
 
-            return _processors?.Process(Symbols, StopOnFirstError) ?? true;
+            if( _processors == null )
+            {
+                Logger.Error<Type>("No processors defined for {0}", this.GetType()  );
+                return false;
+            }
+
+            return _processors.Process( Symbols, StopOnFirstError );
         }
 
         public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)

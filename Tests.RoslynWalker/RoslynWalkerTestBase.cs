@@ -11,6 +11,8 @@ namespace Tests.RoslynWalker
         [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj") ]
         public async void WalkerTest( string projFilePath )
         {
+            //var junk = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
+
             var ws = ServiceProvider.Instance.GetRequiredService<DocumentationWorkspace>();
 
             ws.AddProject( projFilePath ).Should().BeTrue();
@@ -20,7 +22,7 @@ namespace Tests.RoslynWalker
 
             result!.Count.Should().BeGreaterThan( 0 );
 
-            var walkers = ServiceProvider.Instance.GetRequiredService<ISyntaxWalkers>();
+            var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
 
             walkers.Process( result, true ).Should().BeTrue();
         }

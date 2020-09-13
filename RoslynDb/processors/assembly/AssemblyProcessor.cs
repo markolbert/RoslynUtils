@@ -7,20 +7,10 @@ namespace J4JSoftware.Roslyn
     public class AssemblyProcessor : BaseProcessorDb<IAssemblySymbol, IAssemblySymbol>
     {
         public AssemblyProcessor( 
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger ) 
             : base( factories, logger )
         {
-        }
-
-        protected override bool InitializeProcessor( IEnumerable<IAssemblySymbol> inputData )
-        {
-            if( !base.InitializeProcessor( inputData ) )
-                return false;
-
-            EntityFactories.MarkSharpObjectUnsynchronized<AssemblyDb>( true );
-
-            return true;
         }
 
         protected override IEnumerable<IAssemblySymbol> ExtractSymbols( ISymbol item )
@@ -36,7 +26,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IAssemblySymbol symbol )
         {
-            if( !EntityFactories.Retrieve<AssemblyDb>( symbol, out var assemblyDb, true ) )
+            if( !EntityFactories.Create<AssemblyDb>( symbol, out var assemblyDb ) )
             {
                 Logger.Error<string>( "Couldn't retrieve AssemblyDb for '{0}'",
                     EntityFactories.GetFullName( symbol ) );

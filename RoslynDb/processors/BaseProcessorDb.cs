@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
         where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
         : base( logger )
@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
             EntityFactories = factories;
         }
 
-        protected IEntityFactories EntityFactories { get; }
+        protected EntityFactories EntityFactories { get; }
         
         protected abstract IEnumerable<TResult> ExtractSymbols( ISymbol item );
         protected abstract bool ProcessSymbol( TResult symbol );
@@ -52,40 +52,6 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             EntityFactories.DbContext.SaveChanges();
-
-            return true;
-        }
-
-        protected bool RetrieveAssembly( IAssemblySymbol symbol, out AssemblyDb? result )
-        {
-            result = null;
-
-            if (!EntityFactories.Retrieve<AssemblyDb>(symbol, out var retVal))
-            {
-                Logger.Error<string>("Couldn't retrieve AssemblyDb entity for '{0}'",
-                    EntityFactories.GetFullName(symbol.ContainingAssembly));
-
-                return false;
-            }
-
-            result = retVal;
-
-            return true;
-        }
-
-        protected bool RetrieveNamespace(INamespaceSymbol symbol, out NamespaceDb? result)
-        {
-            result = null;
-
-            if (!EntityFactories.Retrieve<NamespaceDb>(symbol, out var retVal))
-            {
-                Logger.Error<string>("Couldn't retrieve AssemblyDb entity for '{0}'",
-                    EntityFactories.GetFullName(symbol.ContainingAssembly));
-
-                return false;
-            }
-
-            result = retVal;
 
             return true;
         }

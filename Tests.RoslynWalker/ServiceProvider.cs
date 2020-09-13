@@ -1,5 +1,6 @@
 ﻿using System;
 using Autofac;
+using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
@@ -20,8 +21,8 @@ namespace Tests.RoslynWalker
                 {
                     var retVal = new J4JLoggerConfiguration { EventElements = EventElements.All };
 
-                    retVal.Channels.Add( new ConsoleChannel() { MinimumLevel = LogEventLevel.Verbose } );
-                    retVal.Channels.Add( new DebugChannel() { MinimumLevel = LogEventLevel.Verbose } );
+                    retVal.Channels.Add( new ConsoleChannel() { MinimumLevel = LogEventLevel.Error } );
+                    retVal.Channels.Add( new DebugChannel() { MinimumLevel = LogEventLevel.Error } );
 
                     return retVal;
                 } )
@@ -54,7 +55,7 @@ namespace Tests.RoslynWalker
                 .AsImplementedInterfaces();
 
             builder.RegisterType<SyntaxWalkers>()
-                .AsImplementedInterfaces()
+                .AsSelf()
                 .SingleInstance();
 
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
@@ -73,11 +74,11 @@ namespace Tests.RoslynWalker
                 .As<IInScopeAssemblyProcessor>();
 
             RegisterSymbolProcessor<IAssemblySymbol, AssemblyProcessors>( builder );
-            RegisterSymbolProcessor<INamespaceSymbol, NamespaceProcessors>(builder);
-            RegisterSymbolProcessor<ITypeSymbol, TypeProcessors>(builder);
-            RegisterSymbolProcessor<IMethodSymbol, MethodProcessors>(builder);
-            RegisterSymbolProcessor<IPropertySymbol, PropertyProcessors>(builder);
-            RegisterSymbolProcessor<IFieldSymbol, FieldProcessors>(builder);
+            RegisterSymbolProcessor<INamespaceSymbol, NamespaceProcessors>( builder );
+            RegisterSymbolProcessor<ITypeSymbol, TypeProcessors>( builder );
+            RegisterSymbolProcessor<IMethodSymbol, MethodProcessors>( builder );
+            RegisterSymbolProcessor<IPropertySymbol, PropertyProcessors>( builder );
+            RegisterSymbolProcessor<IFieldSymbol, FieldProcessors>( builder );
 
             builder.RegisterAssemblyTypes( typeof(RoslynDbContext).Assembly )
                 .Where( t => !t.IsAbstract
@@ -87,15 +88,15 @@ namespace Tests.RoslynWalker
                 .SingleInstance();
 
             builder.RegisterType<EntityFactories>()
-                .As<IEntityFactories>()
+                .AsSelf()
                 .SingleInstance();
 
             Instance = new AutofacServiceProvider( builder.Build() );
         }
 
-        private static void RegisterSymbolProcessor<TSymbol, TProcessors>( ContainerBuilder builder )
+        private static IRegistrationBuilder<TProcessors, ConcreteReflectionActivatorData, SingleRegistrationStyle> RegisterSymbolProcessor<TSymbol, TProcessors>( ContainerBuilder builder )
             where TSymbol : ISymbol
-            where TProcessors : ISymbolProcessors<TSymbol>
+            where TProcessors : RoslynDbProcessors<TSymbol>
         {
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
                 .Where(t => !t.IsAbstract
@@ -103,7 +104,7 @@ namespace Tests.RoslynWalker
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 
-            builder.RegisterType<TProcessors>()
+            return builder.RegisterType<TProcessors>()
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }

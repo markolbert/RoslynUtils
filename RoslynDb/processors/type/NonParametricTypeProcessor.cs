@@ -9,7 +9,7 @@ namespace J4JSoftware.Roslyn
     public class NonParametricTypeProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public NonParametricTypeProcessor(
-            IEntityFactories factories,
+            EntityFactories factories,
             IJ4JLogger logger
         )
             : base( factories, logger )
@@ -53,19 +53,19 @@ namespace J4JSoftware.Roslyn
         // type arguments, if any
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            if( !RetrieveAssembly( symbol.ContainingAssembly, out var assemblyDb ) )
+            if( !EntityFactories.Get<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
                 return false;
 
-            if( !RetrieveNamespace( symbol.ContainingNamespace, out var nsDb ) )
+            if( !EntityFactories.Get<NamespaceDb>( symbol.ContainingNamespace, out var nsDb ) )
                 return false;
 
             ImplementableTypeDb? dbSymbol = null;
 
-            if( symbol.IsGenericType && EntityFactories.Retrieve<GenericTypeDb>( symbol, out var dbTemp, true ) )
+            if( symbol.IsGenericType && EntityFactories.Create<GenericTypeDb>( symbol, out var dbTemp ) )
                 dbSymbol = dbTemp;
             else
             {
-                if( EntityFactories.Retrieve<FixedTypeDb>( symbol, out var dbTemp2, true ) )
+                if( EntityFactories.Create<FixedTypeDb>( symbol, out var dbTemp2 ) )
                     dbSymbol = dbTemp2;
             }
 

@@ -17,7 +17,7 @@ namespace J4JSoftware.Roslyn
             if( !base.ValidateEntitySymbol( symbol ) )
                 return false;
 
-            if( !Factories!.Retrieve<AssemblyDb>( symbol, out _ ) )
+            if( !Factories!.Get<AssemblyDb>( symbol, out _ ) )
             {
                 Logger.Error<string>( "Couldn't find AssemblyDb entity in database for '{0}'",
                     Factories!.GetFullName( symbol ) );
@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            if (!Factories!.Retrieve<NamespaceDb>(symbol, out _))
+            if (!Factories!.Get<NamespaceDb>(symbol, out _))
             {
                 Logger.Error<string>("Couldn't find NamespaceDb entity in database for '{0}'",
                     Factories!.GetFullName(symbol));

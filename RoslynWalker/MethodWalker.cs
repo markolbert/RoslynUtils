@@ -22,12 +22,12 @@ namespace J4JSoftware.Roslyn
         }
 
         public MethodWalker(
-            IEnumerable<ISymbolSink> symbolSinks,
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            IJ4JLogger logger
+            IJ4JLogger logger,
+            ISymbolSink<IMethodSymbol>? symbolSink = null
         )
-            : base( symbolSinks, defaultSymbolSink, symbolInfo, logger )
+            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
         {
         }
 

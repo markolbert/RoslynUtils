@@ -1,4 +1,5 @@
-﻿using J4JSoftware.Logging;
+﻿using System.Collections.Generic;
+using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
@@ -8,7 +9,7 @@ namespace J4JSoftware.Roslyn.Sinks
         public AssemblySink(
             UniqueSymbols<IAssemblySymbol> uniqueSymbols,
             IJ4JLogger logger,
-            ISymbolProcessors<IAssemblySymbol>? processors = null )
+            IProcessorCollection<IAssemblySymbol>? processors = null )
             : base( uniqueSymbols, logger, processors )
         {
         }

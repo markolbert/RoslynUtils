@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     public interface IEntityFactories : ISymbolFullName
     {
@@ -14,9 +14,6 @@ namespace J4JSoftware.Roslyn
         SharpObjectType GetSharpObjectType<TEntity>()
             where TEntity : ISharpObject;
 
-        bool CanProcess<TEntity>( ISymbol symbol, bool createIfMissing )
-            where TEntity : class, ISharpObject;
-
         void MarkSharpObjectUnsynchronized<TEntity>( bool saveChanges = false )
             where TEntity : class, ISharpObject;
 
@@ -26,8 +23,12 @@ namespace J4JSoftware.Roslyn
         void MarkSynchronized<TEntity>( TEntity entity )
             where TEntity : class, ISharpObject;
 
-        bool RetrieveSharpObject( ISymbol symbol, out SharpObject? result, bool createIfMissing = false );
-        bool Retrieve<TEntity>( ISymbol symbol, out TEntity? result, bool createIfMissing = false )
+        bool GetSharpObject( ISymbol symbol, out SharpObject? result );
+        bool CreateSharpObject( ISymbol symbol, out SharpObject? result );
+
+        bool Get<TEntity>( ISymbol symbol, out TEntity? result )
+            where TEntity : class, ISharpObject;
+        bool Create<TEntity>(ISymbol symbol, out TEntity? result)
             where TEntity : class, ISharpObject;
     }
 }

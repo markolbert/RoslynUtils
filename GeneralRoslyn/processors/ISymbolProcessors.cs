@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     public interface ISymbolProcessors<in TSymbol> 
         where TSymbol : ISymbol
