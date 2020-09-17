@@ -5,8 +5,8 @@ namespace J4JSoftware.Roslyn
 {
     public class AssemblyFactory : EntityFactory<IAssemblySymbol, AssemblyDb>
     {
-        public AssemblyFactory( IJ4JLogger logger ) 
-            : base( logger )
+        public AssemblyFactory( IJ4JLogger logger )
+            : base( SharpObjectType.Assembly, logger )
         {
         }
 

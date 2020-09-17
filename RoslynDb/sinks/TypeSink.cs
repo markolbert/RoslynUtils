@@ -4,51 +4,25 @@ using System.Collections.Immutable;
 using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
     public class TypeSink : RoslynDbSink<ITypeSymbol>
     {
-        private class TypeSymbolComparer : IEqualityComparer<ISymbol>
-        {
-            private readonly EntityFactories _factories;
-
-            public TypeSymbolComparer( EntityFactories factories )
-            {
-                _factories = factories;
-            }
-
-            public bool Equals( ISymbol? x, ISymbol? y )
-            {
-                if( x == null && y == null )
-                    return true;
-
-                if( x == null || y == null )
-                    return false;
-
-                return string.Equals( _factories.GetFullName( x ), _factories.GetFullName( y ),
-                    StringComparison.Ordinal );
-            }
-
-            public int GetHashCode( ISymbol obj )
-            {
-                return obj.GetHashCode();
-            }
-        }
-
-        private readonly TopologicallySortableCollection<ISymbol> _symbols;
         private readonly EntityFactories _factories;
+        private readonly TypeSymbolContainer _symbols;
+        private readonly List<string> _visited = new List<string>();
 
         public TypeSink(
             UniqueSymbols<ITypeSymbol> uniqueSymbols,
-            IJ4JLogger logger,
+            Func<IJ4JLogger> loggerFactory,
             EntityFactories factories,
             IProcessorCollection<ITypeSymbol>? processors = null )
-            : base( uniqueSymbols, logger, processors)
+            : base( uniqueSymbols, loggerFactory(), processors)
         {
             _factories = factories;
-
-            _symbols = new TopologicallySortableCollection<ISymbol>( new TypeSymbolComparer( _factories ) );
+            _symbols = new TypeSymbolContainer( factories, loggerFactory() );
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
@@ -63,125 +37,114 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !_symbols.Sort( out var sorted, out var remainingEdges ) )
-            {
-                Logger.Error("Couldn't topologically sort ITypeSymbols");
-                return false;
-            }
-
-            // having to do this makes no sense, but it's necessary
-            sorted!.Reverse();
-
             if (_processors == null)
             {
                 Logger.Error<Type>("No processors defined for {0}", this.GetType());
                 return false;
             }
 
-            return _processors.Process( sorted!.Cast<ITypeSymbol>(), StopOnFirstError );
-
-            //return base.FinalizeSink( syntaxWalker );
+            return _processors.Process( _symbols, StopOnFirstError );
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
         {
-            var fullName = _factories.GetFullName( symbol );
+            _visited.Clear();
 
-            // add our ancestor chain
-            if( symbol.BaseType == null )
-                _symbols.Add( symbol );
-            else AddAncestors( symbol.BaseType, symbol );
-
-            // add the symbol's interfaces
-            foreach( var endOfEdge in symbol.AllInterfaces )
-            {
-                _symbols.Add( symbol, endOfEdge );
-
-                // add our type arguments, if any
-                foreach( var endOfEdge2 in endOfEdge.TypeArguments )
-                {
-                    AddAncestors( endOfEdge2, endOfEdge );
-                }
-
-                foreach (var endOfEdge3 in endOfEdge.TypeParameters)
-                {
-                    AddAncestors(endOfEdge3, endOfEdge);
-                }
-            }
-
-            //// we don't call the base implementation because it tries to add the symbol
-            //// which is fine but we need to drill into it's parentage and we only want to
-            //// do that if we haven't visited it before
-            //StoreTypeTree( symbol );
+            if( symbol is INamedTypeSymbol ntSymbol && ntSymbol.TypeKind == TypeKind.Interface )
+                return AddInterface( ntSymbol );
+            
+            AddNonInterface( symbol, null );
 
             return true;
         }
 
-        private void AddAncestors( ITypeSymbol startOfEdge, ITypeSymbol endOfEdge )
+        private bool AddInterface( INamedTypeSymbol symbol )
         {
-            if( SymbolEqualityComparer.Default.Equals( startOfEdge, endOfEdge ) )
-                return;
+            if ( SymbolIsDuplicate( symbol ) )
+                return true;
 
-            _symbols.Add( startOfEdge, endOfEdge );
+            if( symbol.TypeKind != TypeKind.Interface )
+            {
+                Logger.Error<string>("Non-interface '{0}' submitted to AddInterface()", _factories.GetFullName(symbol));
+                return false;
+            }
 
-            if( startOfEdge.BaseType == null )
-                return;
+            if ( symbol.BaseType != null )
+            {
+                Logger.Error<string>( "Interface '{0}' has a base type", _factories.GetFullName( symbol ) );
+                return false;
+            }
 
-            AddAncestors( startOfEdge.BaseType, startOfEdge );
+            _symbols.AddConnection( symbol );
+
+            // add any type parameters and type arguments
+            foreach( var tpSymbol in symbol.TypeParameters )
+            {
+                AddNonInterface( tpSymbol, null );
+            }
+
+            foreach (var taSymbol in symbol.TypeArguments)
+            {
+                AddNonInterface(taSymbol, null);
+            }
+
+            return true;
         }
 
-        private void StoreTypeTree( ITypeSymbol symbol )
+        private void AddNonInterface( ITypeSymbol symbol, ITypeSymbol? parentSymbol )
         {
-            var junk = symbol.ToDisplayString( EntityFactories.FullNameFormat );
+            _symbols.AddConnection( symbol, parentSymbol );
 
-            // if we've visited this symbol go no further
-            if( !Symbols.Add( symbol ) )
+            if (SymbolIsDuplicate(symbol))
                 return;
 
-            _symbols.Add( symbol, symbol.BaseType );
+            if ( symbol.BaseType != null )
+                AddNonInterface( symbol.BaseType, symbol );
 
-            if( symbol is INamedTypeSymbol ntSymbol )
-                StoreTypeParameters( ntSymbol.TypeParameters );
+            if( !( symbol is INamedTypeSymbol ntSymbol ) )
+                return;
 
-            foreach ( var interfaceSymbol in symbol.Interfaces )
+            // add any interfaces
+            foreach( var interfaceSymbol in ntSymbol.AllInterfaces )
             {
-                if( interfaceSymbol == null )
-                    continue;
-
-                StoreTypeTree( interfaceSymbol );
+                AddInterface( interfaceSymbol );
             }
 
-            // array symbols have two ancestry paths, one pointing to Array
-            // and the other pointing to whatever type of element they contain
-            if( symbol is IArrayTypeSymbol arraySymbol )
-                StoreTypeTree(arraySymbol.ElementType);
-
-            var baseSymbol = symbol.BaseType;
-
-            while( baseSymbol != null )
+            // add any type parameters and type arguments
+            foreach (var tpSymbol in ntSymbol.TypeParameters)
             {
-                if (baseSymbol.BaseType != null)
-                    StoreTypeTree(baseSymbol.BaseType);
+                AddNonInterface(tpSymbol, ntSymbol);
 
-                baseSymbol = baseSymbol.BaseType;
+                // add any interfaces
+                foreach (var interfaceSymbol in tpSymbol.AllInterfaces)
+                {
+                    AddInterface(interfaceSymbol);
+                }
             }
-        }
 
-        private void StoreImplementableTypeArguments( ImmutableArray<ITypeSymbol> typeArgs )
-        {
-            foreach (var implTypeSymbol in typeArgs
-                .Where(x => !(x is ITypeParameterSymbol)))
+            foreach (var taSymbol in ntSymbol.TypeArguments)
             {
-                StoreTypeTree(implTypeSymbol);
+                AddNonInterface(taSymbol, symbol);
+
+                // add any interfaces
+                foreach (var interfaceSymbol in taSymbol.AllInterfaces)
+                {
+                    AddInterface(interfaceSymbol);
+                }
             }
         }
 
-        private void StoreTypeParameters( ImmutableArray<ITypeParameterSymbol> typeParameters )
+        private bool SymbolIsDuplicate( ISymbol symbol )
         {
-            foreach (var typeParam in typeParameters)
-            {
-                StoreTypeTree( typeParam );
-            }
+            // don't allow duplicate additions so we can avoid infinite loops
+            var fullName = _factories.GetFullName(symbol);
+
+            if (_visited.Any(x => x.Equals(fullName)))
+                return true;
+
+            _visited.Add(fullName);
+
+            return false;
         }
     }
 }

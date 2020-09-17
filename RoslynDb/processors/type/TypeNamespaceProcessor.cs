@@ -30,7 +30,7 @@ namespace J4JSoftware.Roslyn
             }
 
             // ignore any namespaces already on file
-            if( !EntityFactories.Get<NamespaceDb>( typeSymbol.ContainingNamespace, out _ ) )
+            if( !EntityFactories.InDatabase<NamespaceDb>( typeSymbol.ContainingNamespace ) )
                 yield return typeSymbol.ContainingNamespace!;
         }
 

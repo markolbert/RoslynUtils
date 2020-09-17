@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class GenericTypeFactory : ImplementableTypeEntityFactory<INamedTypeSymbol, GenericTypeDb>
     {
         public GenericTypeFactory( IJ4JLogger logger)
-            : base( logger)
+            : base( SharpObjectType.GenericType, logger)
         {
         }
 

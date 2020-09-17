@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class NamespaceFactory : EntityFactory<INamespaceSymbol, NamespaceDb>
     {
         public NamespaceFactory( IJ4JLogger logger )
-            : base( logger )
+            : base( SharpObjectType.Namespace, logger )
         {
         }
 

@@ -10,19 +10,31 @@ namespace J4JSoftware.Roslyn
     // needs to be part of an IEntityFactories collection to function
     // local properties of created entities are initialized. Relationship properties
     // are not.
-    public abstract class EntityFactory<TSymbol, TEntity> : IEntityFactory<TEntity>
+    public abstract class EntityFactory<TSymbol, TEntity> : IEntityFactory<TEntity>, IEntityFactoryInternal
         where TSymbol : class, ISymbol
         where TEntity : class, ISharpObject
     {
-        protected EntityFactory( IJ4JLogger logger )
+        protected EntityFactory(
+            SharpObjectType sharpObjType,
+            IJ4JLogger logger )
         {
+            SharpObjectType = sharpObjType;
+            EntityType = typeof(TEntity);
+            SymbolType = typeof(TSymbol);
+
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
         }
 
         protected IJ4JLogger Logger { get; }
 
-        public EntityFactories? Factories { get; set; }
+        public EntityFactories? Factories { get; private set; }
+
+        public bool Initialized => Factories != null;
+
+        public SharpObjectType SharpObjectType { get; }
+        public Type EntityType { get; }
+        public Type SymbolType { get; }
 
         public bool CanCreate<T>()
             where T : ISharpObject => typeof(T) == typeof(TEntity);
@@ -32,11 +44,36 @@ namespace J4JSoftware.Roslyn
 
         public bool CanProcess( ISymbol? symbol ) => GetEntitySymbol( symbol, out _ );
 
+        public bool InDatabase( ISymbol? symbol )
+        {
+            if( !Initialized )
+                throw new ArgumentException($"{this.GetType().Name} is not initialized");
+
+            if( symbol == null )
+                return false;
+
+            return GetEntitySymbol( symbol, out var entitySymbol )
+                   && ValidateEntitySymbol( entitySymbol! )
+                   && Factories!.SharpObjectInDatabase( entitySymbol! );
+        }
+
         public bool Get( ISymbol? symbol, out TEntity? result )
         {
+            if (!Initialized)
+                throw new ArgumentException($"{this.GetType().Name} is not initialized");
+
             result = null;
 
-            if( !ValidateConfiguration( symbol, out TSymbol? entitySymbol, out var uniqueName ) )
+            if( symbol == null )
+            {
+                Logger.Information( "symbol is undefined" );
+                return false;
+            }
+
+            if( !GetEntitySymbol( symbol, out var entitySymbol ) )
+                return false;
+
+            if (!ValidateEntitySymbol(entitySymbol!))
                 return false;
 
             if( !Factories!.GetSharpObject( entitySymbol!, out var sharpObj ) )
@@ -58,13 +95,33 @@ namespace J4JSoftware.Roslyn
 
         public bool Create(ISymbol? symbol, out TEntity? result)
         {
+            if (!Initialized)
+                throw new ArgumentException($"{this.GetType().Name} is not initialized");
+
             result = null;
 
-            if( !ValidateConfiguration( symbol, out var entitySymbol, out var uniqueName ) )
+            if (symbol == null)
+            {
+                Logger.Information("symbol is undefined");
+                return false;
+            }
+
+            if (!GetEntitySymbol(symbol, out var entitySymbol))
+                return false;
+
+            if (!ValidateEntitySymbol(entitySymbol!))
                 return false;
 
             if (!Factories!.CreateSharpObject(entitySymbol!, out var sharpObj))
                 return false;
+
+            if (!Factories!.GetUniqueName(entitySymbol!, out var uniqueName))
+            {
+                Logger.Error<string>("Couldn't create unique name for '{0}'",
+                    Factories.GetFullName(entitySymbol!));
+
+                return false;
+            }
 
             var entities = Factories.DbContext.Set<TEntity>();
 
@@ -92,51 +149,6 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool ValidateConfiguration(ISymbol? symbol, out TSymbol? symbolResult, out string? uniqueName )
-        {
-            symbolResult = null;
-            uniqueName = null;
-
-            if (symbol == null)
-                return false;
-
-            if (Factories == null)
-            {
-                Logger.Error("IEntityFactories is undefined");
-                return false;
-            }
-
-            var type = Factories.GetSharpObjectType<TEntity>();
-
-            if (type == SharpObjectType.Unknown)
-            {
-                Logger.Error<Type>("Unknown SharpObjectType ({0})", typeof(TEntity));
-                return false;
-            }
-
-            if (!GetEntitySymbol(symbol, out var entitySymbol))
-            {
-                Logger.Error<string>("Couldn't extract required symbol from '{0}'", Factories.GetFullName(symbol));
-                return false;
-            }
-
-            if (!Factories!.GetUniqueName(entitySymbol!, out var name))
-            {
-                Logger.Error<string>("Couldn't create unique name for '{0}'",
-                    Factories.GetFullName(entitySymbol!));
-
-                return false;
-            }
-
-            if (!ValidateEntitySymbol(entitySymbol!))
-                return false;
-
-            symbolResult = entitySymbol;
-            uniqueName = name;
-
-            return true;
-        }
-
         protected abstract bool GetEntitySymbol( ISymbol? symbol, out TSymbol? result );
         protected abstract bool CreateNewEntity( TSymbol symbol, out TEntity? result );
 
@@ -146,6 +158,9 @@ namespace J4JSoftware.Roslyn
 
         bool IEntityFactory.Get(ISymbol? symbol, out ISharpObject? result)
         {
+            if (!Initialized)
+                throw new ArgumentException($"{this.GetType().Name} is not initialized");
+
             result = null;
 
             if (symbol == null)
@@ -161,6 +176,9 @@ namespace J4JSoftware.Roslyn
 
         bool IEntityFactory.Create(ISymbol? symbol, out ISharpObject? result)
         {
+            if (!Initialized)
+                throw new ArgumentException($"{this.GetType().Name} is not initialized");
+
             result = null;
 
             if (symbol == null)
@@ -172,6 +190,11 @@ namespace J4JSoftware.Roslyn
             result = innerResult;
 
             return true;
+        }
+
+        void IEntityFactoryInternal.SetFactories( EntityFactories factories )
+        {
+            Factories = factories;
         }
     }
 }

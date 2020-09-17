@@ -30,7 +30,7 @@ namespace J4JSoftware.Roslyn
 
             try
             {
-                foreach( var symbol in FilterSymbols( inputData ) )
+                foreach( var symbol in FilterSymbols(inputData) )
                 {
                     allOkay = ProcessSymbol( symbol );
 
@@ -110,6 +110,7 @@ namespace J4JSoftware.Roslyn
                 foreach( var symbol in ExtractSymbols(item) )
                 {
                     var crap = EntityFactories.GetFullName( symbol );
+
                     if( !EntityFactories.GetUniqueName( symbol!, out var fqn ) )
                     {
                         var mesg = $"Couldn't get unique name for ISymbol '{EntityFactories.GetFullName( symbol )}'";

@@ -29,7 +29,7 @@ namespace J4JSoftware.Roslyn
             }
 
             // ignore any assemblies already on file
-            if( !EntityFactories.Get<AssemblyDb>( typeSymbol.ContainingAssembly, out _ ) )
+            if( !EntityFactories.InDatabase<AssemblyDb>( typeSymbol.ContainingAssembly) )
                 yield return typeSymbol.ContainingAssembly!;
         }
 

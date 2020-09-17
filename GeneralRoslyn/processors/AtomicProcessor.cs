@@ -37,7 +37,7 @@ namespace J4JSoftware.Roslyn
 
         protected virtual bool FinalizeProcessor(IEnumerable<TSymbol> inputData ) => true;
 
-        protected abstract bool ProcessInternal(IEnumerable<TSymbol> inputData);
+        protected abstract bool ProcessInternal( IEnumerable<TSymbol> inputData );
 
         //bool IAtomicProcessor.Process( object inputData, bool stopOnFirstError )
         //{

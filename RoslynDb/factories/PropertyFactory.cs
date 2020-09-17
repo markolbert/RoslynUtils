@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class PropertyFactory : EntityFactory<IPropertySymbol, PropertyDb>
     {
         public PropertyFactory( IJ4JLogger logger ) 
-            : base( logger )
+            : base( SharpObjectType.Property, logger )
         {
         }
 

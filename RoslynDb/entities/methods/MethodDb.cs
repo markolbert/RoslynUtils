@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.Roslyn
 {
-    [ EntityConfiguration( typeof(MethodDbConfigurator) ) ]
+    [EntityConfiguration( typeof(MethodDbConfigurator) ) ]
     public class MethodDb : ISharpObject
     {
         public int SharpObjectID { get; set; }

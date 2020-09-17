@@ -17,6 +17,9 @@ namespace Tests.RoslynWalker
             var node = Add(new TypeAssemblyProcessor(factories, loggerFactory()));
             node = Add(new TypeNamespaceProcessor(factories, loggerFactory()), node );
             node = Add(new SortedTypeProcessor(factories, loggerFactory()), node);
+            var taNode = Add( new TypeArgumentProcessor( factories, loggerFactory() ), node );
+            var tptNode = Add(new TypeParametricTypeProcessor(factories, loggerFactory()), node);
+            var ancestorNode = Add( new AncestorProcessor( factories, loggerFactory() ), node );
         }
 
         protected override bool Initialize( IEnumerable<ITypeSymbol> symbols )

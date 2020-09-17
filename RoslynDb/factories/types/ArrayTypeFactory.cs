@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn.entityfactories
     public class ArrayTypeFactory : EntityFactory<IArrayTypeSymbol, TypeDb>
     {
         public ArrayTypeFactory( IJ4JLogger logger ) 
-            : base( logger )
+            : base( SharpObjectType.ArrayType, logger )
         {
         }
 

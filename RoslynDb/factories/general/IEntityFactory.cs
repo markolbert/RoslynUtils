@@ -5,7 +5,13 @@ namespace J4JSoftware.Roslyn
 {
     public interface IEntityFactory
     {
-        EntityFactories Factories { get; set; }
+        bool Initialized { get; }
+
+        EntityFactories Factories { get; }
+
+        SharpObjectType SharpObjectType { get; }
+        Type EntityType { get; }
+        Type SymbolType { get; }
 
         bool CanProcess( ISymbol? symbol );
 
@@ -15,8 +21,15 @@ namespace J4JSoftware.Roslyn
         bool IsAssignableTo<T>()
             where T : ISharpObject;
 
+        bool InDatabase( ISymbol? symbol );
+
         bool Get( ISymbol? symbol, out ISharpObject? result );
         bool Create( ISymbol? symbol, out ISharpObject? result );
+    }
+
+    internal interface IEntityFactoryInternal
+    {
+        void SetFactories( EntityFactories factories );
     }
 
     public interface IEntityFactory<TEntity> : IEntityFactory

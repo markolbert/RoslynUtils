@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class FieldFactory : EntityFactory<IFieldSymbol, FieldDb>
     {
         public FieldFactory( IJ4JLogger logger ) 
-            : base( logger )
+            : base( SharpObjectType.Field, logger )
         {
         }
 

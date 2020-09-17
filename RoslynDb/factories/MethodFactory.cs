@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class MethodFactory : EntityFactory<IMethodSymbol, MethodDb>
     {
         public MethodFactory( IJ4JLogger logger ) 
-            : base( logger )
+            : base( SharpObjectType.Method, logger )
         {
         }
 

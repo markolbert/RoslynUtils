@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class FixedTypeFactory : ImplementableTypeEntityFactory<INamedTypeSymbol, FixedTypeDb>
     {
         public FixedTypeFactory( IJ4JLogger logger ) 
-            : base( logger )
+            : base( SharpObjectType.FixedType, logger )
         {
         }
 

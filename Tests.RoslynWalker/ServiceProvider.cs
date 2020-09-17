@@ -34,10 +34,6 @@ namespace Tests.RoslynWalker
             builder.RegisterType<DocumentationWorkspace>()
                 .AsSelf();
 
-            builder.RegisterType<SharpObjectTypeMapper>()
-                .As<ISharpObjectTypeMapper>()
-                .SingleInstance();
-
             builder.RegisterType<SymbolFullName>()
                 .As<ISymbolFullName>()
                 .SingleInstance();

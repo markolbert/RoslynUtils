@@ -7,8 +7,11 @@ namespace J4JSoftware.Roslyn
         where TSymbol : class, ITypeSymbol
         where TEntity : TypeDb
     {
-        protected TypeEntityFactory( IJ4JLogger logger)
-            : base( logger)
+        protected TypeEntityFactory(
+            SharpObjectType sharpObjType,
+            IJ4JLogger logger
+        )
+            : base( sharpObjType, logger )
         {
         }
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
+using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
@@ -36,7 +37,9 @@ namespace J4JSoftware.Roslyn
                 yield break;
             }
 
-            if( EntityFactories.Get<TypeDb>( typeSymbol, out _ ) )
+            var fullName = EntityFactories.GetFullName( typeSymbol );
+
+            if( EntityFactories.InDatabase<TypeDb>( typeSymbol ) )
                 yield break;
 
             yield return typeSymbol;
@@ -44,7 +47,9 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            return typeSymbol switch
+            var fullName = EntityFactories.GetFullName(typeSymbol);
+
+            var retVal = typeSymbol switch
             {
                 INamedTypeSymbol ntSymbol => ntSymbol.IsGenericType switch
                 {
@@ -55,6 +60,11 @@ namespace J4JSoftware.Roslyn
                 ITypeParameterSymbol tpSymbol => ProcessTypeParameter( tpSymbol ),
                 _ => unhandled()
             };
+
+            if( retVal )
+                EntityFactories.DbContext.SaveChanges();
+
+            return retVal;
 
             bool unhandled()
             {

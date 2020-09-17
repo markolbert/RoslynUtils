@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public class ParametricTypeFactory : TypeEntityFactory<ITypeParameterSymbol, ParametricTypeDb>
     {
         public ParametricTypeFactory( IJ4JLogger logger ) 
-            : base(  logger )
+            : base( SharpObjectType.ParametricType,  logger )
         {
         }
 

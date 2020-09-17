@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using System.Reflection;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
@@ -13,19 +14,14 @@ namespace J4JSoftware.Roslyn
 {
     public class EntityFactories
     {
+        #region Format specifications
+
         public static SymbolDisplayFormat UniqueNameFormat { get; } = SymbolDisplayFormat.FullyQualifiedFormat
             .WithGlobalNamespaceStyle( SymbolDisplayGlobalNamespaceStyle.Omitted )
             .WithGenericsOptions( SymbolDisplayGenericsOptions.IncludeTypeParameters )
             .WithMemberOptions( SymbolDisplayMemberOptions.IncludeContainingType
                                 | SymbolDisplayMemberOptions.IncludeExplicitInterface )
-            //| SymbolDisplayMemberOptions.IncludeParameters )
             .WithParameterOptions( SymbolDisplayParameterOptions.None )
-            //.WithParameterOptions(SymbolDisplayParameterOptions.IncludeExtensionThis
-            //                      | SymbolDisplayParameterOptions.IncludeName
-            //                      | SymbolDisplayParameterOptions.IncludeParamsRefOut
-            //                      | SymbolDisplayParameterOptions.IncludeDefaultValue
-            //                      | SymbolDisplayParameterOptions.IncludeOptionalBrackets
-            //                      | SymbolDisplayParameterOptions.IncludeType)
             .RemoveMiscellaneousOptions( SymbolDisplayMiscellaneousOptions.UseSpecialTypes );
 
         public static SymbolDisplayFormat FullNameFormat { get; } = SymbolDisplayFormat.FullyQualifiedFormat
@@ -47,9 +43,14 @@ namespace J4JSoftware.Roslyn
             .RemoveMiscellaneousOptions( SymbolDisplayMiscellaneousOptions.UseSpecialTypes )
             .RemoveGenericsOptions( SymbolDisplayGenericsOptions.IncludeTypeParameters );
 
+#endregion
+
         public SymbolDisplayFormat SimpleNameFormat { get; } = SymbolDisplayFormat.MinimallyQualifiedFormat;
 
         private readonly List<IEntityFactory> _factories;
+        private readonly Dictionary<Type, MethodInfo> _supportedSymbols = new Dictionary<Type, MethodInfo>();
+        private readonly Dictionary<Type, SharpObjectType> _entityTypes = new Dictionary<Type, SharpObjectType>();
+
         private readonly IJ4JLogger _logger;
 
         public EntityFactories(
@@ -60,27 +61,54 @@ namespace J4JSoftware.Roslyn
         {
             DbContext = dbContext;
 
-            _factories = factories.ToList();
-            _factories.ForEach( x => x.Factories = this );
-
             _logger = logger;
-            _logger.SetLoggedType( this.GetType() );
+            _logger.SetLoggedType(this.GetType());
 
-            if( !_factories.Any() )
-                _logger.Error( "No entity factories defined" );
+            _factories = factories.ToList();
+
+            if (!_factories.Any())
+                _logger.Error("No entity factories defined");
+
+            // initialize the entity factories so they can refer to us
+            foreach( var factory in _factories.Cast<IEntityFactoryInternal>() )
+            {
+                factory.SetFactories( this );
+            }
         }
 
         #region Methods for getting symbol names
 
-        public string GetFullName( ISymbol? symbol ) =>
-            symbol == null ? "***undefined symbol***" : symbol.ToDisplayString( FullNameFormat );
+        public string GetFullName( ISymbol? symbol )
+        {
+            if( symbol == null )
+                return "***undefined symbol***";
 
-        public bool GetUniqueName( ISymbol? symbol, out string result )
+            if ( symbol is ITypeParameterSymbol tpSymbol )
+            {
+                ISymbol? declaringSymbol = null;
+
+                if( tpSymbol.DeclaringType != null )
+                    declaringSymbol = tpSymbol.DeclaringType;
+
+                if( tpSymbol.DeclaringMethod != null )
+                    declaringSymbol = tpSymbol.DeclaringMethod;
+
+                return declaringSymbol != null 
+                    ? $"{declaringSymbol.ToDisplayString( FullNameFormat )}:{tpSymbol.ToDisplayString( FullNameFormat )}" 
+                    : tpSymbol.ToDisplayString( FullNameFormat );
+            }
+
+            return symbol.ToDisplayString( FullNameFormat );
+        }
+
+        public bool GetUniqueName( ISymbol? symbol, out string result, bool suppressMessages = false )
         {
             if( symbol == null )
             {
                 result = string.Empty;
-                _logger.Error( "symbol is undefined" );
+
+                if( !suppressMessages )
+                    _logger.Error( "symbol is undefined" );
 
                 return false;
             }
@@ -89,7 +117,9 @@ namespace J4JSoftware.Roslyn
 
             if( GetSharpObjectType( symbol ) == SharpObjectType.Unknown )
             {
-                _logger.Error<string>( "Unhandled ISymbol '{0}'", result );
+                if (!suppressMessages)
+                    _logger.Error<string>( "Unhandled ISymbol '{0}'", result );
+    
                 return false;
             }
 
@@ -141,7 +171,8 @@ namespace J4JSoftware.Roslyn
                     return true;
             }
 
-            _logger.Error<string>( "Unhandled ISymbol '{0}'", result );
+            if (!suppressMessages)
+                _logger.Error<string>( "Unhandled ISymbol '{0}'", result );
 
             return false;
         }
@@ -216,13 +247,16 @@ namespace J4JSoftware.Roslyn
             result = null;
 
             if( symbol.DeclaringType != null )
+            {
                 result = $"{symbol.DeclaringType.ToDisplayString( UniqueNameFormat )}::{symbol.Name}";
+                return true;
+            }
 
             if( symbol.DeclaringMethod != null )
+            {
                 result = $"{symbol.DeclaringMethod.ToDisplayString( UniqueNameFormat )}::{symbol.Name}";
-
-            if( result != null )
                 return true;
+            }
 
             _logger.Error<string>(
                 "ITypeParameterSymbol '{0}' is contained neither by an IMethodSymbol nor an INamedTypeSymbol",
@@ -348,60 +382,43 @@ namespace J4JSoftware.Roslyn
 
         public SharpObjectType GetSharpObjectType( ISymbol symbol )
         {
-            return symbol switch
+            var symbolType = symbol.GetType();
+
+            foreach( var factory in _factories )
             {
-                IAssemblySymbol aSymbol => SharpObjectType.Assembly,
-                INamespaceSymbol nsSymbol => SharpObjectType.Namespace,
-                INamedTypeSymbol ntSymbol => ntSymbol.IsGenericType
-                    ? SharpObjectType.GenericType
-                    : SharpObjectType.FixedType,
-                IMethodSymbol mSymbol => SharpObjectType.Method,
-                ITypeParameterSymbol tpSymbol => SharpObjectType.ParametricType,
-                IPropertySymbol pSymbol => SharpObjectType.Property,
-                IArrayTypeSymbol arraySymbol => SharpObjectType.ArrayType,
-                IFieldSymbol fieldSymbol => SharpObjectType.Field,
-                _ => SharpObjectType.Unknown
-            };
-        }
-
-        public SharpObjectType GetSharpObjectType<TEntity>()
-            where TEntity : ISharpObject
-        {
-            var entityType = typeof(TEntity);
-
-            if( typeof(AssemblyDb) == entityType )
-                return SharpObjectType.Assembly;
-
-            if( typeof(NamespaceDb) == entityType )
-                return SharpObjectType.Namespace;
-
-            if( typeof(FixedTypeDb) == entityType )
-                return SharpObjectType.FixedType;
-
-            if( typeof(GenericTypeDb) == entityType )
-                return SharpObjectType.GenericType;
-
-            if( typeof(MethodDb) == entityType )
-                return SharpObjectType.Method;
-
-            if( typeof(ParametricTypeDb) == entityType )
-                return SharpObjectType.ParametricType;
-
-            if( typeof(TypeParametricTypeDb) == entityType )
-                return SharpObjectType.ParametricType;
-
-            if( typeof(MethodParametricTypeDb) == entityType )
-                return SharpObjectType.ParametricType;
-
-            if( typeof(PropertyDb) == entityType )
-                return SharpObjectType.Property;
+                if( factory.SymbolType.IsAssignableFrom( symbolType ) )
+                    return factory.SharpObjectType;
+            }
 
             return SharpObjectType.Unknown;
         }
 
+        public List<SharpObjectType> GetSharpObjectType<TEntity>()
+            where TEntity : ISharpObject
+            => _factories.Where( f => typeof(TEntity).IsAssignableFrom( f.EntityType ) )
+                .Select( f => f.SharpObjectType )
+                .ToList();
+
         #endregion
 
         public RoslynDbContext DbContext { get; }
+
+        #region Entity methods
+
+        public bool InDatabase<TEntity>( ISymbol? symbol )
+            where TEntity : class, ISharpObject
+        {
+            if( symbol == null )
+                return false;
+
+            foreach( var factory in _factories.Where( f => f.IsAssignableTo<TEntity>() ) )
+            {
+                if( factory.InDatabase( symbol ) )
+                    return true;
+            }
+
+            return false;
+        }
 
         public bool Get<TEntity>( ISymbol? symbol, out TEntity? result )
             where TEntity : class, ISharpObject
@@ -415,11 +432,13 @@ namespace J4JSoftware.Roslyn
             // it can get entities assignable to TEntity
             foreach( var factory in _factories.Where( f => f.IsAssignableTo<TEntity>() ) )
             {
-                if( factory.Get( symbol, out var innerResult ) )
-                {
-                    result = (TEntity) innerResult!;
-                    return true;
-                }
+                if( !factory.InDatabase( symbol ) ) 
+                    continue;
+                
+                factory.Get( symbol, out var innerResult );
+                result = (TEntity) innerResult!;
+
+                return true;
             }
 
             _logger.Error<string>( "Couldn't find an entity in the database for '{0}'", GetFullName( symbol ) );
@@ -457,52 +476,24 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
+        #endregion
+
+        #region SharpObject methods
+
+        internal bool SharpObjectInDatabase( ISymbol symbol )
+        {
+            if (!GetUniqueName(symbol, out var fqn, true))
+                return false;
+
+            if( GetSharpObjectType( symbol ) == SharpObjectType.Unknown )
+                return false;
+
+            return DbContext.SharpObjects.Any( x => x.FullyQualifiedName == fqn );
+        }
+
         internal bool GetSharpObject( ISymbol symbol, out SharpObject? result )
         {
             result = null;
-
-            if( !ValidateSharpObjectConfiguration( symbol, out var fqn, out var soType ) )
-                return false;
-
-            result = DbContext.SharpObjects.FirstOrDefault( x => x.FullyQualifiedName == fqn );
-
-            if( result != null ) 
-                return true;
-
-            _logger.Error<string>( "Couldn't find SharpObject for '{0}' in the database", GetFullName( symbol ) );
-            return false;
-        }
-
-        internal bool CreateSharpObject( ISymbol symbol, out SharpObject? result )
-        {
-            result = null;
-
-            if( !ValidateSharpObjectConfiguration( symbol, out var fqn, out var soType ) )
-                return false;
-
-            if( DbContext.SharpObjects.Any( x => x.FullyQualifiedName == fqn ) )
-            {
-                _logger.Error<string>( "Duplicate SharpObject ({0})", GetFullName( symbol ) );
-                return false;
-            }
-
-            result = new SharpObject
-            {
-                FullyQualifiedName = fqn!,
-                Name = GetName( symbol ),
-                SharpObjectType = soType!.Value,
-                Synchronized = true
-            };
-
-            DbContext.SharpObjects.Add( result );
-
-            return true;
-        }
-
-        private bool ValidateSharpObjectConfiguration(ISymbol symbol, out string? uniqueName, out SharpObjectType? soType )
-        {
-            uniqueName = null;
-            soType = null;
 
             if (!GetUniqueName(symbol, out var fqn))
             {
@@ -512,18 +503,65 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            soType = GetSharpObjectType(symbol);
-
-            if (soType== SharpObjectType.Unknown)
+            if( GetSharpObjectType( symbol ) == SharpObjectType.Unknown )
             {
                 _logger.Error<string>("Unknown SharpObjectType '{0}'", fqn);
+
                 return false;
             }
 
-            uniqueName = fqn;
+            result = DbContext.SharpObjects.FirstOrDefault( x => x.FullyQualifiedName == fqn );
+
+            if( result != null ) 
+                return true;
+
+            _logger.Error<string>( "Couldn't find SharpObject for '{0}' in the database", fqn );
+
+            return false;
+        }
+
+        internal bool CreateSharpObject( ISymbol symbol, out SharpObject? result )
+        {
+            result = null;
+
+            if (!GetUniqueName(symbol, out var fqn))
+            {
+                _logger.Error<string>("Couldn't generate unique name of '{0}'",
+                    symbol.ToDisplayString(UniqueNameFormat));
+
+                return false;
+            }
+
+            var soType = GetSharpObjectType( symbol );
+
+            if (soType == SharpObjectType.Unknown)
+            {
+                _logger.Error<string>("Unknown SharpObjectType '{0}'", fqn);
+
+                return false;
+            }
+
+            if ( DbContext.SharpObjects.Any( x => x.FullyQualifiedName == fqn ) )
+            {
+                _logger.Error<string>( "Duplicate SharpObject ({0})", GetFullName( symbol ) );
+
+                return false;
+            }
+
+            result = new SharpObject
+            {
+                FullyQualifiedName = fqn!,
+                Name = GetName( symbol ),
+                SharpObjectType = soType,
+                Synchronized = true
+            };
+
+            DbContext.SharpObjects.Add( result );
 
             return true;
         }
+
+#endregion
 
         #region Methods for marking objects as synchronized or unsynchronized
 
@@ -533,9 +571,9 @@ namespace J4JSoftware.Roslyn
             var entityType = typeof(TEntity);
 
             // update the underlying DocObject
-            var docObjType = GetSharpObjectType<TEntity>();
+            var docObjTypes = GetSharpObjectType<TEntity>();
 
-            DbContext.SharpObjects.Where( x => x.SharpObjectType == docObjType )
+            DbContext.SharpObjects.Where( x => docObjTypes.Any( z => z == x.SharpObjectType ) )
                 .ForEachAsync( x => x.Synchronized = false );
 
             if( saveChanges )
