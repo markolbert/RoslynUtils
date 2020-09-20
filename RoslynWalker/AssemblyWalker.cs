@@ -16,31 +16,14 @@ namespace J4JSoftware.Roslyn
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
         }
 
-        private readonly IInScopeAssemblyProcessor _inScopeProcessor;
-
         public AssemblyWalker( 
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            IInScopeAssemblyProcessor inScopeProcessor,
             IJ4JLogger logger,
             ISymbolSink<IAssemblySymbol>? symbolSink = null
             ) 
             : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
         {
-            _inScopeProcessor = inScopeProcessor;
-        }
-
-        // override the Traverse() method to synchronize the project file based metadata
-        // for assemblies that are within the scope of the documentation
-        public override bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
-        {
-            if( !base.Process( compResults, stopOnFirstError ) )
-                return false;
-
-            if( !_inScopeProcessor.Initialize() )
-                return false;
-
-            return _inScopeProcessor.Synchronize( compResults );
         }
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out IAssemblySymbol? result )

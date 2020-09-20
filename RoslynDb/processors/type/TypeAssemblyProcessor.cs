@@ -7,10 +7,9 @@ namespace J4JSoftware.Roslyn
     public class TypeAssemblyProcessor : BaseProcessorDb<ITypeSymbol, IAssemblySymbol>
     {
         public TypeAssemblyProcessor(
-            EntityFactories factories,
-            IJ4JLogger logger
-        )
-            : base( factories, logger )
+            IRoslynDataLayer dataLayer,
+            IJ4JLogger logger)
+            : base(dataLayer, logger)
         {
         }
 
@@ -29,23 +28,11 @@ namespace J4JSoftware.Roslyn
             }
 
             // ignore any assemblies already on file
-            if( !EntityFactories.InDatabase<AssemblyDb>( typeSymbol.ContainingAssembly) )
+            if( !DataLayer.SharpObjectInDatabase<AssemblyDb>( typeSymbol.ContainingAssembly) )
                 yield return typeSymbol.ContainingAssembly!;
         }
 
-        protected override bool ProcessSymbol(IAssemblySymbol symbol)
-        {
-            if( !EntityFactories.Create<AssemblyDb>( symbol, out var assemblyDb ) )
-            {
-                Logger.Error<string>("Couldn't retrieve AssemblyDb for '{0}'",
-                    EntityFactories.GetFullName(symbol));
-
-                return false;
-            }
-
-            EntityFactories.MarkSynchronized( assemblyDb! );
-
-            return true;
-        }
+        protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
+            DataLayer.GetAssembly( symbol, true ) != null;
     }
 }

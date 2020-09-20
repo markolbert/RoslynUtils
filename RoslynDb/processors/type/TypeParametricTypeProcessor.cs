@@ -8,10 +8,9 @@ namespace J4JSoftware.Roslyn
     public class TypeParametricTypeProcessor : BaseProcessorDb<ITypeSymbol, ITypeParameterSymbol>
     {
         public TypeParametricTypeProcessor(
-            EntityFactories factories,
-            IJ4JLogger logger
-        )
-            : base( factories, logger )
+            IRoslynDataLayer dataLayer,
+            IJ4JLogger logger)
+            : base(dataLayer, logger)
         {
         }
 
@@ -51,36 +50,7 @@ namespace J4JSoftware.Roslyn
         }
 
         // symbol is guaranteed to be an ITypeParameterSymbol with a non-null DeclaringType property
-        protected override bool ProcessSymbol( ITypeParameterSymbol symbol )
-        {
-            if( !EntityFactories.Get<TypeDb>( symbol.DeclaringType!, out var containerDb ) )
-            {
-                Logger.Error<string>( "Couldn't retrieve TypeDb entity for DeclaringType of '{0}'",
-                    EntityFactories.GetFullName( symbol ) );
-
-                return false;
-            }
-
-            if( !EntityFactories.Get<ParametricTypeDb>( symbol, out var paramDb ) )
-            {
-                Logger.Error<string>("Couldn't retrieve TypeParametricTypeDb entity for '{0}'",
-                    EntityFactories.GetFullName(symbol));
-
-                return false;
-            }
-
-            if( !(paramDb is TypeParametricTypeDb tParamDb) )
-            {
-                Logger.Error<Type, string>("Retrieved a {0} instead of a TypeParametricTypeDb entity for '{1}'",
-                    paramDb!.GetType(),
-                    EntityFactories.GetFullName(symbol));
-
-                return false;
-            }
-
-            tParamDb!.ContainingTypeID = containerDb!.SharpObjectID;
-
-            return true;
-        }
+        protected override bool ProcessSymbol( ITypeParameterSymbol symbol ) =>
+            DataLayer.GetParametricType( symbol, true ) != null;
     }
 }

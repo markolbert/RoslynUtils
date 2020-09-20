@@ -8,6 +8,7 @@ namespace J4JSoftware.Roslyn
     public class InScopeAssemblyProcessor : IInScopeAssemblyProcessor
     {
         private readonly EntityFactories _factories;
+        private readonly IRoslynDataLayer _dataLayer;
         private readonly IJ4JLogger _logger;
 
         public InScopeAssemblyProcessor(
@@ -23,7 +24,7 @@ namespace J4JSoftware.Roslyn
 
         public bool Initialize()
         {
-            _factories.MarkUnsynchronized<InScopeAssemblyInfo>( true );
+            _dataLayer.MarkUnsynchronized<InScopeAssemblyInfo>();
 
             return true;
         }

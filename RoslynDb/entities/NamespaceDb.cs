@@ -14,7 +14,7 @@ namespace J4JSoftware.Roslyn
         public SharpObject SharpObject { get; set; }
 
         public List<AssemblyNamespaceDb>? AssemblyNamespaces { get; set; }
-        public List<TypeDb>? Types { get; set; }
+        public List<BaseTypeDb>? Types { get; set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<NamespaceDb>

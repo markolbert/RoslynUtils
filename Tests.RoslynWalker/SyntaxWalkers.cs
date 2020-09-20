@@ -16,7 +16,6 @@ namespace Tests.RoslynWalker
         public SyntaxWalkers(
             ISymbolFullName symbolNamer,
             IDefaultSymbolSink defaultSymbolSink,
-            IInScopeAssemblyProcessor inScopeAssemblyProcessor,
             IEnumerable<ISymbolSink> symbolSinks,
             Func<IJ4JLogger> loggerFactory
         )
@@ -28,7 +27,6 @@ namespace Tests.RoslynWalker
 
             var node = Add( new AssemblyWalker( symbolNamer,
                 defaultSymbolSink,
-                inScopeAssemblyProcessor,
                 loggerFactory(),
                 GetSink<IAssemblySymbol>() ) );
 
@@ -86,14 +84,5 @@ namespace Tests.RoslynWalker
 
             return allOkay;
         }
-
-        //protected override bool SetPredecessors()
-        //{
-        //    return SetPredecessor<NamespaceWalker, AssemblyWalker>()
-        //           && SetPredecessor<TypeWalker, NamespaceWalker>();
-        //           //&& SetPredecessor<MethodWalker, TypeWalker>()
-        //           //&& SetPredecessor<PropertyWalker, TypeWalker>()
-        //           //&& SetPredecessor<FieldWalker, TypeWalker>();
-        //}
     }
 }

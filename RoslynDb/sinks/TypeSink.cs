@@ -10,19 +10,16 @@ namespace J4JSoftware.Roslyn.Sinks
 {
     public class TypeSink : RoslynDbSink<ITypeSymbol>
     {
-        private readonly EntityFactories _factories;
         private readonly TypeSymbolContainer _symbols;
         private readonly List<string> _visited = new List<string>();
 
         public TypeSink(
             UniqueSymbols<ITypeSymbol> uniqueSymbols,
             Func<IJ4JLogger> loggerFactory,
-            EntityFactories factories,
             IProcessorCollection<ITypeSymbol>? processors = null )
             : base( uniqueSymbols, loggerFactory(), processors)
         {
-            _factories = factories;
-            _symbols = new TypeSymbolContainer( factories, loggerFactory() );
+            _symbols = new TypeSymbolContainer( loggerFactory() );
         }
 
         public override bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
@@ -65,13 +62,13 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if( symbol.TypeKind != TypeKind.Interface )
             {
-                Logger.Error<string>("Non-interface '{0}' submitted to AddInterface()", _factories.GetFullName(symbol));
+                Logger.Error<string>("Non-interface '{0}' submitted to AddInterface()", symbol.ToFullName());
                 return false;
             }
 
             if ( symbol.BaseType != null )
             {
-                Logger.Error<string>( "Interface '{0}' has a base type", _factories.GetFullName( symbol ) );
+                Logger.Error<string>( "Interface '{0}' has a base type", symbol.ToFullName() );
                 return false;
             }
 
@@ -137,7 +134,7 @@ namespace J4JSoftware.Roslyn.Sinks
         private bool SymbolIsDuplicate( ISymbol symbol )
         {
             // don't allow duplicate additions so we can avoid infinite loops
-            var fullName = _factories.GetFullName(symbol);
+            var fullName = symbol.ToFullName();
 
             if (_visited.Any(x => x.Equals(fullName)))
                 return true;

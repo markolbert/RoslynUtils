@@ -5,7 +5,7 @@ namespace J4JSoftware.Roslyn
 {
     public abstract class TypeEntityFactory<TSymbol, TEntity> : EntityFactory<TSymbol, TEntity>
         where TSymbol : class, ITypeSymbol
-        where TEntity : TypeDb
+        where TEntity : BaseTypeDb
     {
         protected TypeEntityFactory(
             SharpObjectType sharpObjType,
@@ -20,18 +20,18 @@ namespace J4JSoftware.Roslyn
             if( !base.ValidateEntitySymbol( symbol ) )
                 return false;
 
-            if( !Factories!.Get<AssemblyDb>( symbol, out _ ) )
+            if( !Factories!.InDatabase<AssemblyDb>( symbol ) )
             {
                 Logger.Error<string>( "Couldn't find AssemblyDb entity in database for '{0}'",
-                    Factories!.GetFullName( symbol ) );
+                    symbol.ToFullName() );
 
                 return false;
             }
 
-            if (!Factories!.Get<NamespaceDb>(symbol, out _))
+            if( !Factories!.InDatabase<NamespaceDb>( symbol ) )
             {
-                Logger.Error<string>("Couldn't find NamespaceDb entity in database for '{0}'",
-                    Factories!.GetFullName(symbol));
+                Logger.Error<string>( "Couldn't find NamespaceDb entity in database for '{0}'",
+                    symbol.ToFullName() );
 
                 return false;
             }

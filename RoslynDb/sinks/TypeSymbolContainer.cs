@@ -12,13 +12,6 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         private class TypeSymbolComparer : IEqualityComparer<ISymbol>
         {
-            private readonly EntityFactories _factories;
-
-            public TypeSymbolComparer( EntityFactories factories )
-            {
-                _factories = factories;
-            }
-
             public bool Equals( ISymbol? x, ISymbol? y )
             {
                 if( x == null && y == null )
@@ -27,8 +20,8 @@ namespace J4JSoftware.Roslyn.Sinks
                 if( x == null || y == null )
                     return false;
 
-                return string.Equals( _factories.GetFullName( x ), 
-                    _factories.GetFullName( y ),
+                return string.Equals( x.ToFullName(), 
+                    y.ToFullName(),
                     StringComparison.Ordinal );
             }
 
@@ -40,17 +33,13 @@ namespace J4JSoftware.Roslyn.Sinks
 
         private readonly TopologicallySortableCollection<ISymbol> _nonInterfaces;
         private readonly TopologicallySortableCollection<ISymbol> _interfaces;
-        private readonly EntityFactories _factories;
         private readonly IJ4JLogger _logger;
 
         public TypeSymbolContainer(
-            EntityFactories factories,
             IJ4JLogger logger 
             )
         {
-            _factories = factories;
-
-            var comparer = new TypeSymbolComparer( _factories );
+            var comparer = new TypeSymbolComparer();
 
             _nonInterfaces = new TopologicallySortableCollection<ISymbol>( comparer );
             _interfaces = new TopologicallySortableCollection<ISymbol>( comparer );
@@ -97,8 +86,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 yield break;
             }
 
-            var junk = _interfaces.Nodes.FirstOrDefault( x => _factories
-                .GetFullName(x)
+            var junk = _interfaces.Nodes.FirstOrDefault( x => x.ToFullName()
                 .IndexOf( "IEnumerable<T>", StringComparison.Ordinal ) >= 0 );
 
             if (!_interfaces.Sort(out var interfaces, out _))
@@ -107,8 +95,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 yield break;
             }
 
-            var junk2 = interfaces!.FirstOrDefault(x => _factories
-                .GetFullName(x)
+            var junk2 = interfaces!.FirstOrDefault(x => x.ToFullName()
                 .IndexOf("IEnumerable<T>", StringComparison.Ordinal) >= 0);
 
             // not sure why the topological sorts come out backwards but they do...

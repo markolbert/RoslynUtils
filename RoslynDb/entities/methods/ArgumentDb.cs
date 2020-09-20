@@ -6,15 +6,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( MethodArgumentConfigurator ) )]
-    public class ArgumentDb : ISynchronized
+    public class ArgumentDb : ISharpObject
     {
-        public int ID { get; set; }
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
         public int Ordinal { get; set; }
-        public string Name { get; set; }
-        public bool Synchronized { get; set; }
 
-        public int DeclaringMethodID { get; set; }
-        public MethodDb DeclaringMethod { get; set; }
+        public int MethodID { get; set; }
+        public MethodDb Method { get; set; }
 
         public bool IsOptional { get; set; }
         public bool IsParams { get; set; }
@@ -24,22 +23,24 @@ namespace J4JSoftware.Roslyn
         public string? DefaultText { get; set; }
 
         public int ArgumentTypeID { get; set; }
-        public TypeDb ArgumentType { get; set; }
+        public BaseTypeDb ArgumentType { get; set; }
     }
 
     internal class MethodArgumentConfigurator : EntityConfigurator<ArgumentDb>
     {
         protected override void Configure(EntityTypeBuilder<ArgumentDb> builder)
         {
+            builder.HasKey(x => x.SharpObjectID);
+
             builder.HasOne( x => x.ArgumentType )
                 .WithMany( x => x.MethodArguments )
                 .HasPrincipalKey( x => x.SharpObjectID )
                 .HasForeignKey( x => x.ArgumentTypeID );
 
-            builder.HasOne( x => x.DeclaringMethod )
+            builder.HasOne( x => x.Method )
                 .WithMany( x => x.Arguments )
                 .HasPrincipalKey( x => x.SharpObjectID )
-                .HasForeignKey( x => x.DeclaringMethodID );
+                .HasForeignKey( x => x.MethodID );
         }
     }
 }

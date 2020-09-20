@@ -8,9 +8,9 @@ namespace J4JSoftware.Roslyn
     public class TypeAncestorDb : ISynchronized
     {
         public int ChildTypeID { get; set; }
-        public TypeDb ChildType { get; set; }
+        public BaseTypeDb ChildType { get; set; }
         public int AncestorTypeID { get; set; }
-        public TypeDb AncestorType { get; set; }
+        public BaseTypeDb AncestorType { get; set; }
         public bool Synchronized { get; set; }
     }
 

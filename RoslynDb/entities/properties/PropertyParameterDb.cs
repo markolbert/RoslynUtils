@@ -5,12 +5,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [ EntityConfiguration( typeof(PropertyParameterConfigurator) ) ]
-    public class PropertyParameterDb : ISynchronized
+    public class PropertyParameterDb : ISharpObject
     {
-        public int ID { get; set; }
-        public string Name { get; set; }
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
         public int Ordinal { get; set; }
-        public bool Synchronized { get; set; }
 
         public int PropertyID { get; set; }
         public PropertyDb Property { get; set; }
@@ -30,6 +29,8 @@ namespace J4JSoftware.Roslyn
     {
         protected override void Configure( EntityTypeBuilder<PropertyParameterDb> builder )
         {
+            builder.HasKey(x => x.SharpObjectID);
+
             builder.HasOne( x => x.Property )
                 .WithMany( x => x.Parameters )
                 .HasPrincipalKey( x => x.SharpObjectID )

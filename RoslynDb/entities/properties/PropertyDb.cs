@@ -49,7 +49,7 @@ namespace J4JSoftware.Roslyn
         public ImplementableTypeDb DefiningType { get; set; } = null!;
 
         public int PropertyTypeID { get; set; }
-        public TypeDb PropertyType { get; set; } = null!;
+        public BaseTypeDb PropertyType { get; set; } = null!;
 
         public List<PropertyParameterDb> Parameters { get; set; }
     }

@@ -9,17 +9,17 @@ namespace Tests.RoslynWalker
     public sealed class TypeProcessors : RoslynDbProcessors<ITypeSymbol>
     {
         public TypeProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             Func<IJ4JLogger> loggerFactory 
         ) 
-            : base( factories, loggerFactory() )
+            : base( dataLayer, loggerFactory() )
         {
-            var node = Add(new TypeAssemblyProcessor(factories, loggerFactory()));
-            node = Add(new TypeNamespaceProcessor(factories, loggerFactory()), node );
-            node = Add(new SortedTypeProcessor(factories, loggerFactory()), node);
-            var taNode = Add( new TypeArgumentProcessor( factories, loggerFactory() ), node );
-            var tptNode = Add(new TypeParametricTypeProcessor(factories, loggerFactory()), node);
-            var ancestorNode = Add( new AncestorProcessor( factories, loggerFactory() ), node );
+            var node = Add(new TypeAssemblyProcessor(dataLayer, loggerFactory()));
+            node = Add(new TypeNamespaceProcessor(dataLayer, loggerFactory()), node );
+            node = Add(new SortedTypeProcessor(dataLayer, loggerFactory()), node);
+            var taNode = Add( new TypeArgumentProcessor( dataLayer, loggerFactory() ), node );
+            var tptNode = Add(new TypeParametricTypeProcessor(dataLayer, loggerFactory()), node);
+            var ancestorNode = Add( new AncestorProcessor( dataLayer, loggerFactory() ), node );
         }
 
         protected override bool Initialize( IEnumerable<ITypeSymbol> symbols )
@@ -27,29 +27,14 @@ namespace Tests.RoslynWalker
             if( !base.Initialize( symbols ) )
                 return false;
 
-            EntityFactories.MarkSharpObjectUnsynchronized<FixedTypeDb>();
-            EntityFactories.MarkSharpObjectUnsynchronized<GenericTypeDb>();
-            EntityFactories.MarkSharpObjectUnsynchronized<TypeParametricTypeDb>();
-            EntityFactories.MarkSharpObjectUnsynchronized<MethodParametricTypeDb>();
-            EntityFactories.MarkSharpObjectUnsynchronized<ParametricTypeDb>();
-            EntityFactories.MarkUnsynchronized<TypeAncestorDb>();
-            EntityFactories.MarkUnsynchronized<TypeArgumentDb>(true);
+            DataLayer.MarkSharpObjectUnsynchronized<FixedTypeDb>( false );
+            DataLayer.MarkSharpObjectUnsynchronized<GenericTypeDb>( false );
+            DataLayer.MarkSharpObjectUnsynchronized<ParametricTypeDb>( false );
+            DataLayer.MarkSharpObjectUnsynchronized<ParametricMethodTypeDb>( false );
+            DataLayer.MarkUnsynchronized<TypeAncestorDb>( false );
+            DataLayer.MarkUnsynchronized<TypeArgumentDb>();
 
             return true;
         }
-
-        //protected override bool SetPredecessors()
-        //{
-        //    return SetPredecessor<TypeNamespaceProcessor, TypeAssemblyProcessor>()
-        //           && SetPredecessor<SortedTypeProcessor, TypeNamespaceProcessor>();
-        //           //&& SetPredecessor<NonGenericTypeProcessor, TypeNamespaceProcessor>()
-        //           //&& SetPredecessor<NonParametricTypeProcessor, NonGenericTypeProcessor>()
-        //           //&& SetPredecessor<ParametricTypeProcessor, NonParametricTypeProcessor>()
-        //           //&& SetPredecessor<FinalNamedTypeProcessor, ParametricTypeProcessor>()
-        //           //&& SetPredecessor<ArrayTypeProcessor, FinalNamedTypeProcessor>()
-        //           //&& SetPredecessor<TypeParametricTypeProcessor, ArrayTypeProcessor>()
-        //           //&& SetPredecessor<AncestorProcessor, ArrayTypeProcessor>()
-        //           //&& SetPredecessor<TypeArgumentProcessor, AncestorProcessor>();
-        //}
     }
 }

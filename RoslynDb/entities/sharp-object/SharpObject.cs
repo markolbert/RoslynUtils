@@ -1,11 +1,15 @@
-﻿using J4JSoftware.EFCoreUtilities;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 #pragma warning disable 8618
 #pragma warning disable 8602
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration(typeof(DocObjectConfigurator))]
+    [EntityConfiguration(typeof(SharpObjectConfigurator))]
     public class SharpObject : ISynchronized
     {
         public int ID { get; set; }
@@ -14,28 +18,21 @@ namespace J4JSoftware.Roslyn
         public bool Synchronized { get; set; }
         public SharpObjectType SharpObjectType { get; set; } = SharpObjectType.Unknown;
 
-        public object? Entity => SharpObjectType switch
-        {
-            SharpObjectType.Assembly => Assembly,
-            SharpObjectType.Namespace => Namespace,
-            SharpObjectType.FixedType => Type,
-            SharpObjectType.GenericType => Type,
-            SharpObjectType.ParametricType => Type,
-            SharpObjectType.Method => Method,
-            SharpObjectType.Property => Property,
-            SharpObjectType.Field => Field,
-            _ => null
-        };
-
         public AssemblyDb? Assembly { get; set; }
         public NamespaceDb? Namespace { get; set; }
-        public TypeDb? Type { get; set; }
+        public FixedTypeDb? FixedType { get; set; }
+        public GenericTypeDb? GenericType { get; set; }
+        public ParametricTypeDb? ParametricType { get; set; }
+        public ParametricMethodTypeDb? ParametricMethodType { get; set; }
+        public ArrayTypeDb? ArrayType { get; set; }
         public MethodDb? Method { get; set; }
+        public ArgumentDb? MethodArgument { get; set; }
         public PropertyDb? Property { get; set; }
+        public PropertyParameterDb? PropertyParameter { get; set; }
         public FieldDb? Field { get; set; }
-    }
+   }
 
-    internal class DocObjectConfigurator : EntityConfigurator<SharpObject>
+    internal class SharpObjectConfigurator : EntityConfigurator<SharpObject>
     {
         protected override void Configure( EntityTypeBuilder<SharpObject> builder )
         {
@@ -49,6 +46,56 @@ namespace J4JSoftware.Roslyn
                 .HasPrincipalKey<SharpObject>(x => x.ID)
                 .HasForeignKey<NamespaceDb>(x => x.SharpObjectID);
 
+            builder.HasOne(x => x.FixedType)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<FixedTypeDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.GenericType)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<GenericTypeDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.ParametricType)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<ParametricTypeDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.ParametricMethodType)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<ParametricMethodTypeDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.ArrayType)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<ArrayTypeDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.Method)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<MethodDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.MethodArgument)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<ArgumentDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.Property)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<PropertyDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.PropertyParameter)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<PropertyParameterDb>(x => x.SharpObjectID);
+
+            builder.HasOne(x => x.Field)
+                .WithOne(x => x.SharpObject)
+                .HasPrincipalKey<SharpObject>(x => x.ID)
+                .HasForeignKey<FieldDb>(x => x.SharpObjectID);
+
             builder.HasIndex( x => x.FullyQualifiedName )
                 .IsUnique();
 
@@ -58,7 +105,7 @@ namespace J4JSoftware.Roslyn
             builder.Property(x => x.Name)
                 .IsRequired();
 
-            builder.Property( x => x.SharpObjectType )
+            builder.Property(x => x.SharpObjectType)
                 .HasConversion<string>();
         }
     }

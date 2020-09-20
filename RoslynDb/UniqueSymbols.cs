@@ -9,18 +9,12 @@ namespace J4JSoftware.Roslyn
         where TSymbol : ISymbol
     {
         private readonly Dictionary<string, TSymbol> _symbols = new Dictionary<string, TSymbol>();
-        private readonly EntityFactories _factories;
-
-        public UniqueSymbols( EntityFactories factories )
-        {
-            _factories = factories;
-        }
 
         public void Clear() => _symbols.Clear();
 
         public bool Add( TSymbol symbol )
         {
-            var fqn = _factories.GetFullName( symbol );
+            var fqn = symbol.ToFullName();
 
             if( _symbols.ContainsKey( fqn ) )
                 return false;

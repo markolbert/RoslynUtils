@@ -26,9 +26,9 @@ namespace J4JSoftware.Roslyn
         // type definition and implementation
         public DbSet<FixedTypeDb> FixedTypes { get; set; }
         public DbSet<GenericTypeDb> GenericTypes { get; set; }
-        public DbSet<TypeParametricTypeDb> TypeParametricTypes { get; set; }
-        public DbSet<MethodParametricTypeDb> MethodParametericTypes { get; set; }
-        public DbSet<ParametricTypeDb> AllParametricTypes { get; set; }
+        public DbSet<ParametricTypeDb> ParametricTypes { get; set; }
+        public DbSet<ParametricMethodTypeDb> ParametricMethodTypes { get; set; }
+        public DbSet<ArrayTypeDb> ArrayTypes { get; set; }
         public DbSet<TypeAncestorDb> TypeAncestors { get; set; }
         public DbSet<TypeArgumentDb> TypeArguments { get; set; }
 

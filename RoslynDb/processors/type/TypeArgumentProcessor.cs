@@ -8,10 +8,9 @@ namespace J4JSoftware.Roslyn
     public class TypeArgumentProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
     {
         public TypeArgumentProcessor(
-            EntityFactories factories,
-            IJ4JLogger logger
-        )
-            : base( factories, logger )
+            IRoslynDataLayer dataLayer,
+            IJ4JLogger logger)
+            : base(dataLayer, logger)
         {
         }
 
@@ -43,10 +42,12 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )
         {
-            if( !EntityFactories.Get<ImplementableTypeDb>( symbol, out var declaringDb ) )
+            var declaringDb = DataLayer.GetGenericType( symbol );
+
+            if( declaringDb == null )
             {
                 Logger.Error<string>( "Couldn't retrieve ImplementableTypeDb entity for '{0}'",
-                    EntityFactories.GetFullName( symbol ) );
+                    symbol.ToFullName() );
 
                 return false;
             }
@@ -57,31 +58,15 @@ namespace J4JSoftware.Roslyn
             {
                 var typeArgSymbol = symbol.TypeArguments[ ordinal ];
 
-                if( !EntityFactories.Get<TypeDb>(typeArgSymbol, out var typeDb))
+                if( DataLayer.GetTypeArgument(declaringDb, typeArgSymbol, ordinal, true) == null )
                 {
-                    Logger.Error<string, string>( "", 
-                        EntityFactories.GetFullName( typeArgSymbol ),
-                        EntityFactories.GetFullName( symbol ) );
+                    Logger.Error<string>( "Couldn't find type for type argument '{0}' in database ",
+                        typeArgSymbol.ToFullName() );
 
                     allOkay = false;
 
                     continue;
                 }
-
-                var typeArgDb = EntityFactories.DbContext.TypeArguments
-                    .FirstOrDefault( ta => ta.ArgumentTypeID == typeDb!.SharpObjectID && ta.Ordinal == ordinal );
-
-                if( typeArgDb == null )
-                {
-                    typeArgDb = new TypeArgumentDb();
-
-                    EntityFactories.DbContext.TypeArguments.Add( typeArgDb );
-                }
-
-                typeArgDb.DeclaringTypeID = declaringDb!.SharpObjectID;
-                typeArgDb.ArgumentTypeID = typeDb!.SharpObjectID;
-                typeArgDb.Ordinal = ordinal;
-                typeArgDb.Synchronized = true;
             }
 
             return allOkay;

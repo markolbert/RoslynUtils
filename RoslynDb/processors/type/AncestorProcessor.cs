@@ -8,10 +8,9 @@ namespace J4JSoftware.Roslyn
     public class AncestorProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
     {
         public AncestorProcessor(
-            EntityFactories factories,
-            IJ4JLogger logger
-        )
-            : base( factories, logger )
+            IRoslynDataLayer dataLayer,
+            IJ4JLogger logger)
+            : base(dataLayer, logger)
         {
         }
 
@@ -40,14 +39,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            if( !EntityFactories.Get<TypeDb>(typeSymbol, out var typeDb))
-            {
-                Logger.Error<string, TypeKind>( "Couldn't find ITypeSymbol '{0}' in database ({1})",
-                    EntityFactories.GetFullName( typeSymbol ), 
-                    typeSymbol.TypeKind );
+            var typeDb = DataLayer.GetUnspecifiedType( typeSymbol );
 
+            if( typeDb == null )
                 return false;
-            }
 
             // if typeSymbol is System.Object, which has no base type, we're done
             if( typeSymbol.BaseType == null )
@@ -66,29 +61,17 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        private bool ProcessAncestor( TypeDb typeDb, INamedTypeSymbol ancestorSymbol )
+        private bool ProcessAncestor( BaseTypeDb typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            if( !EntityFactories.Get<ImplementableTypeDb>( ancestorSymbol, out var ancestorDb ))
-            {
-                Logger.Error<string>( "Couldn't find ancestor type '{0}' in the database",
-                    EntityFactories.GetFullName( ancestorSymbol ) );
+            var ancestorDb = DataLayer.GetImplementableType( ancestorSymbol );
 
+            if( ancestorDb == null )
                 return false;
-            }
 
-            var typeAncestorDb = EntityFactories.DbContext.TypeAncestors
-                .FirstOrDefault( ti => ti.ChildTypeID == typeDb!.SharpObjectID && ti.AncestorTypeID == ancestorDb!.SharpObjectID );
+            var typeAncestorDb = DataLayer.GetTypeAncestor( typeDb, ancestorDb!, true );
 
             if( typeAncestorDb == null )
-            {
-                typeAncestorDb = new TypeAncestorDb
-                {
-                    AncestorTypeID = ancestorDb!.SharpObjectID,
-                    ChildTypeID = typeDb!.SharpObjectID
-                };
-
-                EntityFactories.DbContext.TypeAncestors.Add( typeAncestorDb );
-            }
+                return false;
 
             typeAncestorDb.Synchronized = true;
 

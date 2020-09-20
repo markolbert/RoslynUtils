@@ -9,14 +9,14 @@ namespace Tests.RoslynWalker
     public sealed class PropertyProcessors : RoslynDbProcessors<IPropertySymbol>
     {
         public PropertyProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( factories, loggerFactory() )
+        ) : base( dataLayer, loggerFactory() )
         {
-            var rootProcessor = new PropertyProcessor(factories, loggerFactory());
+            var rootProcessor = new PropertyProcessor(dataLayer, loggerFactory());
 
             Add( rootProcessor );
-            Add( new ParameterProcessor( factories, loggerFactory() ), rootProcessor );
+            Add( new ParameterProcessor( dataLayer, loggerFactory() ), rootProcessor );
         }
 
         protected override bool Initialize( IEnumerable<IPropertySymbol> symbols )
@@ -24,15 +24,10 @@ namespace Tests.RoslynWalker
             if( !base.Initialize( symbols ) )
                 return false;
 
-            EntityFactories.MarkSharpObjectUnsynchronized<PropertyDb>();
-            EntityFactories.MarkUnsynchronized<PropertyParameterDb>(true);
+            DataLayer.MarkSharpObjectUnsynchronized<PropertyDb>( false );
+            DataLayer.MarkSharpObjectUnsynchronized<PropertyParameterDb>();
 
             return true;
         }
-
-        //protected override bool SetPredecessors()
-        //{
-        //    return SetPredecessor<ParameterProcessor, PropertyProcessor>();
-        //}
     }
 }

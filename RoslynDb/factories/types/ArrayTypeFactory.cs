@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.entityfactories
 {
-    public class ArrayTypeFactory : EntityFactory<IArrayTypeSymbol, TypeDb>
+    public class ArrayTypeFactory : EntityFactory<IArrayTypeSymbol, BaseTypeDb>
     {
         public ArrayTypeFactory( IJ4JLogger logger ) 
             : base( SharpObjectType.ArrayType, logger )
@@ -17,23 +17,23 @@ namespace J4JSoftware.Roslyn.entityfactories
             return result != null;
         }
 
-        protected override bool ValidateEntitySymbol(IArrayTypeSymbol symbol)
+        protected override bool ValidateEntitySymbol( IArrayTypeSymbol symbol )
         {
-            if (!base.ValidateEntitySymbol(symbol))
+            if( !base.ValidateEntitySymbol( symbol ) )
                 return false;
 
-            if (!Factories!.Get<AssemblyDb>(symbol.ElementType.ContainingAssembly, out _))
+            if( !Factories!.InDatabase<AssemblyDb>( symbol.ElementType.ContainingAssembly ) )
             {
-                Logger.Error<string>("Couldn't find AssemblyDb entity in database for '{0}'",
-                    Factories!.GetFullName(symbol));
+                Logger.Error<string>( "Couldn't find AssemblyDb entity in database for '{0}'",
+                    symbol.ToFullName() );
 
                 return false;
             }
 
-            if (!Factories!.Get<NamespaceDb>(symbol.ElementType.ContainingNamespace, out _))
+            if( !Factories!.InDatabase<NamespaceDb>( symbol.ElementType.ContainingNamespace ) )
             {
-                Logger.Error<string>("Couldn't find NamespaceDb entity in database for '{0}'",
-                    Factories!.GetFullName(symbol));
+                Logger.Error<string>( "Couldn't find NamespaceDb entity in database for '{0}'",
+                    symbol.ToFullName() );
 
                 return false;
             }
@@ -41,7 +41,7 @@ namespace J4JSoftware.Roslyn.entityfactories
             return true;
         }
 
-        protected override bool CreateNewEntity( IArrayTypeSymbol symbol, out TypeDb? result )
+        protected override bool CreateNewEntity( IArrayTypeSymbol symbol, out BaseTypeDb? result )
         {
             result = null;
 
@@ -53,15 +53,15 @@ namespace J4JSoftware.Roslyn.entityfactories
 
                 case ITypeParameterSymbol tpSymbol:
                     if( tpSymbol.DeclaringType != null )
-                        result = new TypeParametricTypeDb();
+                        result = new ParametricTypeDb();
                     else
                     {
                         if( tpSymbol.DeclaringMethod != null )
-                            result = new MethodParametricTypeDb();
+                            result = new ParametricMethodTypeDb();
                         else
                             Logger.Error<string>(
                                 "ITypeParameterSymbol is contained by neither an IMethodSymbol nor an INamedTypeSymbol",
-                                Factories!.GetFullName( symbol.ElementType ) );
+                                symbol.ElementType.ToFullName() );
                     }
 
                     break;
@@ -70,7 +70,7 @@ namespace J4JSoftware.Roslyn.entityfactories
             return result != null;
         }
 
-        protected override bool ConfigureEntity( IArrayTypeSymbol symbol, TypeDb newEntity )
+        protected override bool ConfigureEntity( IArrayTypeSymbol symbol, BaseTypeDb newEntity )
         {
             if (!base.ConfigureEntity(symbol, newEntity))
                 return false;

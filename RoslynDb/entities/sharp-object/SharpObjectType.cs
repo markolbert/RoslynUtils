@@ -8,8 +8,11 @@
         FixedType,
         GenericType,
         ParametricType,
+        ParametricMethodType,
         Method,
+        MethodArgument,
         Property,
+        PropertyParameter,
         Field,
 
         Unknown

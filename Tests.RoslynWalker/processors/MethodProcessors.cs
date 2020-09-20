@@ -9,14 +9,14 @@ namespace Tests.RoslynWalker
     public sealed class MethodProcessors : RoslynDbProcessors<IMethodSymbol>
     {
         public MethodProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( factories, loggerFactory() )
+        ) : base( dataLayer, loggerFactory() )
         {
-            var rootProcessor = new MethodProcessor( factories, loggerFactory() );
+            var rootProcessor = new MethodProcessor( dataLayer, loggerFactory() );
 
             Add( rootProcessor );
-            Add( new ArgumentProcessor( factories, loggerFactory() ), rootProcessor );
+            Add( new ArgumentProcessor( dataLayer, loggerFactory() ), rootProcessor );
         }
 
         protected override bool Initialize( IEnumerable<IMethodSymbol> symbols )
@@ -24,30 +24,11 @@ namespace Tests.RoslynWalker
             if( !base.Initialize( symbols ) )
                 return false;
 
-            EntityFactories.MarkSharpObjectUnsynchronized<MethodDb>();
-            EntityFactories.MarkUnsynchronized<ArgumentDb>();
-            EntityFactories.MarkSharpObjectUnsynchronized<MethodParametricTypeDb>(true);
+            DataLayer.MarkSharpObjectUnsynchronized<MethodDb>(false);
+            DataLayer.MarkSharpObjectUnsynchronized<ParametricMethodTypeDb>( false );
+            DataLayer.MarkSharpObjectUnsynchronized<ArgumentDb>();
 
             return true;
         }
-
-        //protected override bool SetPredecessors()
-        //{
-        //    return SetPredecessor<ArgumentProcessor, MethodProcessor>();
-        //}
-
-        //// ensure the context object is able to reset itself so it can 
-        //// handle multiple iterations
-        //public bool Process( IEnumerable<IMethodSymbol> context )
-        //{
-        //    var allOkay = true;
-
-        //    foreach( var processor in ExecutionSequence )
-        //    {
-        //        allOkay &= processor.Process( context );
-        //    }
-
-        //    return allOkay;
-        //}
     }
 }

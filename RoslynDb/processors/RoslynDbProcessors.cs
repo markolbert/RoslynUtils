@@ -9,13 +9,13 @@ namespace J4JSoftware.Roslyn
         where TSymbol : ISymbol
     {
         protected RoslynDbProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             IJ4JLogger logger ) 
             : base( logger )
         {
-            EntityFactories = factories;
+            DataLayer = dataLayer;
         }
 
-        protected EntityFactories EntityFactories { get; }
+        protected IRoslynDataLayer DataLayer { get; }
     }
 }

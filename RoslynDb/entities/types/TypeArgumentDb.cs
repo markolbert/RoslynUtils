@@ -11,11 +11,11 @@ namespace J4JSoftware.Roslyn
         public bool Synchronized { get; set; }
 
         public int DeclaringTypeID { get; set; }
-        public ImplementableTypeDb? DeclaringType { get; set; }
+        public GenericTypeDb? DeclaringType { get; set; }
 
         public int Ordinal { get; set; }
         public int ArgumentTypeID { get; set; }
-        public ImplementableTypeDb? ArgumentType { get; set; }
+        public BaseTypeDb? ArgumentType { get; set; }
     }
 
     internal class TypeArgumentConfigurator : EntityConfigurator<TypeArgumentDb>

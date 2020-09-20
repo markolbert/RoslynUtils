@@ -9,11 +9,11 @@ namespace Tests.RoslynWalker
     public sealed class AssemblyProcessors : RoslynDbProcessors<IAssemblySymbol>
     {
         public AssemblyProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( factories, loggerFactory() )
+        ) : base( dataLayer, loggerFactory() )
         {
-            Add( new AssemblyProcessor( factories, loggerFactory() ) );
+            Add( new AssemblyProcessor( dataLayer, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<IAssemblySymbol> symbols )
@@ -21,7 +21,7 @@ namespace Tests.RoslynWalker
             if( !base.Initialize( symbols ) )
                 return false;
 
-            EntityFactories.MarkSharpObjectUnsynchronized<AssemblyDb>(true);
+            DataLayer.MarkSharpObjectUnsynchronized<AssemblyDb>();
 
             return true;
         }

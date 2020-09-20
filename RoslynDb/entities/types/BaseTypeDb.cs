@@ -11,12 +11,8 @@ namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration( typeof( TypeDbConfigurator ) )]
     [Table("Types")]
-    public class TypeDb : ISharpObject
+    public abstract class BaseTypeDb : ISharpObject
     {
-        protected TypeDb()
-        {
-        }
-
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
 
@@ -32,7 +28,11 @@ namespace J4JSoftware.Roslyn
         public int AssemblyID { get; set; }
         public AssemblyDb Assembly { get; set; }
 
-        public List<TypeParametricTypeDb> ParametricTypes { get; set; }
+        // parametric types, if any, defined for this type
+        public List<ParametricTypeDb> ParametricTypes { get; set; }
+
+        // list of TypeArguments where this type is referenced as a closing type
+        public List<TypeArgumentDb> TypeArgumentReferences { get; set; }
 
         // list of return types referencing this type definition
         public List<MethodDb> ReturnTypes { get; set; }
@@ -48,18 +48,16 @@ namespace J4JSoftware.Roslyn
 
         // list of fields having this type
         public List<FieldDb> FieldTypes { get; set; }
+
+        // list of array types having this type for elements
+        public List<ArrayTypeDb> ArrayTypes { get; set; }
     }
 
-    internal class TypeDbConfigurator : EntityConfigurator<TypeDb>
+    internal class TypeDbConfigurator : EntityConfigurator<BaseTypeDb>
     {
-        protected override void Configure( EntityTypeBuilder<TypeDb> builder )
+        protected override void Configure( EntityTypeBuilder<BaseTypeDb> builder )
         {
             builder.HasKey(x => x.SharpObjectID);
-
-            builder.HasOne( x => x.SharpObject )
-                .WithOne( x => x.Type )
-                .HasPrincipalKey<SharpObject>( x => x.ID )
-                .HasForeignKey<TypeDb>( x => x.SharpObjectID );
 
             builder.HasOne( x => x.Namespace )
                 .WithMany( x => x.Types )

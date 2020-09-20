@@ -11,15 +11,15 @@ namespace J4JSoftware.Roslyn
         where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             IJ4JLogger logger
         )
         : base( logger )
         {
-            EntityFactories = factories;
+            DataLayer = dataLayer;
         }
 
-        protected EntityFactories EntityFactories { get; }
+        protected IRoslynDataLayer DataLayer { get; }
         
         protected abstract IEnumerable<TResult> ExtractSymbols( ISymbol item );
         protected abstract bool ProcessSymbol( TResult symbol );
@@ -51,7 +51,7 @@ namespace J4JSoftware.Roslyn
             if (!base.FinalizeProcessor(inputData))
                 return false;
 
-            EntityFactories.DbContext.SaveChanges();
+            DataLayer.SaveChanges();
 
             return true;
         }
@@ -107,23 +107,16 @@ namespace J4JSoftware.Roslyn
                 if (item == null )
                     continue;
 
-                foreach( var symbol in ExtractSymbols(item) )
+                foreach( var symbol in ExtractSymbols( item ) )
                 {
-                    var crap = EntityFactories.GetFullName( symbol );
+                    var crap = symbol.ToFullName();
 
-                    if( !EntityFactories.GetUniqueName( symbol!, out var fqn ) )
-                    {
-                        var mesg = $"Couldn't get unique name for ISymbol '{EntityFactories.GetFullName( symbol )}'";
+                    var fqn = symbol.GetUniqueName();
 
-                        Logger.Error( mesg );
-
-                        throw new ArgumentException( mesg );
-                    }
-
-                    if (processed.ContainsKey(fqn))
+                    if( processed.ContainsKey( fqn ) )
                         continue;
 
-                    processed.Add(fqn, symbol!);
+                    processed.Add( fqn, symbol! );
 
                     yield return symbol!;
                 }

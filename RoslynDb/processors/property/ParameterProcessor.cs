@@ -7,10 +7,10 @@ namespace J4JSoftware.Roslyn
 {
     public class ParameterProcessor : BaseProcessorDb<IPropertySymbol, IParameterSymbol>
     {
-        public ParameterProcessor( 
-            EntityFactories factories,
-            IJ4JLogger logger ) 
-            : base( factories, logger )
+        public ParameterProcessor(
+            IRoslynDataLayer dataLayer,
+            IJ4JLogger logger)
+            : base(dataLayer, logger)
         {
         }
 
@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
             if (!(item is IPropertySymbol propSymbol) )
             {
                 Logger.Error<string>( "Supplied item is not an IPropertySymbol ({0})",
-                    EntityFactories.GetFullName( item ) );
+                    item.ToFullName() );
 
                 yield break;
             }
@@ -30,44 +30,7 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        protected override bool ProcessSymbol( IParameterSymbol symbol )
-        {
-            if( !EntityFactories.Get<PropertyDb>(symbol.ContainingSymbol, out var propDb  ))
-                return false;
-
-            if( !EntityFactories.Get<TypeDb>(symbol.Type, out var typeDb))
-            {
-                Logger.Error<string>( "Couldn't find type for IParameterSymbol '{0}'",
-                    EntityFactories.GetFullName( symbol ) );
-
-                return false;
-            }
-
-            var propParamDb = EntityFactories.DbContext.PropertyParameters
-                .FirstOrDefault( pp => pp.PropertyID == propDb!.SharpObjectID && pp.Ordinal == symbol.Ordinal );
-
-            if( propParamDb == null )
-            {
-                propParamDb = new PropertyParameterDb
-                {
-                    PropertyID = propDb!.SharpObjectID,
-                    Ordinal = symbol.Ordinal
-                };
-
-                EntityFactories.DbContext.PropertyParameters.Add( propParamDb );
-            }
-
-            propParamDb.Synchronized = true;
-            propParamDb.Name = symbol.Name;
-            propParamDb.ParameterTypeID = typeDb!.SharpObjectID;
-            propParamDb.IsAbstract = symbol.IsAbstract;
-            propParamDb.IsExtern = symbol.IsExtern;
-            propParamDb.IsOverride = symbol.IsOverride;
-            propParamDb.IsSealed = symbol.IsSealed;
-            propParamDb.IsStatic = symbol.IsStatic;
-            propParamDb.IsVirtual = symbol.IsVirtual;
-
-            return true;
-        }
+        protected override bool ProcessSymbol( IParameterSymbol symbol ) =>
+            DataLayer.GetPropertyParameter( symbol, true ) != null;
     }
 }

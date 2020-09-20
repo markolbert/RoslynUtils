@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(AssemblyConfigurator))]
-    public class AssemblyDb : ISharpObject //, IFullyQualifiedName, ISynchronized
+    public class AssemblyDb : ISharpObject
     {
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
         public InScopeAssemblyInfo? InScopeInfo { get; set; }
 
         public List<AssemblyNamespaceDb>? AssemblyNamespaces { get; set; }
-        public List<TypeDb>? Types { get; set; }
+        public List<BaseTypeDb>? Types { get; set; }
     }
 
     internal class AssemblyConfigurator : EntityConfigurator<AssemblyDb>

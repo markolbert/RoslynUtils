@@ -7,20 +7,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace J4JSoftware.Roslyn
 {
     [EntityConfiguration(typeof(DefinedTypeDbConfigurator))]
-    public class ImplementableTypeDb : TypeDb
+    public abstract class ImplementableTypeDb : BaseTypeDb
     {
-        protected ImplementableTypeDb()
-        {
-        }
-
         public DeclarationModifier DeclarationModifier { get; set; }
 
-        // list of TypeArguments for this type
-        public List<TypeArgumentDb> TypeArguments { get; set; }
-
-        // list of TypeArguments where this type is referenced as a closing type
-        public List<TypeArgumentDb> TypeArgumentReferences { get; set; }
-        
         // list of methods defined for this type
         public List<MethodDb> Methods { get; set; }
 

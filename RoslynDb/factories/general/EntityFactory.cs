@@ -54,7 +54,7 @@ namespace J4JSoftware.Roslyn
 
             return GetEntitySymbol( symbol, out var entitySymbol )
                    && ValidateEntitySymbol( entitySymbol! )
-                   && Factories!.SharpObjectInDatabase( entitySymbol! );
+                   && SharpObjectInDatabase( entitySymbol! );
         }
 
         public bool Get( ISymbol? symbol, out TEntity? result )
@@ -76,10 +76,10 @@ namespace J4JSoftware.Roslyn
             if (!ValidateEntitySymbol(entitySymbol!))
                 return false;
 
-            if( !Factories!.GetSharpObject( entitySymbol!, out var sharpObj ) )
+            if( GetSharpObject( entitySymbol!, out var sharpObj ) )
                 return false;
 
-            var entities = Factories.DbContext.Set<TEntity>();
+            var entities = Factories!.DbContext.Set<TEntity>();
 
             result = entities
                 .FirstOrDefault( x => x.SharpObjectID == sharpObj!.ID );
@@ -88,7 +88,7 @@ namespace J4JSoftware.Roslyn
                 return true;
 
             Logger.Error<Type, string>( "Couldn't find {0} in database for '{1}'", typeof(TEntity),
-                Factories.GetFullName( symbol! ) );
+                symbol.ToFullName() );
 
             return false;
         }
@@ -112,18 +112,12 @@ namespace J4JSoftware.Roslyn
             if (!ValidateEntitySymbol(entitySymbol!))
                 return false;
 
-            if (!Factories!.CreateSharpObject(entitySymbol!, out var sharpObj))
+            if (CreateSharpObject(entitySymbol!, out var sharpObj))
                 return false;
 
-            if (!Factories!.GetUniqueName(entitySymbol!, out var uniqueName))
-            {
-                Logger.Error<string>("Couldn't create unique name for '{0}'",
-                    Factories.GetFullName(entitySymbol!));
+            var uniqueName = entitySymbol!.GetUniqueName();
 
-                return false;
-            }
-
-            var entities = Factories.DbContext.Set<TEntity>();
+            var entities = Factories!.DbContext.Set<TEntity>();
 
             result = entities
                 .Include(x => x.SharpObject)
@@ -155,6 +149,73 @@ namespace J4JSoftware.Roslyn
         protected virtual bool ValidateEntitySymbol( TSymbol symbol ) => true;
 
         protected virtual bool ConfigureEntity( TSymbol symbol, TEntity newEntity ) => true;
+
+        public bool SharpObjectInDatabase(ISymbol symbol)
+        {
+            if (Factories!.GetSharpObjectType(symbol) == SharpObjectType.Unknown)
+                return false;
+
+            var fqn = symbol.GetUniqueName();
+
+            return Factories.DbContext.SharpObjects.Any(x => x.FullyQualifiedName == fqn);
+        }
+
+        public bool GetSharpObject(ISymbol symbol, out SharpObject? result)
+        {
+            result = null;
+
+            var fqn = symbol.GetUniqueName();
+
+            if (Factories!.GetSharpObjectType(symbol) == SharpObjectType.Unknown)
+            {
+                Logger.Error<string>("Unknown SharpObjectType '{0}'", fqn);
+
+                return false;
+            }
+
+            result = Factories.DbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
+
+            if (result != null)
+                return true;
+
+            Logger.Error<string>("Couldn't find SharpObject for '{0}' in the database", fqn);
+
+            return false;
+        }
+
+        public bool CreateSharpObject(ISymbol symbol, out SharpObject? result)
+        {
+            result = null;
+
+            var fqn = symbol.GetUniqueName();
+
+            var soType = Factories!.GetSharpObjectType(symbol);
+
+            if (soType == SharpObjectType.Unknown)
+            {
+                Logger.Error<string>("Unknown SharpObjectType '{0}'", fqn);
+
+                return false;
+            }
+
+            if (Factories.DbContext.SharpObjects.Any(x => x.FullyQualifiedName == fqn))
+            {
+                Logger.Error<string>("Duplicate SharpObject ({0})", symbol.ToFullName());
+
+                return false;
+            }
+
+            result = new SharpObject
+            {
+                FullyQualifiedName = fqn!,
+                Name = symbol.ToSimpleName(),
+                Synchronized = true
+            };
+
+            Factories.DbContext.SharpObjects.Add(result);
+
+            return true;
+        }
 
         bool IEntityFactory.Get(ISymbol? symbol, out ISharpObject? result)
         {

@@ -14,9 +14,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="factories\**" />
+	  <EmbeddedResource Remove="factories\**" />
+	  <None Remove="factories\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Compile Remove="entities\sharp-object\ISharpObjectTypeMapper.cs" />
 	  <Compile Remove="entities\sharp-object\SharpObjectTypeAttribute.cs" />
 	  <Compile Remove="entities\sharp-object\SharpObjectTypeMapper.cs" />
+	  <Compile Remove="processors\assembly\InScopeAssemblyProcessor.cs" />
 	  <Compile Remove="processors\type\ArrayTypeProcessor.cs" />
 	  <Compile Remove="processors\type\FinalNamedTypeProcessor.cs" />
 	  <Compile Remove="processors\type\NonGenericTypeProcessor.cs" />

@@ -1,27 +1,49 @@
-﻿using J4JSoftware.EFCoreUtilities;
-using Microsoft.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+#pragma warning disable 8602
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration(typeof(TypeParametricTypeBaseDbConfigurator))]
-    public class ParametricTypeDb : TypeDb
+    [EntityConfiguration( typeof( ParametricTypeDbConfigurator ) )]
+    public class ParametricTypeDb : BaseTypeDb, IParametricTypeEntity
     {
-        protected ParametricTypeDb()
+        public ParametricTypeConstraint Constraints { get; set; }
+
+        public int? ContainingTypeID { get; set; }
+        public BaseTypeDb? ContainingType { get; set; }
+
+        int? IParametricTypeEntity.ContainerID
         {
+            get => ContainingTypeID;
+            set => ContainingTypeID = value;
         }
 
-        public ParametricTypeConstraint Constraints { get; set; }
+        object? IParametricTypeEntity.Container
+        {
+            get => ContainingType;
+
+            set
+            {
+                if( value is BaseTypeDb typeDb )
+                    ContainingType = typeDb;
+                else throw new InvalidCastException( $"Expected a {typeof(BaseTypeDb)} but got a {value.GetType()}" );
+            }
+        }
     }
 
-    internal class TypeParametricTypeBaseDbConfigurator : EntityConfigurator<ParametricTypeDb>
+    internal class ParametricTypeDbConfigurator : EntityConfigurator<ParametricTypeDb>
     {
-        protected override void Configure(EntityTypeBuilder<ParametricTypeDb> builder)
+        protected override void Configure( EntityTypeBuilder<ParametricTypeDb> builder )
         {
+            builder.HasOne( x => x.ContainingType )
+                .WithMany( x => x.ParametricTypes )
+                .HasPrincipalKey( x => x.SharpObjectID )
+                .HasForeignKey( x => x.ContainingTypeID );
+
             builder.Property(x => x.Constraints)
                 .HasConversion<string>();
         }
     }
-
 }

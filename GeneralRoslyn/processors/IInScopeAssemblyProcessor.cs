@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace J4JSoftware.Roslyn
+namespace J4JSoftware.Roslyn.Deprecated
 {
     public interface IInScopeAssemblyProcessor
     {

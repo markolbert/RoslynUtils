@@ -9,11 +9,11 @@ namespace Tests.RoslynWalker
     public sealed class FieldProcessors : RoslynDbProcessors<IFieldSymbol>
     {
         public FieldProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( factories, loggerFactory() )
+        ) : base( dataLayer, loggerFactory() )
         {
-            Add( new FieldProcessor( factories, loggerFactory() ) );
+            Add( new FieldProcessor( dataLayer, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<IFieldSymbol> symbols )
@@ -21,12 +21,9 @@ namespace Tests.RoslynWalker
             if( !base.Initialize( symbols ) )
                 return false;
 
-            EntityFactories.MarkSharpObjectUnsynchronized<FieldDb>();
+            DataLayer.MarkSharpObjectUnsynchronized<FieldDb>();
 
             return true;
         }
-
-        //// fields only have a single processor
-        //protected override bool SetPredecessors() => true;
     }
 }

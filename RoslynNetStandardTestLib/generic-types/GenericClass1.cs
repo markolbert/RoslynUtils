@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace J4JSoftware.Roslyn.Tests
 {
@@ -11,5 +12,26 @@ namespace J4JSoftware.Roslyn.Tests
 
         public T1 TOne { get; set; }
         public T2 TTwo { get; set; }
+    }
+
+    public class GenericClass1<T>
+    {
+        public T Property { get; set; }
+        public T[] OneDimensionalArray { get; set; }
+        public T[,] TwoDimensionalArray { get; set; }
+    }
+
+    public class DefinedGenericClass1 : GenericClass1<int>
+    {
+    }
+
+    public class ComplexGeneric<T>
+        where T : IEnumerable<T>
+    {
+        public TMethod SomeMethod<TMethod>( TMethod item )
+            where TMethod : GenericClass1<T, int>
+        {
+            throw new NotImplementedException();
+        }
     }
 }

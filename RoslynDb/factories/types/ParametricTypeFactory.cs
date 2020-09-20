@@ -12,7 +12,10 @@ namespace J4JSoftware.Roslyn
 
         protected override bool GetEntitySymbol( ISymbol? symbol, out ITypeParameterSymbol? result )
         {
-            result = symbol as ITypeParameterSymbol;
+            result = null;
+
+            if( symbol is ITypeParameterSymbol tpSymbol && tpSymbol.DeclaringType != null )
+                result = tpSymbol;
 
             return result != null;
         }
@@ -21,15 +24,13 @@ namespace J4JSoftware.Roslyn
         {
             result = null;
 
+            // this should never get tripped...
             if( symbol.DeclaringType != null )
-                result = new TypeParametricTypeDb();
-
-            if( result == null && symbol.DeclaringMethod != null )
-                result = new MethodParametricTypeDb();
+                result = new ParametricTypeDb();
 
             if( result == null )
-                Logger.Error<string>( "'{0}' is not contained by either an IMethodSymbol or an INamedTypeSymbol",
-                    Factories!.GetFullName( symbol ) );
+                Logger.Error<string>( "'{0}' is not contained by either an INamedTypeSymbol",
+                    symbol.ToFullName() );
             else 
                 result.Constraints = symbol.GetParametricTypeConstraint();
 

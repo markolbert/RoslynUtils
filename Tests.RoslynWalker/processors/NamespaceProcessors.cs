@@ -9,11 +9,11 @@ namespace Tests.RoslynWalker
     public sealed class NamespaceProcessors : RoslynDbProcessors<INamespaceSymbol>
     {
         public NamespaceProcessors( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( factories, loggerFactory() )
+        ) : base( dataLayer, loggerFactory() )
         {
-            Add( new NamespaceProcessor( factories, loggerFactory() ) );
+            Add( new NamespaceProcessor( dataLayer, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<INamespaceSymbol> symbols )
@@ -21,12 +21,9 @@ namespace Tests.RoslynWalker
             if( !base.Initialize( symbols ) )
                 return false;
 
-            EntityFactories.MarkSharpObjectUnsynchronized<NamespaceDb>(true);
+            DataLayer.MarkSharpObjectUnsynchronized<NamespaceDb>();
 
             return true;
         }
-
-        //// there's only one processor for namespaces
-        //protected override bool SetPredecessors() => true;
     }
 }

@@ -32,7 +32,7 @@ namespace J4JSoftware.Roslyn
         public ImplementableTypeDb? DefiningType { get; set; } = null!;
 
         public int FieldTypeID { get; set; }
-        public TypeDb FieldType { get; set; } = null!;
+        public BaseTypeDb FieldType { get; set; } = null!;
     }
 
     internal class FieldConfigurator : EntityConfigurator<FieldDb>

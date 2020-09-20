@@ -7,9 +7,9 @@ namespace J4JSoftware.Roslyn
     public class AssemblyProcessor : BaseProcessorDb<IAssemblySymbol, IAssemblySymbol>
     {
         public AssemblyProcessor( 
-            EntityFactories factories,
+            IRoslynDataLayer dataLayer,
             IJ4JLogger logger ) 
-            : base( factories, logger )
+            : base( dataLayer, logger )
         {
         }
 
@@ -24,19 +24,7 @@ namespace J4JSoftware.Roslyn
             yield return assemblySymbol!;
         }
 
-        protected override bool ProcessSymbol( IAssemblySymbol symbol )
-        {
-            if( !EntityFactories.Create<AssemblyDb>( symbol, out var assemblyDb ) )
-            {
-                Logger.Error<string>( "Couldn't retrieve AssemblyDb for '{0}'",
-                    EntityFactories.GetFullName( symbol ) );
-
-                return false;
-            }
-
-            EntityFactories.MarkSynchronized( assemblyDb! );
-
-            return true;
-        }
+        protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
+            DataLayer.GetAssembly( symbol, true ) != null;
     }
 }

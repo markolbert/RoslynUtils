@@ -18,10 +18,10 @@ namespace J4JSoftware.Roslyn
         public DeclarationModifier DeclarationModifier { get; set; }
 
         public int DefiningTypeID { get; set; }
-        public FixedTypeDb DefiningType { get; set; }
+        public ImplementableTypeDb DefiningType { get; set; }
 
         public int ReturnTypeID { get; set; }
-        public FixedTypeDb ReturnType { get; set; }
+        public BaseTypeDb ReturnType { get; set; }
 
         public bool ReturnsByRef { get; set; }
         public bool ReturnsByRefReadOnly { get; set; }
@@ -38,7 +38,7 @@ namespace J4JSoftware.Roslyn
         // list of method arguments
         public List<ArgumentDb> Arguments { get; set; }
 
-        public List<MethodParametricTypeDb> ParametricTypes { get; set; }
+        public List<ParametricMethodTypeDb> ParametricTypes { get; set; }
     }
 
     internal class MethodDbConfigurator : EntityConfigurator<MethodDb>

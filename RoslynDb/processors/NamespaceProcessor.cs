@@ -8,10 +8,9 @@ namespace J4JSoftware.Roslyn
     public class NamespaceProcessor : BaseProcessorDb<INamespaceSymbol, INamespaceSymbol>
     {
         public NamespaceProcessor(
-            EntityFactories factories,
-            IJ4JLogger logger
-        )
-            : base( factories, logger )
+            IRoslynDataLayer dataLayer,
+            IJ4JLogger logger)
+            : base(dataLayer, logger)
         {
         }
 
@@ -28,31 +27,17 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )
         {
-            if ( !EntityFactories.Get<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
+            var assemblyDb = DataLayer.GetAssembly(symbol.ContainingAssembly);
+
+            if (assemblyDb == null)
                 return false;
 
-            if ( !EntityFactories.Create<NamespaceDb>( symbol, out var nsDb ) )
+            var nsDb = DataLayer.GetNamespace(symbol, true);
+
+            if (nsDb == null)
                 return false;
 
-            EntityFactories.MarkSynchronized( nsDb! );
-
-            var m2mDb = EntityFactories.DbContext.AssemblyNamespaces
-                .FirstOrDefault( x => x.AssemblyID == assemblyDb!.SharpObjectID && x.NamespaceID == nsDb!.SharpObjectID );
-
-            if( m2mDb != null )
-                return true;
-
-            m2mDb = new AssemblyNamespaceDb
-            {
-                Assembly = assemblyDb!,
-                Namespace = nsDb!
-            };
-
-            EntityFactories.DbContext.AssemblyNamespaces.Add( m2mDb );
-
-            EntityFactories.DbContext.SaveChanges();
-
-            return true;
+            return DataLayer.GetAssemblyNamespace(assemblyDb, nsDb, true) != null;
         }
     }
 }
