@@ -54,25 +54,63 @@ namespace J4JSoftware.Roslyn.Sinks
             _interfaces.Clear();
         }
 
-        public bool AddConnection( ITypeSymbol parentSymbol, ITypeSymbol? symbol = null )
+        //public bool AddConnection( ITypeSymbol parentSymbol, ITypeSymbol? symbol = null )
+        //{
+        //    if (parentSymbol.TypeKind == TypeKind.Interface
+        //        && (symbol?.TypeKind ?? TypeKind.Interface) == TypeKind.Interface)
+        //    {
+        //        _interfaces.Add(parentSymbol, symbol);
+        //        return true;
+        //    }
+
+        //    if (parentSymbol.TypeKind != TypeKind.Interface
+        //        && (symbol?.TypeKind ?? TypeKind.Class) != TypeKind.Interface)
+        //    {
+        //        _nonInterfaces.Add( parentSymbol, symbol );
+        //        return true;
+        //    }
+
+        //    _logger.Error<string, string>(
+        //        "Trying to add ITypeSymbols where one is an interface and one is not, which is not allowed ({0}, {1})",
+        //        parentSymbol.Name, symbol!.Name);
+
+        //    return false;
+        //}
+
+        public bool AddNonInterfaceConnection(ITypeSymbol parentSymbol, ITypeSymbol? symbol = null)
         {
-            if (parentSymbol.TypeKind == TypeKind.Interface
-                && (symbol?.TypeKind ?? TypeKind.Interface) == TypeKind.Interface)
+            if( parentSymbol.TypeKind == TypeKind.Interface )
+            {
+                _logger.Error("Trying to add an interface to the non-interface connections collection");
+                return false;
+            }
+
+            if ((symbol?.TypeKind ?? TypeKind.Class) != TypeKind.Interface)
+            {
+                _nonInterfaces.Add(parentSymbol, symbol);
+                return true;
+            }
+
+            _logger.Error<string>("Target {0} is an interface", symbol!.ToFullName());
+
+            return false;
+        }
+
+        public bool AddInterfaceConnection(INamedTypeSymbol parentSymbol, ITypeSymbol? symbol = null)
+        {
+            if( parentSymbol.TypeKind != TypeKind.Interface )
+            {
+                _logger.Error("Trying to add a non-interface to the interface connections collection"  );
+                return false;
+            }
+
+            if ((symbol?.TypeKind ?? TypeKind.Interface) == TypeKind.Interface)
             {
                 _interfaces.Add(parentSymbol, symbol);
                 return true;
             }
 
-            if (parentSymbol.TypeKind != TypeKind.Interface
-                && (symbol?.TypeKind ?? TypeKind.Class) != TypeKind.Interface)
-            {
-                _nonInterfaces.Add( parentSymbol, symbol );
-                return true;
-            }
-
-            _logger.Error<string, string>(
-                "Trying to add ITypeSymbols where one is an interface and one is not, which is not allowed ({0}, {1})",
-                parentSymbol.Name, symbol!.Name);
+            _logger.Error<string>("Target {0} is not an interface",symbol!.ToFullName());
 
             return false;
         }

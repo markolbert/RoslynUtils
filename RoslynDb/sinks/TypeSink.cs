@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -28,6 +29,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
 
             _symbols.Clear();
+            _visited.Clear();
 
             return true;
         }
@@ -45,21 +47,46 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
         {
-            _visited.Clear();
+            return AddType( symbol, null );
 
-            if( symbol is INamedTypeSymbol ntSymbol && ntSymbol.TypeKind == TypeKind.Interface )
-                return AddInterface( ntSymbol );
+            //if( symbol is INamedTypeSymbol ntSymbol && ntSymbol.TypeKind == TypeKind.Interface )
+            //    return AddInterface( ntSymbol );
             
-            AddNonInterface( symbol, null );
+            //AddNonInterface( symbol, null );
 
-            return true;
+            //return true;
         }
 
-        private bool AddInterface( INamedTypeSymbol symbol )
+        private bool AddType( ITypeSymbol symbol, ITypeSymbol? parentSymbol )
         {
-            if ( SymbolIsDuplicate( symbol ) )
-                return true;
+            return symbol switch
+            {
+                INamedTypeSymbol ntSymbol => AddNamedType(ntSymbol, null),
+                ITypeParameterSymbol tpSymbol => AddTypeParameter(tpSymbol, null),
+                IArrayTypeSymbol arraySymbol => AddArrayType(arraySymbol, null),
+                _ => unhandled()
+            };
 
+            bool unhandled()
+            {
+                Logger.Error<string>("ITypeSymbol '{0}' is neither an INamedTypeSymbol, an ITypeParameterSymbol nor an IArrayTypeSymbol",
+                    symbol.ToFullName());
+
+                return false;
+            }
+        }
+
+        private bool AddNamedType( INamedTypeSymbol ntSymbol, ITypeSymbol? parentSymbol )
+        {
+            return ntSymbol.TypeKind switch
+            {
+                TypeKind.Interface => AddInterface( ntSymbol, parentSymbol ),
+                _ => AddImplementableType( ntSymbol, parentSymbol )
+            };
+        }
+
+        private bool AddInterface( INamedTypeSymbol symbol, ITypeSymbol? parentSymbol )
+        {
             if( symbol.TypeKind != TypeKind.Interface )
             {
                 Logger.Error<string>("Non-interface '{0}' submitted to AddInterface()", symbol.ToFullName());
@@ -72,69 +99,164 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            _symbols.AddConnection( symbol );
+            _symbols.AddInterfaceConnection( symbol, parentSymbol );
+
+            if (SymbolIsDuplicate(symbol))
+                return true;
 
             // add any type parameters and type arguments
-            foreach( var tpSymbol in symbol.TypeParameters )
+            foreach ( var tpSymbol in symbol.TypeParameters )
             {
-                AddNonInterface( tpSymbol, null );
+                if( !AddType( tpSymbol, symbol ) )
+                    return false;
             }
 
-            foreach (var taSymbol in symbol.TypeArguments)
+            foreach (var taSymbol in symbol.TypeArguments.Where(x => !(x is ITypeParameterSymbol)))
             {
-                AddNonInterface(taSymbol, null);
+                if ( !AddType( taSymbol, symbol ) )
+                    return false;
             }
 
             return true;
         }
 
-        private void AddNonInterface( ITypeSymbol symbol, ITypeSymbol? parentSymbol )
+        private bool AddImplementableType( INamedTypeSymbol symbol, ITypeSymbol? parentSymbol )
         {
-            _symbols.AddConnection( symbol, parentSymbol );
+            _symbols.AddNonInterfaceConnection(symbol, parentSymbol);
 
             if (SymbolIsDuplicate(symbol))
-                return;
+                return true;
 
-            if ( symbol.BaseType != null )
-                AddNonInterface( symbol.BaseType, symbol );
-
-            if( !( symbol is INamedTypeSymbol ntSymbol ) )
-                return;
+            if (symbol.BaseType != null)
+                AddImplementableType(symbol.BaseType, symbol);
 
             // add any interfaces
-            foreach( var interfaceSymbol in ntSymbol.AllInterfaces )
+            foreach (var interfaceSymbol in symbol.AllInterfaces)
             {
-                AddInterface( interfaceSymbol );
+                if( !AddInterface( interfaceSymbol, symbol ) )
+                    return false;
             }
 
             // add any type parameters and type arguments
-            foreach (var tpSymbol in ntSymbol.TypeParameters)
+            foreach (var tpSymbol in symbol.TypeParameters)
             {
-                AddNonInterface(tpSymbol, ntSymbol);
+                if( !AddType( tpSymbol, symbol ) )
+                    return false;
 
                 // add any interfaces
                 foreach (var interfaceSymbol in tpSymbol.AllInterfaces)
                 {
-                    AddInterface(interfaceSymbol);
+                    if( !AddInterface( interfaceSymbol, symbol ) )
+                        return false;
                 }
             }
 
-            foreach (var taSymbol in ntSymbol.TypeArguments)
+            foreach( var taSymbol in symbol.TypeArguments.Where( x => !( x is ITypeParameterSymbol ) ) )
             {
-                AddNonInterface(taSymbol, symbol);
+                if( !AddType( taSymbol, symbol ) )
+                    return false;
 
                 // add any interfaces
-                foreach (var interfaceSymbol in taSymbol.AllInterfaces)
+                foreach( var interfaceSymbol in taSymbol.AllInterfaces )
                 {
-                    AddInterface(interfaceSymbol);
+                    if( !AddInterface( interfaceSymbol, symbol ) )
+                        return false;
                 }
             }
+
+            return true;
         }
+
+        private bool AddTypeParameter(ITypeParameterSymbol symbol, ITypeSymbol? parentSymbol)
+        {
+            _symbols.AddNonInterfaceConnection(symbol, parentSymbol);
+
+            if (SymbolIsDuplicate(symbol))
+                return true;
+
+            if (symbol.BaseType != null)
+                AddImplementableType(symbol.BaseType, symbol);
+
+            // add any interfaces
+            foreach (var interfaceSymbol in symbol.AllInterfaces)
+            {
+                if (!AddInterface(interfaceSymbol, symbol))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool AddArrayType(IArrayTypeSymbol symbol, ITypeSymbol? parentSymbol)
+        {
+            _symbols.AddNonInterfaceConnection(symbol, parentSymbol);
+
+            if (SymbolIsDuplicate(symbol))
+                return true;
+
+            if (symbol.BaseType != null)
+                AddImplementableType(symbol.BaseType, symbol);
+
+            if( !AddType( symbol.ElementType, symbol ) )
+                return false;
+
+            // add any interfaces
+            foreach (var interfaceSymbol in symbol.AllInterfaces)
+            {
+                if (!AddInterface(interfaceSymbol, symbol))
+                    return false;
+            }
+
+            return true;
+        }
+
+        //private void AddNonInterface( ITypeSymbol symbol, ITypeSymbol? parentSymbol )
+        //{
+        //    _symbols.AddConnection( symbol, parentSymbol );
+
+        //    if (SymbolIsDuplicate(symbol))
+        //        return;
+
+        //    if ( symbol.BaseType != null )
+        //        AddNonInterface( symbol.BaseType, symbol );
+
+        //    if( !( symbol is INamedTypeSymbol ntSymbol ) )
+        //        return;
+
+        //    // add any interfaces
+        //    foreach( var interfaceSymbol in ntSymbol.AllInterfaces )
+        //    {
+        //        AddInterface( interfaceSymbol );
+        //    }
+
+        //    // add any type parameters and type arguments
+        //    foreach (var tpSymbol in ntSymbol.TypeParameters)
+        //    {
+        //        AddNonInterface(tpSymbol, ntSymbol);
+
+        //        // add any interfaces
+        //        foreach (var interfaceSymbol in tpSymbol.AllInterfaces)
+        //        {
+        //            AddInterface(interfaceSymbol);
+        //        }
+        //    }
+
+        //    foreach (var taSymbol in ntSymbol.TypeArguments)
+        //    {
+        //        AddNonInterface(taSymbol, symbol);
+
+        //        // add any interfaces
+        //        foreach (var interfaceSymbol in taSymbol.AllInterfaces)
+        //        {
+        //            AddInterface(interfaceSymbol);
+        //        }
+        //    }
+        //}
 
         private bool SymbolIsDuplicate( ISymbol symbol )
         {
             // don't allow duplicate additions so we can avoid infinite loops
-            var fullName = symbol.ToFullName();
+            var fullName = symbol.GetUniqueName();
 
             if (_visited.Any(x => x.Equals(fullName)))
                 return true;
