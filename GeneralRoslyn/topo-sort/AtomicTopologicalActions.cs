@@ -31,7 +31,7 @@ namespace J4JSoftware.Roslyn
 
             foreach( var processor in processors! )
             {
-                allOkay &= processor.Process( symbols, stopOnFirstError );
+                allOkay &= processor.Process( symbols );
 
                 if( !allOkay && stopOnFirstError )
                     break;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -26,5 +27,6 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
             DataLayer.GetAssembly( symbol, true ) != null;
+
     }
 }

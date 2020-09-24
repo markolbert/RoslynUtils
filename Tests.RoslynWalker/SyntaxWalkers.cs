@@ -46,6 +46,8 @@ namespace Tests.RoslynWalker
             _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
                 as ISymbolSink<TSymbol>;
 
+        public bool Initialize( ISyntaxWalker syntaxWalker ) => true;
+
         public bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
         {
             var numRoots = Edges().Count;

@@ -96,23 +96,17 @@ namespace J4JSoftware.Roslyn.Sinks
             return false;
         }
 
-        public bool AddInterfaceConnection(INamedTypeSymbol parentSymbol, ITypeSymbol? symbol = null)
+        public bool AddInterfaceConnection( INamedTypeSymbol parentSymbol )
         {
             if( parentSymbol.TypeKind != TypeKind.Interface )
             {
-                _logger.Error("Trying to add a non-interface to the interface connections collection"  );
+                _logger.Error( "Trying to add a non-interface to the interface connections collection" );
                 return false;
             }
 
-            if ((symbol?.TypeKind ?? TypeKind.Interface) == TypeKind.Interface)
-            {
-                _interfaces.Add(parentSymbol, symbol);
-                return true;
-            }
+            _interfaces.Add( parentSymbol );
 
-            _logger.Error<string>("Target {0} is not an interface",symbol!.ToFullName());
-
-            return false;
+            return true;
         }
 
         public IEnumerator<ITypeSymbol> GetEnumerator()

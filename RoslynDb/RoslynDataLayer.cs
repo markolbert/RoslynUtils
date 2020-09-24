@@ -368,8 +368,10 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if( !GetContainingAssemblyNamespace( symbol, fqn, out var assemblyDb, out var nsDb ) )
+            if( !GetContainingAssemblyNamespace( symbol, out var assemblyDb, out var nsDb ) )
                 return null;
+
+            LoadInScopeInfo(assemblyDb!);
 
             retVal = new FixedTypeDb
             {
@@ -439,15 +441,16 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, fqn, out var assemblyDb, out var nsDb))
+            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
                 return null;
+
+            LoadInScopeInfo( assemblyDb! );
 
             retVal = new GenericTypeDb
             {
                 SharpObject = GetSharpObject(symbol, true, SharpObjectType.GenericType)!,
                 Assembly = assemblyDb!,
                 Namespace = nsDb!,
-                InDocumentationScope = assemblyDb!.InScopeInfo != null
             };
 
             _dbContext.GenericTypes.Add(retVal);
@@ -549,8 +552,10 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, fqn, out var assemblyDb, out var nsDb))
+            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
                 return null;
+
+            LoadInScopeInfo(assemblyDb!);
 
             retVal = new ParametricTypeDb
             {
@@ -625,8 +630,10 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, fqn, out var assemblyDb, out var nsDb))
+            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
                 return null;
+
+            LoadInScopeInfo(assemblyDb!);
 
             retVal = new ParametricMethodTypeDb
             {
@@ -751,8 +758,10 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, fqn, out var assemblyDb, out var nsDb))
+            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
                 return null;
+
+            LoadInScopeInfo(assemblyDb!);
 
             var elementDb = GetUnspecifiedType( symbol.ElementType );
 
@@ -994,7 +1003,7 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if( !GetContainingAndReturnValueTypes( symbol, fqn, out var returnDb, out var containingDb ) )
+            if( !GetContainingAndReturnValueTypes( symbol, out var returnDb, out var containingDb ) )
                 return null;
 
             retVal = new MethodDb
@@ -1153,7 +1162,7 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if( !GetContainingAndReturnValueTypes( symbol, fqn, out var propDb, out var containingDb ) )
+            if( !GetContainingAndReturnValueTypes( symbol, out var propDb, out var containingDb ) )
                 return null;
 
             retVal = new PropertyDb
@@ -1323,7 +1332,7 @@ namespace J4JSoftware.Roslyn
                 return null;
             }
 
-            if (!GetContainingAndReturnValueTypes(symbol, fqn, out var propDb, out var containingDb))
+            if (!GetContainingAndReturnValueTypes(symbol, out var propDb, out var containingDb))
                 return null;
 
             retVal = new FieldDb
@@ -1401,6 +1410,13 @@ namespace J4JSoftware.Roslyn
                 .Load();
         }
 
+        private void LoadInScopeInfo(AssemblyDb entity)
+        {
+            _dbContext.Entry(entity)
+                .Reference(x => x.InScopeInfo)
+                .Load();
+        }
+
         private bool SharpObjectMatchesSymbol<TEntity>( ISymbol symbol, TEntity entity )
             where TEntity : class, ISharpObject
         {
@@ -1419,7 +1435,28 @@ namespace J4JSoftware.Roslyn
             return false;
         }
 
-        private bool GetContainingAssemblyNamespace(ITypeSymbol symbol, string symbolFQN, out AssemblyDb? assemblyDb, out NamespaceDb? nsDb)
+        private bool GetContainingAssembly(ITypeSymbol symbol, out AssemblyDb? assemblyDb)
+        {
+            assemblyDb = symbol switch
+            {
+                IArrayTypeSymbol arraySymbol => GetAssembly(arraySymbol.ElementType.ContainingAssembly),
+                _ => GetAssembly(symbol.ContainingAssembly)
+            };
+
+            if (assemblyDb == null)
+            {
+                _logger.Error<string, string>(
+                    "Couldn't find AssemblyDb entity for ContainingAssembly '{0}' in ITypeSymbol '{1}'",
+                    symbol.ContainingAssembly.ToUniqueName(),
+                    symbol.GetUniqueName());
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool GetContainingAssemblyNamespace(ITypeSymbol symbol, out AssemblyDb? assemblyDb, out NamespaceDb? nsDb)
         {
             nsDb = null;
 
@@ -1434,7 +1471,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find AssemblyDb entity for ContainingAssembly '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingAssembly.ToUniqueName(),
-                    symbolFQN);
+                    symbol.GetUniqueName());
 
                 return false;
             }
@@ -1450,7 +1487,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find NamespaceDb entity for ContainingNamespace '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingNamespace.ToUniqueName(),
-                    symbolFQN);
+                    symbol.GetUniqueName());
 
                 return false;
             }
@@ -1458,7 +1495,7 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool GetContainingAndReturnValueTypes(ISymbol symbol, string symbolFQN, out BaseTypeDb? returnDb, out ImplementableTypeDb? containingDb )
+        private bool GetContainingAndReturnValueTypes(ISymbol symbol, out BaseTypeDb? returnDb, out ImplementableTypeDb? containingDb )
         {
             returnDb = null;
 
@@ -1474,7 +1511,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find entity for ContainingType '{0}' in INamedTypeSymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
-                    symbolFQN);
+                    symbol.GetUniqueName());
 
                 return false;
             }
@@ -1491,7 +1528,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find entity for return value/property type '{0}' in INamedTypeSymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
-                    symbolFQN);
+                    symbol.GetUniqueName());
 
                 return false;
             }

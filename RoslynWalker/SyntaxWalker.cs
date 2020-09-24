@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -38,22 +39,28 @@ namespace J4JSoftware.Roslyn
         protected IJ4JLogger Logger { get; }
         protected ISymbolFullName SymbolInfo { get; }
 
-        public ISyntaxWalker? Predecessor { get; set; }
         public Type SymbolType { get; }
 
         public ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies => _modelAssemblies.AsReadOnly();
+        public bool StopOnFirstError { get; private set; }
 
         public bool InDocumentationScope(IAssemblySymbol toCheck)
             => DocumentationAssemblies.Any(ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
 
-        public virtual bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
+        public bool Initialize( ITopologicalActionConfiguration config )
+        {
+            StopOnFirstError = config.StopOnFirstError;
+            return true;
+        }
+
+        public virtual bool Process( IEnumerable<CompiledProject> compResults )
         {
             _modelAssemblies.Clear();
             _modelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
 
             _visitedNodes.Clear();
 
-            if( !_symbolSink.InitializeSink(this, stopOnFirstError) )
+            if( !_symbolSink.InitializeSink(this, StopOnFirstError) )
                 return false;
 
             foreach( var compResult in compResults.SelectMany(cr=>cr) )

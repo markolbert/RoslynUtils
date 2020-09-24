@@ -80,12 +80,12 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             return ntSymbol.TypeKind switch
             {
-                TypeKind.Interface => AddInterface( ntSymbol, parentSymbol ),
+                TypeKind.Interface => AddInterface( ntSymbol ),
                 _ => AddImplementableType( ntSymbol, parentSymbol )
             };
         }
 
-        private bool AddInterface( INamedTypeSymbol symbol, ITypeSymbol? parentSymbol )
+        private bool AddInterface( INamedTypeSymbol symbol )
         {
             if( symbol.TypeKind != TypeKind.Interface )
             {
@@ -99,7 +99,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            _symbols.AddInterfaceConnection( symbol, parentSymbol );
+            _symbols.AddInterfaceConnection( symbol );
 
             if (SymbolIsDuplicate(symbol))
                 return true;
@@ -133,7 +133,7 @@ namespace J4JSoftware.Roslyn.Sinks
             // add any interfaces
             foreach (var interfaceSymbol in symbol.AllInterfaces)
             {
-                if( !AddInterface( interfaceSymbol, symbol ) )
+                if( !AddInterface( interfaceSymbol ) )
                     return false;
             }
 
@@ -146,7 +146,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 // add any interfaces
                 foreach (var interfaceSymbol in tpSymbol.AllInterfaces)
                 {
-                    if( !AddInterface( interfaceSymbol, symbol ) )
+                    if( !AddInterface( interfaceSymbol ) )
                         return false;
                 }
             }
@@ -159,7 +159,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 // add any interfaces
                 foreach( var interfaceSymbol in taSymbol.AllInterfaces )
                 {
-                    if( !AddInterface( interfaceSymbol, symbol ) )
+                    if( !AddInterface( interfaceSymbol ) )
                         return false;
                 }
             }
@@ -180,7 +180,7 @@ namespace J4JSoftware.Roslyn.Sinks
             // add any interfaces
             foreach (var interfaceSymbol in symbol.AllInterfaces)
             {
-                if (!AddInterface(interfaceSymbol, symbol))
+                if (!AddInterface(interfaceSymbol ))
                     return false;
             }
 
@@ -203,7 +203,7 @@ namespace J4JSoftware.Roslyn.Sinks
             // add any interfaces
             foreach (var interfaceSymbol in symbol.AllInterfaces)
             {
-                if (!AddInterface(interfaceSymbol, symbol))
+                if (!AddInterface(interfaceSymbol))
                     return false;
             }
 

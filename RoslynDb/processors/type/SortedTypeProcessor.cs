@@ -46,7 +46,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            var fullName = typeSymbol.ToFullName();
+            var fullName = typeSymbol.GetUniqueName();
 
             if( DataLayer.GetUnspecifiedType( typeSymbol, true ) == null )
                 return false;
