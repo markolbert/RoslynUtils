@@ -14,10 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="processors\SymbolProcessors.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Buildalyzer" Version="3.0.1" />
     <PackageReference Include="Microsoft.CodeAnalysis" Version="3.6.0" />
     <PackageReference Include="NuGet.Versioning" Version="5.6.0" />
