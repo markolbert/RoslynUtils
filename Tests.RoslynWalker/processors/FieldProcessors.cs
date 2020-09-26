@@ -10,10 +10,11 @@ namespace Tests.RoslynWalker
     {
         public FieldProcessors( 
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, loggerFactory() )
+        ) : base( dataLayer, context, loggerFactory() )
         {
-            Add( new FieldProcessor( dataLayer, loggerFactory() ) );
+            Add( new FieldProcessor( dataLayer, context, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<IFieldSymbol> symbols )

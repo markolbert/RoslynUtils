@@ -38,6 +38,10 @@ namespace Tests.RoslynWalker
                 .As<ISymbolFullName>()
                 .SingleInstance();
 
+            builder.RegisterType<ExecutionContext>()
+                .AsSelf()
+                .SingleInstance();
+
             builder.RegisterType<RoslynDbContextFactoryConfiguration>()
                 .AsImplementedInterfaces();
 
@@ -70,26 +74,12 @@ namespace Tests.RoslynWalker
             builder.RegisterGeneric( typeof(UniqueSymbols<>) )
                 .AsSelf();
 
-            //builder.RegisterType<InScopeAssemblyProcessor>()
-            //    .As<IInScopeAssemblyProcessor>();
-
             RegisterSymbolProcessor<IAssemblySymbol, AssemblyProcessors>( builder );
             RegisterSymbolProcessor<INamespaceSymbol, NamespaceProcessors>( builder );
             RegisterSymbolProcessor<ITypeSymbol, TypeProcessors>( builder );
             RegisterSymbolProcessor<IMethodSymbol, MethodProcessors>( builder );
             RegisterSymbolProcessor<IPropertySymbol, PropertyProcessors>( builder );
             RegisterSymbolProcessor<IFieldSymbol, FieldProcessors>( builder );
-
-            //builder.RegisterAssemblyTypes( typeof(RoslynDbContext).Assembly )
-            //    .Where( t => !t.IsAbstract
-            //                 && typeof(IEntityFactory).IsAssignableFrom( t )
-            //                 && t.GetConstructors().Length > 0 )
-            //    .AsImplementedInterfaces()
-            //    .SingleInstance();
-
-            //builder.RegisterType<EntityFactories>()
-            //    .AsSelf()
-            //    .SingleInstance();
 
             Instance = new AutofacServiceProvider( builder.Build() );
         }
@@ -100,7 +90,7 @@ namespace Tests.RoslynWalker
         {
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
                 .Where(t => !t.IsAbstract
-                            && typeof(IAtomicProcessor<TSymbol>).IsAssignableFrom(t)
+                            && typeof(IEnumerableProcessor<TSymbol>).IsAssignableFrom(t)
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 

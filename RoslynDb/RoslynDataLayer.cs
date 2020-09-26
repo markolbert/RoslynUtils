@@ -10,17 +10,14 @@ namespace J4JSoftware.Roslyn
     public class RoslynDataLayer : IRoslynDataLayer
     {
         private readonly RoslynDbContext _dbContext;
-        private readonly List<CompiledProject> _projects;
         private readonly IJ4JLogger _logger;
 
         public RoslynDataLayer(
             RoslynDbContext dbContext,
-            IEnumerable<CompiledProject> projects,
             IJ4JLogger logger
         )
         {
             _dbContext = dbContext;
-            _projects = projects.ToList();
 
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
@@ -222,24 +219,91 @@ namespace J4JSoftware.Roslyn
 
             entity.SharpObject.Synchronized = true;
 
-            // for assemblies within the documentation scope update the information
-            // in the InScopeInfo table
-            var project = _projects.FirstOrDefault( x => x.AssemblyName.Equals( entity.SharpObject.Name ) );
+            return true;
+        }
 
-            if( project == null )
-                return true;
+        public InScopeAssemblyInfo? GetInScopeAssemblyInfo( 
+            CompiledProject project,
+            bool createIfMissing = false,
+            bool updateExisting = false )
+        {
+            var fqn = project.AssemblySymbol.ToUniqueName();
 
-            entity.InScopeInfo = new InScopeAssemblyInfo
+            var assemblyDb = _dbContext.Assemblies
+                .Include( x => x.SharpObject )
+                .Include( x => x.InScopeInfo )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
+
+            if( assemblyDb == null )
             {
-                TargetFrameworksText = project.TargetFrameworksText,
-                Authors = project.Authors,
-                Company = project.Company,
-                Copyright = project.Copyright,
-                Description = project.Description,
-                FileVersionText = project.FileVersionText,
-                PackageVersionText = project.PackageVersionText,
-                RootNamespace = project.RootNamespace,
+                _logger.Error<string>(
+                    "Couldn't find AssemblyDb object for '{0}' in the database, can't return or create InScopeAssemblyInfo entity",
+                    fqn );
+
+                return null;
+            }
+
+            var retVal = assemblyDb.InScopeInfo;
+
+            if (retVal != null)
+            {
+                if (updateExisting)
+                    UpdateInScopeAssemblyInfo(project, retVal);
+
+                return retVal;
+            }
+
+            if (!createIfMissing)
+            {
+                _logger.Error<string>( "Couldn't find InScopeAssemblyInfo object for '{0}' in the database", fqn );
+                return null;
+            }
+
+            retVal = new InScopeAssemblyInfo
+            {
+                Assembly = assemblyDb
             };
+
+            _dbContext.InScopeInfo.Add( retVal );
+
+            // update after add so the entity is being tracked
+            UpdateInScopeAssemblyInfo(project, retVal);
+
+            return retVal;
+        }
+
+        public bool UpdateInScopeAssemblyInfo(CompiledProject project, InScopeAssemblyInfo entity)
+        {
+            _dbContext.Entry(entity)
+                .Reference(x => x.Assembly)
+                .Load();
+
+            _dbContext.Entry(entity.Assembly)
+                .Reference(x => x.SharpObject)
+                .Load();
+
+            var fqn = project.AssemblySymbol.GetUniqueName();
+
+            if( !entity.Assembly.SharpObject.FullyQualifiedName.Equals( fqn, StringComparison.Ordinal ) )
+            {
+                _logger.Error<string, Type, string>( "CompiledProject '{0}' does not correspond to {1} '{2}'",
+                    project.AssemblyName,
+                    typeof(InScopeAssemblyInfo),
+                    entity.Assembly.SharpObject.FullyQualifiedName );
+
+                return false;
+            }
+
+            entity.TargetFrameworksText = project.TargetFrameworksText;
+            entity.Authors = project.Authors;
+            entity.Company = project.Company;
+            entity.Copyright = project.Copyright;
+            entity.Description = project.Description;
+            entity.FileVersionText = project.FileVersionText;
+            entity.PackageVersionText = project.PackageVersionText;
+            entity.RootNamespace = project.RootNamespace;
+
+            entity.Synchronized = true;
 
             return true;
         }
@@ -1491,6 +1555,11 @@ namespace J4JSoftware.Roslyn
 
                 return false;
             }
+
+            // load the associated InScopeInfo
+            _dbContext.Entry( assemblyDb )
+                .Reference( x => x.InScopeInfo )
+                .Load();
 
             return true;
         }

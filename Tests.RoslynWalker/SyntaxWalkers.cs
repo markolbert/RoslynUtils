@@ -11,32 +11,38 @@ namespace Tests.RoslynWalker
     public sealed class SyntaxWalkers : TopologicallySortableCollection<ISyntaxWalker>, IProcessorCollection<CompiledProject>
     {
         private readonly List<ISymbolSink> _sinks;
+        private readonly ExecutionContext _context;
         private readonly IJ4JLogger _logger;
 
         public SyntaxWalkers(
             ISymbolFullName symbolNamer,
             IDefaultSymbolSink defaultSymbolSink,
             IEnumerable<ISymbolSink> symbolSinks,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory
         )
         {
             _sinks = symbolSinks.ToList();
+            _context = context;
 
             _logger = loggerFactory();
             _logger.SetLoggedType( this.GetType() );
 
             var node = Add( new AssemblyWalker( symbolNamer,
                 defaultSymbolSink,
+                context,
                 loggerFactory(),
                 GetSink<IAssemblySymbol>() ) );
 
             node = Add( new NamespaceWalker( symbolNamer,
                 defaultSymbolSink,
+                context,
                 loggerFactory(),
                 GetSink<INamespaceSymbol>() ), node );
 
             node = Add(new TypeWalker(symbolNamer,
                 defaultSymbolSink,
+                context,
                 loggerFactory(),
                 GetSink<ITypeSymbol>()), node);
         }
@@ -46,9 +52,7 @@ namespace Tests.RoslynWalker
             _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
                 as ISymbolSink<TSymbol>;
 
-        public bool Initialize( ISyntaxWalker syntaxWalker ) => true;
-
-        public bool Process( IEnumerable<CompiledProject> compResults, bool stopOnFirstError = false )
+        public bool Process( IEnumerable<CompiledProject> projects )
         {
             var numRoots = Edges().Count;
 
@@ -78,9 +82,9 @@ namespace Tests.RoslynWalker
 
             foreach( var walker in walkers! )
             {
-                allOkay &= walker.Process( compResults, stopOnFirstError );
+                allOkay &= walker.Process( projects );
 
-                if( !allOkay && stopOnFirstError )
+                if( !allOkay && _context.StopOnFirstError )
                     break;
             }
 

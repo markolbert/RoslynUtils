@@ -10,10 +10,11 @@ namespace Tests.RoslynWalker
     {
         public NamespaceProcessors( 
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, loggerFactory() )
+        ) : base( dataLayer, context, loggerFactory() )
         {
-            Add( new NamespaceProcessor( dataLayer, loggerFactory() ) );
+            Add( new NamespaceProcessor( dataLayer, context, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<INamespaceSymbol> symbols )

@@ -9,32 +9,39 @@ namespace J4JSoftware.Roslyn
     {
         public AncestorProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<ITypeSymbol> ExtractSymbols( ISymbol item )
+        protected override List<ITypeSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
         {
-            if (!(item is ITypeSymbol typeSymbol))
+            var retVal = new List<ITypeSymbol>();
+
+            foreach( var symbol in inputData )
             {
-                Logger.Error("Supplied item is not an ITypeSymbol");
-                yield break;
+                switch( symbol )
+                {
+                    case IDynamicTypeSymbol dtSymbol:
+                        Logger.Error<string>("IDynamicTypeSymbols are not supported ('{0}')", symbol.Name);
+                        break;
+
+                    case IPointerTypeSymbol ptSymbol:
+                        Logger.Error<string>("IPointerTypeSymbols are not supported ('{0}')", symbol.Name);
+                        break;
+
+                    case IErrorTypeSymbol errSymbol:
+                        Logger.Error<string>("IErrorTypeSymbols are not supported ('{0}')", symbol.Name);
+                        break;
+
+                    default:
+                        retVal.Add( symbol );
+                        break;
+                }
             }
 
-            if (typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol)
-            {
-                Logger.Error<string>("Unhandled ITypeSymbol '{0}'", typeSymbol.Name);
-                yield break;
-            }
-
-            if (typeSymbol is IErrorTypeSymbol)
-            {
-                Logger.Error("ITypeSymbol is an IErrorTypeSymbol, ignored");
-                yield break;
-            }
-
-            yield return typeSymbol;
+            return retVal;
         }
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )

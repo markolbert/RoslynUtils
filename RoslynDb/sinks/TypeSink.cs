@@ -16,16 +16,17 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public TypeSink(
             UniqueSymbols<ITypeSymbol> uniqueSymbols,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory,
             IProcessorCollection<ITypeSymbol>? processors = null )
-            : base( uniqueSymbols, loggerFactory(), processors)
+            : base( uniqueSymbols, context, loggerFactory(), processors)
         {
             _symbols = new TypeSymbolContainer( loggerFactory() );
         }
 
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !base.InitializeSink( syntaxWalker, stopOnFirstError ) )
+            if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
             _symbols.Clear();
@@ -42,19 +43,12 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            return _processors.Process( _symbols, StopOnFirstError );
+            return _processors.Process( _symbols);
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )
         {
             return AddType( symbol, null );
-
-            //if( symbol is INamedTypeSymbol ntSymbol && ntSymbol.TypeKind == TypeKind.Interface )
-            //    return AddInterface( ntSymbol );
-            
-            //AddNonInterface( symbol, null );
-
-            //return true;
         }
 
         private bool AddType( ITypeSymbol symbol, ITypeSymbol? parentSymbol )
@@ -209,49 +203,6 @@ namespace J4JSoftware.Roslyn.Sinks
 
             return true;
         }
-
-        //private void AddNonInterface( ITypeSymbol symbol, ITypeSymbol? parentSymbol )
-        //{
-        //    _symbols.AddConnection( symbol, parentSymbol );
-
-        //    if (SymbolIsDuplicate(symbol))
-        //        return;
-
-        //    if ( symbol.BaseType != null )
-        //        AddNonInterface( symbol.BaseType, symbol );
-
-        //    if( !( symbol is INamedTypeSymbol ntSymbol ) )
-        //        return;
-
-        //    // add any interfaces
-        //    foreach( var interfaceSymbol in ntSymbol.AllInterfaces )
-        //    {
-        //        AddInterface( interfaceSymbol );
-        //    }
-
-        //    // add any type parameters and type arguments
-        //    foreach (var tpSymbol in ntSymbol.TypeParameters)
-        //    {
-        //        AddNonInterface(tpSymbol, ntSymbol);
-
-        //        // add any interfaces
-        //        foreach (var interfaceSymbol in tpSymbol.AllInterfaces)
-        //        {
-        //            AddInterface(interfaceSymbol);
-        //        }
-        //    }
-
-        //    foreach (var taSymbol in ntSymbol.TypeArguments)
-        //    {
-        //        AddNonInterface(taSymbol, symbol);
-
-        //        // add any interfaces
-        //        foreach (var interfaceSymbol in taSymbol.AllInterfaces)
-        //        {
-        //            AddInterface(interfaceSymbol);
-        //        }
-        //    }
-        //}
 
         private bool SymbolIsDuplicate( ISymbol symbol )
         {

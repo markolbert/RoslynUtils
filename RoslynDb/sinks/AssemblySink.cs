@@ -9,25 +9,11 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public AssemblySink(
             UniqueSymbols<IAssemblySymbol> uniqueSymbols,
+            ExecutionContext context,
             IJ4JLogger logger,
             IProcessorCollection<IAssemblySymbol>? processors = null )
-            : base( uniqueSymbols, logger, processors )
+            : base( uniqueSymbols, context, logger, processors )
         {
         }
-
-        public override bool FinalizeSink(ISyntaxWalker syntaxWalker)
-        {
-            if (!base.FinalizeSink(syntaxWalker))
-                return false;
-
-            if (_processors == null)
-            {
-                Logger.Error<Type>("No processors defined for {0}", this.GetType());
-                return false;
-            }
-
-            return _processors.Process(Symbols, StopOnFirstError);
-        }
-
     }
 }

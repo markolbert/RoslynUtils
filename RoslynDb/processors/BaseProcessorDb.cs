@@ -6,36 +6,49 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class BaseProcessorDb<TSource, TResult> : AtomicProcessor<TSource>
+    public abstract class BaseProcessorDb<TSource, TResult> : EnumerableProcessorBase<TSource>
         where TResult : class, ISymbol
         where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger
         )
         : base( logger )
         {
             DataLayer = dataLayer;
+            ExecutionContext = context;
         }
 
         protected IRoslynDataLayer DataLayer { get; }
+        protected ExecutionContext ExecutionContext { get; }
         
-        protected abstract IEnumerable<TResult> ExtractSymbols( ISymbol item );
+        protected abstract List<TResult> ExtractSymbols( IEnumerable<TSource> inputData );
         protected abstract bool ProcessSymbol( TResult symbol );
 
-        protected override bool ProcessInternal( IEnumerable<TSource> inputData )
+        protected override bool ProcessLoop( IEnumerable<TSource> inputData )
         {
             var allOkay = true;
 
+            var processed = new HashSet<string>();
+
             try
             {
-                foreach( var symbol in FilterSymbols(inputData) )
+                foreach( var symbol in ExtractSymbols(inputData) )
                 {
+                    var fqn = symbol.GetUniqueName();
+
+                    // skip symbols we've already processed
+                    if( processed.Contains( fqn ) )
+                        continue;
+
                     allOkay = ProcessSymbol( symbol );
 
-                    if( !allOkay && StopOnFirstError )
+                    if( !allOkay && ExecutionContext.StopOnFirstError )
                         break;
+
+                    processed.Add( fqn );
                 }
             }
             catch( Exception e )
@@ -46,9 +59,9 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        protected override bool FinalizeProcessor(IEnumerable<TSource> inputData)
+        protected override bool PostLoopFinalization(IEnumerable<TSource> inputData)
         {
-            if (!base.FinalizeProcessor(inputData))
+            if (!base.PostLoopFinalization(inputData))
                 return false;
 
             DataLayer.SaveChanges();
@@ -94,33 +107,6 @@ namespace J4JSoftware.Roslyn
             }
 
             return false;
-        }
-
-        private IEnumerable<TResult> FilterSymbols(IEnumerable<TSource> source)
-        {
-            var processed = new Dictionary<string, TResult>();
-
-            var procName = this.GetType().Name;
-
-            foreach (var item in source)
-            {
-                if (item == null )
-                    continue;
-
-                foreach( var symbol in ExtractSymbols( item ) )
-                {
-                    var crap = symbol.ToFullName();
-
-                    var fqn = symbol.GetUniqueName();
-
-                    if( processed.ContainsKey( fqn ) )
-                        continue;
-
-                    processed.Add( fqn, symbol! );
-
-                    yield return symbol!;
-                }
-            }
         }
     }
 }

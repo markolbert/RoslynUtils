@@ -9,28 +9,29 @@ namespace J4JSoftware.Roslyn
     {
         public TypeNamespaceProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
+
         {
         }
 
-        protected override IEnumerable<INamespaceSymbol> ExtractSymbols( ISymbol item )
+        protected override List<INamespaceSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
         {
-            if( !( item is ITypeSymbol typeSymbol ) )
+            var retVal = new List<INamespaceSymbol>();
+
+            foreach (var symbol in inputData)
             {
-                Logger.Error( "Supplied item is not an ITypeSymbol" );
-                yield break;
+                var nsSymbol = symbol is IArrayTypeSymbol arraySymbol
+                    ? arraySymbol.ElementType.ContainingNamespace
+                    : symbol.ContainingNamespace;
+
+                if (nsSymbol == null)
+                    Logger.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name);
+                else retVal.Add(nsSymbol);
             }
 
-            if( typeSymbol.ContainingNamespace == null )
-            {
-                Logger.Information<string>( "ITypeSymbol '{0}' does not have a ContainingNamespace", typeSymbol.Name );
-                yield break;
-            }
-
-            // ignore any namespaces already on file
-            if( !DataLayer.SharpObjectInDatabase<NamespaceDb>( typeSymbol.ContainingNamespace ) )
-                yield return typeSymbol.ContainingNamespace!;
+            return retVal;
         }
 
         protected override bool ProcessSymbol(INamespaceSymbol symbol)
@@ -40,7 +41,7 @@ namespace J4JSoftware.Roslyn
             if( assemblyDb == null )
                 return false;
 
-            var nsDb = DataLayer.GetNamespace( symbol, true );
+            var nsDb = DataLayer.GetNamespace( symbol, true, true );
 
             if (nsDb == null )
                 return false;

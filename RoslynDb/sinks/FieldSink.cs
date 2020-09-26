@@ -8,9 +8,10 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public FieldSink(
             UniqueSymbols<IFieldSymbol> uniqueSymbols,
+            ExecutionContext context,
             IJ4JLogger logger,
             IProcessorCollection<IFieldSymbol>? processors = null )
-            : base( uniqueSymbols, logger, processors)
+            : base( uniqueSymbols, context, logger, processors)
         {
         }
     }

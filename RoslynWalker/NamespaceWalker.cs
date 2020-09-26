@@ -19,10 +19,11 @@ namespace J4JSoftware.Roslyn
         public NamespaceWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
+            ExecutionContext context,
             IJ4JLogger logger,
             ISymbolSink<INamespaceSymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
+            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

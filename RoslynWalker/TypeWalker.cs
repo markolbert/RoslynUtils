@@ -19,10 +19,11 @@ namespace J4JSoftware.Roslyn
         public TypeWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
+            ExecutionContext context,
             IJ4JLogger logger,
             ISymbolSink<ITypeSymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
+            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

@@ -10,16 +10,18 @@ namespace Tests.RoslynWalker
     {
         public TypeProcessors( 
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
         ) 
-            : base( dataLayer, loggerFactory() )
+            : base( dataLayer, context, loggerFactory() )
         {
-            var node = Add(new TypeAssemblyProcessor(dataLayer, loggerFactory()));
-            node = Add(new TypeNamespaceProcessor(dataLayer, loggerFactory()), node );
-            node = Add(new SortedTypeProcessor(dataLayer, loggerFactory()), node);
-            var taNode = Add( new TypeArgumentProcessor( dataLayer, loggerFactory() ), node );
-            var tptNode = Add(new TypeParametricTypeProcessor(dataLayer, loggerFactory()), node);
-            var ancestorNode = Add( new AncestorProcessor( dataLayer, loggerFactory() ), node );
+            var node = Add(new TypeAssemblyProcessor(dataLayer, context, loggerFactory()));
+            node = Add( new TypeInScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node );
+            node = Add(new TypeNamespaceProcessor(dataLayer, context, loggerFactory()), node );
+            node = Add(new SortedTypeProcessor(dataLayer, context, loggerFactory()), node);
+            var taNode = Add( new TypeArgumentProcessor( dataLayer, context, loggerFactory() ), node );
+            var tptNode = Add(new TypeParametricTypeProcessor(dataLayer, context, loggerFactory()), node);
+            var ancestorNode = Add( new AncestorProcessor( dataLayer, context, loggerFactory() ), node );
         }
 
         protected override bool Initialize( IEnumerable<ITypeSymbol> symbols )

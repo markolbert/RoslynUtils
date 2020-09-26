@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -8,23 +9,18 @@ namespace J4JSoftware.Roslyn
     {
         public PropertyProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IPropertySymbol> ExtractSymbols( ISymbol item )
+        protected override List<IPropertySymbol> ExtractSymbols( IEnumerable<IPropertySymbol> inputData )
         {
-            if (!(item is IPropertySymbol propSymbol) )
-            {
-                Logger.Error("Supplied item is not an IPropertySymbol");
-                yield break;
-            }
-
-            yield return propSymbol;
+            return inputData.ToList();
         }
 
         protected override bool ProcessSymbol( IPropertySymbol symbol ) =>
-            DataLayer.GetProperty( symbol, true ) != null;
+            DataLayer.GetProperty( symbol, true, true ) != null;
     }
 }

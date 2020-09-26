@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -6,25 +7,20 @@ namespace J4JSoftware.Roslyn
 {
     public class FieldProcessor : BaseProcessorDb<IFieldSymbol, IFieldSymbol>
     {
-        public FieldProcessor( 
+        public FieldProcessor(
             IRoslynDataLayer dataLayer,
-            IJ4JLogger logger ) 
-            : base( dataLayer, logger )
+            ExecutionContext context,
+            IJ4JLogger logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IFieldSymbol> ExtractSymbols( ISymbol item )
+        protected override List<IFieldSymbol> ExtractSymbols( IEnumerable<IFieldSymbol> inputData )
         {
-            if (!(item is IFieldSymbol fieldSymbol) )
-            {
-                Logger.Error("Supplied item is not an IFieldSymbol");
-                yield break;
-            }
-
-            yield return fieldSymbol;
+            return inputData.ToList();
         }
 
         protected override bool ProcessSymbol( IFieldSymbol symbol ) =>
-            DataLayer.GetField( symbol, true ) != null;
+            DataLayer.GetField( symbol, true, true ) != null;
     }
 }

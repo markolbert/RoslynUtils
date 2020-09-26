@@ -9,35 +9,24 @@ namespace J4JSoftware.Roslyn
     {
         public TypeArgumentProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<INamedTypeSymbol> ExtractSymbols( ISymbol item )
+        protected override List<INamedTypeSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
         {
-            if( !( item is ITypeSymbol typeSymbol ) )
+            var retVal = new List<INamedTypeSymbol>();
+
+            foreach (var symbol in inputData)
             {
-                Logger.Error( "Supplied item is not an ITypeSymbol" );
-                yield break;
+                if( symbol is INamedTypeSymbol ntSymbol
+                    && ntSymbol.TypeArguments.Any( x => !( x is ITypeParameterSymbol ) ) )
+                    retVal.Add( ntSymbol );
             }
 
-            if( typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol )
-            {
-                Logger.Error<string>( "Unhandled ITypeSymbol '{0}'", typeSymbol.Name );
-                yield break;
-            }
-
-            if( typeSymbol is IErrorTypeSymbol )
-            {
-                Logger.Error( "ITypeSymbol is an IErrorTypeSymbol, ignored" );
-                yield break;
-            }
-
-            // we handle INamedTypeSymbols that have TypeArguments that aren't ITypeParameterSymbols
-            if( typeSymbol is INamedTypeSymbol ntSymbol
-                && ntSymbol.TypeArguments.Any( x => !( x is ITypeParameterSymbol ) ) )
-                yield return ntSymbol;
+            return retVal;
         }
 
         protected override bool ProcessSymbol( INamedTypeSymbol symbol )

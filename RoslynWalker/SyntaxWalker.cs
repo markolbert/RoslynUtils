@@ -8,25 +8,25 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SyntaxWalker<TSymbol> : ISyntaxWalker<TSymbol>
+    public abstract class SyntaxWalker<TSymbol> : EnumerableProcessorBase<CompiledProject>, ISyntaxWalker<TSymbol>
         where TSymbol : class, ISymbol
     {
         private readonly ISymbolSink _symbolSink;
-        private readonly List<IAssemblySymbol> _modelAssemblies = new List<IAssemblySymbol>();
         private readonly List<SyntaxNode> _visitedNodes = new List<SyntaxNode>();
 
         protected SyntaxWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
+            ExecutionContext context,
             IJ4JLogger logger,
             ISymbolSink<TSymbol>? symbolSink = null
         )
+            : base( logger )
         {
-            Logger = logger;
-            Logger.SetLoggedType( this.GetType() );
-
             SymbolInfo = symbolInfo;
             SymbolType = typeof(TSymbol);
+
+            Context = context;
 
             if( symbolSink == null )
             {
@@ -36,39 +36,34 @@ namespace J4JSoftware.Roslyn
             else _symbolSink = symbolSink;
         }
 
-        protected IJ4JLogger Logger { get; }
         protected ISymbolFullName SymbolInfo { get; }
+        protected ExecutionContext Context { get; }
 
         public Type SymbolType { get; }
 
-        public ReadOnlyCollection<IAssemblySymbol> DocumentationAssemblies => _modelAssemblies.AsReadOnly();
-        public bool StopOnFirstError { get; private set; }
-
-        public bool InDocumentationScope(IAssemblySymbol toCheck)
-            => DocumentationAssemblies.Any(ma => SymbolEqualityComparer.Default.Equals(ma, toCheck));
-
-        public bool Initialize( ITopologicalActionConfiguration config )
+        protected override bool PreLoopInitialization( IEnumerable<CompiledProject> compResults )
         {
-            StopOnFirstError = config.StopOnFirstError;
-            return true;
-        }
+            if( !base.PreLoopInitialization( compResults ) )
+                return false;
 
-        public virtual bool Process( IEnumerable<CompiledProject> compResults )
-        {
-            _modelAssemblies.Clear();
-            _modelAssemblies.AddRange( compResults.Select( cr => cr.AssemblySymbol ).Distinct() );
+            if (!_symbolSink.InitializeSink(this))
+                return false;
+
+            Context.SetCompiledProjects( compResults );
 
             _visitedNodes.Clear();
 
-            if( !_symbolSink.InitializeSink(this, StopOnFirstError) )
-                return false;
+            return true;
+        }
 
-            foreach( var compResult in compResults.SelectMany(cr=>cr) )
+        protected override bool ProcessLoop( IEnumerable<CompiledProject> compResults )
+        {
+            foreach (var compResult in compResults.SelectMany(cr => cr))
             {
-                TraverseInternal( compResult.RootSyntaxNode, compResult );
+                TraverseInternal(compResult.RootSyntaxNode, compResult);
             }
 
-            return _symbolSink.FinalizeSink(this);
+            return true;
         }
 
         protected void TraverseInternal( SyntaxNode node, CompiledFile context )
@@ -91,6 +86,14 @@ namespace J4JSoftware.Roslyn
             {
                 TraverseInternal( childNode, context );
             }
+        }
+
+        protected override bool PostLoopFinalization( IEnumerable<CompiledProject> inputData )
+        {
+            if( !base.PostLoopFinalization( inputData ) )
+                return false;
+
+            return _symbolSink.FinalizeSink(this);
         }
 
         protected abstract bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out TSymbol? result );

@@ -11,148 +11,49 @@ namespace J4JSoftware.Roslyn
     {
         public SortedTypeProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<ITypeSymbol> ExtractSymbols( ISymbol item )
+        protected override List<ITypeSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
         {
-            if (!(item is ITypeSymbol typeSymbol))
+            var retVal = new List<ITypeSymbol>();
+
+            foreach( var symbol in inputData )
             {
-                Logger.Error("Supplied item is not an ITypeSymbol");
-                yield break;
+                switch( symbol )
+                {
+                    case IDynamicTypeSymbol dtSymbol:
+                        Logger.Error<string>( "IDynamicTypeSymbols are not supported ('{0}')", symbol.Name );
+                        break;
+
+                    case IPointerTypeSymbol ptSymbol:
+                        Logger.Error<string>( "IPointerTypeSymbols are not supported ('{0}')", symbol.Name );
+                        break;
+
+                    case IErrorTypeSymbol errSymbol:
+                        Logger.Error<string>( "IErrorTypeSymbols are not supported ('{0}')", symbol.Name );
+                        break;
+
+                    default:
+                        retVal.Add( symbol );
+                        break;
+                }
             }
 
-            if (typeSymbol is IDynamicTypeSymbol || typeSymbol is IPointerTypeSymbol)
-            {
-                Logger.Error<string>("Unhandled ITypeSymbol '{0}'", typeSymbol.Name);
-                yield break;
-            }
-
-            if (typeSymbol is IErrorTypeSymbol)
-            {
-                Logger.Error("ITypeSymbol is an IErrorTypeSymbol, ignored");
-                yield break;
-            }
-
-            var fullName = typeSymbol.ToFullName();
-
-            if( DataLayer.SharpObjectInDatabase<BaseTypeDb>( typeSymbol ) )
-                yield break;
-
-            yield return typeSymbol;
+            return retVal;
         }
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            var fullName = typeSymbol.GetUniqueName();
-
-            if( DataLayer.GetUnspecifiedType( typeSymbol, true ) == null )
+            if( DataLayer.GetUnspecifiedType( typeSymbol, true, true ) == null )
                 return false;
 
             DataLayer.SaveChanges();
 
             return true;
         }
-
-        //private bool ProcessFixedType( INamedTypeSymbol symbol )
-        //{
-        //    if (!EntityFactories.Get<AssemblyDb>(symbol.ContainingAssembly, out var assemblyDb))
-        //        return false;
-
-        //    if (!EntityFactories.Get<NamespaceDb>(symbol.ContainingNamespace, out var nsDb))
-        //        return false;
-
-        //    if (!EntityFactories.Create<FixedTypeDb>(symbol, out var dbSymbol))
-        //    {
-        //        Logger.Error<string>("Could not create entity for '{0}'",
-        //            symbol.ToFullName());
-
-        //        return false;
-        //    }
-
-        //    DataLayer.MarkSynchronized(dbSymbol!);
-
-        //    dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
-        //    dbSymbol.NamespaceID = nsDb!.SharpObjectID;
-
-        //    return true;
-        //}
-
-        //private bool ProcessGenericType( INamedTypeSymbol symbol )
-        //{
-        //    if( !EntityFactories.Get<AssemblyDb>( symbol.ContainingAssembly, out var assemblyDb ) )
-        //        return false;
-
-        //    if( !EntityFactories.Get<NamespaceDb>( symbol.ContainingNamespace, out var nsDb ) )
-        //        return false;
-
-        //    if( !EntityFactories.Create<GenericTypeDb>( symbol, out var dbSymbol ) )
-        //    {
-        //        Logger.Error<string>( "Could not create entity for '{0}'",
-        //            symbol.ToFullName() );
-
-        //        return false;
-        //    }
-
-        //    DataLayer.MarkSynchronized( dbSymbol! );
-
-        //    dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
-        //    dbSymbol.NamespaceID = nsDb!.SharpObjectID;
-
-        //    return true;
-        //}
-
-        //private bool ProcessArrayType(IArrayTypeSymbol symbol)
-        //{
-        //    var fqn = symbol.ToFullName();
-
-        //    if (!EntityFactories.Get<AssemblyDb>(symbol.ElementType.ContainingAssembly, out var assemblyDb))
-        //        return false;
-
-        //    if (!EntityFactories.Get<NamespaceDb>(symbol.ElementType.ContainingNamespace, out var nsDb))
-        //        return false;
-
-        //    if (!EntityFactories.Create<BaseTypeDb>(symbol, out var dbSymbol))
-        //    {
-        //        Logger.Error<string>("Could not retrieve TypeDb entity for '{0}'",
-        //            symbol.ToFullName());
-
-        //        return false;
-        //    }
-
-        //    DataLayer.MarkSynchronized(dbSymbol!);
-
-        //    dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
-        //    dbSymbol.NamespaceID = nsDb!.SharpObjectID;
-
-        //    return true;
-        //}
-
-        //private bool ProcessTypeParameter(ITypeParameterSymbol symbol)
-        //{
-        //    if (!EntityFactories.Get<AssemblyDb>(symbol.ContainingAssembly, out var assemblyDb))
-        //        return false;
-
-        //    if (!EntityFactories.Get<NamespaceDb>(symbol.ContainingNamespace, out var nsDb))
-        //        return false;
-
-        //    if (!EntityFactories.Create<ParametricTypeDb>(symbol, out var dbSymbol))
-        //    {
-        //        Logger.Error<string>("Could not retrieve ParametricTypeDb entity for '{0}'",
-        //            symbol.ToFullName());
-
-        //        return false;
-        //    }
-
-        //    DataLayer.MarkSynchronized(dbSymbol!);
-
-        //    dbSymbol!.AssemblyID = assemblyDb!.SharpObjectID;
-        //    dbSymbol.NamespaceID = nsDb!.SharpObjectID;
-
-        //    return true;
-        //}
-
     }
 }

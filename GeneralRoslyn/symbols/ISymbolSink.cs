@@ -6,7 +6,7 @@ namespace J4JSoftware.Roslyn
     public interface ISymbolSink
     {
         bool SupportsSymbol( Type symbolType );
-        bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false );
+        bool InitializeSink( ISyntaxWalker syntaxWalker );
         bool FinalizeSink( ISyntaxWalker syntaxWalker );
         bool OutputSymbol(ISyntaxWalker syntaxWalker, ISymbol symbol );
     }

@@ -15,7 +15,12 @@ namespace J4JSoftware.Roslyn
         private string _tgtFrameworksText = string.Empty;
         private bool _parseTargetFrameworks;
 
-        public int ID { get; set; }
+        public int AssemblyID { get; set; }
+
+#pragma warning disable 8618
+        public AssemblyDb Assembly { get; set; }
+#pragma warning restore 8618
+
         public bool Synchronized { get; set; }
         public string RootNamespace { get; set; } = null!;
         public string Authors { get; set; } = null!;
@@ -77,18 +82,19 @@ namespace J4JSoftware.Roslyn
                 return _tgtFrameworks.AsReadOnly();
             }
         }
-
-        public int AssemblyID { get; set; }
-
-#pragma warning disable 8618
-        public AssemblyDb Assembly { get; set; }
-#pragma warning restore 8618
     }
 
     internal class InScopeAssemblyInfoConfigurator : EntityConfigurator<InScopeAssemblyInfo>
     {
         protected override void Configure(EntityTypeBuilder<InScopeAssemblyInfo> builder)
         {
+            builder.HasKey( x => x.AssemblyID );
+
+            builder.HasOne( x => x.Assembly )
+                .WithOne( x => x.InScopeInfo )
+                .HasPrincipalKey<AssemblyDb>( x => x.SharpObjectID )
+                .HasForeignKey<InScopeAssemblyInfo>( x => x.AssemblyID );
+
             builder.Ignore(x => x.FileVersion);
             builder.Ignore(x => x.PackageVersion);
             builder.Ignore(x => x.TargetFrameworks);

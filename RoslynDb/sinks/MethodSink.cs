@@ -8,9 +8,10 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public MethodSink(
             UniqueSymbols<IMethodSymbol> uniqueSymbols,
+            ExecutionContext context,
             IJ4JLogger logger,
             IProcessorCollection<IMethodSymbol>? processors = null )
-            : base( uniqueSymbols, logger, processors )
+            : base( uniqueSymbols,context, logger, processors )
         {
         }
     }

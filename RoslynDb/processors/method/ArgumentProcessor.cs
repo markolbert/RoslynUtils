@@ -9,27 +9,19 @@ namespace J4JSoftware.Roslyn
     {
         public ArgumentProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IParameterSymbol> ExtractSymbols( ISymbol item )
+        protected override List<IParameterSymbol> ExtractSymbols( IEnumerable<IMethodSymbol> inputData )
         {
-            if (!(item is IMethodSymbol methodSymbol) )
-            {
-                Logger.Error("Supplied item is not an IMethodSymbol");
-                yield break;
-            }
-
-            foreach( var argSymbol in methodSymbol.Parameters )
-            {
-                yield return argSymbol;
-            }
+            return inputData.SelectMany( m => m.Parameters ).ToList();
         }
 
         protected override bool ProcessSymbol( IParameterSymbol symbol ) =>
-            DataLayer.GetArgument( symbol, true ) != null;
+            DataLayer.GetArgument( symbol, true, true ) != null;
 
     }
 }

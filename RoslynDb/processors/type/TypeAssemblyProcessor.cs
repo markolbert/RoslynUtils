@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -8,31 +9,31 @@ namespace J4JSoftware.Roslyn
     {
         public TypeAssemblyProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IAssemblySymbol> ExtractSymbols( ISymbol item )
+        protected override List<IAssemblySymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
         {
-            if( !( item is ITypeSymbol typeSymbol ) )
+            var retVal = new List<IAssemblySymbol>();
+
+            foreach( var symbol in inputData )
             {
-                Logger.Error( "Supplied item is not an ITypeSymbol" );
-                yield break;
+                var assemblySymbol = symbol is IArrayTypeSymbol arraySymbol
+                    ? arraySymbol.ElementType.ContainingAssembly
+                    : symbol.ContainingAssembly;
+
+                if( assemblySymbol == null )
+                    Logger.Information<string>( "ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name );
+                else retVal.Add( assemblySymbol );
             }
 
-            if( typeSymbol.ContainingAssembly == null )
-            {
-                Logger.Information<string>( "ITypeSymbol '{0}' does not have a ContainingAssembly", typeSymbol.Name );
-                yield break;
-            }
-
-            // ignore any assemblies already on file
-            if( !DataLayer.SharpObjectInDatabase<AssemblyDb>( typeSymbol.ContainingAssembly) )
-                yield return typeSymbol.ContainingAssembly!;
+            return retVal;
         }
 
-        protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
-            DataLayer.GetAssembly( symbol, true ) != null;
+        protected override bool ProcessSymbol(IAssemblySymbol symbol) =>
+            DataLayer.GetAssembly(symbol, true, true) != null;
     }
 }

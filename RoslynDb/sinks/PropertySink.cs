@@ -8,9 +8,10 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public PropertySink(
             UniqueSymbols<IPropertySymbol> uniqueSymbols,
+            ExecutionContext context,
             IJ4JLogger logger,
             IProcessorCollection<IPropertySymbol>? processors = null )
-            : base( uniqueSymbols, logger, processors)
+            : base( uniqueSymbols, context, logger, processors)
         {
         }
     }

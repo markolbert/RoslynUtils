@@ -10,8 +10,9 @@ namespace J4JSoftware.Roslyn
     {
         protected RoslynDbProcessors( 
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger ) 
-            : base( logger )
+            : base( context, logger )
         {
             DataLayer = dataLayer;
         }

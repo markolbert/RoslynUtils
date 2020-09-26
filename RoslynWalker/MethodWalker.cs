@@ -24,15 +24,16 @@ namespace J4JSoftware.Roslyn
         public MethodWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
+            ExecutionContext context,
             IJ4JLogger logger,
             ISymbolSink<IMethodSymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
+            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 
         protected override bool NodeReferencesSymbol( SyntaxNode node, 
-            CompiledFile context,
+            CompiledFile compiledFile,
             out IMethodSymbol? result )
         {
             result = null;
@@ -41,10 +42,10 @@ namespace J4JSoftware.Roslyn
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
 
-            if( !context.GetSymbol<IMethodSymbol>( node, out var symbol ) )
+            if( !compiledFile.GetSymbol<IMethodSymbol>( node, out var symbol ) )
                 return false;
 
-            if( !InDocumentationScope( symbol!.ContainingAssembly ) )
+            if( !Context.InDocumentationScope( symbol!.ContainingAssembly ) )
                 return false;
 
             result = symbol;

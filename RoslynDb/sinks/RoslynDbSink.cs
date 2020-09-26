@@ -14,10 +14,11 @@ namespace J4JSoftware.Roslyn.Sinks
 
         protected RoslynDbSink(
             UniqueSymbols<TSymbol> uniqueSymbols,
+            ExecutionContext context,
             IJ4JLogger logger,
             IProcessorCollection<TSymbol>? processors = null
         )
-            : base( logger )
+            : base( context, logger )
         {
             Symbols = uniqueSymbols;
 
@@ -25,15 +26,15 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if( _processors == null )
                 Logger.Error( "No {0} processors defined for symbol {1}",
-                    typeof(IAtomicProcessor<TSymbol>),
+                    typeof(IEnumerableProcessor<TSymbol>),
                     typeof(TSymbol) );
         }
 
         protected UniqueSymbols<TSymbol> Symbols { get; }
 
-        public override bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
+        public override bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            if( !base.InitializeSink( syntaxWalker, stopOnFirstError ) )
+            if( !base.InitializeSink( syntaxWalker ) )
                 return false;
 
             Symbols.Clear();
@@ -52,7 +53,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            return _processors.Process( Symbols, StopOnFirstError );
+            return _processors.Process( Symbols );
         }
 
         public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)

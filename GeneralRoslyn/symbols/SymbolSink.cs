@@ -8,29 +8,36 @@ namespace J4JSoftware.Roslyn
         where TSymbol : ISymbol
     {
         protected SymbolSink(
+            ExecutionContext context,
             IJ4JLogger logger
             )
         {
+            ExecutionContext = context;
+
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
         }
 
         protected IJ4JLogger Logger { get; }
+        protected ISyntaxWalker? SyntaxWalker { get; private set; } = null;
+        protected ExecutionContext ExecutionContext { get; }
 
-        public bool StopOnFirstError { get; private set; } = false;
+        public bool Initialized { get; private set; } = false;
 
-        public virtual bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) => true;
+        public virtual bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol ) => Initialized;
 
         public virtual bool SupportsSymbol( Type symbolType ) => typeof(TSymbol) == symbolType;
 
-        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
+        public virtual bool InitializeSink( ISyntaxWalker syntaxWalker )
         {
-            StopOnFirstError = stopOnFirstError;
+            SyntaxWalker = syntaxWalker;
+
+            Initialized = true;
 
             return true;
         }
 
-        public virtual bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
+        public virtual bool FinalizeSink( ISyntaxWalker syntaxWalker ) => Initialized;
 
         bool ISymbolSink.OutputSymbol( ISyntaxWalker syntaxWalker, ISymbol symbol )
         {

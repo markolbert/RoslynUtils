@@ -10,10 +10,13 @@ namespace Tests.RoslynWalker
     {
         public AssemblyProcessors( 
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, loggerFactory() )
+        ) : base( dataLayer,  context, loggerFactory() )
         {
-            Add( new AssemblyProcessor( dataLayer, loggerFactory() ) );
+            var node = Add( new AssemblyProcessor( dataLayer, context, loggerFactory() ) );
+
+            Add( new InScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node );
         }
 
         protected override bool Initialize( IEnumerable<IAssemblySymbol> symbols )

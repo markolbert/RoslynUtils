@@ -8,24 +8,24 @@ namespace J4JSoftware.Roslyn
     {
         private readonly IJ4JLogger _logger;
 
-        public DefaultSymbolSink( IJ4JLogger logger )
+        public DefaultSymbolSink( 
+            ExecutionContext context,
+            IJ4JLogger logger 
+            )
         {
+            ExecutionContext = context;
+
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
         }
 
-        public bool StopOnFirstError { get; private set; } = false;
+        public ExecutionContext ExecutionContext { get; }
 
         // even though we support all ISymbols we deny it because we don't want
         // to be selected before a non-default sink can be selected
         public bool SupportsSymbol( Type symbolType ) => false;
 
-        public bool InitializeSink( ISyntaxWalker syntaxWalker, bool stopOnFirstError = false )
-        {
-            StopOnFirstError = stopOnFirstError;
-
-            return true;
-        }
+        public bool InitializeSink( ISyntaxWalker syntaxWalker ) => true;
 
         public bool FinalizeSink( ISyntaxWalker syntaxWalker ) => true;
 

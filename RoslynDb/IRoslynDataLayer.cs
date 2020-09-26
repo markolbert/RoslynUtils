@@ -31,6 +31,13 @@ namespace J4JSoftware.Roslyn
         AssemblyDb? GetAssembly( IAssemblySymbol symbol, bool createIfMissing = false, bool updateExisting = false );
         bool UpdateAssembly( IAssemblySymbol symbol, AssemblyDb entity );
 
+        InScopeAssemblyInfo? GetInScopeAssemblyInfo(
+            CompiledProject project,
+            bool createIfMissing = false,
+            bool updateExisting = false );
+
+        bool UpdateInScopeAssemblyInfo( CompiledProject project, InScopeAssemblyInfo entity );
+
         #endregion
 
         #region Namespace

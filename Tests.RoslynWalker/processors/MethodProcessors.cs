@@ -10,13 +10,14 @@ namespace Tests.RoslynWalker
     {
         public MethodProcessors( 
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, loggerFactory() )
+        ) : base( dataLayer, context, loggerFactory() )
         {
-            var rootProcessor = new MethodProcessor( dataLayer, loggerFactory() );
+            var rootProcessor = new MethodProcessor( dataLayer, context, loggerFactory() );
 
             Add( rootProcessor );
-            Add( new ArgumentProcessor( dataLayer, loggerFactory() ), rootProcessor );
+            Add( new ArgumentProcessor( dataLayer, context, loggerFactory() ), rootProcessor );
         }
 
         protected override bool Initialize( IEnumerable<IMethodSymbol> symbols )

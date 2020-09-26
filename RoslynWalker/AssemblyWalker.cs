@@ -19,10 +19,11 @@ namespace J4JSoftware.Roslyn
         public AssemblyWalker( 
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
+            ExecutionContext context,
             IJ4JLogger logger,
             ISymbolSink<IAssemblySymbol>? symbolSink = null
             ) 
-            : base( symbolInfo, defaultSymbolSink, logger, symbolSink )
+            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 
@@ -33,19 +34,6 @@ namespace J4JSoftware.Roslyn
             // certain node types don't lead to places we need to process
             if( _ignoredNodeKinds.Any( nk => nk == node.Kind() ) )
                 return false;
-
-            //// SyntaxKind.CompilationUnit appears to represent the assembly level...but you can't
-            //// retrieve its ISymbol from the node
-            //if( node.IsKind( SyntaxKind.CompilationUnit ) )
-            //{
-            //    Logger.Information<string, SyntaxKind>( "{0}: found {1}", 
-            //        context.Container.AssemblyName,
-            //        SyntaxKind.CompilationUnit );
-
-            //    result = context.Container.AssemblySymbol;
-
-            //    return true;
-            //}
 
             if( !context.GetSymbol<ISymbol>( node, out var otherSymbol ) )
                 return false;
@@ -58,13 +46,6 @@ namespace J4JSoftware.Roslyn
 
                 return false;
             }
-
-            //if( InDocumentationScope( otherAssembly ) )
-            //{
-            //    Logger.Verbose<string>("Assembly for symbol {0} is in scope", otherSymbol.ToDisplayString());
-
-            //    return false;
-            //}
 
             result = otherAssembly;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -7,26 +8,20 @@ namespace J4JSoftware.Roslyn
 {
     public class AssemblyProcessor : BaseProcessorDb<IAssemblySymbol, IAssemblySymbol>
     {
-        public AssemblyProcessor( 
+        public AssemblyProcessor(
             IRoslynDataLayer dataLayer,
-            IJ4JLogger logger ) 
-            : base( dataLayer, logger )
+            ExecutionContext context,
+            IJ4JLogger logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IAssemblySymbol> ExtractSymbols( ISymbol item )
+        protected override List<IAssemblySymbol> ExtractSymbols( IEnumerable<IAssemblySymbol> source )
         {
-            if (!(item is IAssemblySymbol assemblySymbol ))
-            {
-                Logger.Error("Supplied item is not an IAssemblySymbol");
-                yield break;
-            }
-
-            yield return assemblySymbol!;
+            return source.ToList();
         }
 
         protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
-            DataLayer.GetAssembly( symbol, true ) != null;
-
+            DataLayer.GetAssembly( symbol, true, true ) != null;
     }
 }

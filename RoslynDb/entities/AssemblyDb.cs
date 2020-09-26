@@ -48,9 +48,6 @@ namespace J4JSoftware.Roslyn
                 .WithOne(x => x.Assembly)
                 .HasForeignKey(x => x.AssemblyID)
                 .HasPrincipalKey(x => x.SharpObjectID);
-
-            builder.HasOne( x => x.InScopeInfo )
-                .WithOne( x => x.Assembly );
         }
     }
 }

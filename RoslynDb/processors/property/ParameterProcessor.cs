@@ -9,28 +9,18 @@ namespace J4JSoftware.Roslyn
     {
         public ParameterProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IParameterSymbol> ExtractSymbols( ISymbol item )
+        protected override List<IParameterSymbol> ExtractSymbols( IEnumerable<IPropertySymbol> inputData )
         {
-            if (!(item is IPropertySymbol propSymbol) )
-            {
-                Logger.Error<string>( "Supplied item is not an IPropertySymbol ({0})",
-                    item.ToFullName() );
-
-                yield break;
-            }
-
-            foreach( var paramSymbol in propSymbol.Parameters )
-            {
-                yield return paramSymbol;
-            }
+            return inputData.SelectMany( p => p.Parameters ).ToList();
         }
 
         protected override bool ProcessSymbol( IParameterSymbol symbol ) =>
-            DataLayer.GetPropertyParameter( symbol, true ) != null;
+            DataLayer.GetPropertyParameter( symbol, true, true ) != null;
     }
 }

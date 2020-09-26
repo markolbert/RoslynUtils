@@ -9,20 +9,15 @@ namespace J4JSoftware.Roslyn
     {
         public NamespaceProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<INamespaceSymbol> ExtractSymbols( ISymbol item )
+        protected override List<INamespaceSymbol> ExtractSymbols( IEnumerable<INamespaceSymbol> inputData )
         {
-            if( !( item is INamespaceSymbol nsSymbol ) )
-            {
-                Logger.Error( "Supplied item is not an INamespaceSymbol" );
-                yield break;
-            }
-
-            yield return nsSymbol!;
+            return inputData.ToList();
         }
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )
@@ -32,7 +27,7 @@ namespace J4JSoftware.Roslyn
             if (assemblyDb == null)
                 return false;
 
-            var nsDb = DataLayer.GetNamespace(symbol, true);
+            var nsDb = DataLayer.GetNamespace(symbol, true, true);
 
             if (nsDb == null)
                 return false;

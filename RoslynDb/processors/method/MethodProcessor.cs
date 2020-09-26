@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 
@@ -8,23 +9,18 @@ namespace J4JSoftware.Roslyn
     {
         public MethodProcessor(
             IRoslynDataLayer dataLayer,
+            ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, logger)
+            : base(dataLayer, context, logger)
         {
         }
 
-        protected override IEnumerable<IMethodSymbol> ExtractSymbols( ISymbol item )
+        protected override List<IMethodSymbol> ExtractSymbols( IEnumerable<IMethodSymbol> inputData )
         {
-            if (!(item is IMethodSymbol methodSymbol) )
-            {
-                Logger.Error("Supplied item is not an IMethodSymbol");
-                yield break;
-            }
-
-            yield return methodSymbol;
+            return inputData.ToList();
         }
 
         protected override bool ProcessSymbol( IMethodSymbol symbol ) =>
-            DataLayer.GetMethod( symbol, true ) != null;
+            DataLayer.GetMethod( symbol, true, true ) != null;
     }
 }

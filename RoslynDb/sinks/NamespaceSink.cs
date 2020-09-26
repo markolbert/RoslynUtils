@@ -8,9 +8,10 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public NamespaceSink(
             UniqueSymbols<INamespaceSymbol> uniqueSymbols,
+            ExecutionContext context,
             IJ4JLogger logger,
             IProcessorCollection<INamespaceSymbol>? processors = null )
-            : base( uniqueSymbols, logger, processors )
+            : base( uniqueSymbols, context, logger, processors )
         {
         }
     }
