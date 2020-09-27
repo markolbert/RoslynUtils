@@ -1002,6 +1002,8 @@ namespace J4JSoftware.Roslyn
                 Synchronized = true
             };
 
+            _dbContext.TypeArguments.Add( retVal );
+
             return retVal;
         }
 
