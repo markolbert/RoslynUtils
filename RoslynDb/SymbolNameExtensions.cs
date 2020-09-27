@@ -81,6 +81,9 @@ namespace J4JSoftware.Roslyn
         public static string ToUniqueName( this IFieldSymbol symbol ) =>
             symbol.ToDisplayString( BasicFormat );
 
+        public static string ToUniqueName(this IEventSymbol symbol) =>
+            symbol.ToDisplayString(BasicFormat);
+
         public static string ToUniqueName( this INamedTypeSymbol symbol )
         {
             if( !symbol.IsGenericType )
@@ -190,6 +193,7 @@ namespace J4JSoftware.Roslyn
             {
                 IAssemblySymbol aSymbol => aSymbol.ToUniqueName(),
                 INamespaceSymbol nsSymbol => nsSymbol.ToUniqueName(),
+                IEventSymbol eventSymbol => eventSymbol.ToUniqueName(),
                 IFieldSymbol fieldSymbol => fieldSymbol.ToUniqueName(),
                 INamedTypeSymbol ntSymbol => ntSymbol.ToUniqueName(),
                 ITypeParameterSymbol tpSymbol => tpSymbol.ToUniqueName(),

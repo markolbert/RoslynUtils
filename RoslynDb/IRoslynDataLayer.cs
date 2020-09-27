@@ -123,6 +123,13 @@ namespace J4JSoftware.Roslyn
 
         TypeArgumentDb? GetTypeArgument(GenericTypeDb genericDb, ITypeSymbol symbol, int ordinal,
             bool createIfMissing = false);
-#endregion
+        #endregion
+
+        #region Event
+
+        EventDb? GetEvent( IEventSymbol symbol, bool createIfMissing = false, bool updateExisting = false );
+        bool UpdateEvent( IEventSymbol symbol, EventDb entity );
+
+        #endregion
     }
 }

@@ -166,6 +166,13 @@ namespace J4JSoftware.Roslyn
                         .Load();
 
                     return sharpObj.Field;
+
+                case SharpObjectType.Event:
+                    _dbContext.Entry(sharpObj)
+                        .Reference(x => x.Event)
+                        .Load();
+
+                    return sharpObj.Event;
             }
 
             _logger.Error( "Unsupported SharpObjectType {0}", sharpObj.SharpObjectType );
@@ -187,8 +194,8 @@ namespace J4JSoftware.Roslyn
 
             if( retVal != null )
             {
-                if( updateExisting ) 
-                    UpdateAssembly( symbol, retVal );
+                if( updateExisting )
+                    return UpdateAssembly( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
@@ -207,9 +214,12 @@ namespace J4JSoftware.Roslyn
             _dbContext.Assemblies.Add(retVal);
 
             // update after add so the entity is being tracked
-            UpdateAssembly(symbol, retVal);
+            if( UpdateAssembly( symbol, retVal ) ) 
+                return retVal;
+            
+            _dbContext.Assemblies.Remove( retVal );
 
-            return retVal;
+            return null;
         }
 
         public bool UpdateAssembly( IAssemblySymbol symbol, AssemblyDb entity )
@@ -248,7 +258,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateInScopeAssemblyInfo(project, retVal);
+                    return UpdateInScopeAssemblyInfo(project, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -267,9 +277,12 @@ namespace J4JSoftware.Roslyn
             _dbContext.InScopeInfo.Add( retVal );
 
             // update after add so the entity is being tracked
-            UpdateInScopeAssemblyInfo(project, retVal);
+            if( UpdateInScopeAssemblyInfo( project, retVal ) ) 
+                return retVal;
 
-            return retVal;
+            _dbContext.InScopeInfo.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateInScopeAssemblyInfo(CompiledProject project, InScopeAssemblyInfo entity)
@@ -323,7 +336,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateNamespace(symbol, retVal);
+                    return UpdateNamespace(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -341,9 +354,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.Namespaces.Add(retVal);
 
-            UpdateNamespace(symbol, retVal);
+            if( UpdateNamespace( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.Namespaces.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateNamespace(INamespaceSymbol symbol, NamespaceDb entity)
@@ -420,8 +436,8 @@ namespace J4JSoftware.Roslyn
 
             if( retVal != null )
             {
-                if( updateExisting )
-                    UpdateFixedType( symbol, retVal );
+                if (updateExisting)
+                    return UpdateFixedType(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -447,9 +463,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.FixedTypes.Add( retVal );
 
-            UpdateFixedType(symbol, retVal);
+            if( UpdateFixedType( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.FixedTypes.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateFixedType(INamedTypeSymbol symbol, FixedTypeDb entity)
@@ -494,7 +513,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateGenericType(symbol, retVal);
+                    return UpdateGenericType(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -519,9 +538,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.GenericTypes.Add(retVal);
 
-            UpdateGenericType(symbol, retVal);
+            if( UpdateGenericType( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.GenericTypes.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateGenericType(INamedTypeSymbol symbol, GenericTypeDb entity)
@@ -605,7 +627,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateParametricType(symbol, retVal);
+                    return UpdateParametricType(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -631,9 +653,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.ParametricTypes.Add( retVal );
 
-            UpdateParametricType(symbol, retVal);
+            if( UpdateParametricType( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.ParametricTypes.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateParametricType(ITypeParameterSymbol symbol, ParametricTypeDb entity )
@@ -683,7 +708,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateParametricMethodType(symbol, retVal);
+                    return UpdateParametricMethodType(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -710,9 +735,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.ParametricMethodTypes.Add(retVal);
 
-            UpdateParametricMethodType(symbol, retVal);
+            if( UpdateParametricMethodType( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.ParametricMethodTypes.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateParametricMethodType(ITypeParameterSymbol symbol, ParametricMethodTypeDb entity)
@@ -811,7 +839,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateArrayType(symbol, retVal);
+                    return UpdateArrayType(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -849,9 +877,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.ArrayTypes.Add(retVal);
 
-            UpdateArrayType(symbol, retVal);
+            if( UpdateArrayType( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.ArrayTypes.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateArrayType(IArrayTypeSymbol symbol, ArrayTypeDb entity )
@@ -1058,7 +1089,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateMethod(symbol, retVal);
+                    return UpdateMethod(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -1081,9 +1112,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.Methods.Add(retVal);
 
-            UpdateMethod(symbol, retVal);
+            if( UpdateMethod( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.Methods.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateMethod(IMethodSymbol symbol, MethodDb entity)
@@ -1217,7 +1251,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateProperty(symbol, retVal);
+                    return UpdateProperty(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -1240,9 +1274,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.Properties.Add( retVal );
 
-            UpdateProperty(symbol, retVal);
+            if( UpdateProperty( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.Properties.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateProperty(IPropertySymbol symbol, PropertyDb entity)
@@ -1387,7 +1424,7 @@ namespace J4JSoftware.Roslyn
             if (retVal != null)
             {
                 if (updateExisting)
-                    UpdateField(symbol, retVal);
+                    return UpdateField(symbol, retVal) ? retVal : null;
 
                 return retVal;
             }
@@ -1410,9 +1447,12 @@ namespace J4JSoftware.Roslyn
 
             _dbContext.Fields.Add(retVal);
 
-            UpdateField(symbol, retVal);
+            if( UpdateField( symbol, retVal ) )
+                return retVal;
 
-            return retVal;
+            _dbContext.Fields.Remove( retVal );
+
+            return null;
         }
 
         public bool UpdateField(IFieldSymbol symbol, FieldDb entity)
@@ -1435,7 +1475,108 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-#endregion
+        #endregion
+
+        #region Event
+
+        public EventDb? GetEvent(IEventSymbol symbol, bool createIfMissing = false, bool updateExisting = false)
+        {
+            var fqn = symbol.ToUniqueName();
+
+            var retVal = _dbContext.Events
+                .Include(x => x.SharpObject)
+                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+
+            if (retVal != null)
+            {
+                if (updateExisting)
+                    return UpdateEvent(symbol, retVal) ? retVal : null;
+
+                return retVal;
+            }
+
+            if (!createIfMissing)
+            {
+                _logger.Error<string>("Couldn't find EventDb object for '{0}' in the database", fqn);
+                return null;
+            }
+
+            if (!GetContainingAndReturnValueTypes(symbol, out var propDb, out var containingDb))
+                return null;
+
+            retVal = new EventDb()
+            {
+                SharpObject = GetSharpObject(symbol, true, SharpObjectType.Field)!,
+                DefiningType = containingDb!,
+                EventType = propDb!
+            };
+
+            _dbContext.Events.Add(retVal);
+
+            if( UpdateEvent( symbol, retVal ) )
+                return retVal;
+
+            _dbContext.Events.Remove( retVal );
+
+            return null;
+        }
+
+        public bool UpdateEvent( IEventSymbol symbol, EventDb entity )
+        {
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
+                return false;
+
+            MethodDb? addMethod = null;
+
+            if( symbol.AddMethod != null && !symbol.AddMethod.IsImplicitlyDeclared )
+            {
+                addMethod = GetMethod( symbol.AddMethod );
+
+                if( addMethod == null )
+                {
+                    _logger.Error<string, string>( "Couldn't find IEventSymbol add method '{0}' for event '{1}'",
+                        symbol.AddMethod.ToUniqueName(),
+                        symbol.ToUniqueName() );
+
+                    return false;
+                }
+            }
+
+            MethodDb? removeMethod = null;
+
+            if (symbol.RemoveMethod != null && !symbol.RemoveMethod.IsImplicitlyDeclared)
+            {
+                removeMethod = GetMethod(symbol.RemoveMethod);
+
+                if (removeMethod == null)
+                {
+                    _logger.Error<string, string>("Couldn't find IEventSymbol remove method '{0}' for event '{1}'",
+                        symbol.RemoveMethod.ToUniqueName(),
+                        symbol.ToUniqueName());
+
+                    return false;
+                }
+            }
+
+            entity.Accessibility = symbol.DeclaredAccessibility;
+            entity.DeclarationModifier = symbol.GetDeclarationModifier();
+            entity.IsAbstract = symbol.IsAbstract;
+            entity.IsExtern = symbol.IsExtern;
+            entity.IsOverride = symbol.IsOverride;
+            entity.IsSealed = symbol.IsSealed;
+            entity.IsStatic = symbol.IsStatic;
+            entity.IsVirtual = symbol.IsVirtual;
+            entity.IsWindowsRuntimeEvent = symbol.IsWindowsRuntimeEvent;
+
+            entity.AddMethod = addMethod;
+            entity.RemoveMethod = removeMethod;
+
+            entity.SharpObject.Synchronized = true;
+
+            return true;
+        }
+
+        #endregion
 
         private SharpObject? GetSharpObject(ISymbol symbol, bool createIfMissing = false, SharpObjectType soType = SharpObjectType.Unknown )
         {
@@ -1575,6 +1716,7 @@ namespace J4JSoftware.Roslyn
                 IMethodSymbol methodSymbol => GetImplementableType( methodSymbol.ContainingType ),
                 IPropertySymbol propSymbol => GetImplementableType( propSymbol.ContainingType ),
                 IFieldSymbol fieldSymbol => GetImplementableType( fieldSymbol.ContainingType ),
+                IEventSymbol eventSymbol => GetImplementableType( eventSymbol.ContainingType ),
                 _ => null
             };
 
@@ -1593,6 +1735,7 @@ namespace J4JSoftware.Roslyn
                 IMethodSymbol methodSymbol => GetUnspecifiedType( methodSymbol.ReturnType ),
                 IPropertySymbol propSymbol => GetUnspecifiedType( propSymbol.Type ),
                 IFieldSymbol fieldSymbol => GetUnspecifiedType( fieldSymbol.Type ),
+                IEventSymbol eventSymbol => GetUnspecifiedType( eventSymbol.Type ),
                 _ => null
             };
 

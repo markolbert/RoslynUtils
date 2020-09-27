@@ -20,11 +20,9 @@ namespace J4JSoftware.Roslyn
         public Accessibility Accessibility { get; set; }
         public bool InDocumentationScope { get; set; }
 
-        // the namespace to which this entity belongs
         public int NamespaceID { get; set; }
         public NamespaceDb Namespace { get; set; }
 
-        // the assembly defining this type
         public int AssemblyID { get; set; }
         public AssemblyDb Assembly { get; set; }
 
@@ -51,7 +49,10 @@ namespace J4JSoftware.Roslyn
 
         // list of array types having this type for elements
         public List<ArrayTypeDb> ArrayTypes { get; set; }
-    }
+
+        // list of events having this type
+        public List<EventDb> EventTypes { get; set; }
+        }
 
     internal class TypeDbConfigurator : EntityConfigurator<BaseTypeDb>
     {

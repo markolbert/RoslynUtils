@@ -5,6 +5,7 @@
         Assembly,
         Namespace,
         ArrayType,
+        Event,
         FixedType,
         GenericType,
         ParametricType,

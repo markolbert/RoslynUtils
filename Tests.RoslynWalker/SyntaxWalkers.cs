@@ -63,6 +63,12 @@ namespace Tests.RoslynWalker
                 context,
                 loggerFactory(),
                 GetSink<IFieldSymbol>()), node);
+
+            node = Add(new EventWalker(symbolNamer,
+                defaultSymbolSink,
+                context,
+                loggerFactory(),
+                GetSink<IEventSymbol>()), node);
         }
 
         private ISymbolSink<TSymbol> GetSink<TSymbol>()

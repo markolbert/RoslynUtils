@@ -40,6 +40,8 @@ namespace J4JSoftware.Roslyn
 
         public DbSet<FieldDb> Fields { get; set; }
 
+        public DbSet<EventDb> Events { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);

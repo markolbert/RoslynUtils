@@ -80,6 +80,7 @@ namespace Tests.RoslynWalker
             RegisterSymbolProcessor<IMethodSymbol, MethodProcessors>( builder );
             RegisterSymbolProcessor<IPropertySymbol, PropertyProcessors>( builder );
             RegisterSymbolProcessor<IFieldSymbol, FieldProcessors>( builder );
+            RegisterSymbolProcessor<IEventSymbol, EventProcessors>(builder);
 
             Instance = new AutofacServiceProvider( builder.Build() );
         }

@@ -39,6 +39,12 @@ namespace J4JSoftware.Roslyn
         public List<ArgumentDb> Arguments { get; set; }
 
         public List<ParametricMethodTypeDb> ParametricTypes { get; set; }
+
+        // list of event add methods which reference this method
+        public List<EventDb> AddEvents { get; set; }
+
+        // list of event remove methods which reference this method
+        public List<EventDb> RemoveEvents { get; set; }
     }
 
     internal class MethodDbConfigurator : EntityConfigurator<MethodDb>

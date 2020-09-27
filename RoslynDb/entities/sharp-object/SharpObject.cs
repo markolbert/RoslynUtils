@@ -20,6 +20,7 @@ namespace J4JSoftware.Roslyn
 
         public AssemblyDb? Assembly { get; set; }
         public NamespaceDb? Namespace { get; set; }
+        public EventDb? Event { get; set; }
         public FixedTypeDb? FixedType { get; set; }
         public GenericTypeDb? GenericType { get; set; }
         public ParametricTypeDb? ParametricType { get; set; }
