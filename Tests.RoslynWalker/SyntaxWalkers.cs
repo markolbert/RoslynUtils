@@ -45,6 +45,24 @@ namespace Tests.RoslynWalker
                 context,
                 loggerFactory(),
                 GetSink<ITypeSymbol>()), node);
+
+            node = Add(new MethodWalker(symbolNamer,
+                defaultSymbolSink,
+                context,
+                loggerFactory(),
+                GetSink<IMethodSymbol>()), node);
+
+            node = Add(new PropertyWalker(symbolNamer,
+                defaultSymbolSink,
+                context,
+                loggerFactory(),
+                GetSink<IPropertySymbol>()), node);
+
+            node = Add(new FieldWalker(symbolNamer,
+                defaultSymbolSink,
+                context,
+                loggerFactory(),
+                GetSink<IFieldSymbol>()), node);
         }
 
         private ISymbolSink<TSymbol> GetSink<TSymbol>()
