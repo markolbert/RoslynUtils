@@ -1574,13 +1574,14 @@ namespace J4JSoftware.Roslyn
             {
                 IMethodSymbol methodSymbol => GetImplementableType( methodSymbol.ContainingType ),
                 IPropertySymbol propSymbol => GetImplementableType( propSymbol.ContainingType ),
+                IFieldSymbol fieldSymbol => GetImplementableType( fieldSymbol.ContainingType ),
                 _ => null
             };
 
             if( containingDb == null )
             {
                 _logger.Error<string, string>(
-                    "Couldn't find entity for ContainingType '{0}' in INamedTypeSymbol '{1}'",
+                    "Couldn't find entity for ContainingType '{0}' in ISymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
                     symbol.GetUniqueName());
 
@@ -1591,13 +1592,14 @@ namespace J4JSoftware.Roslyn
             {
                 IMethodSymbol methodSymbol => GetUnspecifiedType( methodSymbol.ReturnType ),
                 IPropertySymbol propSymbol => GetUnspecifiedType( propSymbol.Type ),
+                IFieldSymbol fieldSymbol => GetUnspecifiedType( fieldSymbol.Type ),
                 _ => null
             };
 
             if (returnDb == null)
             {
                 _logger.Error<string, string>(
-                    "Couldn't find entity for return value/property type '{0}' in INamedTypeSymbol '{1}'",
+                    "Couldn't find entity for return value/property/field type '{0}' in ISymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
                     symbol.GetUniqueName());
 
