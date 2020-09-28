@@ -16,7 +16,7 @@ namespace J4JSoftware.Roslyn
         public int SharpObjectID { get; set; }
         public SharpObject SharpObject { get; set; }
 
-        public TypeKind Nature { get; set; }
+        public TypeKind TypeKind { get; set; }
         public Accessibility Accessibility { get; set; }
         public bool InDocumentationScope { get; set; }
 
@@ -73,7 +73,7 @@ namespace J4JSoftware.Roslyn
             builder.Property( x => x.Accessibility )
                 .HasConversion<string>();
 
-            builder.Property(x=>x.Nature  )
+            builder.Property(x=>x.TypeKind  )
                 .HasConversion<string>();
         }
     }

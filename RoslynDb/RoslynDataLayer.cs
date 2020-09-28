@@ -485,7 +485,7 @@ namespace J4JSoftware.Roslyn
 
             entity.DeclarationModifier = symbol.GetDeclarationModifier();
             entity.Accessibility = symbol.DeclaredAccessibility;
-            entity.Nature = symbol.TypeKind;
+            entity.TypeKind = symbol.TypeKind;
 
             entity.SharpObject.Synchronized = true;
 
@@ -560,7 +560,7 @@ namespace J4JSoftware.Roslyn
 
             entity.DeclarationModifier = symbol.GetDeclarationModifier();
             entity.Accessibility = symbol.DeclaredAccessibility;
-            entity.Nature = symbol.TypeKind;
+            entity.TypeKind = symbol.TypeKind;
 
             entity.SharpObject.Synchronized = true;
 
@@ -677,7 +677,7 @@ namespace J4JSoftware.Roslyn
 
             entity.Constraints = symbol.GetParametricTypeConstraint();
             entity.Accessibility = symbol.DeclaredAccessibility;
-            entity.Nature = symbol.TypeKind;
+            entity.TypeKind = symbol.TypeKind;
 
             entity.SharpObject.Synchronized = true;
 
@@ -759,7 +759,7 @@ namespace J4JSoftware.Roslyn
 
             entity.Constraints = symbol.GetParametricTypeConstraint();
             entity.Accessibility = symbol.DeclaredAccessibility;
-            entity.Nature = symbol.TypeKind;
+            entity.TypeKind = symbol.TypeKind;
 
             entity.SharpObject.Synchronized = true;
 
@@ -891,7 +891,7 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             entity.Accessibility = symbol.DeclaredAccessibility;
-            entity.Nature = symbol.TypeKind;
+            entity.TypeKind = symbol.TypeKind;
             entity.Rank = symbol.Rank;
 
             entity.SharpObject.Synchronized = true;
