@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, context, logger)
+            : base("adding Type Namespaces to the database", dataLayer, context, logger)
 
         {
         }

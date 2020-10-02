@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
@@ -11,7 +12,7 @@ namespace J4JSoftware.Roslyn
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, context, logger)
+            : base("adding Method Arguments to the database", dataLayer, context, logger)
         {
         }
 
@@ -22,6 +23,5 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( IParameterSymbol symbol ) =>
             DataLayer.GetArgument( symbol, true, true ) != null;
-
     }
 }

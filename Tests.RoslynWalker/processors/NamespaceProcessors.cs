@@ -12,7 +12,7 @@ namespace Tests.RoslynWalker
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, context, loggerFactory() )
+        ) : base( "Namespace processing", dataLayer, context, loggerFactory() )
         {
             Add( new NamespaceProcessor( dataLayer, context, loggerFactory() ) );
         }

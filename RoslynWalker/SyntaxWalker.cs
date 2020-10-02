@@ -15,6 +15,7 @@ namespace J4JSoftware.Roslyn
         private readonly List<SyntaxNode> _visitedNodes = new List<SyntaxNode>();
 
         protected SyntaxWalker(
+            string walkerName,
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             ExecutionContext context,
@@ -23,6 +24,8 @@ namespace J4JSoftware.Roslyn
         )
             : base( logger )
         {
+            Name = walkerName;
+
             SymbolInfo = symbolInfo;
             SymbolType = typeof(TSymbol);
 
@@ -40,9 +43,12 @@ namespace J4JSoftware.Roslyn
         protected ExecutionContext Context { get; }
 
         public Type SymbolType { get; }
+        public string Name { get; }
 
         protected override bool PreLoopInitialization( IEnumerable<CompiledProject> compResults )
         {
+            Logger.Information<string>( "Starting {0}...", Name );
+
             if( !base.PreLoopInitialization( compResults ) )
                 return false;
 
@@ -90,7 +96,9 @@ namespace J4JSoftware.Roslyn
 
         protected override bool PostLoopFinalization( IEnumerable<CompiledProject> inputData )
         {
-            if( !base.PostLoopFinalization( inputData ) )
+            Logger.Information<string>("...finished {0}", Name);
+
+            if ( !base.PostLoopFinalization( inputData ) )
                 return false;
 
             return _symbolSink.FinalizeSink(this);

@@ -13,7 +13,7 @@ namespace J4JSoftware.Roslyn
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, context, logger)
+            : base("adding basic Types to the database", dataLayer, context, logger)
         {
         }
 
@@ -48,6 +48,8 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
+            Logger.Information<string>("Processing ITypeSymbol {0}", typeSymbol.ToUniqueName());
+
             if( DataLayer.GetUnspecifiedType( typeSymbol, true, true ) == null )
                 return false;
 

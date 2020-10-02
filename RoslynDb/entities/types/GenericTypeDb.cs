@@ -8,6 +8,7 @@ namespace J4JSoftware.Roslyn
     [EntityConfiguration( typeof( GenericTypeDbConfigurator ) )]
     public class GenericTypeDb : ImplementableTypeDb
     {
+        public bool IsTupleType { get; set; }
         // list of TypeArguments for this type
         public List<TypeArgumentDb> TypeArguments { get; set; }
 

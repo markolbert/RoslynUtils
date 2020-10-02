@@ -11,12 +11,14 @@ namespace J4JSoftware.Roslyn
         where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
+            string name,
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             IJ4JLogger logger
         )
         : base( logger )
         {
+            Name = name;
             DataLayer = dataLayer;
             ExecutionContext = context;
         }
@@ -26,6 +28,15 @@ namespace J4JSoftware.Roslyn
         
         protected abstract List<TResult> ExtractSymbols( IEnumerable<TSource> inputData );
         protected abstract bool ProcessSymbol( TResult symbol );
+
+        public string Name { get; }
+
+        protected override bool PreLoopInitialization( IEnumerable<TSource> inputData )
+        {
+            Logger.Information<string>("Staring {0}...", Name);
+
+            return base.PreLoopInitialization( inputData );
+        }
 
         protected override bool ProcessLoop( IEnumerable<TSource> inputData )
         {
@@ -37,7 +48,7 @@ namespace J4JSoftware.Roslyn
             {
                 foreach( var symbol in ExtractSymbols(inputData) )
                 {
-                    var fqn = symbol.GetUniqueName();
+                    var fqn = symbol.ToUniqueName();
 
                     // skip symbols we've already processed
                     if( processed.Contains( fqn ) )
@@ -61,6 +72,8 @@ namespace J4JSoftware.Roslyn
 
         protected override bool PostLoopFinalization(IEnumerable<TSource> inputData)
         {
+            Logger.Information<string>( "...finished {0}", Name );
+
             if (!base.PostLoopFinalization(inputData))
                 return false;
 

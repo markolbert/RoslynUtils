@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
             IJ4JLogger logger,
             ISymbolSink<IMethodSymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
+            : base( "Method walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

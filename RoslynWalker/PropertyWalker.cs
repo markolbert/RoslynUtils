@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
             IJ4JLogger logger,
             ISymbolSink<IPropertySymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
+            : base( "Property walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

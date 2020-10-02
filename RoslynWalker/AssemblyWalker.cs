@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
             IJ4JLogger logger,
             ISymbolSink<IAssemblySymbol>? symbolSink = null
             ) 
-            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
+            : base( "Assembly walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

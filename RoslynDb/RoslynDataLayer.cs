@@ -64,7 +64,7 @@ namespace J4JSoftware.Roslyn
         public bool SharpObjectInDatabase<TEntity>( ISymbol symbol )
             where TEntity : class, ISharpObject
         {
-            var fqn = symbol.GetUniqueName();
+            var fqn = symbol.ToUniqueName();
 
             var sharpObj = _dbContext.SharpObjects.FirstOrDefault( x => x.FullyQualifiedName == fqn );
 
@@ -74,7 +74,7 @@ namespace J4JSoftware.Roslyn
         public ISharpObject? GetDescendantEntity<TEntity>(ISymbol symbol)
             where TEntity : class, ISharpObject
         {
-            var fqn = symbol.GetUniqueName();
+            var fqn = symbol.ToUniqueName();
 
             var sharpObj = _dbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
@@ -295,7 +295,7 @@ namespace J4JSoftware.Roslyn
                 .Reference(x => x.SharpObject)
                 .Load();
 
-            var fqn = project.AssemblySymbol.GetUniqueName();
+            var fqn = project.AssemblySymbol.ToUniqueName();
 
             if( !entity.Assembly.SharpObject.FullyQualifiedName.Equals( fqn, StringComparison.Ordinal ) )
             {
@@ -561,6 +561,7 @@ namespace J4JSoftware.Roslyn
             entity.DeclarationModifier = symbol.GetDeclarationModifier();
             entity.Accessibility = symbol.DeclaredAccessibility;
             entity.TypeKind = symbol.TypeKind;
+            entity.IsTupleType = symbol.IsTupleType;
 
             entity.SharpObject.Synchronized = true;
 
@@ -905,8 +906,6 @@ namespace J4JSoftware.Roslyn
 
         public BaseTypeDb? GetUnspecifiedType( ITypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
         {
-            var fqn = symbol.ToFullName();
-
             return symbol switch
             {
                 INamedTypeSymbol ntSymbol => GetImplementableType( ntSymbol, createIfMissing, updateExisting ),
@@ -919,7 +918,7 @@ namespace J4JSoftware.Roslyn
             {
                 _logger.Error<string, Type>(
                     "ITypeSymbol '{0}' ({1}) is unsupported ",
-                    fqn,
+                    symbol.ToFullName(),
                     symbol.GetType() );
 
                 return null;
@@ -1189,7 +1188,7 @@ namespace J4JSoftware.Roslyn
             if( typeDb == null )
             {
                 _logger.Error<string>("Type ({0}) for IParameterSymbol '{1}' not found",
-                    symbol.Type.GetUniqueName(),
+                    symbol.Type.ToUniqueName(),
                     fqn);
 
                 return null;
@@ -1580,7 +1579,7 @@ namespace J4JSoftware.Roslyn
 
         private SharpObject? GetSharpObject(ISymbol symbol, bool createIfMissing = false, SharpObjectType soType = SharpObjectType.Unknown )
         {
-            var fqn = symbol.GetUniqueName();
+            var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
 
@@ -1629,9 +1628,9 @@ namespace J4JSoftware.Roslyn
         {
             LoadSharpObject( entity );
 
-            var fqn = symbol.GetUniqueName();
+            var fqn = symbol.ToUniqueName();
 
-            if( entity.SharpObject.FullyQualifiedName.Equals( fqn, StringComparison.Ordinal ) )
+            if ( entity.SharpObject.FullyQualifiedName.Equals( fqn, StringComparison.Ordinal ) )
                 return true;
 
             _logger.Error<string, Type, string>( "ISymbol '{0}' does not correspond to {1} '{2}'",
@@ -1655,7 +1654,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find AssemblyDb entity for ContainingAssembly '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingAssembly.ToUniqueName(),
-                    symbol.GetUniqueName());
+                    symbol.ToUniqueName());
 
                 return false;
             }
@@ -1678,7 +1677,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find AssemblyDb entity for ContainingAssembly '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingAssembly.ToUniqueName(),
-                    symbol.GetUniqueName());
+                    symbol.ToUniqueName());
 
                 return false;
             }
@@ -1694,7 +1693,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find NamespaceDb entity for ContainingNamespace '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingNamespace.ToUniqueName(),
-                    symbol.GetUniqueName());
+                    symbol.ToUniqueName());
 
                 return false;
             }
@@ -1725,7 +1724,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find entity for ContainingType '{0}' in ISymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
-                    symbol.GetUniqueName());
+                    symbol.ToUniqueName());
 
                 return false;
             }
@@ -1744,7 +1743,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find entity for return value/property/field type '{0}' in ISymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
-                    symbol.GetUniqueName());
+                    symbol.ToUniqueName());
 
                 return false;
             }

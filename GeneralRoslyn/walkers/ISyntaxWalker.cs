@@ -8,6 +8,7 @@ namespace J4JSoftware.Roslyn
     public interface ISyntaxWalker : ITopologicalAction<CompiledProject>, IEquatable<ISyntaxWalker> //ITopologicalSort<ISyntaxWalker>
     {
         Type SymbolType { get; }
+        string Name { get; }
     }
 
     public interface ISyntaxWalker<TSymbol> : ISyntaxWalker

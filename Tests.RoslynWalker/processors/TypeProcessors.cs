@@ -13,7 +13,7 @@ namespace Tests.RoslynWalker
             ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
         ) 
-            : base( dataLayer, context, loggerFactory() )
+            : base( "Type processing", dataLayer, context, loggerFactory() )
         {
             var node = Add(new TypeAssemblyProcessor(dataLayer, context, loggerFactory()));
             node = Add( new TypeInScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node );

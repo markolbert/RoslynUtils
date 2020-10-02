@@ -11,7 +11,7 @@ namespace J4JSoftware.Roslyn
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             IJ4JLogger logger)
-            : base(dataLayer, context, logger)
+            : base("updating Type InScopeAssemblyInfo in the database", dataLayer, context, logger)
         {
         }
 

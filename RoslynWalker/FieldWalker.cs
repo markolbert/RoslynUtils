@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
             IJ4JLogger logger,
             ISymbolSink<IFieldSymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
+            : base( "Field walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

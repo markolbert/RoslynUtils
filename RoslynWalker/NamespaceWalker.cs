@@ -23,7 +23,7 @@ namespace J4JSoftware.Roslyn
             IJ4JLogger logger,
             ISymbolSink<INamespaceSymbol>? symbolSink = null
         )
-            : base( symbolInfo, defaultSymbolSink, context, logger, symbolSink )
+            : base( "Namespace walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 

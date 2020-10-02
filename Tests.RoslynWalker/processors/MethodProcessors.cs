@@ -12,7 +12,7 @@ namespace Tests.RoslynWalker
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, context, loggerFactory() )
+        ) : base( "Method processing", dataLayer, context, loggerFactory() )
         {
             var rootProcessor = new MethodProcessor( dataLayer, context, loggerFactory() );
 

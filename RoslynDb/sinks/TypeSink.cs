@@ -207,7 +207,7 @@ namespace J4JSoftware.Roslyn.Sinks
         private bool SymbolIsDuplicate( ISymbol symbol )
         {
             // don't allow duplicate additions so we can avoid infinite loops
-            var fullName = symbol.GetUniqueName();
+            var fullName = symbol.ToUniqueName();
 
             if (_visited.Any(x => x.Equals(fullName)))
                 return true;

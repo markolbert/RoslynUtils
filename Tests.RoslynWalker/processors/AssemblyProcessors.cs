@@ -12,7 +12,7 @@ namespace Tests.RoslynWalker
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer,  context, loggerFactory() )
+        ) : base( "Assembly processing", dataLayer,  context, loggerFactory() )
         {
             var node = Add( new AssemblyProcessor( dataLayer, context, loggerFactory() ) );
 

@@ -21,8 +21,8 @@ namespace Tests.RoslynWalker
                 {
                     var retVal = new J4JLoggerConfiguration { EventElements = EventElements.All };
 
-                    retVal.Channels.Add( new ConsoleChannel() { MinimumLevel = LogEventLevel.Error } );
-                    retVal.Channels.Add( new DebugChannel() { MinimumLevel = LogEventLevel.Error } );
+                    retVal.Channels.Add( new ConsoleChannel() { MinimumLevel = LogEventLevel.Information } );
+                    retVal.Channels.Add( new DebugChannel() { MinimumLevel = LogEventLevel.Information } );
 
                     return retVal;
                 } )

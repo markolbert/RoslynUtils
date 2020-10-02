@@ -12,7 +12,7 @@ namespace Tests.RoslynWalker
             IRoslynDataLayer dataLayer,
             ExecutionContext context,
             Func<IJ4JLogger> loggerFactory 
-        ) : base( dataLayer, context, loggerFactory() )
+        ) : base( "Event processing", dataLayer, context, loggerFactory() )
         {
             Add( new EventProcessor( dataLayer, context, loggerFactory() ) );
         }
