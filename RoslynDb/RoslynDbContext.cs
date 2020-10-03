@@ -42,6 +42,9 @@ namespace J4JSoftware.Roslyn
 
         public DbSet<EventDb> Events { get; set; }
 
+        public DbSet<AttributeDb> Attributes { get; set; }
+        public DbSet<AttributeArgumentDb> AttributeArguments { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);

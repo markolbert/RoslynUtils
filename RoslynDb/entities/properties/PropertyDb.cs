@@ -52,6 +52,7 @@ namespace J4JSoftware.Roslyn
         public BaseTypeDb PropertyType { get; set; } = null!;
 
         public List<PropertyParameterDb> Parameters { get; set; }
+        public List<AttributeArgumentDb> AttributeArgumentReferences { get; set; }
     }
 
     internal class PropertyConfigurator : EntityConfigurator<PropertyDb>

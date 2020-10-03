@@ -31,6 +31,8 @@ namespace J4JSoftware.Roslyn
         public PropertyDb? Property { get; set; }
         public PropertyParameterDb? PropertyParameter { get; set; }
         public FieldDb? Field { get; set; }
+
+        public List<AttributeDb> Attributes { get; set; }
    }
 
     internal class SharpObjectConfigurator : EntityConfigurator<SharpObject>

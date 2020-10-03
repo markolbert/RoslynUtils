@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
@@ -21,7 +22,7 @@ namespace J4JSoftware.Roslyn
         bool SharpObjectInDatabase<TEntity>( ISymbol symbol )
             where TEntity : class, ISharpObject;
 
-        ISharpObject? GetDescendantEntity<TEntity>( ISymbol symbol )
+        public void LoadSharpObject<TEntity>( TEntity entity )
             where TEntity : class, ISharpObject;
 
         #endregion
@@ -87,10 +88,11 @@ namespace J4JSoftware.Roslyn
         BaseTypeDb? GetArrayType( IArrayTypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false);
         bool UpdateArrayType( IArrayTypeSymbol symbol, ArrayTypeDb entity );
 
-#endregion
+        #endregion
 
         BaseTypeDb? GetUnspecifiedType( ITypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false);
         bool UpdateUnspecifiedType( ITypeSymbol symbol, BaseTypeDb entity );
+        void LoadProperties( ImplementableTypeDb typeDb );
 
         #endregion
 
@@ -100,6 +102,7 @@ namespace J4JSoftware.Roslyn
         bool UpdateMethod( IMethodSymbol symbol, MethodDb entity );
         ArgumentDb? GetArgument( IParameterSymbol symbol, bool createIfMissing = false, bool updateExisting = false );
         bool UpdateArgument( IParameterSymbol symbol, ArgumentDb entity );
+        void LoadMethodArguments(MethodDb methodDb);
 
         #endregion
 
@@ -129,6 +132,30 @@ namespace J4JSoftware.Roslyn
 
         EventDb? GetEvent( IEventSymbol symbol, bool createIfMissing = false, bool updateExisting = false );
         bool UpdateEvent( IEventSymbol symbol, EventDb entity );
+
+        #endregion
+
+        #region Attributes
+
+        ISharpObject? GetAttributableEntity(ISymbol symbol);
+
+        AttributeDb? GetAttribute<TEntity>( 
+            TEntity targetObjDb, 
+            AttributeData attrData,
+            bool createIfMissing = false )
+            where TEntity : class, ISharpObject;
+
+        AttributeArgumentDb? GetAttributeArgument(
+            AttributeDb attrDb,
+            AttributeData attrData,
+            string propName,
+            bool createIfMissing = false );
+
+        AttributeArgumentDb? GetAttributeArgument(
+            AttributeDb attrDb,
+            AttributeData attrData,
+            int ctorArgOrdinal,
+            bool createIfMissing = false);
 
         #endregion
     }

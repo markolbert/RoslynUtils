@@ -18,6 +18,8 @@ namespace J4JSoftware.Roslyn
         public List<PropertyParameterDb> PropertyParameters { get; set; }
         public List<FieldDb> Fields { get; set; }
         public List<EventDb> Events { get; set; }
+        // list of attributes referencing this type (which must be an attribute)
+        public List<AttributeDb> AttributeReferences { get; set; }
     }
 
     internal class DefinedTypeDbConfigurator : EntityConfigurator<ImplementableTypeDb>

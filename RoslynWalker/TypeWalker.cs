@@ -3,6 +3,7 @@ using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.Roslyn
 {
@@ -31,6 +32,16 @@ namespace J4JSoftware.Roslyn
             CompiledFile context,
             out ITypeSymbol? result )
         {
+            switch( node.Kind() )
+            {
+                case SyntaxKind.Attribute:
+                case SyntaxKind.AttributeList:
+                case SyntaxKind.AttributeArgument:
+                case SyntaxKind.AttributeArgumentList:
+                case SyntaxKind.AttributeTargetSpecifier:
+                    break;
+            }
+
             result = null;
 
             // certain node types don't lead to places we need to process

@@ -43,7 +43,7 @@ namespace J4JSoftware.Roslyn
                     break;
             }
 
-            return Finalize( symbols );
+            return allOkay && Finalize( symbols );
         }
 
         protected virtual bool Initialize( IEnumerable<TSymbol> symbols ) => true;

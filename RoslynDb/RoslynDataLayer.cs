@@ -25,7 +25,7 @@ namespace J4JSoftware.Roslyn
 
         #region clearing synchronization
 
-        public void MarkUnsynchronized<TEntity>(bool saveChanges = true)
+        public void MarkUnsynchronized<TEntity>( bool saveChanges = true )
             where TEntity : class, ISynchronized
         {
             var entityType = typeof(TEntity);
@@ -33,25 +33,25 @@ namespace J4JSoftware.Roslyn
             // update the entities directly
             var dbSet = _dbContext.Set<TEntity>().Cast<ISynchronized>();
 
-            dbSet.ForEachAsync(x => x.Synchronized = false);
+            dbSet.ForEachAsync( x => x.Synchronized = false );
 
-            if (saveChanges)
+            if( saveChanges )
                 _dbContext.SaveChanges();
         }
 
-        public void MarkSharpObjectUnsynchronized<TEntity>(bool saveChanges = true)
+        public void MarkSharpObjectUnsynchronized<TEntity>( bool saveChanges = true )
             where TEntity : class, ISharpObject
         {
             var entityType = typeof(TEntity);
 
             // update the entities directly
             var dbSet = _dbContext.Set<TEntity>()
-                .Include(x=>x.SharpObject)
+                .Include( x => x.SharpObject )
                 .Cast<ISharpObject>();
 
-            dbSet.ForEachAsync(x => x.SharpObject.Synchronized = false);
+            dbSet.ForEachAsync( x => x.SharpObject.Synchronized = false );
 
-            if (saveChanges)
+            if( saveChanges )
                 _dbContext.SaveChanges();
         }
 
@@ -71,126 +71,26 @@ namespace J4JSoftware.Roslyn
             return sharpObj != null;
         }
 
-        public ISharpObject? GetDescendantEntity<TEntity>(ISymbol symbol)
+        public void LoadSharpObject<TEntity>( TEntity entity )
             where TEntity : class, ISharpObject
         {
-            var fqn = symbol.ToUniqueName();
-
-            var sharpObj = _dbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
-
-            if (sharpObj == null)
-                return null;
-
-            switch( sharpObj.SharpObjectType )
-            {
-                case SharpObjectType.Assembly:
-                    _dbContext.Entry( sharpObj )
-                        .Reference( x => x.Assembly )
-                        .Load();
-
-                    return sharpObj.Assembly;
-
-                case SharpObjectType.Namespace:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.Namespace)
-                        .Load();
-
-                    return sharpObj.Namespace;
-
-                case SharpObjectType.FixedType:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.FixedType)
-                        .Load();
-
-                    return sharpObj.Namespace;
-
-                case SharpObjectType.GenericType:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.GenericType)
-                        .Load();
-
-                    return sharpObj.GenericType;
-
-                case SharpObjectType.ParametricType:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.ParametricType)
-                        .Load();
-
-                    return sharpObj.ParametricType;
-
-                case SharpObjectType.ParametricMethodType:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.ParametricMethodType)
-                        .Load();
-
-                    return sharpObj.ParametricMethodType;
-
-                case SharpObjectType.ArrayType:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.ArrayType)
-                        .Load();
-
-                    return sharpObj.ArrayType;
-
-                case SharpObjectType.Method:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.Method)
-                        .Load();
-
-                    return sharpObj.Method;
-
-                case SharpObjectType.MethodArgument:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.MethodArgument)
-                        .Load();
-
-                    return sharpObj.MethodArgument;
-
-                case SharpObjectType.Property:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.Property)
-                        .Load();
-
-                    return sharpObj.Property;
-
-                case SharpObjectType.PropertyParameter:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.PropertyParameter)
-                        .Load();
-
-                    return sharpObj.PropertyParameter;
-
-                case SharpObjectType.Field:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.Field)
-                        .Load();
-
-                    return sharpObj.Field;
-
-                case SharpObjectType.Event:
-                    _dbContext.Entry(sharpObj)
-                        .Reference(x => x.Event)
-                        .Load();
-
-                    return sharpObj.Event;
-            }
-
-            _logger.Error( "Unsupported SharpObjectType {0}", sharpObj.SharpObjectType );
-
-            return null;
+            _dbContext.Entry( entity )
+                .Reference( x => x.SharpObject )
+                .Load();
         }
 
         #endregion
 
         #region Assembly
 
-        public AssemblyDb? GetAssembly( IAssemblySymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public AssemblyDb? GetAssembly( IAssemblySymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.Assemblies
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
             if( retVal != null )
             {
@@ -200,23 +100,23 @@ namespace J4JSoftware.Roslyn
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find AssemblyDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find AssemblyDb object for '{0}' in the database", fqn );
                 return null;
             }
 
             retVal = new AssemblyDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.Assembly )!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Assembly )!,
             };
 
-            _dbContext.Assemblies.Add(retVal);
+            _dbContext.Assemblies.Add( retVal );
 
             // update after add so the entity is being tracked
-            if( UpdateAssembly( symbol, retVal ) ) 
+            if( UpdateAssembly( symbol, retVal ) )
                 return retVal;
-            
+
             _dbContext.Assemblies.Remove( retVal );
 
             return null;
@@ -232,7 +132,7 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public InScopeAssemblyInfo? GetInScopeAssemblyInfo( 
+        public InScopeAssemblyInfo? GetInScopeAssemblyInfo(
             CompiledProject project,
             bool createIfMissing = false,
             bool updateExisting = false )
@@ -255,15 +155,15 @@ namespace J4JSoftware.Roslyn
 
             var retVal = assemblyDb.InScopeInfo;
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateInScopeAssemblyInfo(project, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateInScopeAssemblyInfo( project, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
                 _logger.Error<string>( "Couldn't find InScopeAssemblyInfo object for '{0}' in the database", fqn );
                 return null;
@@ -277,7 +177,7 @@ namespace J4JSoftware.Roslyn
             _dbContext.InScopeInfo.Add( retVal );
 
             // update after add so the entity is being tracked
-            if( UpdateInScopeAssemblyInfo( project, retVal ) ) 
+            if( UpdateInScopeAssemblyInfo( project, retVal ) )
                 return retVal;
 
             _dbContext.InScopeInfo.Remove( retVal );
@@ -285,14 +185,14 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateInScopeAssemblyInfo(CompiledProject project, InScopeAssemblyInfo entity)
+        public bool UpdateInScopeAssemblyInfo( CompiledProject project, InScopeAssemblyInfo entity )
         {
-            _dbContext.Entry(entity)
-                .Reference(x => x.Assembly)
+            _dbContext.Entry( entity )
+                .Reference( x => x.Assembly )
                 .Load();
 
-            _dbContext.Entry(entity.Assembly)
-                .Reference(x => x.SharpObject)
+            _dbContext.Entry( entity.Assembly )
+                .Reference( x => x.SharpObject )
                 .Load();
 
             var fqn = project.AssemblySymbol.ToUniqueName();
@@ -325,34 +225,35 @@ namespace J4JSoftware.Roslyn
 
         #region Namespace
 
-        public NamespaceDb? GetNamespace(INamespaceSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public NamespaceDb? GetNamespace( INamespaceSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.Namespaces
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateNamespace(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateNamespace( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find AssemblyDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find AssemblyDb object for '{0}' in the database", fqn );
                 return null;
             }
 
             retVal = new NamespaceDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.Namespace)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Namespace )!,
             };
 
-            _dbContext.Namespaces.Add(retVal);
+            _dbContext.Namespaces.Add( retVal );
 
             if( UpdateNamespace( symbol, retVal ) )
                 return retVal;
@@ -362,9 +263,9 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateNamespace(INamespaceSymbol symbol, NamespaceDb entity)
+        public bool UpdateNamespace( INamespaceSymbol symbol, NamespaceDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
             entity.SharpObject.Synchronized = true;
@@ -377,29 +278,24 @@ namespace J4JSoftware.Roslyn
         public AssemblyNamespaceDb? GetAssemblyNamespace(
             AssemblyDb assemblyDb,
             NamespaceDb nsDb,
-            bool createIfMissing = false)
+            bool createIfMissing = false )
         {
-            var retVal = _dbContext.AssemblyNamespaces.FirstOrDefault(x =>
-                x.AssemblyID == assemblyDb.SharpObjectID && x.NamespaceID == nsDb.SharpObjectID);
+            var retVal = _dbContext.AssemblyNamespaces.FirstOrDefault( x =>
+                x.AssemblyID == assemblyDb.SharpObjectID && x.NamespaceID == nsDb.SharpObjectID );
 
-            if (retVal != null)
+            if( retVal != null )
                 return retVal;
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
                 // make sure we can access the fully qualified names
-                _dbContext.Entry(assemblyDb)
-                    .Reference(x => x.SharpObject)
-                    .Load();
-
-                _dbContext.Entry(nsDb)
-                    .Reference(x => x.SharpObject)
-                    .Load();
+                LoadSharpObject( assemblyDb );
+                LoadSharpObject( nsDb );
 
                 _logger.Error<string, string>(
                     "Couldn't create AssemblyNamespaceDb for assembly '{0}' and namespace '{1}' ",
                     assemblyDb.SharpObject.FullyQualifiedName,
-                    nsDb.SharpObject.FullyQualifiedName);
+                    nsDb.SharpObject.FullyQualifiedName );
 
                 return null;
             }
@@ -410,7 +306,7 @@ namespace J4JSoftware.Roslyn
                 Namespace = nsDb
             };
 
-            _dbContext.AssemblyNamespaces.Add(retVal);
+            _dbContext.AssemblyNamespaces.Add( retVal );
 
             return retVal;
         }
@@ -436,8 +332,8 @@ namespace J4JSoftware.Roslyn
 
             if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateFixedType(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateFixedType( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
@@ -451,7 +347,7 @@ namespace J4JSoftware.Roslyn
             if( !GetContainingAssemblyNamespace( symbol, out var assemblyDb, out var nsDb ) )
                 return null;
 
-            LoadInScopeInfo(assemblyDb!);
+            LoadInScopeInfo( assemblyDb! );
 
             retVal = new FixedTypeDb
             {
@@ -471,12 +367,12 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateFixedType(INamedTypeSymbol symbol, FixedTypeDb entity)
+        public bool UpdateFixedType( INamedTypeSymbol symbol, FixedTypeDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
-            if (symbol.IsGenericType)
+            if( symbol.IsGenericType )
             {
                 _logger.Error<string>( "Requested a FixedTypeDb from generic INamedTypeSymbol '{0}'",
                     symbol.ToUniqueName() );
@@ -496,47 +392,48 @@ namespace J4JSoftware.Roslyn
 
         #region GenericType
 
-        public GenericTypeDb? GetGenericType(INamedTypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public GenericTypeDb? GetGenericType( INamedTypeSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
-            if (!symbol.IsGenericType)
+            if( !symbol.IsGenericType )
             {
-                _logger.Error<string>("Requested a GenericTypeDb from a non-generic INamedTypeSymbol '{0}'", fqn);
+                _logger.Error<string>( "Requested a GenericTypeDb from a non-generic INamedTypeSymbol '{0}'", fqn );
                 return null;
             }
 
             var retVal = _dbContext.GenericTypes
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateGenericType(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateGenericType( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find FixedTypeDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find FixedTypeDb object for '{0}' in the database", fqn );
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
+            if( !GetContainingAssemblyNamespace( symbol, out var assemblyDb, out var nsDb ) )
                 return null;
 
             LoadInScopeInfo( assemblyDb! );
 
             retVal = new GenericTypeDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.GenericType)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.GenericType )!,
                 Assembly = assemblyDb!,
                 Namespace = nsDb!,
             };
 
-            _dbContext.GenericTypes.Add(retVal);
+            _dbContext.GenericTypes.Add( retVal );
 
             if( UpdateGenericType( symbol, retVal ) )
                 return retVal;
@@ -546,15 +443,15 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateGenericType(INamedTypeSymbol symbol, GenericTypeDb entity)
+        public bool UpdateGenericType( INamedTypeSymbol symbol, GenericTypeDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
-            if (!symbol.IsGenericType)
+            if( !symbol.IsGenericType )
             {
-                _logger.Error<string>("Requested a GenericTypeDb from a non-generic INamedTypeSymbol '{0}'",
-                    symbol.ToUniqueName());
+                _logger.Error<string>( "Requested a GenericTypeDb from a non-generic INamedTypeSymbol '{0}'",
+                    symbol.ToUniqueName() );
                 return false;
             }
 
@@ -568,9 +465,10 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-#endregion
+        #endregion
 
-        public ImplementableTypeDb? GetImplementableType( INamedTypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public ImplementableTypeDb? GetImplementableType( INamedTypeSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             if( symbol.IsGenericType )
                 return GetGenericType( symbol, createIfMissing, updateExisting );
@@ -578,7 +476,7 @@ namespace J4JSoftware.Roslyn
             return GetFixedType( symbol, createIfMissing, updateExisting );
         }
 
-        public bool UpdateImplementableType(INamedTypeSymbol symbol, ImplementableTypeDb entity )
+        public bool UpdateImplementableType( INamedTypeSymbol symbol, ImplementableTypeDb entity )
         {
             if( symbol.IsGenericType )
             {
@@ -587,9 +485,10 @@ namespace J4JSoftware.Roslyn
 
                 LoadSharpObject( entity );
 
-                _logger.Error<string, string>("Trying to update FixedTypeDb entity '{0}' from generic INamedTypeSymbol '{1}'",
+                _logger.Error<string, string>(
+                    "Trying to update FixedTypeDb entity '{0}' from generic INamedTypeSymbol '{1}'",
                     entity.SharpObject.FullyQualifiedName,
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
@@ -597,18 +496,20 @@ namespace J4JSoftware.Roslyn
             if( entity is FixedTypeDb fixedEntity )
                 return UpdateFixedType( symbol, fixedEntity );
 
-            LoadSharpObject(entity);
+            LoadSharpObject( entity );
 
-            _logger.Error<string, string>("Trying to update GenericTypeDb entity '{0}' from non-generic INamedTypeSymbol '{1}'",
+            _logger.Error<string, string>(
+                "Trying to update GenericTypeDb entity '{0}' from non-generic INamedTypeSymbol '{1}'",
                 entity.SharpObject.FullyQualifiedName,
-                symbol.ToUniqueName());
+                symbol.ToUniqueName() );
 
             return false;
         }
 
         #region ParametricType
 
-        public ParametricTypeDb? GetParametricType( ITypeParameterSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public ParametricTypeDb? GetParametricType( ITypeParameterSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
@@ -625,28 +526,28 @@ namespace J4JSoftware.Roslyn
                 .Include( x => x.SharpObject )
                 .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateParametricType(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateParametricType( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if ( !createIfMissing )
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find ParametericTypeDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find ParametericTypeDb object for '{0}' in the database", fqn );
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
+            if( !GetContainingAssemblyNamespace( symbol, out var assemblyDb, out var nsDb ) )
                 return null;
 
-            LoadInScopeInfo(assemblyDb!);
+            LoadInScopeInfo( assemblyDb! );
 
             retVal = new ParametricTypeDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.ParametricType)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.ParametricType )!,
                 Assembly = assemblyDb!,
                 Namespace = nsDb!,
                 InDocumentationScope = assemblyDb!.InScopeInfo != null
@@ -662,9 +563,9 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateParametricType(ITypeParameterSymbol symbol, ParametricTypeDb entity )
+        public bool UpdateParametricType( ITypeParameterSymbol symbol, ParametricTypeDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
             if( symbol.DeclaringType == null )
@@ -689,52 +590,53 @@ namespace J4JSoftware.Roslyn
 
         #region ParametricMethodType
 
-        public ParametricMethodTypeDb? GetParametricMethodType(ITypeParameterSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public ParametricMethodTypeDb? GetParametricMethodType( ITypeParameterSymbol symbol,
+            bool createIfMissing = false, bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
-            if (symbol.DeclaringMethod == null)
+            if( symbol.DeclaringMethod == null )
             {
                 _logger.Error<string>(
                     "Requested a ParametericMethodTypeDb from an ITypeParameterSymbol with an undefined DeclaringMethod '{0}'",
-                    fqn);
+                    fqn );
 
                 return null;
             }
 
             var retVal = _dbContext.ParametricMethodTypes
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateParametricMethodType(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateParametricMethodType( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find ParametericMethodTypeDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find ParametericMethodTypeDb object for '{0}' in the database", fqn );
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
+            if( !GetContainingAssemblyNamespace( symbol, out var assemblyDb, out var nsDb ) )
                 return null;
 
-            LoadInScopeInfo(assemblyDb!);
+            LoadInScopeInfo( assemblyDb! );
 
             retVal = new ParametricMethodTypeDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.ParametricMethodType)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.ParametricMethodType )!,
                 Assembly = assemblyDb!,
                 Namespace = nsDb!,
                 Constraints = symbol.GetParametricTypeConstraint(),
                 InDocumentationScope = assemblyDb!.InScopeInfo != null
             };
 
-            _dbContext.ParametricMethodTypes.Add(retVal);
+            _dbContext.ParametricMethodTypes.Add( retVal );
 
             if( UpdateParametricMethodType( symbol, retVal ) )
                 return retVal;
@@ -744,16 +646,16 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateParametricMethodType(ITypeParameterSymbol symbol, ParametricMethodTypeDb entity)
+        public bool UpdateParametricMethodType( ITypeParameterSymbol symbol, ParametricMethodTypeDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
-            if (symbol.DeclaringMethod == null)
+            if( symbol.DeclaringMethod == null )
             {
                 _logger.Error<string>(
                     "Updating a ParametericMethodTypeDb from an ITypeParameterSymbol with an undefined DeclaringMethod '{0}'",
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
@@ -771,11 +673,12 @@ namespace J4JSoftware.Roslyn
 
         #region unspecified parametric
 
-        public BaseTypeDb? GetUnspecifiedParametricType( ITypeParameterSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public BaseTypeDb? GetUnspecifiedParametricType( ITypeParameterSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
-            if ( symbol.DeclaringType != null )
+            if( symbol.DeclaringType != null )
                 return GetParametricType( symbol, createIfMissing, updateExisting );
 
             if( symbol.DeclaringMethod != null )
@@ -783,78 +686,81 @@ namespace J4JSoftware.Roslyn
 
             _logger.Error<string>(
                 "ITypeParameterSymbol '{0}' has neither a defined DeclaringMethod nor a defined DeclaringType",
-                fqn);
+                fqn );
 
             return null;
         }
 
-        public bool UpdateUnspecifiedParametricType(ITypeParameterSymbol symbol, BaseTypeDb entity )
+        public bool UpdateUnspecifiedParametricType( ITypeParameterSymbol symbol, BaseTypeDb entity )
         {
             if( symbol.DeclaringType != null )
             {
                 if( entity is ParametricTypeDb parametricEntity )
                     return UpdateParametricType( symbol, parametricEntity );
 
-                LoadSharpObject(entity);
+                LoadSharpObject( entity );
 
-                _logger.Error<string, string>("Trying to update entity '{0}' from DeclaringType ITypeParameterSymbol '{1}'",
+                _logger.Error<string, string>(
+                    "Trying to update entity '{0}' from DeclaringType ITypeParameterSymbol '{1}'",
                     entity.SharpObject.FullyQualifiedName,
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
 
             if( symbol.DeclaringMethod != null )
             {
-                if (entity is ParametricMethodTypeDb parametricMethodEntity)
-                    return UpdateParametricMethodType(symbol, parametricMethodEntity);
+                if( entity is ParametricMethodTypeDb parametricMethodEntity )
+                    return UpdateParametricMethodType( symbol, parametricMethodEntity );
 
-                LoadSharpObject(entity);
+                LoadSharpObject( entity );
 
-                _logger.Error<string, string>("Trying to update entity '{0}' from DeclaringMethod ITypeParameterSymbol '{1}'",
+                _logger.Error<string, string>(
+                    "Trying to update entity '{0}' from DeclaringMethod ITypeParameterSymbol '{1}'",
                     entity.SharpObject.FullyQualifiedName,
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
 
             _logger.Error<string>(
                 "ITypeParameterSymbol '{0}' has neither a defined DeclaringMethod nor a defined DeclaringType",
-                symbol.ToUniqueName());
+                symbol.ToUniqueName() );
 
             return false;
         }
 
-#endregion
+        #endregion
 
         #region ArrayType
 
-        public BaseTypeDb? GetArrayType( IArrayTypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public BaseTypeDb? GetArrayType( IArrayTypeSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.ArrayTypes
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateArrayType(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateArrayType( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find ArrayType object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find ArrayType object for '{0}' in the database", fqn );
                 return null;
             }
 
-            if (!GetContainingAssemblyNamespace(symbol, out var assemblyDb, out var nsDb))
+            if( !GetContainingAssemblyNamespace( symbol, out var assemblyDb, out var nsDb ) )
                 return null;
 
-            LoadInScopeInfo(assemblyDb!);
+            LoadInScopeInfo( assemblyDb! );
 
             var elementDb = GetUnspecifiedType( symbol.ElementType );
 
@@ -869,14 +775,14 @@ namespace J4JSoftware.Roslyn
 
             retVal = new ArrayTypeDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.ArrayType)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.ArrayType )!,
                 Assembly = assemblyDb!,
                 Namespace = nsDb!,
                 ElementType = elementDb,
                 InDocumentationScope = assemblyDb!.InScopeInfo != null
             };
 
-            _dbContext.ArrayTypes.Add(retVal);
+            _dbContext.ArrayTypes.Add( retVal );
 
             if( UpdateArrayType( symbol, retVal ) )
                 return retVal;
@@ -886,9 +792,9 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateArrayType(IArrayTypeSymbol symbol, ArrayTypeDb entity )
+        public bool UpdateArrayType( IArrayTypeSymbol symbol, ArrayTypeDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
             entity.Accessibility = symbol.DeclaredAccessibility;
@@ -904,12 +810,14 @@ namespace J4JSoftware.Roslyn
 
         #region unspecified
 
-        public BaseTypeDb? GetUnspecifiedType( ITypeSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public BaseTypeDb? GetUnspecifiedType( ITypeSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             return symbol switch
             {
                 INamedTypeSymbol ntSymbol => GetImplementableType( ntSymbol, createIfMissing, updateExisting ),
-                ITypeParameterSymbol tpSymbol => GetUnspecifiedParametricType( tpSymbol, createIfMissing, updateExisting ),
+                ITypeParameterSymbol tpSymbol => GetUnspecifiedParametricType( tpSymbol, createIfMissing,
+                    updateExisting ),
                 IArrayTypeSymbol arraySymbol => GetArrayType( arraySymbol, createIfMissing, updateExisting ),
                 _ => unhandled()
             };
@@ -960,11 +868,11 @@ namespace J4JSoftware.Roslyn
                 if( entity is ArrayTypeDb arrayEntity )
                     return UpdateArrayType( arraySymbol, arrayEntity );
 
-                LoadSharpObject(entity);
+                LoadSharpObject( entity );
 
-                _logger.Error<string, string>("Trying to update entity '{0}' from ITypeSymbol '{1}'",
+                _logger.Error<string, string>( "Trying to update entity '{0}' from ITypeSymbol '{1}'",
                     entity.SharpObject.FullyQualifiedName,
-                    symbol.ToFullName());
+                    symbol.ToFullName() );
 
                 return false;
             }
@@ -980,29 +888,30 @@ namespace J4JSoftware.Roslyn
 
         #region miscellaneous
 
-        public TypeArgumentDb? GetTypeArgument(GenericTypeDb genericDb, ITypeSymbol symbol, int ordinal, bool createIfMissing = false)
+        public TypeArgumentDb? GetTypeArgument( GenericTypeDb genericDb, ITypeSymbol symbol, int ordinal,
+            bool createIfMissing = false )
         {
-            var argDb = GetUnspecifiedType(symbol);
+            var argDb = GetUnspecifiedType( symbol );
 
-            if (argDb == null)
+            if( argDb == null )
             {
                 // make sure we can access the fully qualified names
-                _dbContext.Entry(genericDb)
-                    .Reference(x => x.SharpObject)
+                _dbContext.Entry( genericDb )
+                    .Reference( x => x.SharpObject )
                     .Load();
 
                 _logger.Error<string, string>(
                     "Couldn't find ParametricType for type '{0}' from symbol '{1}",
                     genericDb.SharpObject.FullyQualifiedName,
-                    symbol.ToFullName());
+                    symbol.ToFullName() );
 
                 return null;
             }
 
             var retVal = _dbContext.TypeArguments
-                .FirstOrDefault(ta => ta.ArgumentTypeID == genericDb!.SharpObjectID && ta.Ordinal == ordinal);
+                .FirstOrDefault( ta => ta.ArgumentTypeID == genericDb!.SharpObjectID && ta.Ordinal == ordinal );
 
-            if (retVal != null)
+            if( retVal != null )
             {
                 retVal.Synchronized = true;
                 retVal.ArgumentType = argDb;
@@ -1010,16 +919,16 @@ namespace J4JSoftware.Roslyn
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
                 // make sure we can access the fully qualified names
-                _dbContext.Entry(genericDb)
-                    .Reference(x => x.SharpObject)
+                _dbContext.Entry( genericDb )
+                    .Reference( x => x.SharpObject )
                     .Load();
 
                 _logger.Error<string>(
                     "Couldn't create TypeArgument for type '{0}'",
-                    genericDb.SharpObject.FullyQualifiedName);
+                    genericDb.SharpObject.FullyQualifiedName );
 
                 return null;
             }
@@ -1037,25 +946,26 @@ namespace J4JSoftware.Roslyn
             return retVal;
         }
 
-        public TypeAncestorDb? GetTypeAncestor(BaseTypeDb typeDb, ImplementableTypeDb ancestorDb, bool createIfMissing = false)
+        public TypeAncestorDb? GetTypeAncestor( BaseTypeDb typeDb, ImplementableTypeDb ancestorDb,
+            bool createIfMissing = false )
         {
-            var retVal = _dbContext.TypeAncestors.FirstOrDefault(x =>
-                x.AncestorTypeID == ancestorDb.SharpObjectID && x.ChildTypeID == typeDb.SharpObjectID);
+            var retVal = _dbContext.TypeAncestors.FirstOrDefault( x =>
+                x.AncestorTypeID == ancestorDb.SharpObjectID && x.ChildTypeID == typeDb.SharpObjectID );
 
-            if (retVal != null)
+            if( retVal != null )
                 return retVal;
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
                 // make sure we can access the fully qualified name
-                _dbContext.Entry(ancestorDb)
-                    .Reference(x => x.SharpObject)
+                _dbContext.Entry( ancestorDb )
+                    .Reference( x => x.SharpObject )
                     .Load();
 
                 _logger.Error<string, string>(
                     "Couldn't create TypeAncestorDb for entity '{0}' and ancestor symbol '{1}' ",
                     typeDb.SharpObject.FullyQualifiedName,
-                    ancestorDb.SharpObject.FullyQualifiedName);
+                    ancestorDb.SharpObject.FullyQualifiedName );
 
                 return null;
             }
@@ -1066,14 +976,21 @@ namespace J4JSoftware.Roslyn
                 ChildTypeID = typeDb!.SharpObjectID
             };
 
-            _dbContext.TypeAncestors.Add(retVal);
+            _dbContext.TypeAncestors.Add( retVal );
 
             return retVal;
         }
 
+        public void LoadProperties( ImplementableTypeDb typeDb )
+        {
+            _dbContext.Entry( typeDb )
+                .Reference( x => x.Properties )
+                .Load();
+        }
+
         #endregion
 
-#endregion
+        #endregion
 
         #region Method
 
@@ -1082,20 +999,20 @@ namespace J4JSoftware.Roslyn
             var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.Methods
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateMethod(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateMethod( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find MethodDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find MethodDb object for '{0}' in the database", fqn );
                 return null;
             }
 
@@ -1104,12 +1021,12 @@ namespace J4JSoftware.Roslyn
 
             retVal = new MethodDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.MethodArgument)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.MethodArgument )!,
                 DefiningType = containingDb!,
                 ReturnType = returnDb!
             };
 
-            _dbContext.Methods.Add(retVal);
+            _dbContext.Methods.Add( retVal );
 
             if( UpdateMethod( symbol, retVal ) )
                 return retVal;
@@ -1119,9 +1036,9 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateMethod(IMethodSymbol symbol, MethodDb entity)
+        public bool UpdateMethod( IMethodSymbol symbol, MethodDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
             entity.Accessibility = symbol.DeclaredAccessibility;
@@ -1142,33 +1059,35 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public ArgumentDb? GetArgument(IParameterSymbol symbol, bool createIfMissing = false, bool updateExisting = false)
+        public ArgumentDb? GetArgument( IParameterSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
             if( !( symbol.ContainingSymbol is IMethodSymbol methodSymbol ) )
             {
-                _logger.Error<string>("Trying to retrieve a method argument from IParameterSymbol '{0}' which is not contained by a method",
-                    fqn);
+                _logger.Error<string>(
+                    "Trying to retrieve a method argument from IParameterSymbol '{0}' which is not contained by a method",
+                    fqn );
 
                 return null;
             }
 
             var retVal = _dbContext.MethodArguments
-                .Include(x=>x.SharpObject  )
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    UpdateArgument(symbol, retVal);
+                if( updateExisting )
+                    UpdateArgument( symbol, retVal );
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find ArgumentDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find ArgumentDb object for '{0}' in the database", fqn );
                 return null;
             }
 
@@ -1176,9 +1095,9 @@ namespace J4JSoftware.Roslyn
 
             if( methodDb == null )
             {
-                _logger.Error<string>("Containing method '{0}' for IParameterSymbol '{1}' not found",
+                _logger.Error<string>( "Containing method '{0}' for IParameterSymbol '{1}' not found",
                     methodSymbol.ToUniqueName(),
-                    fqn);
+                    fqn );
 
                 return null;
             }
@@ -1187,23 +1106,23 @@ namespace J4JSoftware.Roslyn
 
             if( typeDb == null )
             {
-                _logger.Error<string>("Type ({0}) for IParameterSymbol '{1}' not found",
+                _logger.Error<string>( "Type ({0}) for IParameterSymbol '{1}' not found",
                     symbol.Type.ToUniqueName(),
-                    fqn);
+                    fqn );
 
                 return null;
             }
 
             retVal = new ArgumentDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.MethodArgument)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.MethodArgument )!,
                 Method = methodDb,
                 ArgumentType = typeDb
             };
 
-            _dbContext.MethodArguments.Add(retVal);
+            _dbContext.MethodArguments.Add( retVal );
 
-            UpdateArgument(symbol, retVal);
+            UpdateArgument( symbol, retVal );
 
             return retVal;
         }
@@ -1235,11 +1154,19 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
+        public void LoadMethodArguments( MethodDb methodDb )
+        {
+            _dbContext.Entry( methodDb )
+                .Reference( x => x.Arguments )
+                .Load();
+        }
+
         #endregion
 
         #region Property
 
-        public PropertyDb? GetProperty( IPropertySymbol symbol, bool createIfMissing = false, bool updateExisting = false )
+        public PropertyDb? GetProperty( IPropertySymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
@@ -1247,15 +1174,15 @@ namespace J4JSoftware.Roslyn
                 .Include( x => x.SharpObject )
                 .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateProperty(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateProperty( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if ( !createIfMissing )
+            if( !createIfMissing )
             {
                 _logger.Error<string>( "Couldn't find PropertyDb object for '{0}' in the database", fqn );
                 return null;
@@ -1281,9 +1208,9 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateProperty(IPropertySymbol symbol, PropertyDb entity)
+        public bool UpdateProperty( IPropertySymbol symbol, PropertyDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
             entity.GetAccessibility = symbol.GetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable;
@@ -1306,77 +1233,79 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        public PropertyParameterDb? GetPropertyParameter(IParameterSymbol symbol, bool createIfMissing = false, bool updateExisting = false)
+        public PropertyParameterDb? GetPropertyParameter( IParameterSymbol symbol, bool createIfMissing = false,
+            bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
-            if (!(symbol.ContainingSymbol is IPropertySymbol propSymbol))
+            if( !( symbol.ContainingSymbol is IPropertySymbol propSymbol ) )
             {
-                _logger.Error<string>("Trying to retrieve a property parameter from IParameterSymbol '{0}' which is not contained by a property",
-                    fqn);
+                _logger.Error<string>(
+                    "Trying to retrieve a property parameter from IParameterSymbol '{0}' which is not contained by a property",
+                    fqn );
 
                 return null;
             }
 
             var retVal = _dbContext.PropertyParameters
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    UpdatePropertyParameter(symbol, retVal);
+                if( updateExisting )
+                    UpdatePropertyParameter( symbol, retVal );
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find PropertyParameterDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find PropertyParameterDb object for '{0}' in the database", fqn );
                 return null;
             }
 
-            var propDb = GetProperty(propSymbol);
+            var propDb = GetProperty( propSymbol );
 
-            if (propDb == null)
+            if( propDb == null )
             {
-                _logger.Error<string>("Containing method '{0}' for IParameterSymbol '{1}' not found",
+                _logger.Error<string>( "Containing method '{0}' for IParameterSymbol '{1}' not found",
                     propSymbol.ToUniqueName(),
-                    fqn);
+                    fqn );
 
                 return null;
             }
 
             if( !( symbol.Type is INamedTypeSymbol ntSymbol ) )
             {
-                _logger.Error<string>("Type '{0}' of IParameterSymbol '{1}' is not an INamedTypeSymbol",
+                _logger.Error<string>( "Type '{0}' of IParameterSymbol '{1}' is not an INamedTypeSymbol",
                     symbol.Type.ToFullName(),
-                    fqn);
+                    fqn );
 
                 return null;
             }
 
             var typeDb = GetImplementableType( ntSymbol );
 
-            if (typeDb == null)
+            if( typeDb == null )
             {
-                _logger.Error<string>("Type ({0}) for IParameterSymbol '{1}' not found",
+                _logger.Error<string>( "Type ({0}) for IParameterSymbol '{1}' not found",
                     ntSymbol.ToUniqueName(),
-                    fqn);
+                    fqn );
 
                 return null;
             }
 
             retVal = new PropertyParameterDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.PropertyParameter)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.PropertyParameter )!,
                 Property = propDb,
                 ParameterType = typeDb
             };
 
-            _dbContext.PropertyParameters.Add(retVal);
+            _dbContext.PropertyParameters.Add( retVal );
 
-            UpdatePropertyParameter(symbol, retVal);
+            UpdatePropertyParameter( symbol, retVal );
 
             return retVal;
         }
@@ -1412,39 +1341,39 @@ namespace J4JSoftware.Roslyn
 
         #region Field
 
-        public FieldDb? GetField(IFieldSymbol symbol, bool createIfMissing = false, bool updateExisting = false)
+        public FieldDb? GetField( IFieldSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.Fields
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateField(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateField( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find FieldDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find FieldDb object for '{0}' in the database", fqn );
                 return null;
             }
 
-            if (!GetContainingAndReturnValueTypes(symbol, out var propDb, out var containingDb))
+            if( !GetContainingAndReturnValueTypes( symbol, out var propDb, out var containingDb ) )
                 return null;
 
             retVal = new FieldDb
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.Field)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Field )!,
                 DefiningType = containingDb!,
                 FieldType = propDb!
             };
 
-            _dbContext.Fields.Add(retVal);
+            _dbContext.Fields.Add( retVal );
 
             if( UpdateField( symbol, retVal ) )
                 return retVal;
@@ -1454,9 +1383,9 @@ namespace J4JSoftware.Roslyn
             return null;
         }
 
-        public bool UpdateField(IFieldSymbol symbol, FieldDb entity)
+        public bool UpdateField( IFieldSymbol symbol, FieldDb entity )
         {
-            if (!SharpObjectMatchesSymbol(symbol, entity))
+            if( !SharpObjectMatchesSymbol( symbol, entity ) )
                 return false;
 
             entity.Accessibility = symbol.DeclaredAccessibility;
@@ -1478,39 +1407,39 @@ namespace J4JSoftware.Roslyn
 
         #region Event
 
-        public EventDb? GetEvent(IEventSymbol symbol, bool createIfMissing = false, bool updateExisting = false)
+        public EventDb? GetEvent( IEventSymbol symbol, bool createIfMissing = false, bool updateExisting = false )
         {
             var fqn = symbol.ToUniqueName();
 
             var retVal = _dbContext.Events
-                .Include(x => x.SharpObject)
-                .FirstOrDefault(x => x.SharpObject.FullyQualifiedName == fqn);
+                .Include( x => x.SharpObject )
+                .FirstOrDefault( x => x.SharpObject.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( retVal != null )
             {
-                if (updateExisting)
-                    return UpdateEvent(symbol, retVal) ? retVal : null;
+                if( updateExisting )
+                    return UpdateEvent( symbol, retVal ) ? retVal : null;
 
                 return retVal;
             }
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                _logger.Error<string>("Couldn't find EventDb object for '{0}' in the database", fqn);
+                _logger.Error<string>( "Couldn't find EventDb object for '{0}' in the database", fqn );
                 return null;
             }
 
-            if (!GetContainingAndReturnValueTypes(symbol, out var propDb, out var containingDb))
+            if( !GetContainingAndReturnValueTypes( symbol, out var propDb, out var containingDb ) )
                 return null;
 
             retVal = new EventDb()
             {
-                SharpObject = GetSharpObject(symbol, true, SharpObjectType.Field)!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Field )!,
                 DefiningType = containingDb!,
                 EventType = propDb!
             };
 
-            _dbContext.Events.Add(retVal);
+            _dbContext.Events.Add( retVal );
 
             if( UpdateEvent( symbol, retVal ) )
                 return retVal;
@@ -1543,15 +1472,15 @@ namespace J4JSoftware.Roslyn
 
             MethodDb? removeMethod = null;
 
-            if (symbol.RemoveMethod != null && !symbol.RemoveMethod.IsImplicitlyDeclared)
+            if( symbol.RemoveMethod != null && !symbol.RemoveMethod.IsImplicitlyDeclared )
             {
-                removeMethod = GetMethod(symbol.RemoveMethod);
+                removeMethod = GetMethod( symbol.RemoveMethod );
 
-                if (removeMethod == null)
+                if( removeMethod == null )
                 {
-                    _logger.Error<string, string>("Couldn't find IEventSymbol remove method '{0}' for event '{1}'",
+                    _logger.Error<string, string>( "Couldn't find IEventSymbol remove method '{0}' for event '{1}'",
                         symbol.RemoveMethod.ToUniqueName(),
-                        symbol.ToUniqueName());
+                        symbol.ToUniqueName() );
 
                     return false;
                 }
@@ -1577,23 +1506,330 @@ namespace J4JSoftware.Roslyn
 
         #endregion
 
-        private SharpObject? GetSharpObject(ISymbol symbol, bool createIfMissing = false, SharpObjectType soType = SharpObjectType.Unknown )
+        #region Attribute
+
+        public ISharpObject? GetAttributableEntity( ISymbol symbol )
         {
             var fqn = symbol.ToUniqueName();
 
-            var retVal = _dbContext.SharpObjects.FirstOrDefault(x => x.FullyQualifiedName == fqn);
+            var sharpObj = _dbContext.SharpObjects.FirstOrDefault( x => x.FullyQualifiedName == fqn );
 
-            if (retVal != null)
+            if( sharpObj == null )
+            {
+                _logger.Error<string>( "Couldn't find '{0}' in the database", fqn );
+                return null;
+            }
+
+            switch( sharpObj.SharpObjectType )
+            {
+                case SharpObjectType.Assembly:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.Assembly )
+                        .Load();
+
+                    return sharpObj.Assembly;
+
+                case SharpObjectType.Namespace:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.Namespace )
+                        .Load();
+
+                    return sharpObj.Namespace;
+
+                case SharpObjectType.FixedType:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.FixedType )
+                        .Load();
+
+                    return sharpObj.FixedType;
+
+                case SharpObjectType.GenericType:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.GenericType )
+                        .Load();
+
+                    return sharpObj.GenericType;
+
+                case SharpObjectType.ParametricType:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.ParametricType )
+                        .Load();
+
+                    return sharpObj.ParametricType;
+
+                case SharpObjectType.ParametricMethodType:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.ParametricMethodType )
+                        .Load();
+
+                    return sharpObj.ParametricMethodType;
+
+                case SharpObjectType.ArrayType:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.ArrayType )
+                        .Load();
+
+                    return sharpObj.ArrayType;
+
+                case SharpObjectType.Method:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.Method )
+                        .Load();
+
+                    return sharpObj.Method;
+
+                case SharpObjectType.MethodArgument:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.MethodArgument )
+                        .Load();
+
+                    return sharpObj.MethodArgument;
+
+                case SharpObjectType.Property:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.Property )
+                        .Load();
+
+                    return sharpObj.Property;
+
+                case SharpObjectType.PropertyParameter:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.PropertyParameter )
+                        .Load();
+
+                    return sharpObj.PropertyParameter;
+
+                case SharpObjectType.Field:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.Field )
+                        .Load();
+
+                    return sharpObj.Field;
+
+                case SharpObjectType.Event:
+                    _dbContext.Entry( sharpObj )
+                        .Reference( x => x.Event )
+                        .Load();
+
+                    return sharpObj.Event;
+            }
+
+            _logger.Error( "Unsupported SharpObjectType {0}", sharpObj.SharpObjectType );
+
+            return null;
+        }
+
+        public AttributeDb? GetAttribute<TEntity>( TEntity targetObjDb, AttributeData attrData,
+            bool createIfMissing = false )
+            where TEntity : class, ISharpObject
+        {
+            if( attrData.AttributeClass == null )
+            {
+                _logger.Error( "Undefined AttributeClass" );
+                return null;
+            }
+
+            var attrTypeDb = GetImplementableType( attrData.AttributeClass );
+            if( attrTypeDb == null )
+            {
+                _logger.Error<string>( "Couldn't find ImplementableType entity for '{0}'",
+                    attrData.AttributeClass.ToUniqueName() );
+
+                return null;
+            }
+
+            if( attrData.AttributeConstructor == null )
+            {
+                _logger.Error( "Undefined AttributeConstructor" );
+                return null;
+            }
+
+            var attrCtorDb = GetMethod( attrData.AttributeConstructor );
+            if( attrCtorDb == null )
+            {
+                LoadSharpObject( attrTypeDb );
+
+                _logger.Error<string>( "Couldn't find constructor for '{0}'",
+                    attrTypeDb.SharpObject.FullyQualifiedName );
+
+                return null;
+            }
+
+            var retVal = _dbContext.Attributes.FirstOrDefault( x =>
+                x.TargetObjectID == targetObjDb.SharpObjectID && x.AttributeTypeID == attrTypeDb.SharpObjectID );
+
+            if( retVal != null )
+                return retVal;
+
+            LoadSharpObject( targetObjDb );
+
+            if( !createIfMissing )
+            {
+                // make sure we can access the fully qualified names
+                LoadSharpObject( attrTypeDb );
+
+                _logger.Error<string, string>(
+                    "Couldn't create Attribute for entity '{0}' and attribute '{1}' ",
+                    targetObjDb.SharpObject.FullyQualifiedName,
+                    attrTypeDb.SharpObject.FullyQualifiedName );
+
+                return null;
+            }
+
+            retVal = new AttributeDb
+            {
+                TargetObject = targetObjDb.SharpObject,
+                AttributeType = attrTypeDb
+            };
+
+            _dbContext.Attributes.Add( retVal );
+
+            return retVal;
+        }
+
+        public AttributeArgumentDb? GetAttributeArgument(
+            AttributeDb attrDb,
+            AttributeData attrData,
+            string propName,
+            bool createIfMissing = false )
+        {
+            // load the properties of the attribute type so we can ensure the specified
+            // property exists
+            _dbContext.Entry( attrDb )
+                .Reference( x => x.AttributeType )
+                .Load();
+
+            LoadProperties( attrDb.AttributeType );
+            attrDb.AttributeType.Properties.ForEach( LoadSharpObject );
+
+            var propDb = attrDb.AttributeType.Properties.FirstOrDefault( x => x.SharpObject.Name == propName );
+            if( propDb == null )
+            {
+                LoadSharpObject( attrDb.AttributeType );
+
+                _logger.Error<string, string>( "Couldn't find property '{0}' in Attribute '{1}'",
+                    propName,
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName );
+
+                return null;
+            }
+
+            var retVal = _dbContext.AttributeArguments
+                .FirstOrDefault( x =>
+                    x.AttributeID == attrDb.ID
+                    && x.ArgumentType == AttributeArgumentType.NamedProperty
+                    && x.PropertyName == propName );
+
+            if( retVal != null )
+                return retVal;
+
+            if( !createIfMissing )
+            {
+                LoadSharpObject( attrDb.AttributeType );
+
+                _logger.Error<string, string>("Couldn't create AttributeArgumentDb for named property '{0}' on type '{1}'",
+                    propName,
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName);
+
+                return null;
+            }
+
+            retVal = new AttributeArgumentDb
+            {
+                ArgumentType = AttributeArgumentType.NamedProperty,
+                Attribute = attrDb,
+                PropertyName = propName
+            };
+
+            _dbContext.AttributeArguments.Add( retVal );
+
+            return retVal;
+        }
+
+        public AttributeArgumentDb? GetAttributeArgument(
+            AttributeDb attrDb,
+            AttributeData attrData,
+            int ctorArgOrdinal,
+            bool createIfMissing = false )
+        {
+            // make sure we can find the right constructor
+            if( attrData.AttributeConstructor == null )
+            {
+                LoadSharpObject( attrDb.AttributeType );
+
+                _logger.Error<string>( "Undefined AttributeConstructor for attribute '{0}'",
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName );
+
+                return null;
+            }
+
+            var ctorDb = GetMethod( attrData.AttributeConstructor );
+            if( ctorDb == null )
+            {
+                LoadSharpObject( attrDb.AttributeType );
+
+                _logger.Error<string, string>( "Couldn't find constructor '{0}' for Attribute '{1}'",
+                    attrData.AttributeConstructor.ToUniqueName(),
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName );
+
+                return null;
+            }
+
+            var retVal = _dbContext.AttributeArguments
+                .FirstOrDefault( x =>
+                    x.AttributeID == attrDb.ID
+                    && x.ArgumentType == AttributeArgumentType.ConstructorArgument
+                    && x.ConstructorArgumentOrdinal == ctorArgOrdinal );
+
+            if( retVal != null )
                 return retVal;
 
             if (!createIfMissing)
             {
-                _logger.Error<string>("Couldn't find SharpObject for '{0}' in the database", fqn);
+                LoadSharpObject(attrDb.AttributeType);
+
+                _logger.Error<int, string>("Couldn't create AttributeArgumentDb for constructor argument #{0} on type '{1}'",
+                    ctorArgOrdinal,
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName);
+
+                return null;
+            }
+
+            retVal = new AttributeArgumentDb
+            {
+                ArgumentType = AttributeArgumentType.ConstructorArgument,
+                Attribute = attrDb,
+                ConstructorArgumentOrdinal = ctorArgOrdinal
+            };
+
+            _dbContext.AttributeArguments.Add( retVal );
+
+            return retVal;
+        }
+
+        #endregion
+
+        #region support methods
+
+        private SharpObject? GetSharpObject( ISymbol symbol, bool createIfMissing = false,
+            SharpObjectType soType = SharpObjectType.Unknown )
+        {
+            var fqn = symbol.ToUniqueName();
+
+            var retVal = _dbContext.SharpObjects.FirstOrDefault( x => x.FullyQualifiedName == fqn );
+
+            if( retVal != null )
+                return retVal;
+
+            if( !createIfMissing )
+            {
+                _logger.Error<string>( "Couldn't find SharpObject for '{0}' in the database", fqn );
                 return null;
             }
 
             if( soType == SharpObjectType.Unknown )
-                throw new ArgumentException($"Can't create a SharpObject whose SharpObjectType is SharpObjectType.Unknown");
+                throw new ArgumentException(
+                    $"Can't create a SharpObject whose SharpObjectType is SharpObjectType.Unknown" );
 
             retVal = new SharpObject
             {
@@ -1603,23 +1839,15 @@ namespace J4JSoftware.Roslyn
                 SharpObjectType = soType
             };
 
-            _dbContext.SharpObjects.Add(retVal);
+            _dbContext.SharpObjects.Add( retVal );
 
             return retVal;
         }
 
-        private void LoadSharpObject<TEntity>(TEntity entity)
-            where TEntity : class, ISharpObject
+        private void LoadInScopeInfo( AssemblyDb entity )
         {
-            _dbContext.Entry(entity)
-                .Reference(x => x.SharpObject)
-                .Load();
-        }
-
-        private void LoadInScopeInfo(AssemblyDb entity)
-        {
-            _dbContext.Entry(entity)
-                .Reference(x => x.InScopeInfo)
+            _dbContext.Entry( entity )
+                .Reference( x => x.InScopeInfo )
                 .Load();
         }
 
@@ -1630,7 +1858,7 @@ namespace J4JSoftware.Roslyn
 
             var fqn = symbol.ToUniqueName();
 
-            if ( entity.SharpObject.FullyQualifiedName.Equals( fqn, StringComparison.Ordinal ) )
+            if( entity.SharpObject.FullyQualifiedName.Equals( fqn, StringComparison.Ordinal ) )
                 return true;
 
             _logger.Error<string, Type, string>( "ISymbol '{0}' does not correspond to {1} '{2}'",
@@ -1641,20 +1869,20 @@ namespace J4JSoftware.Roslyn
             return false;
         }
 
-        private bool GetContainingAssembly(ITypeSymbol symbol, out AssemblyDb? assemblyDb)
+        private bool GetContainingAssembly( ITypeSymbol symbol, out AssemblyDb? assemblyDb )
         {
             assemblyDb = symbol switch
             {
-                IArrayTypeSymbol arraySymbol => GetAssembly(arraySymbol.ElementType.ContainingAssembly),
-                _ => GetAssembly(symbol.ContainingAssembly)
+                IArrayTypeSymbol arraySymbol => GetAssembly( arraySymbol.ElementType.ContainingAssembly ),
+                _ => GetAssembly( symbol.ContainingAssembly )
             };
 
-            if (assemblyDb == null)
+            if( assemblyDb == null )
             {
                 _logger.Error<string, string>(
                     "Couldn't find AssemblyDb entity for ContainingAssembly '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingAssembly.ToUniqueName(),
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
@@ -1662,7 +1890,8 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool GetContainingAssemblyNamespace(ITypeSymbol symbol, out AssemblyDb? assemblyDb, out NamespaceDb? nsDb)
+        private bool GetContainingAssemblyNamespace( ITypeSymbol symbol, out AssemblyDb? assemblyDb,
+            out NamespaceDb? nsDb )
         {
             nsDb = null;
 
@@ -1672,12 +1901,12 @@ namespace J4JSoftware.Roslyn
                 _ => GetAssembly( symbol.ContainingAssembly )
             };
 
-            if (assemblyDb == null)
+            if( assemblyDb == null )
             {
                 _logger.Error<string, string>(
                     "Couldn't find AssemblyDb entity for ContainingAssembly '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingAssembly.ToUniqueName(),
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
@@ -1688,12 +1917,12 @@ namespace J4JSoftware.Roslyn
                 _ => GetNamespace( symbol.ContainingNamespace )
             };
 
-            if (nsDb == null)
+            if( nsDb == null )
             {
                 _logger.Error<string, string>(
                     "Couldn't find NamespaceDb entity for ContainingNamespace '{0}' in ITypeSymbol '{1}'",
                     symbol.ContainingNamespace.ToUniqueName(),
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
@@ -1706,7 +1935,8 @@ namespace J4JSoftware.Roslyn
             return true;
         }
 
-        private bool GetContainingAndReturnValueTypes(ISymbol symbol, out BaseTypeDb? returnDb, out ImplementableTypeDb? containingDb )
+        private bool GetContainingAndReturnValueTypes( ISymbol symbol, out BaseTypeDb? returnDb,
+            out ImplementableTypeDb? containingDb )
         {
             returnDb = null;
 
@@ -1724,7 +1954,7 @@ namespace J4JSoftware.Roslyn
                 _logger.Error<string, string>(
                     "Couldn't find entity for ContainingType '{0}' in ISymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
@@ -1738,17 +1968,19 @@ namespace J4JSoftware.Roslyn
                 _ => null
             };
 
-            if (returnDb == null)
+            if( returnDb == null )
             {
                 _logger.Error<string, string>(
                     "Couldn't find entity for return value/property/field type '{0}' in ISymbol '{1}'",
                     symbol.ContainingType.ToUniqueName(),
-                    symbol.ToUniqueName());
+                    symbol.ToUniqueName() );
 
                 return false;
             }
 
             return true;
         }
+
+        #endregion
     }
 }

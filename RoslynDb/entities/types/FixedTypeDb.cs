@@ -1,4 +1,5 @@
-﻿using J4JSoftware.EFCoreUtilities;
+﻿using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

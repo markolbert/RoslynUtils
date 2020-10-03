@@ -1,4 +1,5 @@
-﻿using J4JSoftware.EFCoreUtilities;
+﻿using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 #pragma warning disable 8618
@@ -24,6 +25,9 @@ namespace J4JSoftware.Roslyn
 
         public int ArgumentTypeID { get; set; }
         public BaseTypeDb ArgumentType { get; set; }
+
+        // list of attribute arguments which reference this argument
+        public List<AttributeArgumentDb> AttributeArgumentReferences { get; set; }
     }
 
     internal class MethodArgumentConfigurator : EntityConfigurator<ArgumentDb>
