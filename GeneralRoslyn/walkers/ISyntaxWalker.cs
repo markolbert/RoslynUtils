@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ISyntaxWalker : ITopologicalAction<CompiledProject>, IEquatable<ISyntaxWalker> //ITopologicalSort<ISyntaxWalker>
+    public interface ISyntaxWalker : ITopologicalAction<CompiledProject>, IEquatable<ISyntaxWalker>
     {
         Type SymbolType { get; }
         string Name { get; }

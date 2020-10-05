@@ -3,6 +3,25 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
+    public enum NodeSinkResult
+    {
+        Okay,
+        AlreadyProcessed,
+        UnsupportedSyntaxNode
+    }
+
+    public interface ISingleWalker : ITopologicalAction<CompiledProject>
+    {
+
+    }
+
+    public interface ISyntaxNodeSink
+    {
+        bool InitializeSink(SemanticModel model);
+        bool FinalizeSink(ISingleWalker syntaxWalker);
+        NodeSinkResult OutputSyntaxNode(SyntaxNode node);
+    }
+
     public interface ISymbolSink
     {
         bool SupportsSymbol( Type symbolType );
