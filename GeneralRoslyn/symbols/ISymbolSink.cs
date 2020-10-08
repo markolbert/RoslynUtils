@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -7,7 +8,10 @@ namespace J4JSoftware.Roslyn
     {
         Okay,
         AlreadyProcessed,
-        UnsupportedSyntaxNode
+        IgnorableNode,
+        InvalidNode,
+        TerminalNode,
+        UnsupportedNode
     }
 
     public interface ISingleWalker : ITopologicalAction<CompiledProject>
@@ -17,9 +21,13 @@ namespace J4JSoftware.Roslyn
 
     public interface ISyntaxNodeSink
     {
+        bool AlreadyProcessed( SyntaxNode node );
+        bool ProcessesNode(SyntaxNode node);
+        bool DrillIntoNode( SyntaxNode node );
+
         bool InitializeSink(SemanticModel model);
         bool FinalizeSink(ISingleWalker syntaxWalker);
-        NodeSinkResult OutputSyntaxNode(SyntaxNode node);
+        void OutputSyntaxNode( Stack<SyntaxNode> nodeStack );
     }
 
     public interface ISymbolSink

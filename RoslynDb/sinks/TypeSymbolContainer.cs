@@ -95,17 +95,11 @@ namespace J4JSoftware.Roslyn.Sinks
                 yield break;
             }
 
-            var junk = _interfaces.Nodes.FirstOrDefault( x => x.ToFullName()
-                .IndexOf( "IEnumerable<T>", StringComparison.Ordinal ) >= 0 );
-
             if (!_interfaces.Sort(out var interfaces, out _))
             {
                 _logger.Error("Couldn't topologically sort the interface ITypeSymbols");
                 yield break;
             }
-
-            var junk2 = interfaces!.FirstOrDefault(x => x.ToFullName()
-                .IndexOf("IEnumerable<T>", StringComparison.Ordinal) >= 0);
 
             // not sure why the topological sorts come out backwards but they do...
             nonInterfaces!.Reverse();

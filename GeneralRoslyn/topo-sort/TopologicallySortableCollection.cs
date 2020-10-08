@@ -3,16 +3,23 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using J4JSoftware.Logging;
+using Microsoft.CodeAnalysis;
 using Serilog;
 
 namespace J4JSoftware.Roslyn
 {
+    public enum TopologicalAdditionResult
+    {
+        AddedEntry,
+        DuplicateEntry
+    }
+
     public class TopologicallySortableCollection<T>
         where T : class, IEquatable<T>
     {
         private readonly IEqualityComparer<T>? _comparer;
         private readonly HashSet<T> _nodes = new HashSet<T>();
-        private readonly HashSet<(T startOfEdge, T endOfEdge)> _edges = new HashSet<(T startOfEdge, T endOfEdge)>();
+        private readonly HashSet<(T predecessorNode, T node)> _edges = new HashSet<(T predecessorNode, T node)>();
 
         public TopologicallySortableCollection( IEqualityComparer<T>? comparer = null )
         {
@@ -30,44 +37,49 @@ namespace J4JSoftware.Roslyn
         public List<T> Edges( T? node = null )
         {
             if( node == null )
-                return _nodes.Where( x => _edges.All( y => !NodesAreEqual(y.endOfEdge, x) ) )
+                return _nodes.Where( x => _edges.All( y => !NodesAreEqual(y.node, x) ) )
                     .Distinct()
                     .ToList();
             else
-                return _edges.Where( x => NodesAreEqual(x.startOfEdge ,node) )
-                    .Select( x => x.endOfEdge )
+                return _edges.Where( x => NodesAreEqual(x.predecessorNode ,node) )
+                    .Select( x => x.node )
                     .Distinct()
                     .ToList();
         }
 
         public bool HasNode( T node ) => _nodes.Any( n => NodesAreEqual(n ,node) );
 
-        public bool HasEdge( T startOfEdge, T? endOfEdge )
+        public bool HasEdge( T predecessorNode, T node )
         {
-            if( endOfEdge == null )
-                return false;
-
-            var edge = ( startOfEdge, endOfEdge );
+            var edge = ( predecessorNode, node );
 
             return _edges.Any( x => EdgesAreEqual(x ,edge) );
         }
 
-        public virtual T Add( T startOfEdge, T? endOfEdge = null )
+        public virtual T Add( T unboundNode )
         {
-            if( _nodes.All( x => !NodesAreEqual(x, startOfEdge)) )
-                _nodes.Add( startOfEdge );
+            if( _nodes.All( x => !NodesAreEqual(x, unboundNode)) )
+                _nodes.Add( unboundNode );
 
-            if( endOfEdge == null )
-                return startOfEdge;
+            return unboundNode;
+        }
 
-            var edge = ( startOfEdge, endOfEdge );
+        public virtual T Add( T predecessorNode, T node )
+        {
+            if( node is IAssemblySymbol )
+                System.Diagnostics.Debugger.Break();
 
-            if( startOfEdge == endOfEdge || _edges.Any( x => EdgesAreEqual( x,edge )) )
-                return startOfEdge;
+            Add( predecessorNode );
+            Add( node );
+
+            var edge = ( predecessorNode, node );
+
+            if( predecessorNode == node || _edges.Any( x => EdgesAreEqual( x, edge ) ) )
+                return predecessorNode;
 
             _edges.Add( edge );
 
-            return startOfEdge;
+            return predecessorNode;
         }
 
         public void Remove( T toRemove )
@@ -79,7 +91,7 @@ namespace J4JSoftware.Roslyn
 
             foreach( var edge in _edges )
             {
-                if( NodesAreEqual(edge.startOfEdge, toRemove) || NodesAreEqual(edge.endOfEdge, toRemove))
+                if( NodesAreEqual(edge.predecessorNode, toRemove) || NodesAreEqual(edge.node, toRemove))
                     edgesToRemove.Add( edge );
             }
 

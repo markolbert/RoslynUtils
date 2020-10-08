@@ -12,18 +12,17 @@ namespace J4JSoftware.Roslyn
     public class SingleWalker : EnumerableProcessorBase<CompiledProject>, ISingleWalker
     {
         private readonly ISyntaxNodeSink _nodeSink;
-        private readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
+        private readonly ExecutionContext _context;
 
         public SingleWalker(
             ISyntaxNodeSink nodeSink,
+            ExecutionContext context,
             IJ4JLogger logger
         )
             : base( logger )
         {
             _nodeSink = nodeSink;
-
-            _ignoredNodeKinds.Add(SyntaxKind.UsingDirective);
-            _ignoredNodeKinds.Add(SyntaxKind.QualifiedName);
+            _context = context;
         }
 
         protected override bool PreLoopInitialization( IEnumerable<CompiledProject> compResults )
@@ -33,43 +32,44 @@ namespace J4JSoftware.Roslyn
             if( !base.PreLoopInitialization( compResults ) )
                 return false;
 
+            _context.SetCompiledProjects(compResults);
+
             return true;
         }
 
         protected override bool ProcessLoop( IEnumerable<CompiledProject> compResults )
         {
+            var nodeStack = new Stack<SyntaxNode>();
+
             foreach (var compResult in compResults.SelectMany(cr => cr))
             {
                 if (!_nodeSink.InitializeSink(compResult.Model))
                     return false;
 
-                TraverseInternal(compResult.RootSyntaxNode);
+                nodeStack.Clear();
+                nodeStack.Push( compResult.RootSyntaxNode );
+
+                TraverseInternal(nodeStack);
             }
 
             return true;
         }
 
-        protected void TraverseInternal( SyntaxNode node )
+        protected void TraverseInternal( Stack<SyntaxNode> nodeStack )
         {
-            // don't re-visit nodes
-            switch( _nodeSink.OutputSyntaxNode( node ) )
-            {
-                case NodeSinkResult.AlreadyProcessed:
-                    Logger.Verbose<string>("Already processed SyntaxNode", node.ToString());
-                    return;
+            _nodeSink.OutputSyntaxNode( nodeStack );
 
-                case NodeSinkResult.UnsupportedSyntaxNode:
-                    Logger.Verbose<SyntaxKind>("Unsupported SyntaxNode ({0})", node.Kind());
-                    return;
-            }
-
-            if ( !GetChildNodesToVisit( node, out var children ) )
+            if( !_nodeSink.DrillIntoNode( nodeStack.Peek() ) )
                 return;
 
-            foreach( var childNode in children! )
+            foreach( var childNode in nodeStack.Peek().ChildNodes() )
             {
-                TraverseInternal( childNode );
+                nodeStack.Push( childNode );
+
+                TraverseInternal( nodeStack );
             }
+
+            nodeStack.Pop();
         }
 
         protected override bool PostLoopFinalization( IEnumerable<CompiledProject> inputData )
@@ -80,22 +80,6 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             return _nodeSink.FinalizeSink(this);
-        }
-
-        private bool GetChildNodesToVisit( SyntaxNode node, out List<SyntaxNode>? result )
-        {
-            result = null;
-
-            // we're interested in traversing almost everything that's within scope
-            // except for node types that we know don't lead any place interesting
-            if (_ignoredNodeKinds.Any(nk => nk == node.Kind()))
-                return false;
-
-            result = node.ChildNodes()
-                .Where(n => _ignoredNodeKinds.All(i => i != n.Kind()))
-                .ToList();
-
-            return true;
         }
     }
 }
