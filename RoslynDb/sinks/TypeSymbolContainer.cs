@@ -31,8 +31,8 @@ namespace J4JSoftware.Roslyn.Sinks
             }
         }
 
-        private readonly TopologicallySortableCollection<ISymbol> _nonInterfaces;
-        private readonly TopologicallySortableCollection<ISymbol> _interfaces;
+        private readonly TopologicalCollection<ISymbol> _nonInterfaces;
+        private readonly TopologicalCollection<ISymbol> _interfaces;
         private readonly IJ4JLogger _logger;
 
         public TypeSymbolContainer(
@@ -41,8 +41,8 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             var comparer = new TypeSymbolComparer();
 
-            _nonInterfaces = new TopologicallySortableCollection<ISymbol>( comparer );
-            _interfaces = new TopologicallySortableCollection<ISymbol>( comparer );
+            _nonInterfaces = new TopologicalCollection<ISymbol>( comparer );
+            _interfaces = new TopologicalCollection<ISymbol>( comparer );
 
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
@@ -64,7 +64,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if ((symbol?.TypeKind ?? TypeKind.Class) != TypeKind.Interface)
             {
-                _nonInterfaces.Add(parentSymbol, symbol);
+                _nonInterfaces.AddDependency(parentSymbol, symbol);
                 return true;
             }
 
@@ -81,7 +81,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            _interfaces.Add( parentSymbol );
+            _interfaces.AddValue( parentSymbol );
 
             return true;
         }

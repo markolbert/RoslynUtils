@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class AtomicTopologicalActions<TSymbol> : TopologicallySortableCollection<IEnumerableProcessor<TSymbol>>, IProcessorCollection<TSymbol>
+    public class AtomicTopologicalActions<TSymbol> : TopologicalCollection<IEnumerableProcessor<TSymbol>>, IProcessorCollection<TSymbol>
         where TSymbol : ISymbol
     {
         protected AtomicTopologicalActions( 
@@ -29,15 +29,17 @@ namespace J4JSoftware.Roslyn
 
             var allOkay = true;
 
-            if( !Sort( out var processors, out var remainingEdges ) )
+            if( !Sort( out var procesorNodes, out var remainingEdges ) )
             {
                 Logger.Error( "Couldn't topologically sort processors" );
                 return false;
             }
 
-            foreach( var processor in processors! )
+            procesorNodes.Reverse();
+
+            foreach( var node in procesorNodes! )
             {
-                allOkay &= processor.Process( symbols );
+                allOkay &= node.Value.Process( symbols );
 
                 if( !allOkay && Context.StopOnFirstError )
                     break;

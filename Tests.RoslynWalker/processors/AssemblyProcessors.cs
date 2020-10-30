@@ -14,9 +14,9 @@ namespace Tests.RoslynWalker
             Func<IJ4JLogger> loggerFactory 
         ) : base( "Assembly processing", dataLayer,  context, loggerFactory() )
         {
-            var node = Add( new AssemblyProcessor( dataLayer, context, loggerFactory() ) );
+            var node = AddValue( new AssemblyProcessor( dataLayer, context, loggerFactory() ) );
 
-            Add( new InScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node );
+            AddDependency( new InScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
         }
 
         protected override bool Initialize( IEnumerable<IAssemblySymbol> symbols )

@@ -15,13 +15,13 @@ namespace Tests.RoslynWalker
         ) 
             : base( "Type processing", dataLayer, context, loggerFactory() )
         {
-            var node = Add(new TypeAssemblyProcessor(dataLayer, context, loggerFactory()));
-            node = Add( new TypeInScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node );
-            node = Add(new TypeNamespaceProcessor(dataLayer, context, loggerFactory()), node );
-            node = Add(new SortedTypeProcessor(dataLayer, context, loggerFactory()), node);
-            var taNode = Add( new TypeArgumentProcessor( dataLayer, context, loggerFactory() ), node );
-            var tptNode = Add(new TypeParametricTypeProcessor(dataLayer, context, loggerFactory()), node);
-            var ancestorNode = Add( new AncestorProcessor( dataLayer, context, loggerFactory() ), node );
+            var node = AddValue(new TypeAssemblyProcessor(dataLayer, context, loggerFactory()));
+            node = AddDependency( new TypeInScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
+            node = AddDependency(new TypeNamespaceProcessor(dataLayer, context, loggerFactory()), node.Value );
+            node = AddDependency(new SortedTypeProcessor(dataLayer, context, loggerFactory()), node.Value);
+            AddDependency( new TypeArgumentProcessor( dataLayer, context, loggerFactory() ), node.Value );
+            AddDependency(new TypeParametricTypeProcessor(dataLayer, context, loggerFactory()), node.Value);
+            AddDependency( new AncestorProcessor( dataLayer, context, loggerFactory() ), node.Value );
         }
 
         protected override bool Initialize( IEnumerable<ITypeSymbol> symbols )

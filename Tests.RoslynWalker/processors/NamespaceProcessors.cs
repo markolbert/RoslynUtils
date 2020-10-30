@@ -14,7 +14,7 @@ namespace Tests.RoslynWalker
             Func<IJ4JLogger> loggerFactory 
         ) : base( "Namespace processing", dataLayer, context, loggerFactory() )
         {
-            Add( new NamespaceProcessor( dataLayer, context, loggerFactory() ) );
+            AddValue( new NamespaceProcessor( dataLayer, context, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<INamespaceSymbol> symbols )

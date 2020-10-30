@@ -14,7 +14,7 @@ namespace Tests.RoslynWalker
             Func<IJ4JLogger> loggerFactory 
         ) : base( "Field processing", dataLayer, context, loggerFactory() )
         {
-            Add( new FieldProcessor( dataLayer, context, loggerFactory() ) );
+            AddValue( new FieldProcessor( dataLayer, context, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<IFieldSymbol> symbols )

@@ -35,8 +35,8 @@ namespace J4JSoftware.Roslyn
 
         private readonly List<SyntaxNode> _visitedNodes = new List<SyntaxNode>();
 
-        private readonly TopologicallySortableCollection<ISymbol> _symbols =
-            new TopologicallySortableCollection<ISymbol>( new SymbolComparer() );
+        private readonly TopologicalCollection<ISymbol> _symbols =
+            new TopologicalCollection<ISymbol>( new SymbolComparer() );
 
         private readonly IRoslynDataLayer _dataLayer;
         private readonly ExecutionContext _context;
@@ -171,7 +171,7 @@ namespace J4JSoftware.Roslyn
 
                 case IFieldSymbol fieldSymbol:
                 case IEventSymbol eventSymbol:
-                    _symbols.Add(symbol.ContainingType, symbol);
+                    _symbols.AddDependency(symbol.ContainingType, symbol);
 
                     ProcessType( symbol.ContainingType/*, symbol.ContainingNamespace*/ );
                     ProcessAttributes(symbol);
@@ -210,11 +210,13 @@ namespace J4JSoftware.Roslyn
             // not sure why the topological sorts come out backwards but they do...
             sortedSymbols!.Reverse();
 
+            var junk = sortedSymbols.Select( x => x.Value ).ToList();
+
             var allOkay = true;
 
-            foreach (var symbol in sortedSymbols!)
+            foreach (var node in sortedSymbols!)
             {
-                var updateSucceeded = symbol switch
+                var updateSucceeded = node.Value switch
                 {
                     IAssemblySymbol assemblySymbol => UpdateAssemblyInDatabase(assemblySymbol),
                     INamespaceSymbol nsSymbol => UpdateNamespaceInDatabase(nsSymbol),
@@ -266,13 +268,13 @@ namespace J4JSoftware.Roslyn
 
         private void ProcessAssembly( IAssemblySymbol symbol )
         {
-            _symbols.Add( symbol );
+            _symbols.AddValue( symbol );
             ProcessAttributes( symbol );
         }
 
         private void ProcessNamespace( INamespaceSymbol symbol )
         {
-            _symbols.Add( symbol.ContainingAssembly, symbol );
+            _symbols.AddDependency( symbol.ContainingAssembly, symbol );
         }
 
         #region type symbol extraction methods
@@ -329,9 +331,9 @@ namespace J4JSoftware.Roslyn
             //    _symbols.Add( interfaceSymbol.ContainingNamespace, interfaceSymbol );
             //else 
             if( interfaceSymbol.ContainingType == null )
-                _symbols.Add( interfaceSymbol.ContainingNamespace, interfaceSymbol );
+                _symbols.AddDependency( interfaceSymbol.ContainingNamespace, interfaceSymbol );
             else
-                _symbols.Add(interfaceSymbol.ContainingType, interfaceSymbol);
+                _symbols.AddDependency(interfaceSymbol.ContainingType, interfaceSymbol);
 
             // add any type parameters and type arguments
             foreach ( var tpSymbol in interfaceSymbol.TypeParameters )
@@ -364,9 +366,9 @@ namespace J4JSoftware.Roslyn
             //    _symbols.Add( symbol.ContainingNamespace, symbol );
             //else 
             if( symbol.ContainingType == null )
-                _symbols.Add( symbol.ContainingNamespace, symbol );
+                _symbols.AddDependency( symbol.ContainingNamespace, symbol );
             else
-                _symbols.Add( symbol.ContainingType, symbol );
+                _symbols.AddDependency( symbol.ContainingType, symbol );
 
             if ( symbol.BaseType != null )
                 ProcessImplementableType( symbol.BaseType/*, symbol*/ );
@@ -426,9 +428,9 @@ namespace J4JSoftware.Roslyn
             //    _symbols.Add( symbol.ContainingNamespace, symbol );
             //else 
             if( symbol.ContainingType == null )
-                _symbols.Add( symbol.ContainingNamespace, symbol );
+                _symbols.AddDependency( symbol.ContainingNamespace, symbol );
             else
-                _symbols.Add(symbol.ContainingType, symbol);
+                _symbols.AddDependency(symbol.ContainingType, symbol);
 
             if ( symbol.BaseType != null )
                 ProcessImplementableType( symbol.BaseType/*, symbol*/ );
@@ -455,9 +457,9 @@ namespace J4JSoftware.Roslyn
             //    _symbols.Add( symbol.ContainingNamespace, symbol );
             //else 
             if( symbol.ContainingType == null )
-                _symbols.Add( symbol.ContainingNamespace, symbol );
+                _symbols.AddDependency( symbol.ContainingNamespace, symbol );
             else
-                _symbols.Add(symbol.ContainingType, symbol);
+                _symbols.AddDependency(symbol.ContainingType, symbol);
 
             if ( symbol.BaseType != null )
                 ProcessImplementableType( symbol.BaseType/*, symbol*/ );
@@ -481,7 +483,7 @@ namespace J4JSoftware.Roslyn
 
         private void ProcessMethod( IMethodSymbol symbol )
         {
-            _symbols.Add( symbol.ContainingType, symbol );
+            _symbols.AddDependency( symbol.ContainingType, symbol );
 
             ProcessType( symbol.ContainingType );
 
@@ -502,7 +504,7 @@ namespace J4JSoftware.Roslyn
 
         private void ProcessProperty(IPropertySymbol symbol)
         {
-            _symbols.Add(symbol.ContainingType, symbol);
+            _symbols.AddDependency(symbol.ContainingType, symbol);
 
             ProcessType(symbol.ContainingType);
 
@@ -518,11 +520,15 @@ namespace J4JSoftware.Roslyn
 
         private void ProcessAttributes( ISymbol symbol )
         {
+            int junk = 0;
+
             foreach( var attrData in symbol.GetAttributes() )
             {
                 if( attrData.AttributeClass != null )
                 {
-                    _symbols.Add( symbol, attrData.AttributeClass );
+                    junk = attrData.AttributeClass.ToUniqueName().IndexOf( "TargetFrameworkAttribute" );
+
+                    _symbols.AddDependency( attrData.AttributeClass, symbol );
 
                     ProcessNamespace(attrData.AttributeClass.ContainingNamespace);
                     ProcessType( attrData.AttributeClass );
@@ -530,7 +536,10 @@ namespace J4JSoftware.Roslyn
 
                 if( attrData.AttributeConstructor != null )
                 {
-                    _symbols.Add( attrData.AttributeConstructor.ContainingType, attrData.AttributeConstructor );
+                    junk = attrData.AttributeConstructor.ContainingType.ToUniqueName()
+                        .IndexOf( "TargetFrameworkAttribute" );
+
+                    _symbols.AddDependency( attrData.AttributeConstructor.ContainingType, attrData.AttributeConstructor );
 
                     ProcessNamespace( attrData.AttributeConstructor.ContainingNamespace );
                     ProcessType( attrData.AttributeConstructor.ContainingType );

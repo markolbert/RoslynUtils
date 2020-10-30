@@ -12,8 +12,8 @@ namespace J4JSoftware.Roslyn
     {
         private readonly List<TAction> _items;
 
-        private readonly TopologicallySortableCollection<TAction> _collection =
-            new TopologicallySortableCollection<TAction>();
+        private readonly TopologicalCollection<TAction> _collection =
+            new TopologicalCollection<TAction>();
 
         protected TopologicalActions(
             IEnumerable<TAction> items,
@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
 
-        public int NumRoots => _collection.Edges( null ).Count;
+        public int NumRoots => _collection.GetDependents( null ).Count;
 
         public bool Add<TItem>()
             where TItem : TAction
@@ -43,7 +43,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            _collection.Add( item );
+            _collection.AddValue( item );
 
             return true;
         }
@@ -75,7 +75,7 @@ namespace J4JSoftware.Roslyn
                 return false;
             }
 
-            _collection.Add( current, predecessor );
+            _collection.AddDependency( predecessor, current );
 
             return true;
         }
@@ -96,9 +96,11 @@ namespace J4JSoftware.Roslyn
                 yield break;
             }
 
+            sorted.Reverse();
+
             foreach( var item in sorted! )
             {
-                yield return item;
+                yield return item.Value;
             }
         }
 

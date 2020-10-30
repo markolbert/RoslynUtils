@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class SyntaxWalkers : TopologicallySortableCollection<ISyntaxWalker>, IProcessorCollection<CompiledProject>
+    public sealed class SyntaxWalkers : TopologicalCollection<ISyntaxWalker>, IProcessorCollection<CompiledProject>
     {
         private readonly List<ISymbolSink> _sinks;
         private readonly ExecutionContext _context;
@@ -28,53 +28,53 @@ namespace Tests.RoslynWalker
             _logger = loggerFactory();
             _logger.SetLoggedType( this.GetType() );
 
-            var node = Add( new AssemblyWalker( symbolNamer,
+            var node = AddValue( new AssemblyWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<IAssemblySymbol>() ) );
 
-            node = Add( new NamespaceWalker( symbolNamer,
+            node = AddDependency( new NamespaceWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<INamespaceSymbol>() ), node );
+                GetSink<INamespaceSymbol>() ), node.Value );
 
-            node = Add(new TypeWalker(symbolNamer,
+            node = AddDependency(new TypeWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<ITypeSymbol>()), node);
+                GetSink<ITypeSymbol>()), node.Value);
 
-            node = Add(new MethodWalker(symbolNamer,
+            node = AddDependency(new MethodWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<IMethodSymbol>()), node);
+                GetSink<IMethodSymbol>()), node.Value);
 
-            node = Add(new PropertyWalker(symbolNamer,
+            node = AddDependency(new PropertyWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<IPropertySymbol>()), node);
+                GetSink<IPropertySymbol>()), node.Value);
 
-            node = Add(new FieldWalker(symbolNamer,
+            node = AddDependency(new FieldWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<IFieldSymbol>()), node);
+                GetSink<IFieldSymbol>()), node.Value);
 
-            node = Add(new EventWalker(symbolNamer,
+            node = AddDependency(new EventWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<IEventSymbol>()), node);
+                GetSink<IEventSymbol>()), node.Value);
 
-            node = Add(new AttributeWalker(symbolNamer,
+            node = AddDependency(new AttributeWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
-                GetSink<ISymbol>()), node);
+                GetSink<ISymbol>()), node.Value);
         }
 
         private ISymbolSink<TSymbol> GetSink<TSymbol>()
@@ -84,7 +84,7 @@ namespace Tests.RoslynWalker
 
         public bool Process( IEnumerable<CompiledProject> projects )
         {
-            var numRoots = Edges().Count;
+            var numRoots = GetRoots().Count;
 
             switch( numRoots )
             {
@@ -102,17 +102,19 @@ namespace Tests.RoslynWalker
 
             }
 
-            if( !Sort( out var walkers, out var remainingEdges ) )
+            if( !Sort( out var walkerNodes, out var remainingEdges ) )
             {
                 _logger.Error("Couldn't topologically sort ISyntaxWalkers"  );
                 return false;
             }
 
+            walkerNodes.Reverse();
+
             var allOkay = true;
 
-            foreach( var walker in walkers! )
+            foreach( var node in walkerNodes! )
             {
-                allOkay &= walker.Process( projects );
+                allOkay &= node.Value.Process( projects );
 
                 if( !allOkay && _context.StopOnFirstError )
                     break;

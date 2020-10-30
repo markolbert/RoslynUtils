@@ -16,8 +16,8 @@ namespace Tests.RoslynWalker
         {
             var rootProcessor = new PropertyProcessor(dataLayer, context, loggerFactory());
 
-            Add( rootProcessor );
-            Add( new ParameterProcessor( dataLayer, context, loggerFactory() ), rootProcessor );
+            AddValue( rootProcessor );
+            AddDependency( new ParameterProcessor( dataLayer, context, loggerFactory() ), rootProcessor );
         }
 
         protected override bool Initialize( IEnumerable<IPropertySymbol> symbols )

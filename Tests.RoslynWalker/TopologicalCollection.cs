@@ -12,8 +12,8 @@ namespace Tests.RoslynWalker
     {
         private readonly List<TAction> _items;
 
-        private readonly TopologicallySortableCollection<TAction> _collection =
-            new TopologicallySortableCollection<TAction>();
+        private readonly TopologicalCollection<TAction> _collection =
+            new TopologicalCollection<TAction>();
 
         protected TopologicalCollection(
             IEnumerable<TAction> items,
@@ -55,7 +55,7 @@ namespace Tests.RoslynWalker
                 return false;
             }
 
-            _collection.Add( start, end );
+            _collection.AddDependency( start, end );
 
             return true;
         }
@@ -76,9 +76,11 @@ namespace Tests.RoslynWalker
                 yield break;
             }
 
+            sorted.Reverse();
+
             foreach( var item in sorted! )
             {
-                yield return item;
+                yield return item.Value;
             }
         }
 

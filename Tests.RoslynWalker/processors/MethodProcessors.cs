@@ -16,8 +16,8 @@ namespace Tests.RoslynWalker
         {
             var rootProcessor = new MethodProcessor( dataLayer, context, loggerFactory() );
 
-            Add( rootProcessor );
-            Add( new ArgumentProcessor( dataLayer, context, loggerFactory() ), rootProcessor );
+            AddValue( rootProcessor );
+            AddDependency( new ArgumentProcessor( dataLayer, context, loggerFactory() ), rootProcessor );
         }
 
         protected override bool Initialize( IEnumerable<IMethodSymbol> symbols )
