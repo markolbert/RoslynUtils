@@ -24,7 +24,7 @@ namespace J4JSoftware.Roslyn
         public MethodWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger,
             ISymbolSink<IMethodSymbol>? symbolSink = null
         )

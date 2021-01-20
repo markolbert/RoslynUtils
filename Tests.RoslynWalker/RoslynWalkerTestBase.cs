@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace Tests.RoslynWalker
 
             result!.Count.Should().BeGreaterThan( 0 );
 
-            var context = ServiceProvider.Instance.GetRequiredService<ExecutionContext>();
+            var context = ServiceProvider.Instance.GetRequiredService<ActionsContext>();
 
             context.StopOnFirstError = true;
 

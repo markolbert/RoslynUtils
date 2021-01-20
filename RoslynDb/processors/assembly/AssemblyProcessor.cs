@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -10,7 +11,7 @@ namespace J4JSoftware.Roslyn
     {
         public AssemblyProcessor(
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger)
             : base("adding Assemblies to the database", dataLayer, context, logger)
         {

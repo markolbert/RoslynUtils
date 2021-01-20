@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+	  <TargetFramework>net5.0</TargetFramework>
+	  <Nullable>enable</Nullable>
     <AssemblyName>J4JSoftware.Roslyn.Walker</AssemblyName>
     <RootNamespace>J4JSoftware.Roslyn</RootNamespace>
     <Authors>Mark A. Olbert</Authors>
@@ -10,13 +11,12 @@
     <Copyright>2020 all rights reserved</Copyright>
     <AssemblyVersion>0.2.0.0</AssemblyVersion>
     <FileVersion>0.2.0.0</FileVersion>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Buildalyzer" Version="3.0.1" />
-    <PackageReference Include="Buildalyzer.Workspaces" Version="3.0.1" />
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.6.0" />
+    <PackageReference Include="Buildalyzer" Version="3.2.0" />
+    <PackageReference Include="Buildalyzer.Workspaces" Version="3.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.8.0" />
   </ItemGroup>
 
   <ItemGroup>

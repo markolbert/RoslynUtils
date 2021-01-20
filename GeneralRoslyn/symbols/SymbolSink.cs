@@ -1,5 +1,6 @@
 ﻿using System;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -8,11 +9,11 @@ namespace J4JSoftware.Roslyn
         where TSymbol : ISymbol
     {
         protected SymbolSink(
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger
             )
         {
-            ExecutionContext = context;
+            Context = context;
 
             Logger = logger;
             Logger.SetLoggedType( this.GetType() );
@@ -20,7 +21,7 @@ namespace J4JSoftware.Roslyn
 
         protected IJ4JLogger Logger { get; }
         protected ISyntaxWalker? SyntaxWalker { get; private set; } = null;
-        protected ExecutionContext ExecutionContext { get; }
+        protected ActionsContext Context { get; }
 
         public bool Initialized { get; private set; } = false;
 

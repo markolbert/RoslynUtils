@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
@@ -10,11 +11,11 @@ namespace Tests.RoslynWalker
     {
         public FieldProcessors( 
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            ActionsContext context,
             Func<IJ4JLogger> loggerFactory 
         ) : base( "Field processing", dataLayer, context, loggerFactory() )
         {
-            AddValue( new FieldProcessor( dataLayer, context, loggerFactory() ) );
+            AddIndependentNode( new FieldProcessor( dataLayer, context, loggerFactory() ) );
         }
 
         protected override bool Initialize( IEnumerable<IFieldSymbol> symbols )

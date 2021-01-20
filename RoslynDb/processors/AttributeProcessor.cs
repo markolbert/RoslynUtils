@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.XPath;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -12,7 +13,7 @@ namespace J4JSoftware.Roslyn
     {
         public AttributeProcessor(
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger)
             : base("adding Attributes to the database", dataLayer, context, logger)
         {

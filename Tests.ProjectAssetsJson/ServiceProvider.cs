@@ -16,19 +16,12 @@ namespace Tests.ProjectAssetsJson
         {
             var builder = new ContainerBuilder();
 
-            builder.Register( c =>
-                {
-                    var retVal = new J4JLoggerConfiguration { EventElements = EventElements.All };
+            var loggerConfig = new J4JLoggerConfiguration { EventElements = EventElements.All };
 
-                    retVal.Channels.Add( new ConsoleChannel() { MinimumLevel = LogEventLevel.Verbose } );
-                    retVal.Channels.Add( new DebugChannel() { MinimumLevel = LogEventLevel.Verbose } );
+            loggerConfig.Channels.Add( new ConsoleConfig() { MinimumLevel = LogEventLevel.Verbose } );
+            loggerConfig.Channels.Add( new DebugConfig() { MinimumLevel = LogEventLevel.Verbose } );
 
-                    return retVal;
-                } )
-                .AsImplementedInterfaces()
-                .SingleInstance();
-
-            builder.RegisterLogger();
+            builder.RegisterJ4JLogging( loggerConfig );
 
             builder.RegisterType<TypedListCreator>()
                 .AsImplementedInterfaces();

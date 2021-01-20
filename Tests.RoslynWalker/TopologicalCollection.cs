@@ -4,16 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 
 namespace Tests.RoslynWalker
 {
     public class TopologicalCollection<TAction, TArg> : IEnumerable<TAction>
-        where TAction: class, IEquatable<TAction>, ITopologicalAction<TArg>
+        where TAction: class, IEquatable<TAction>, IActionProcessor<TArg>
     {
         private readonly List<TAction> _items;
 
-        private readonly TopologicalCollection<TAction> _collection =
-            new TopologicalCollection<TAction>();
+        private readonly Nodes<TAction> _collection =
+            new Nodes<TAction>();
 
         protected TopologicalCollection(
             IEnumerable<TAction> items,
@@ -55,7 +56,7 @@ namespace Tests.RoslynWalker
                 return false;
             }
 
-            _collection.AddDependency( start, end );
+            _collection.AddDependentNode( start, end );
 
             return true;
         }
@@ -76,11 +77,11 @@ namespace Tests.RoslynWalker
                 yield break;
             }
 
-            sorted.Reverse();
+            sorted!.Reverse();
 
             foreach( var item in sorted! )
             {
-                yield return item.Value;
+                yield return item;
             }
         }
 

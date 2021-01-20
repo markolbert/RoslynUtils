@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
@@ -10,18 +11,18 @@ namespace Tests.RoslynWalker
     {
         public TypeProcessors( 
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            WalkerContext context,
             Func<IJ4JLogger> loggerFactory 
         ) 
             : base( "Type processing", dataLayer, context, loggerFactory() )
         {
-            var node = AddValue(new TypeAssemblyProcessor(dataLayer, context, loggerFactory()));
-            node = AddDependency( new TypeInScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
-            node = AddDependency(new TypeNamespaceProcessor(dataLayer, context, loggerFactory()), node.Value );
-            node = AddDependency(new SortedTypeProcessor(dataLayer, context, loggerFactory()), node.Value);
-            AddDependency( new TypeArgumentProcessor( dataLayer, context, loggerFactory() ), node.Value );
-            AddDependency(new TypeParametricTypeProcessor(dataLayer, context, loggerFactory()), node.Value);
-            AddDependency( new AncestorProcessor( dataLayer, context, loggerFactory() ), node.Value );
+            var node = AddIndependentNode(new TypeAssemblyProcessor(dataLayer, context, loggerFactory()));
+            node = AddDependentNode( new TypeInScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
+            node = AddDependentNode(new TypeNamespaceProcessor(dataLayer, context, loggerFactory()), node.Value );
+            node = AddDependentNode(new SortedTypeProcessor(dataLayer, context, loggerFactory()), node.Value);
+            AddDependentNode( new TypeArgumentProcessor( dataLayer, context, loggerFactory() ), node.Value );
+            AddDependentNode(new TypeParametricTypeProcessor(dataLayer, context, loggerFactory()), node.Value);
+            AddDependentNode( new AncestorProcessor( dataLayer, context, loggerFactory() ), node.Value );
         }
 
         protected override bool Initialize( IEnumerable<ITypeSymbol> symbols )

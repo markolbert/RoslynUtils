@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
+using System.Threading;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
-    public class SingleWalker : EnumerableProcessorBase<CompiledProject>, ISingleWalker
+    public class SingleWalker : TopoAction<CompiledProject>, ISingleWalker
     {
         private readonly ISyntaxNodeSink _nodeSink;
-        private readonly ExecutionContext _context;
+        private readonly WalkerContext _context;
 
         public SingleWalker(
             ISyntaxNodeSink nodeSink,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger
         )
             : base( logger )
@@ -25,11 +27,11 @@ namespace J4JSoftware.Roslyn
             _context = context;
         }
 
-        protected override bool PreLoopInitialization( IEnumerable<CompiledProject> compResults )
+        protected override bool Initialize( IEnumerable<CompiledProject> compResults )
         {
             Logger.Information( "Starting syntax walking..." );
 
-            if( !base.PreLoopInitialization( compResults ) )
+            if( !base.Initialize( compResults ) )
                 return false;
 
             _context.SetCompiledProjects(compResults);
@@ -72,11 +74,11 @@ namespace J4JSoftware.Roslyn
             nodeStack.Pop();
         }
 
-        protected override bool PostLoopFinalization( IEnumerable<CompiledProject> inputData )
+        protected override bool Finalize( IEnumerable<CompiledProject> inputData )
         {
             Logger.Information("...finished syntax walking");
 
-            if ( !base.PostLoopFinalization( inputData ) )
+            if ( !base.Finalize( inputData ) )
                 return false;
 
             return _nodeSink.FinalizeSink(this);

@@ -9,7 +9,7 @@ namespace J4JSoftware.Roslyn
         private readonly IJ4JLogger _logger;
 
         public DefaultSymbolSink( 
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger 
             )
         {
@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
             _logger.SetLoggedType( this.GetType() );
         }
 
-        public ExecutionContext ExecutionContext { get; }
+        public WalkerContext ExecutionContext { get; }
 
         // even though we support all ISymbols we deny it because we don't want
         // to be selected before a non-default sink can be selected

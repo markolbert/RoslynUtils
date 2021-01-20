@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ISyntaxWalker : ITopologicalAction<CompiledProject>, IEquatable<ISyntaxWalker>
+    public interface ISyntaxWalker : IAction<CompiledProject>, IEquatable<ISyntaxWalker>
     {
         Type SymbolType { get; }
         string Name { get; }

@@ -4,6 +4,7 @@ using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Serilog.Events;
 
@@ -17,19 +18,12 @@ namespace Tests.RoslynWalker
         {
             var builder = new ContainerBuilder();
 
-            builder.Register( c =>
-                {
-                    var retVal = new J4JLoggerConfiguration { EventElements = EventElements.All };
+            var loggerConfig = new J4JLoggerConfiguration { EventElements = EventElements.All };
 
-                    retVal.Channels.Add( new ConsoleChannel() { MinimumLevel = LogEventLevel.Information } );
-                    retVal.Channels.Add( new DebugChannel() { MinimumLevel = LogEventLevel.Information } );
+            loggerConfig.Channels.Add( new ConsoleConfig() { MinimumLevel = LogEventLevel.Information } );
+            loggerConfig.Channels.Add( new DebugConfig() { MinimumLevel = LogEventLevel.Information } );
 
-                    return retVal;
-                } )
-                .AsImplementedInterfaces()
-                .SingleInstance();
-
-            builder.RegisterLogger();
+            builder.RegisterJ4JLogging( loggerConfig );
 
             builder.RegisterType<DocumentationWorkspace>()
                 .AsSelf();
@@ -38,7 +32,7 @@ namespace Tests.RoslynWalker
                 .As<ISymbolFullName>()
                 .SingleInstance();
 
-            builder.RegisterType<ExecutionContext>()
+            builder.RegisterType<ActionsContext>()
                 .AsSelf()
                 .SingleInstance();
 
@@ -100,7 +94,7 @@ namespace Tests.RoslynWalker
         {
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
                 .Where(t => !t.IsAbstract
-                            && typeof(IEnumerableProcessor<TSymbol>).IsAssignableFrom(t)
+                            && typeof(IAction<TSymbol>).IsAssignableFrom(t)
                             && t.GetConstructors().Length > 0)
                 .AsImplementedInterfaces();
 

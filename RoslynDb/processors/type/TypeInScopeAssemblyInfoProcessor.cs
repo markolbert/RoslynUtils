@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -9,7 +10,7 @@ namespace J4JSoftware.Roslyn
     {
         public TypeInScopeAssemblyInfoProcessor(
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger)
             : base("updating Type InScopeAssemblyInfo in the database", dataLayer, context, logger)
         {
@@ -29,10 +30,10 @@ namespace J4JSoftware.Roslyn
                     Logger.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name);
                 else
                 {
-                    if (!ExecutionContext.InDocumentationScope(symbol.ContainingAssembly))
+                    if (!((WalkerContext) ExecutionContext).InDocumentationScope(symbol.ContainingAssembly))
                         continue;
 
-                    if (ExecutionContext.HasCompiledProject(symbol.ContainingAssembly))
+                    if (((WalkerContext) ExecutionContext).HasCompiledProject(symbol.ContainingAssembly))
                         retVal.Add(symbol.ContainingAssembly);
                     else
                         Logger.Error<string>("Couldn't find CompiledProject for IAssemblySymbol '{0}'",
@@ -45,6 +46,6 @@ namespace J4JSoftware.Roslyn
 
         // symbol is guaranteed to be in the documentation scope and having an associated CompiledProject
         protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
-            DataLayer.GetInScopeAssemblyInfo( ExecutionContext[ symbol ]!, true, true ) != null;
+            DataLayer.GetInScopeAssemblyInfo( ((WalkerContext) ExecutionContext)[ symbol ]!, true, true ) != null;
     }
 }

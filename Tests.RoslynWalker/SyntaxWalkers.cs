@@ -4,21 +4,22 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class SyntaxWalkers : TopologicalCollection<ISyntaxWalker>, IProcessorCollection<CompiledProject>
+    public sealed class SyntaxWalkers : Nodes<ISyntaxWalker>, IActionProcessor<CompiledProject>
     {
         private readonly List<ISymbolSink> _sinks;
-        private readonly ExecutionContext _context;
+        private readonly ActionsContext _context;
         private readonly IJ4JLogger _logger;
 
         public SyntaxWalkers(
             ISymbolFullName symbolNamer,
             IDefaultSymbolSink defaultSymbolSink,
             IEnumerable<ISymbolSink> symbolSinks,
-            ExecutionContext context,
+            WalkerContext context,
             Func<IJ4JLogger> loggerFactory
         )
         {
@@ -28,56 +29,56 @@ namespace Tests.RoslynWalker
             _logger = loggerFactory();
             _logger.SetLoggedType( this.GetType() );
 
-            var node = AddValue( new AssemblyWalker( symbolNamer,
+            var node = AddIndependentNode( new AssemblyWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<IAssemblySymbol>() ) );
 
-            node = AddDependency( new NamespaceWalker( symbolNamer,
+            node = AddDependentNode( new NamespaceWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<INamespaceSymbol>() ), node.Value );
 
-            node = AddDependency(new TypeWalker(symbolNamer,
+            node = AddDependentNode(new TypeWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<ITypeSymbol>()), node.Value);
 
-            node = AddDependency(new MethodWalker(symbolNamer,
+            node = AddDependentNode(new MethodWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<IMethodSymbol>()), node.Value);
 
-            node = AddDependency(new PropertyWalker(symbolNamer,
+            node = AddDependentNode(new PropertyWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<IPropertySymbol>()), node.Value);
 
-            node = AddDependency(new FieldWalker(symbolNamer,
+            node = AddDependentNode(new FieldWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<IFieldSymbol>()), node.Value);
 
-            node = AddDependency(new EventWalker(symbolNamer,
+            node = AddDependentNode(new EventWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<IEventSymbol>()), node.Value);
 
-            node = AddDependency(new AttributeWalker(symbolNamer,
+            node = AddDependentNode(new AttributeWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory(),
                 GetSink<ISymbol>()), node.Value);
         }
 
-        private ISymbolSink<TSymbol> GetSink<TSymbol>()
+        private ISymbolSink<TSymbol>? GetSink<TSymbol>()
             where TSymbol : ISymbol =>
             _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
                 as ISymbolSink<TSymbol>;
@@ -108,13 +109,13 @@ namespace Tests.RoslynWalker
                 return false;
             }
 
-            walkerNodes.Reverse();
+            walkerNodes!.Reverse();
 
             var allOkay = true;
 
-            foreach( var node in walkerNodes! )
+            foreach( var node in walkerNodes )
             {
-                allOkay &= node.Value.Process( projects );
+                allOkay &= node.Process( projects );
 
                 if( !allOkay && _context.StopOnFirstError )
                     break;

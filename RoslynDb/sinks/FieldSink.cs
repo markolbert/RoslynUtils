@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn.Sinks
@@ -8,9 +9,9 @@ namespace J4JSoftware.Roslyn.Sinks
     {
         public FieldSink(
             UniqueSymbols<IFieldSymbol> uniqueSymbols,
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger,
-            IProcessorCollection<IFieldSymbol>? processors = null )
+            IEnumerable<IAction<IFieldSymbol>>? processors = null )
             : base( uniqueSymbols, context, logger, processors)
         {
         }

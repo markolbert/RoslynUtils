@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Internal;
 
@@ -16,9 +17,9 @@ namespace J4JSoftware.Roslyn.Sinks
 
         public TypeSink(
             UniqueSymbols<ITypeSymbol> uniqueSymbols,
-            ExecutionContext context,
+            ActionsContext context,
             Func<IJ4JLogger> loggerFactory,
-            IProcessorCollection<ITypeSymbol>? processors = null )
+            IEnumerable<IAction<ITypeSymbol>>? processors = null )
             : base( uniqueSymbols, context, loggerFactory(), processors)
         {
             _symbols = new TypeSymbolContainer( loggerFactory() );
@@ -43,7 +44,8 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            return _processors.Process( _symbols);
+            throw new NotImplementedException();
+            //return _processors.Process( _symbols);
         }
 
         public override bool OutputSymbol( ISyntaxWalker syntaxWalker, ITypeSymbol symbol )

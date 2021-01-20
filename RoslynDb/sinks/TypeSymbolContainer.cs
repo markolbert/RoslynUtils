@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -31,8 +32,8 @@ namespace J4JSoftware.Roslyn.Sinks
             }
         }
 
-        private readonly TopologicalCollection<ISymbol> _nonInterfaces;
-        private readonly TopologicalCollection<ISymbol> _interfaces;
+        private readonly Nodes<ISymbol> _nonInterfaces;
+        private readonly Nodes<ISymbol> _interfaces;
         private readonly IJ4JLogger _logger;
 
         public TypeSymbolContainer(
@@ -41,8 +42,8 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             var comparer = new TypeSymbolComparer();
 
-            _nonInterfaces = new TopologicalCollection<ISymbol>( comparer );
-            _interfaces = new TopologicalCollection<ISymbol>( comparer );
+            _nonInterfaces = new Nodes<ISymbol>( comparer );
+            _interfaces = new Nodes<ISymbol>( comparer );
 
             _logger = logger;
             _logger.SetLoggedType( this.GetType() );
@@ -64,7 +65,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if ((symbol?.TypeKind ?? TypeKind.Class) != TypeKind.Interface)
             {
-                _nonInterfaces.AddDependency(parentSymbol, symbol);
+                _nonInterfaces.AddDependentNode(parentSymbol, symbol);
                 return true;
             }
 
@@ -81,7 +82,7 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            _interfaces.AddValue( parentSymbol );
+            _interfaces.AddIndependentNode( parentSymbol );
 
             return true;
         }

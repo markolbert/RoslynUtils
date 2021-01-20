@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
+using System.Threading;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SyntaxWalker<TSymbol> : EnumerableProcessorBase<CompiledProject>, ISyntaxWalker<TSymbol>
+    public abstract class SyntaxWalker<TSymbol> : TopoAction<CompiledProject>, ISyntaxWalker<TSymbol>
         where TSymbol : class, ISymbol
     {
         private readonly ISymbolSink _symbolSink;
@@ -18,7 +20,7 @@ namespace J4JSoftware.Roslyn
             string walkerName,
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger,
             ISymbolSink<TSymbol>? symbolSink = null
         )
@@ -40,16 +42,16 @@ namespace J4JSoftware.Roslyn
         }
 
         protected ISymbolFullName SymbolInfo { get; }
-        protected ExecutionContext Context { get; }
+        protected WalkerContext Context { get; }
 
         public Type SymbolType { get; }
         public string Name { get; }
 
-        protected override bool PreLoopInitialization( IEnumerable<CompiledProject> compResults )
+        protected override bool Initialize( IEnumerable<CompiledProject> compResults )
         {
             Logger.Information<string>( "Starting {0}...", Name );
 
-            if( !base.PreLoopInitialization( compResults ) )
+            if( !base.Initialize( compResults ) )
                 return false;
 
             if (!_symbolSink.InitializeSink(this))
@@ -94,11 +96,11 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        protected override bool PostLoopFinalization( IEnumerable<CompiledProject> inputData )
+        protected override bool Finalize( IEnumerable<CompiledProject> inputData )
         {
             Logger.Information<string>("...finished {0}", Name);
 
-            if ( !base.PostLoopFinalization( inputData ) )
+            if ( !base.Finalize( inputData ) )
                 return false;
 
             return _symbolSink.FinalizeSink(this);

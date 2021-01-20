@@ -19,7 +19,7 @@ namespace J4JSoftware.Roslyn
         public FieldWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger,
             ISymbolSink<IFieldSymbol>? symbolSink = null
         )

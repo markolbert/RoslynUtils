@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class BaseProcessorDb<TSource, TResult> : EnumerableProcessorBase<TSource>
+    public abstract class BaseProcessorDb<TSource, TResult> : TopoAction<TSource>
         where TResult : class, ISymbol
         where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
             string name,
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger
         )
         : base( logger )
@@ -24,18 +25,18 @@ namespace J4JSoftware.Roslyn
         }
 
         protected IRoslynDataLayer DataLayer { get; }
-        protected ExecutionContext ExecutionContext { get; }
+        protected ActionsContext ExecutionContext { get; }
         
         protected abstract List<TResult> ExtractSymbols( IEnumerable<TSource> inputData );
         protected abstract bool ProcessSymbol( TResult symbol );
 
         public string Name { get; }
 
-        protected override bool PreLoopInitialization( IEnumerable<TSource> inputData )
+        protected override bool Initialize( IEnumerable<TSource> inputData )
         {
             Logger.Information<string>("Staring {0}...", Name);
 
-            return base.PreLoopInitialization( inputData );
+            return base.Initialize( inputData );
         }
 
         protected override bool ProcessLoop( IEnumerable<TSource> inputData )
@@ -70,11 +71,11 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        protected override bool PostLoopFinalization(IEnumerable<TSource> inputData)
+        protected override bool Finalize(IEnumerable<TSource> inputData)
         {
             Logger.Information<string>( "...finished {0}", Name );
 
-            if (!base.PostLoopFinalization(inputData))
+            if (!base.Finalize(inputData))
                 return false;
 
             DataLayer.SaveChanges();

@@ -3,7 +3,7 @@
 namespace J4JSoftware.Roslyn.Tests
 {
     [ DummyType( typeof(string) ) ]
-    [ DummyType( typeof(ConsoleChannel) ) ]
+    [ DummyType( typeof(ConsoleConfig) ) ]
     public class AttributedClass
     {
         public void DoNothing()

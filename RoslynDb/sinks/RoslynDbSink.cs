@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,23 +11,23 @@ namespace J4JSoftware.Roslyn.Sinks
     public abstract class RoslynDbSink<TSymbol> : SymbolSink<TSymbol>
         where TSymbol : class, ISymbol
     {
-        protected readonly IProcessorCollection<TSymbol>? _processors;
+        protected readonly List<IAction<TSymbol>>? _processors;
 
         protected RoslynDbSink(
             UniqueSymbols<TSymbol> uniqueSymbols,
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger,
-            IProcessorCollection<TSymbol>? processors = null
+            IEnumerable<IAction<TSymbol>>? processors = null
         )
             : base( context, logger )
         {
             Symbols = uniqueSymbols;
 
-            _processors = processors;
+            _processors = processors?.ToList();
 
             if( _processors == null )
                 Logger.Error( "No {0} processors defined for symbol {1}",
-                    typeof(IEnumerableProcessor<TSymbol>),
+                    typeof(IAction<TSymbol>),
                     typeof(TSymbol) );
         }
 
@@ -53,7 +54,8 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            return _processors.Process( Symbols );
+            throw new NotImplementedException();
+            //return _processors.Process( Symbols );
         }
 
         public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)

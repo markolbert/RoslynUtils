@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
@@ -10,13 +11,13 @@ namespace Tests.RoslynWalker
     {
         public AssemblyProcessors( 
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            WalkerContext context,
             Func<IJ4JLogger> loggerFactory 
         ) : base( "Assembly processing", dataLayer,  context, loggerFactory() )
         {
-            var node = AddValue( new AssemblyProcessor( dataLayer, context, loggerFactory() ) );
+            var node = AddIndependentNode( new AssemblyProcessor( dataLayer, context, loggerFactory() ) );
 
-            AddDependency( new InScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
+            AddDependentNode( new InScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
         }
 
         protected override bool Initialize( IEnumerable<IAssemblySymbol> symbols )

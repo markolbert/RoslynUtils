@@ -1,27 +1,41 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>J4JSoftware.Roslyn.General</AssemblyName>
-    <RootNamespace>J4JSoftware.Roslyn</RootNamespace>
-    <Authors>Mark A. Olbert</Authors>
-    <Company>Jump for Joy Software</Company>
-    <Description>general utilities for Roslyn/Microsoft CodeAnalysis</Description>
-    <Copyright>2020 all rights reserved</Copyright>
-    <AssemblyVersion>0.2.0.0</AssemblyVersion>
-    <FileVersion>0.2.0.0</FileVersion>
-    <Nullable>enable</Nullable>
+		<TargetFramework>net5.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<AssemblyName>J4JSoftware.Roslyn.General</AssemblyName>
+		<RootNamespace>J4JSoftware.Roslyn</RootNamespace>
+		<Authors>Mark A. Olbert</Authors>
+		<Company>Jump for Joy Software</Company>
+		<Description>general utilities for Roslyn/Microsoft CodeAnalysis</Description>
+		<Copyright>2020 all rights reserved</Copyright>
+		<AssemblyVersion>0.2.0.0</AssemblyVersion>
+		<FileVersion>0.2.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Buildalyzer" Version="3.0.1" />
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.6.0" />
-    <PackageReference Include="NuGet.Versioning" Version="5.6.0" />
+    <Compile Remove="processors\**" />
+    <Compile Remove="topo-sort\**" />
+    <EmbeddedResource Remove="processors\**" />
+    <EmbeddedResource Remove="topo-sort\**" />
+    <None Remove="processors\**" />
+    <None Remove="topo-sort\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ExecutionContext.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Buildalyzer" Version="3.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.8.0" />
+    <PackageReference Include="NuGet.Versioning" Version="5.8.1" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
+    <ProjectReference Include="..\..\ProgrammingUtilities\TopologicalSort\TopologicalSort.csproj" />
   </ItemGroup>
 
 </Project>

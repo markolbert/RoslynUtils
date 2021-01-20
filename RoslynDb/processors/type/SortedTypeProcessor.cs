@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using NuGet.Versioning;
 
@@ -11,7 +12,7 @@ namespace J4JSoftware.Roslyn
     {
         public SortedTypeProcessor(
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            ActionsContext context,
             IJ4JLogger logger)
             : base("adding basic Types to the database", dataLayer, context, logger)
         {

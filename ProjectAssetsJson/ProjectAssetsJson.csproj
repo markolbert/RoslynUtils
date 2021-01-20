@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+	  <TargetFramework>net5.0</TargetFramework>
+	  <Nullable>enable</Nullable>
     <AssemblyName>J4JSoftware.Roslyn.ProjectAssets</AssemblyName>
     <RootNamespace>J4JSoftware.Roslyn</RootNamespace>
     <Authors>Mark A. Olbert</Authors>
@@ -10,7 +11,6 @@
     <Copyright>2020 all rights reserved</Copyright>
     <AssemblyVersion>0.2.0.0</AssemblyVersion>
     <FileVersion>0.2.0.0</FileVersion>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,11 +18,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.6.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.6.0" />
-    <PackageReference Include="NuGet.Versioning" Version="5.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+    <PackageReference Include="NuGet.Versioning" Version="5.8.1" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="System.Text.Json" Version="4.7.2" />
+    <PackageReference Include="System.Text.Json" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>

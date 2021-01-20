@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -14,7 +15,7 @@ namespace J4JSoftware.Roslyn
         UnsupportedNode
     }
 
-    public interface ISingleWalker : ITopologicalAction<CompiledProject>
+    public interface ISingleWalker : IAction<CompiledProject>
     {
 
     }

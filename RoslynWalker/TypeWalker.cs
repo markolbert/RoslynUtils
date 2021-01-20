@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
         public TypeWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger,
             ISymbolSink<ITypeSymbol>? symbolSink = null
         )

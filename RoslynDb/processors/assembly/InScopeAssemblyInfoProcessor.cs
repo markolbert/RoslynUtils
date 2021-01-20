@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using J4JSoftware.Logging;
+using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
@@ -9,7 +10,7 @@ namespace J4JSoftware.Roslyn
     {
         public InScopeAssemblyInfoProcessor(
             IRoslynDataLayer dataLayer,
-            ExecutionContext context,
+            WalkerContext context,
             IJ4JLogger logger)
             : base("updating InScopeAssembly information in the database", dataLayer, context, logger)
         {
@@ -21,10 +22,10 @@ namespace J4JSoftware.Roslyn
 
             foreach( var symbol in inputData )
             {
-                if( !ExecutionContext.InDocumentationScope( symbol ) ) 
+                if( !((WalkerContext)ExecutionContext).InDocumentationScope( symbol ) ) 
                     continue;
                 
-                if( ExecutionContext.HasCompiledProject( symbol ) )
+                if( ((WalkerContext)ExecutionContext).HasCompiledProject( symbol ) )
                     retVal.Add( symbol );
                 else
                     Logger.Error<string>( "Couldn't find CompiledProject for IAssemblySymbol '{0}'",
@@ -36,6 +37,6 @@ namespace J4JSoftware.Roslyn
 
         // symbol is guaranteed to be in the documentation scope and having an associated CompiledProject
         protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
-            DataLayer.GetInScopeAssemblyInfo( ExecutionContext[ symbol ]!, true, true ) != null;
+            DataLayer.GetInScopeAssemblyInfo( ((WalkerContext)ExecutionContext)[ symbol ]!, true, true ) != null;
     }
 }
