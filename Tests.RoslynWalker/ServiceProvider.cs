@@ -77,10 +77,6 @@ namespace Tests.RoslynWalker
             RegisterSymbolProcessor<IEventSymbol, EventProcessors>(builder);
             RegisterSymbolProcessor<ISymbol, AttributeProcessors>(builder);
 
-            builder.RegisterType<SingleWalker>()
-                .As<ISingleWalker>()
-                .SingleInstance();
-
             builder.RegisterType<SymbolCollector>()
                 .As<ISyntaxNodeSink>()
                 .SingleInstance();

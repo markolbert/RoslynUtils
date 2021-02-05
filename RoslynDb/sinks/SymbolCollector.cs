@@ -200,7 +200,7 @@ namespace J4JSoftware.Roslyn
             };
         }
 
-        public bool FinalizeSink(ISingleWalker syntaxWalker)
+        public bool FinalizeSink(ISyntaxWalker syntaxWalker)
         {
             if (!_symbols.Sort(out var sortedSymbols, out var remainingEdges))
             {
