@@ -85,6 +85,9 @@ namespace Tests.RoslynWalker
                 .As<ISyntaxNodeSink>()
                 .SingleInstance();
 
+            builder.RegisterType<WalkerContext>()
+                .AsSelf();
+
             Instance = new AutofacServiceProvider( builder.Build() );
         }
 

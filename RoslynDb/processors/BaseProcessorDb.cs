@@ -7,39 +7,40 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class BaseProcessorDb<TSource, TResult> : TopoAction<TSource>
+    public abstract class BaseProcessorDb<TSource, TResult> : IAction<TSource>
         where TResult : class, ISymbol
-        where TSource : class, ISymbol
     {
         protected BaseProcessorDb(
             string name,
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger
+            IJ4JLogger? logger
         )
-        : base( logger )
         {
+            Logger = logger;
+            Logger?.SetLoggedType( GetType() );
+
             Name = name;
             DataLayer = dataLayer;
             ExecutionContext = context;
         }
 
+        protected IJ4JLogger? Logger { get; }
         protected IRoslynDataLayer DataLayer { get; }
         protected ActionsContext ExecutionContext { get; }
         
-        protected abstract List<TResult> ExtractSymbols( IEnumerable<TSource> inputData );
+        protected abstract List<TResult> ExtractSymbols( TSource inputData );
         protected abstract bool ProcessSymbol( TResult symbol );
 
         public string Name { get; }
 
-        protected override bool Initialize( IEnumerable<TSource> inputData )
+        protected virtual bool Initialize( TSource inputData )
         {
-            Logger.Information<string>("Staring {0}...", Name);
-
-            return base.Initialize( inputData );
+            Logger?.Information<string>("Starting {0}...", Name);
+            return true;
         }
 
-        protected override bool ProcessLoop( IEnumerable<TSource> inputData )
+        public virtual bool Process( TSource inputData )
         {
             var allOkay = true;
 
@@ -63,7 +64,7 @@ namespace J4JSoftware.Roslyn
                     processed.Add( fqn );
                 }
             }
-            catch( Exception e )
+            catch
             {
                 return false;
             }
@@ -71,12 +72,9 @@ namespace J4JSoftware.Roslyn
             return allOkay;
         }
 
-        protected override bool Finalize(IEnumerable<TSource> inputData)
+        protected virtual bool Finalize(TSource inputData)
         {
-            Logger.Information<string>( "...finished {0}", Name );
-
-            if (!base.Finalize(inputData))
-                return false;
+            Logger?.Information<string>( "...finished {0}", Name );
 
             DataLayer.SaveChanges();
 
@@ -97,28 +95,52 @@ namespace J4JSoftware.Roslyn
 
             foreach (var typeArg in symbol.TypeArguments)
             {
-                if (typeArg == null)
-                    continue;
-
-                if (typeArg is INamedTypeSymbol ntTypeArg && !visitedNames.Any(n => n.Equals(typeArg.Name, StringComparison.Ordinal)))
+                switch( typeArg )
                 {
-                    visitedNames.Add(typeArg.Name);
+                    case null:
+                        continue;
 
-                    if (HasParametricTypes(ntTypeArg, ref visitedNames))
-                        return true;
+                    case INamedTypeSymbol ntTypeArg when !visitedNames.Any(n => n.Equals(typeArg.Name, StringComparison.Ordinal)):
+                    {
+                        visitedNames.Add(typeArg.Name);
+
+                        if (HasParametricTypes(ntTypeArg, ref visitedNames))
+                            return true;
+                        break;
+                    }
                 }
             }
 
             foreach (var interfaceSymbol in symbol.Interfaces)
             {
-                if (!visitedNames.Any(n => n.Equals(interfaceSymbol.Name, StringComparison.Ordinal)))
-                {
-                    visitedNames.Add(interfaceSymbol.Name);
+                if( visitedNames.Any( n => n.Equals( interfaceSymbol.Name, StringComparison.Ordinal ) ) ) 
+                    continue;
 
-                    if (HasParametricTypes(interfaceSymbol, ref visitedNames))
-                        return true;
-                }
+                visitedNames.Add(interfaceSymbol.Name);
+
+                if (HasParametricTypes(interfaceSymbol, ref visitedNames))
+                    return true;
             }
+
+            return false;
+        }
+
+        // processors are equal if they are the same type, so duplicate instances of the 
+        // same type are always equal (and shouldn't be present in the processing set)
+        public bool Equals( IAction<TSource>? other )
+        {
+            if (other == null)
+                return false;
+
+            return other.GetType() == GetType();
+        }
+
+        bool IAction.Process( object src )
+        {
+            if( src is TSource castSrc )
+                return Process( castSrc );
+
+            Logger?.Error( "Expected a {0} but received a {1}", typeof(TSource), src.GetType() );
 
             return false;
         }

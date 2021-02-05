@@ -6,17 +6,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeInScopeAssemblyInfoProcessor : BaseProcessorDb<ITypeSymbol, IAssemblySymbol>
+    public class TypeInScopeAssemblyInfoProcessor : BaseProcessorDb<List<ITypeSymbol>, IAssemblySymbol>
     {
         public TypeInScopeAssemblyInfoProcessor(
             IRoslynDataLayer dataLayer,
             WalkerContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("updating Type InScopeAssemblyInfo in the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<IAssemblySymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
+        protected override List<IAssemblySymbol> ExtractSymbols( List<ITypeSymbol> inputData )
         {
             var retVal = new List<IAssemblySymbol>();
 
@@ -27,7 +27,7 @@ namespace J4JSoftware.Roslyn
                     : symbol.ContainingAssembly;
 
                 if (assemblySymbol == null)
-                    Logger.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name);
+                    Logger?.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name);
                 else
                 {
                     if (!((WalkerContext) ExecutionContext).InDocumentationScope(symbol.ContainingAssembly))
@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn
                     if (((WalkerContext) ExecutionContext).HasCompiledProject(symbol.ContainingAssembly))
                         retVal.Add(symbol.ContainingAssembly);
                     else
-                        Logger.Error<string>("Couldn't find CompiledProject for IAssemblySymbol '{0}'",
+                        Logger?.Error<string>("Couldn't find CompiledProject for IAssemblySymbol '{0}'",
                             symbol.ContainingAssembly.ToUniqueName());
                 }
             }

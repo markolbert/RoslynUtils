@@ -7,17 +7,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ArgumentProcessor : BaseProcessorDb<IMethodSymbol, IParameterSymbol>
+    public class ArgumentProcessor : BaseProcessorDb<List<IMethodSymbol>, IParameterSymbol>
     {
         public ArgumentProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Method Arguments to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<IParameterSymbol> ExtractSymbols( IEnumerable<IMethodSymbol> inputData )
+        protected override List<IParameterSymbol> ExtractSymbols( List<IMethodSymbol> inputData )
         {
             return inputData.SelectMany( m => m.Parameters ).ToList();
         }

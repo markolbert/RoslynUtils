@@ -18,7 +18,7 @@ namespace Tests.RoslynWalker
             AddIndependentNode( new NamespaceProcessor( dataLayer, context, loggerFactory() ) );
         }
 
-        protected override bool Initialize( IEnumerable<INamespaceSymbol> symbols )
+        protected override bool Initialize( List<INamespaceSymbol> symbols )
         {
             if( !base.Initialize( symbols ) )
                 return false;

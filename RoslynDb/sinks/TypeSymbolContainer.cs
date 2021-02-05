@@ -65,7 +65,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if ((symbol?.TypeKind ?? TypeKind.Class) != TypeKind.Interface)
             {
-                _nonInterfaces.AddDependentNode(parentSymbol, symbol);
+                _nonInterfaces.AddDependentNode(parentSymbol, symbol!);
                 return true;
             }
 

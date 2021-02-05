@@ -9,72 +9,72 @@ using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public sealed class SyntaxWalkers : Nodes<ISyntaxWalker>, IActionProcessor<CompiledProject>
+    public sealed class SyntaxWalkers : Nodes<ISyntaxWalker>
     {
         private readonly List<ISymbolSink> _sinks;
         private readonly ActionsContext _context;
-        private readonly IJ4JLogger _logger;
+        private readonly IJ4JLogger? _logger;
 
         public SyntaxWalkers(
             ISymbolFullName symbolNamer,
             IDefaultSymbolSink defaultSymbolSink,
             IEnumerable<ISymbolSink> symbolSinks,
             WalkerContext context,
-            Func<IJ4JLogger> loggerFactory
+            Func<IJ4JLogger>? loggerFactory
         )
         {
             _sinks = symbolSinks.ToList();
             _context = context;
 
-            _logger = loggerFactory();
-            _logger.SetLoggedType( this.GetType() );
+            _logger = loggerFactory?.Invoke();
+            _logger?.SetLoggedType( this.GetType() );
 
             var node = AddIndependentNode( new AssemblyWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<IAssemblySymbol>() ) );
 
             node = AddDependentNode( new NamespaceWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<INamespaceSymbol>() ), node.Value );
 
             node = AddDependentNode(new TypeWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<ITypeSymbol>()), node.Value);
 
             node = AddDependentNode(new MethodWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<IMethodSymbol>()), node.Value);
 
             node = AddDependentNode(new PropertyWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<IPropertySymbol>()), node.Value);
 
             node = AddDependentNode(new FieldWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<IFieldSymbol>()), node.Value);
 
             node = AddDependentNode(new EventWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<IEventSymbol>()), node.Value);
 
             node = AddDependentNode(new AttributeWalker(symbolNamer,
                 defaultSymbolSink,
                 context,
-                loggerFactory(),
+                loggerFactory?.Invoke(),
                 GetSink<ISymbol>()), node.Value);
         }
 
@@ -83,14 +83,14 @@ namespace Tests.RoslynWalker
             _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
                 as ISymbolSink<TSymbol>;
 
-        public bool Process( IEnumerable<CompiledProject> projects )
+        public bool Process( List<CompiledProject> projects )
         {
             var numRoots = GetRoots().Count;
 
             switch( numRoots )
             {
                 case 0:
-                    _logger.Error("No initial ISyntaxWalker defined");
+                    _logger?.Error("No initial ISyntaxWalker defined");
                     return false;
 
                 case 1:
@@ -98,22 +98,20 @@ namespace Tests.RoslynWalker
                     break;
 
                 default:
-                    _logger.Error("Multiple initial ISyntaxWalkers ({0}) defined", numRoots);
+                    _logger?.Error("Multiple initial ISyntaxWalkers ({0}) defined", numRoots);
                     return false;
 
             }
 
             if( !Sort( out var walkerNodes, out var remainingEdges ) )
             {
-                _logger.Error("Couldn't topologically sort ISyntaxWalkers"  );
+                _logger?.Error("Couldn't topologically sort ISyntaxWalkers"  );
                 return false;
             }
 
-            walkerNodes!.Reverse();
-
             var allOkay = true;
 
-            foreach( var node in walkerNodes )
+            foreach( var node in walkerNodes! )
             {
                 allOkay &= node.Process( projects );
 

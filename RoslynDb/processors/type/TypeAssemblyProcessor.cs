@@ -6,17 +6,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeAssemblyProcessor : BaseProcessorDb<ITypeSymbol, IAssemblySymbol>
+    public class TypeAssemblyProcessor : BaseProcessorDb<List<ITypeSymbol>, IAssemblySymbol>
     {
         public TypeAssemblyProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Type Assemblies to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<IAssemblySymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
+        protected override List<IAssemblySymbol> ExtractSymbols( List<ITypeSymbol> inputData )
         {
             var retVal = new List<IAssemblySymbol>();
 
@@ -27,7 +27,7 @@ namespace J4JSoftware.Roslyn
                     : symbol.ContainingAssembly;
 
                 if( assemblySymbol == null )
-                    Logger.Information<string>( "ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name );
+                    Logger?.Information<string>( "ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name );
                 else retVal.Add( assemblySymbol );
             }
 

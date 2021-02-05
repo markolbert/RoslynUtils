@@ -8,17 +8,17 @@ using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
-    public class SortedTypeProcessor : BaseProcessorDb<ITypeSymbol, ITypeSymbol>
+    public class SortedTypeProcessor : BaseProcessorDb<List<ITypeSymbol>, ITypeSymbol>
     {
         public SortedTypeProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding basic Types to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<ITypeSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
+        protected override List<ITypeSymbol> ExtractSymbols( List<ITypeSymbol> inputData )
         {
             var retVal = new List<ITypeSymbol>();
 
@@ -27,15 +27,15 @@ namespace J4JSoftware.Roslyn
                 switch( symbol )
                 {
                     case IDynamicTypeSymbol dtSymbol:
-                        Logger.Error<string>( "IDynamicTypeSymbols are not supported ('{0}')", symbol.Name );
+                        Logger?.Error<string>( "IDynamicTypeSymbols are not supported ('{0}')", symbol.Name );
                         break;
 
                     case IPointerTypeSymbol ptSymbol:
-                        Logger.Error<string>( "IPointerTypeSymbols are not supported ('{0}')", symbol.Name );
+                        Logger?.Error<string>( "IPointerTypeSymbols are not supported ('{0}')", symbol.Name );
                         break;
 
                     case IErrorTypeSymbol errSymbol:
-                        Logger.Error<string>( "IErrorTypeSymbols are not supported ('{0}')", symbol.Name );
+                        Logger?.Error<string>( "IErrorTypeSymbols are not supported ('{0}')", symbol.Name );
                         break;
 
                     default:
@@ -49,7 +49,7 @@ namespace J4JSoftware.Roslyn
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            Logger.Information<string>("Processing ITypeSymbol {0}", typeSymbol.ToUniqueName());
+            Logger?.Information<string>("Processing ITypeSymbol {0}", typeSymbol.ToUniqueName());
 
             if( DataLayer.GetUnspecifiedType( typeSymbol, true, true ) == null )
                 return false;

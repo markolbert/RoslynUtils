@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public interface ISyntaxWalker : IAction<CompiledProject>, IEquatable<ISyntaxWalker>
+    public interface ISyntaxWalker : IAction<List<CompiledProject>>, IEquatable<ISyntaxWalker>
     {
         Type SymbolType { get; }
         string Name { get; }

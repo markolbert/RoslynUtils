@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             WalkerContext context,
-            IJ4JLogger logger,
+            IJ4JLogger? logger,
             ISymbolSink<IAssemblySymbol>? symbolSink = null
             ) 
             : base( "Assembly walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
@@ -43,7 +43,7 @@ namespace J4JSoftware.Roslyn
 
             if( otherAssembly == null )
             {
-                Logger.Verbose<string>( "Symbol {0} isn't contained in an Assembly", otherSymbol.ToDisplayString() );
+                Logger?.Verbose<string>( "Symbol {0} isn't contained in an Assembly", otherSymbol.ToDisplayString() );
 
                 return false;
             }

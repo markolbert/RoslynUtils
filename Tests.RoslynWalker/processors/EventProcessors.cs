@@ -18,7 +18,7 @@ namespace Tests.RoslynWalker
             AddIndependentNode( new EventProcessor( dataLayer, context, loggerFactory() ) );
         }
 
-        protected override bool Initialize( IEnumerable<IEventSymbol> symbols )
+        protected override bool Initialize( List<IEventSymbol> symbols )
         {
             if( !base.Initialize( symbols ) )
                 return false;

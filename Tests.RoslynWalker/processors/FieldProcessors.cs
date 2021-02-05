@@ -18,7 +18,7 @@ namespace Tests.RoslynWalker
             AddIndependentNode( new FieldProcessor( dataLayer, context, loggerFactory() ) );
         }
 
-        protected override bool Initialize( IEnumerable<IFieldSymbol> symbols )
+        protected override bool Initialize( List<IFieldSymbol> symbols )
         {
             if( !base.Initialize( symbols ) )
                 return false;

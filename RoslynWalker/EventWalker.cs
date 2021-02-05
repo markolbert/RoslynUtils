@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             WalkerContext context,
-            IJ4JLogger logger,
+            IJ4JLogger? logger,
             ISymbolSink<IEventSymbol>? symbolSink = null
         )
             : base( "Event walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )

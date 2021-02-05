@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class FieldProcessor : BaseProcessorDb<IFieldSymbol, IFieldSymbol>
+    public class FieldProcessor : BaseProcessorDb<List<IFieldSymbol>, IFieldSymbol>
     {
         public FieldProcessor(
             IRoslynDataLayer dataLayer,
@@ -16,10 +16,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override List<IFieldSymbol> ExtractSymbols( IEnumerable<IFieldSymbol> inputData )
-        {
-            return inputData.ToList();
-        }
+        protected override List<IFieldSymbol> ExtractSymbols( List<IFieldSymbol> inputData ) => inputData;
 
         protected override bool ProcessSymbol( IFieldSymbol symbol ) =>
             DataLayer.GetField( symbol, true, true ) != null;

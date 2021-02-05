@@ -21,7 +21,7 @@ namespace Tests.RoslynWalker
             AddDependentNode( new ArgumentProcessor( dataLayer, context, loggerFactory() ), rootProcessor );
         }
 
-        protected override bool Initialize( IEnumerable<IMethodSymbol> symbols )
+        protected override bool Initialize( List<IMethodSymbol> symbols )
         {
             if( !base.Initialize( symbols ) )
                 return false;

@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn
         private readonly List<CompiledFile> _results = new List<CompiledFile>();
 
         public CompiledProject(
-            IAnalyzerResults? buildResults,
+            IAnalyzerResults buildResults,
             Project project,
             CSharpCompilation compilation
         )
@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn
                     return sb;
                 }, sb => sb.ToString() );
 
-            var buildResult = buildResults.FirstOrDefault();
+            var buildResult = buildResults.First();
 
             RootNamespace = buildResult.GetProperty( "RootNamespace" ) ?? string.Empty;
             Authors = buildResult.GetProperty( "Authors" ) ?? string.Empty;

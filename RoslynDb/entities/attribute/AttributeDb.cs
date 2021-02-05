@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn
 {

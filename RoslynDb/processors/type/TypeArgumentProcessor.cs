@@ -6,17 +6,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeArgumentProcessor : BaseProcessorDb<ITypeSymbol, INamedTypeSymbol>
+    public class TypeArgumentProcessor : BaseProcessorDb<List<ITypeSymbol>, INamedTypeSymbol>
     {
         public TypeArgumentProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Type Arguments to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<INamedTypeSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
+        protected override List<INamedTypeSymbol> ExtractSymbols( List<ITypeSymbol> inputData )
         {
             var retVal = new List<INamedTypeSymbol>();
 
@@ -36,7 +36,7 @@ namespace J4JSoftware.Roslyn
 
             if( declaringDb == null )
             {
-                Logger.Error<string>( "Couldn't retrieve ImplementableTypeDb entity for '{0}'",
+                Logger?.Error<string>( "Couldn't retrieve ImplementableTypeDb entity for '{0}'",
                     symbol.ToFullName() );
 
                 return false;
@@ -48,15 +48,13 @@ namespace J4JSoftware.Roslyn
             {
                 var typeArgSymbol = symbol.TypeArguments[ ordinal ];
 
-                if( DataLayer.GetTypeArgument(declaringDb, typeArgSymbol, ordinal, true) == null )
-                {
-                    Logger.Error<string>( "Couldn't find type for type argument '{0}' in database ",
-                        typeArgSymbol.ToFullName() );
-
-                    allOkay = false;
-
+                if( DataLayer.GetTypeArgument( declaringDb, typeArgSymbol, ordinal, true ) != null ) 
                     continue;
-                }
+
+                Logger?.Error<string>( "Couldn't find type for type argument '{0}' in database ",
+                    typeArgSymbol.ToFullName() );
+
+                allOkay = false;
             }
 
             return allOkay;

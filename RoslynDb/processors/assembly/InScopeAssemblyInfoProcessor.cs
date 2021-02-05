@@ -6,17 +6,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class InScopeAssemblyInfoProcessor : BaseProcessorDb<IAssemblySymbol, IAssemblySymbol>
+    public class InScopeAssemblyInfoProcessor : BaseProcessorDb<List<IAssemblySymbol>, IAssemblySymbol>
     {
         public InScopeAssemblyInfoProcessor(
             IRoslynDataLayer dataLayer,
             WalkerContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("updating InScopeAssembly information in the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<IAssemblySymbol> ExtractSymbols( IEnumerable<IAssemblySymbol> inputData )
+        protected override List<IAssemblySymbol> ExtractSymbols( List<IAssemblySymbol> inputData )
         {
             var retVal = new List<IAssemblySymbol>();
 
@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
                 if( ((WalkerContext)ExecutionContext).HasCompiledProject( symbol ) )
                     retVal.Add( symbol );
                 else
-                    Logger.Error<string>( "Couldn't find CompiledProject for IAssemblySymbol '{0}'",
+                    Logger?.Error<string>( "Couldn't find CompiledProject for IAssemblySymbol '{0}'",
                         symbol.ToUniqueName() );
             }
 

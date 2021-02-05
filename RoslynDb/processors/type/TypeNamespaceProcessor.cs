@@ -6,18 +6,18 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class TypeNamespaceProcessor : BaseProcessorDb<ITypeSymbol, INamespaceSymbol>
+    public class TypeNamespaceProcessor : BaseProcessorDb<List<ITypeSymbol>, INamespaceSymbol>
     {
         public TypeNamespaceProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Type Namespaces to the database", dataLayer, context, logger)
 
         {
         }
 
-        protected override List<INamespaceSymbol> ExtractSymbols( IEnumerable<ITypeSymbol> inputData )
+        protected override List<INamespaceSymbol> ExtractSymbols( List<ITypeSymbol> inputData )
         {
             var retVal = new List<INamespaceSymbol>();
 
@@ -28,7 +28,7 @@ namespace J4JSoftware.Roslyn
                     : symbol.ContainingNamespace;
 
                 if (nsSymbol == null)
-                    Logger.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name);
+                    Logger?.Information<string>("ITypeSymbol '{0}' does not have a ContainingAssembly", symbol.Name);
                 else retVal.Add(nsSymbol);
             }
 

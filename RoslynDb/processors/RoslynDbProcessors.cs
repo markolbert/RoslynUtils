@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class RoslynDbProcessors<TSymbol> : Actions<TSymbol>
+    public abstract class RoslynDbProcessors<TSymbol> : Actions<List<TSymbol>>
         where TSymbol : ISymbol
     {
         protected RoslynDbProcessors( 
@@ -24,17 +24,14 @@ namespace J4JSoftware.Roslyn
 
         public string Name { get; }
 
-        protected override bool Initialize( IEnumerable<TSymbol> symbols )
+        protected override bool Initialize( List<TSymbol> symbols )
         {
             Logger?.Information<string>( "Starting {0}...", Name );
-
-            if( !base.Initialize( symbols ) )
-                return false;
 
             return true;
         }
 
-        protected override bool Finalize( IEnumerable<TSymbol> symbols )
+        protected override bool Finalize( List<TSymbol> symbols )
         {
             Logger?.Information<string>("... finished {0}", Name);
 

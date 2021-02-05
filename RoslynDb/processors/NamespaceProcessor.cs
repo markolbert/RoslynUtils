@@ -6,20 +6,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class NamespaceProcessor : BaseProcessorDb<INamespaceSymbol, INamespaceSymbol>
+    public class NamespaceProcessor : BaseProcessorDb<List<INamespaceSymbol>, INamespaceSymbol>
     {
         public NamespaceProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Namespaces to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<INamespaceSymbol> ExtractSymbols( IEnumerable<INamespaceSymbol> inputData )
-        {
-            return inputData.ToList();
-        }
+        protected override List<INamespaceSymbol> ExtractSymbols( List<INamespaceSymbol> inputData ) => inputData;
 
         protected override bool ProcessSymbol( INamespaceSymbol symbol )
         {

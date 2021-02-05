@@ -6,17 +6,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class ParameterProcessor : BaseProcessorDb<IPropertySymbol, IParameterSymbol>
+    public class ParameterProcessor : BaseProcessorDb<List<IPropertySymbol>, IParameterSymbol>
     {
         public ParameterProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Property Parameters to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<IParameterSymbol> ExtractSymbols( IEnumerable<IPropertySymbol> inputData )
+        protected override List<IParameterSymbol> ExtractSymbols( List<IPropertySymbol> inputData )
         {
             return inputData.SelectMany( p => p.Parameters ).ToList();
         }

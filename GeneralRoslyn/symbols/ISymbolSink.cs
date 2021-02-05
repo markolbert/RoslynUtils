@@ -15,7 +15,7 @@ namespace J4JSoftware.Roslyn
         UnsupportedNode
     }
 
-    public interface ISingleWalker : IAction<CompiledProject>
+    public interface ISingleWalker : IAction<List<CompiledProject>>
     {
 
     }

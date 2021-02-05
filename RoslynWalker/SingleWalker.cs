@@ -11,35 +11,35 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
-    public class SingleWalker : TopoAction<CompiledProject>, ISingleWalker
+    public class SingleWalker : ISingleWalker
     {
         private readonly ISyntaxNodeSink _nodeSink;
         private readonly WalkerContext _context;
+        private readonly IJ4JLogger? _logger;
 
         public SingleWalker(
             ISyntaxNodeSink nodeSink,
             WalkerContext context,
-            IJ4JLogger logger
+            IJ4JLogger? logger
         )
-            : base( logger )
         {
             _nodeSink = nodeSink;
             _context = context;
+
+            _logger = logger;
+            _logger?.SetLoggedType( GetType() );
         }
 
-        protected override bool Initialize( IEnumerable<CompiledProject> compResults )
+        protected virtual bool Initialize( List<CompiledProject> projects )
         {
-            Logger.Information( "Starting syntax walking..." );
+            _logger?.Information( "Starting syntax walking..." );
 
-            if( !base.Initialize( compResults ) )
-                return false;
-
-            _context.SetCompiledProjects(compResults);
+            _context.SetCompiledProjects(projects);
 
             return true;
         }
 
-        protected override bool ProcessLoop( IEnumerable<CompiledProject> compResults )
+        public virtual bool Process( List<CompiledProject> compResults )
         {
             var nodeStack = new Stack<SyntaxNode>();
 
@@ -74,14 +74,29 @@ namespace J4JSoftware.Roslyn
             nodeStack.Pop();
         }
 
-        protected override bool Finalize( IEnumerable<CompiledProject> inputData )
+        protected virtual bool Finalize( List<CompiledProject> inputData )
         {
-            Logger.Information("...finished syntax walking");
-
-            if ( !base.Finalize( inputData ) )
-                return false;
+            _logger?.Information("...finished syntax walking");
 
             return _nodeSink.FinalizeSink(this);
+        }
+
+        public bool Equals( IAction<List<CompiledProject>>? other )
+            => other switch
+            {
+                null => false,
+                SingleWalker castOther => castOther.GetType() == GetType(),
+                _ => false
+            };
+
+        bool IAction.Process( object src )
+        {
+            if( src is List<CompiledProject> castSrc )
+                return Process( castSrc );
+
+            _logger?.Error( "Expected a {0} but received a {1}", typeof(List<CompiledProject>), src.GetType() );
+
+            return false;
         }
     }
 }

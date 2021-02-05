@@ -29,9 +29,9 @@ namespace Tests.RoslynWalker
             var walker = ServiceProvider.Instance.GetRequiredService<ISingleWalker>();
             walker.Process( result ).Should().BeTrue();
 
-            //var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
+            var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
 
-            //walkers.Process(result).Should().BeTrue();
+            walkers.Process(result).Should().BeTrue();
         }
     }
 }

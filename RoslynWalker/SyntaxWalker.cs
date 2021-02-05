@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public abstract class SyntaxWalker<TSymbol> : TopoAction<CompiledProject>, ISyntaxWalker<TSymbol>
+    public abstract class SyntaxWalker<TSymbol> : ISyntaxWalker
         where TSymbol : class, ISymbol
     {
         private readonly ISymbolSink _symbolSink;
@@ -21,12 +21,13 @@ namespace J4JSoftware.Roslyn
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             WalkerContext context,
-            IJ4JLogger logger,
+            IJ4JLogger? logger,
             ISymbolSink<TSymbol>? symbolSink = null
         )
-            : base( logger )
         {
             Name = walkerName;
+            Logger = logger;
+            Logger?.SetLoggedType( GetType() );
 
             SymbolInfo = symbolInfo;
             SymbolType = typeof(TSymbol);
@@ -35,43 +36,44 @@ namespace J4JSoftware.Roslyn
 
             if( symbolSink == null )
             {
-                Logger.Error( "No ISymbolSink defined for symbol type '{0}'", typeof(TSymbol) );
+                Logger?.Error( "No ISymbolSink defined for symbol type '{0}'", typeof(TSymbol) );
                 _symbolSink = defaultSymbolSink;
             }
             else _symbolSink = symbolSink;
         }
 
+        protected IJ4JLogger? Logger { get; }
         protected ISymbolFullName SymbolInfo { get; }
         protected WalkerContext Context { get; }
 
         public Type SymbolType { get; }
         public string Name { get; }
 
-        protected override bool Initialize( IEnumerable<CompiledProject> compResults )
+        protected virtual bool Initialize( List<CompiledProject> projects )
         {
-            Logger.Information<string>( "Starting {0}...", Name );
-
-            if( !base.Initialize( compResults ) )
-                return false;
+            Logger?.Information<string>( "Starting {0}...", Name );
 
             if (!_symbolSink.InitializeSink(this))
                 return false;
 
-            Context.SetCompiledProjects( compResults );
+            Context.SetCompiledProjects( projects );
 
             _visitedNodes.Clear();
 
             return true;
         }
 
-        protected override bool ProcessLoop( IEnumerable<CompiledProject> compResults )
+        public virtual bool Process( List<CompiledProject> projects )
         {
-            foreach (var compResult in compResults.SelectMany(cr => cr))
+            if( !Initialize( projects ) )
+                return false;
+
+            foreach (var compResult in projects.SelectMany(x=>x))
             {
                 TraverseInternal(compResult.RootSyntaxNode, compResult);
             }
 
-            return true;
+            return Finalize( projects );
         }
 
         protected void TraverseInternal( SyntaxNode node, CompiledFile context )
@@ -96,12 +98,9 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        protected override bool Finalize( IEnumerable<CompiledProject> inputData )
+        protected virtual bool Finalize( List<CompiledProject> projects )
         {
-            Logger.Information<string>("...finished {0}", Name);
-
-            if ( !base.Finalize( inputData ) )
-                return false;
+            Logger?.Information<string>("...finished {0}", Name);
 
             return _symbolSink.FinalizeSink(this);
         }
@@ -109,12 +108,30 @@ namespace J4JSoftware.Roslyn
         protected abstract bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out TSymbol? result );
         protected abstract bool GetChildNodesToVisit( SyntaxNode node, out List<SyntaxNode>? result );
 
-        public bool Equals( ISyntaxWalker? other )
-        {
-            if( other == null )
-                return false;
+        public bool Equals( IAction<List<CompiledProject>>? other )
+            => other switch
+            {
+                null => false,
+                SyntaxWalker<TSymbol> castOther => castOther.SymbolType == SymbolType,
+                _ => false
+            };
 
-            return other.SymbolType == SymbolType;
+        public bool Equals( ISyntaxWalker? other )
+            => other switch
+            {
+                null => false,
+                SyntaxWalker<TSymbol> castOther => castOther.SymbolType == SymbolType,
+                _ => false
+            };
+
+        bool IAction.Process( object src )
+        {
+            if( src is List<CompiledProject> projects )
+                return Process( projects );
+
+            Logger?.Error( "Expected a {0} but received a {1}", typeof(List<CompiledProject>), src.GetType() );
+
+            return false;
         }
     }
 }

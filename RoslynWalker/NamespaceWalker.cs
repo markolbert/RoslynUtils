@@ -20,7 +20,7 @@ namespace J4JSoftware.Roslyn
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             WalkerContext context,
-            IJ4JLogger logger,
+            IJ4JLogger? logger,
             ISymbolSink<INamespaceSymbol>? symbolSink = null
         )
             : base( "Namespace walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
@@ -51,14 +51,14 @@ namespace J4JSoftware.Roslyn
 
             if(containingSymbol == null )
             {
-                Logger.Verbose<string>( "Symbol {0} isn't contained in an Namespace", symbol.ToDisplayString() );
+                Logger?.Verbose<string>( "Symbol {0} isn't contained in an Namespace", symbol.ToDisplayString() );
 
                 return false;
             }
 
             if(containingSymbol.ContainingAssembly == null )
             {
-                Logger.Verbose<string>( "Namespace {0} isn't contained in an Assembly", symbol.ToDisplayString() );
+                Logger?.Verbose<string>( "Namespace {0} isn't contained in an Assembly", symbol.ToDisplayString() );
 
                 return false;
             }

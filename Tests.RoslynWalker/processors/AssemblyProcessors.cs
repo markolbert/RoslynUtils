@@ -20,7 +20,7 @@ namespace Tests.RoslynWalker
             AddDependentNode( new InScopeAssemblyInfoProcessor( dataLayer, context, loggerFactory() ), node.Value );
         }
 
-        protected override bool Initialize( IEnumerable<IAssemblySymbol> symbols )
+        protected override bool Initialize( List<IAssemblySymbol> symbols )
         {
             if( !base.Initialize( symbols ) )
                 return false;

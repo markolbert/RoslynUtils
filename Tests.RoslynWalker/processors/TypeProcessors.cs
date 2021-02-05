@@ -25,7 +25,7 @@ namespace Tests.RoslynWalker
             AddDependentNode( new AncestorProcessor( dataLayer, context, loggerFactory() ), node.Value );
         }
 
-        protected override bool Initialize( IEnumerable<ITypeSymbol> symbols )
+        protected override bool Initialize( List<ITypeSymbol> symbols )
         {
             if( !base.Initialize( symbols ) )
                 return false;

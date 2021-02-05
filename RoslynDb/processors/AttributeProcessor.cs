@@ -9,20 +9,17 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class AttributeProcessor : BaseProcessorDb<ISymbol, ISymbol>
+    public class AttributeProcessor : BaseProcessorDb<List<ISymbol>, ISymbol>
     {
         public AttributeProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger logger)
+            IJ4JLogger? logger)
             : base("adding Attributes to the database", dataLayer, context, logger)
         {
         }
 
-        protected override List<ISymbol> ExtractSymbols( IEnumerable<ISymbol> inputData )
-        {
-            return inputData.ToList();
-        }
+        protected override List<ISymbol> ExtractSymbols( List<ISymbol> inputData ) => inputData;
 
         protected override bool ProcessSymbol( ISymbol symbol )
         {
@@ -83,8 +80,8 @@ namespace J4JSoftware.Roslyn
             }
 
             if( sb.Length == 0 )
-                Logger.Error<string>( "Couldn't retrieve value for Attribute property or argument '{0}'",
-                    typedConst.Type.ToUniqueName() );
+                Logger?.Error<string>( "Couldn't retrieve value for Attribute property or argument '{0}'",
+                    typedConst.Type?.ToUniqueName() ?? "<null type>" );
 
             return sb.ToString();
         }

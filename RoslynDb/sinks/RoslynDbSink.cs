@@ -54,8 +54,17 @@ namespace J4JSoftware.Roslyn.Sinks
                 return false;
             }
 
-            throw new NotImplementedException();
-            //return _processors.Process( Symbols );
+            var allOkay = true;
+
+            foreach( var processor in _processors )
+            {
+                allOkay &= processor.Process( Symbols );
+
+                if( !allOkay && Context.StopOnFirstError )
+                    break;
+            }
+
+            return allOkay;
         }
 
         public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)
