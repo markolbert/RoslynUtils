@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class PropertyProcessor : BaseProcessorDb<List<IPropertySymbol>, IPropertySymbol>
+    public class PropertyProcessor : SimpleProcessorDb<IPropertySymbol>
     {
         public PropertyProcessor(
             IRoslynDataLayer dataLayer,
@@ -15,8 +15,6 @@ namespace J4JSoftware.Roslyn
             : base("adding Properties to the database", dataLayer, context, logger)
         {
         }
-
-        protected override List<IPropertySymbol> ExtractSymbols( List<IPropertySymbol> inputData ) => inputData;
 
         protected override bool ProcessSymbol( IPropertySymbol symbol ) =>
             DataLayer.GetProperty( symbol, true, true ) != null;

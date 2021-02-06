@@ -10,16 +10,16 @@ namespace J4JSoftware.Roslyn
     {
         protected SymbolSink(
             ActionsContext context,
-            IJ4JLogger logger
+            IJ4JLogger? logger
             )
         {
             Context = context;
 
             Logger = logger;
-            Logger.SetLoggedType( this.GetType() );
+            Logger?.SetLoggedType( this.GetType() );
         }
 
-        protected IJ4JLogger Logger { get; }
+        protected IJ4JLogger? Logger { get; }
         protected ISyntaxWalker? SyntaxWalker { get; private set; } = null;
         protected ActionsContext Context { get; }
 
@@ -45,7 +45,7 @@ namespace J4JSoftware.Roslyn
             if( symbol is TSymbol castSymbol )
                 return OutputSymbol( syntaxWalker, castSymbol );
 
-            Logger.Error<string, Type>( "{0} is not a {1}", nameof(symbol), typeof(TSymbol) );
+            Logger?.Error<string, Type>( "{0} is not a {1}", nameof(symbol), typeof(TSymbol) );
 
             return false;
         }

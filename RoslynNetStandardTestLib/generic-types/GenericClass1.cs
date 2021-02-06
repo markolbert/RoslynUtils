@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+#pragma warning disable 169
+#pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn.Tests
 {

@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class AttributeProcessor : BaseProcessorDb<List<ISymbol>, ISymbol>
+    public class AttributeProcessor : SimpleProcessorDb<ISymbol>
     {
         public AttributeProcessor(
             IRoslynDataLayer dataLayer,
@@ -18,8 +18,6 @@ namespace J4JSoftware.Roslyn
             : base("adding Attributes to the database", dataLayer, context, logger)
         {
         }
-
-        protected override List<ISymbol> ExtractSymbols( List<ISymbol> inputData ) => inputData;
 
         protected override bool ProcessSymbol( ISymbol symbol )
         {

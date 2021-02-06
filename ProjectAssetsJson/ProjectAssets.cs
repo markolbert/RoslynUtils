@@ -122,6 +122,9 @@ namespace J4JSoftware.Roslyn.ProjectAssets
                 var configuration =
                     JsonSerializer.Deserialize<ExpandoObject>( File.ReadAllText( projectAssetsPath ), opt );
 
+                if( configuration == null )
+                    return false;
+
                 Version = GetProperty<int>( configuration, "version" );
                 
                 Project = new ProjectInfo( 

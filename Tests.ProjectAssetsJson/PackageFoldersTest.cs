@@ -20,7 +20,7 @@ namespace Tests.ProjectAssetsJson
             var expando = GetProperty<ExpandoObject>(container, "packageFolders");
             expando.Should().NotBeNull();
 
-            var asDict = (IDictionary<string, object>) expando;
+            var asDict = (IDictionary<string, object>) expando!;
             var folders = asDict.Keys.ToList();
 
             folders.Count.Should().Be( numFolders );

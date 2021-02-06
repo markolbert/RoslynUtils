@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+#pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn.Tests
 {

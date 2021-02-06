@@ -1,4 +1,6 @@
-﻿namespace J4JSoftware.Roslyn.Tests
+﻿#pragma warning disable 8618
+
+namespace J4JSoftware.Roslyn.Tests
 {
     public class OpenGenericProperties<T1, T2>
         where T1 : struct

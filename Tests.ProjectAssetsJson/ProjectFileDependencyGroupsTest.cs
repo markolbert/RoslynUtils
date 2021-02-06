@@ -24,7 +24,7 @@ namespace Tests.ProjectAssetsJson
             foreach( var kvp in expando )
             {
                 kvp.Value.Should().BeOfType<List<string>>();
-                var libContainer = (List<string>) kvp.Value;
+                var libContainer = (List<string>) kvp.Value!;
 
                 pfdg.Add( new ProjectFileDependencyGroup( kvp.Key, libContainer, LoggerFactory ) );
             }

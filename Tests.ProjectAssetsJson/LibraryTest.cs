@@ -27,7 +27,7 @@ namespace Tests.ProjectAssetsJson
             foreach( var kvp in expando )
             {
                 kvp.Value.Should().BeOfType<ExpandoObject>();
-                var libContainer = (ExpandoObject) kvp.Value;
+                var libContainer = (ExpandoObject) kvp.Value!;
 
                 var refType = GetEnum<ReferenceType>( libContainer, "type" );
 

@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class AssemblyProcessor : BaseProcessorDb<List<IAssemblySymbol>, IAssemblySymbol>
+    public class AssemblyProcessor : SimpleProcessorDb<IAssemblySymbol>
     {
         public AssemblyProcessor(
             IRoslynDataLayer dataLayer,
@@ -16,9 +16,6 @@ namespace J4JSoftware.Roslyn
             : base("adding Assemblies to the database", dataLayer, context, logger)
         {
         }
-
-        protected override List<IAssemblySymbol> ExtractSymbols( List<IAssemblySymbol> source )
-            => source;
 
         protected override bool ProcessSymbol( IAssemblySymbol symbol ) =>
             DataLayer.GetAssembly( symbol, true, true ) != null;

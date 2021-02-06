@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autofac;
 using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
@@ -92,9 +93,16 @@ namespace Tests.RoslynWalker
             where TProcessors : RoslynDbProcessors<TSymbol>
         {
             builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(IAction<TSymbol>).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
+                .Where(t =>
+                {
+                    if( t.IsAbstract )
+                        return false;
+
+                    if(!typeof(IAction).IsAssignableFrom( t ) )
+                        return false;
+
+                    return t.GetConstructors().Length > 0;
+                } )
                 .AsImplementedInterfaces();
 
             return builder.RegisterType<TProcessors>()

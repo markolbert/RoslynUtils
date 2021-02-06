@@ -195,7 +195,7 @@ namespace J4JSoftware.Roslyn
                     ? _buildResults[ project.FilePath ]
                     : null;
 
-                retVal.Add( new CompiledProject( buildResults, project, compilation ) );
+                retVal.Add( new CompiledProject( buildResults!, project, compilation ) );
             }
 
             return retVal;

@@ -93,7 +93,7 @@ namespace J4JSoftware.Roslyn.ProjectAssets
                     return;
 
                 case JsonTokenType.PropertyName:
-                    _propertyNames.Push( reader.GetString() );
+                    _propertyNames.Push( reader.GetString() ?? string.Empty );
 
                     break;
 

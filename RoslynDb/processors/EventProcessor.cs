@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.Roslyn
 {
-    public class EventProcessor : BaseProcessorDb<List<IEventSymbol>, IEventSymbol>
+    public class EventProcessor : SimpleProcessorDb<IEventSymbol>
     {
         public EventProcessor(
             IRoslynDataLayer dataLayer,
@@ -15,8 +15,6 @@ namespace J4JSoftware.Roslyn
             : base("adding Events to the database", dataLayer, context, logger)
         {
         }
-
-        protected override List<IEventSymbol> ExtractSymbols( List<IEventSymbol> inputData ) => inputData;
 
         protected override bool ProcessSymbol( IEventSymbol symbol ) =>
             DataLayer.GetEvent( symbol, true, true ) != null;

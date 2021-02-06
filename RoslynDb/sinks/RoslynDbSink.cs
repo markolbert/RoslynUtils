@@ -11,22 +11,22 @@ namespace J4JSoftware.Roslyn.Sinks
     public abstract class RoslynDbSink<TSymbol> : SymbolSink<TSymbol>
         where TSymbol : class, ISymbol
     {
-        protected readonly List<IAction<TSymbol>>? _processors;
+        protected readonly List<IAction<TSymbol>> _processors;
 
         protected RoslynDbSink(
             UniqueSymbols<TSymbol> uniqueSymbols,
             ActionsContext context,
-            IJ4JLogger logger,
+            IJ4JLogger? logger,
             IEnumerable<IAction<TSymbol>>? processors = null
         )
             : base( context, logger )
         {
             Symbols = uniqueSymbols;
 
-            _processors = processors?.ToList();
+            _processors = processors?.ToList() ?? new List<IAction<TSymbol>>();
 
-            if( _processors == null )
-                Logger.Error( "No {0} processors defined for symbol {1}",
+            if( !_processors.Any() )
+                Logger?.Error( "No {0} processors defined for symbol {1}",
                     typeof(IAction<TSymbol>),
                     typeof(TSymbol) );
         }
@@ -50,7 +50,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             if( _processors == null )
             {
-                Logger.Error<Type>("No processors defined for {0}", this.GetType()  );
+                Logger?.Error<Type>("No processors defined for {0}", this.GetType()  );
                 return false;
             }
 

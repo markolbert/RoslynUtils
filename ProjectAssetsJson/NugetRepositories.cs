@@ -12,7 +12,7 @@ namespace J4JSoftware.Roslyn.ProjectAssets
         public NugetRepositories( ExpandoObject reposContainer, Func<IJ4JLogger> loggerFactory )
             : base( loggerFactory )
         {
-            RepositoryPaths = ( (IDictionary<string, object>) reposContainer ).Keys.ToList();
+            RepositoryPaths = ( (IDictionary<string, object>) reposContainer! ).Keys.ToList();
         }
 
         public List<string> RepositoryPaths { get; }

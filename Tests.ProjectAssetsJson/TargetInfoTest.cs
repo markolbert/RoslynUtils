@@ -28,7 +28,7 @@ namespace Tests.ProjectAssetsJson
             {
                 kvp.Value.Should().BeOfType<ExpandoObject>();
                 
-                var tgtInfo = new TargetInfo( kvp.Key, (ExpandoObject) kvp.Value, LoggerFactory );
+                var tgtInfo = new TargetInfo( kvp.Key, (ExpandoObject) kvp.Value!, LoggerFactory );
                 targets.Add( tgtInfo );
             }
 

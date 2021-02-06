@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             if (_processors == null)
             {
-                Logger.Error<Type>("No processors defined for {0}", this.GetType());
+                Logger?.Error<Type>("No processors defined for {0}", this.GetType());
                 return false;
             }
 
@@ -74,7 +74,7 @@ namespace J4JSoftware.Roslyn.Sinks
 
             bool unhandled()
             {
-                Logger.Error<string>("ITypeSymbol '{0}' is neither an INamedTypeSymbol, an ITypeParameterSymbol nor an IArrayTypeSymbol",
+                Logger?.Error<string>("ITypeSymbol '{0}' is neither an INamedTypeSymbol, an ITypeParameterSymbol nor an IArrayTypeSymbol",
                     symbol.ToFullName());
 
                 return false;
@@ -94,13 +94,13 @@ namespace J4JSoftware.Roslyn.Sinks
         {
             if( symbol.TypeKind != TypeKind.Interface )
             {
-                Logger.Error<string>("Non-interface '{0}' submitted to AddInterface()", symbol.ToFullName());
+                Logger?.Error<string>("Non-interface '{0}' submitted to AddInterface()", symbol.ToFullName());
                 return false;
             }
 
             if ( symbol.BaseType != null )
             {
-                Logger.Error<string>( "Interface '{0}' has a base type", symbol.ToFullName() );
+                Logger?.Error<string>( "Interface '{0}' has a base type", symbol.ToFullName() );
                 return false;
             }
 

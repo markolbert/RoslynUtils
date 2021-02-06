@@ -34,6 +34,6 @@ namespace Tests.ProjectAssetsJson
         protected ExpandoObject ConvertJsonSnippet( string jsonContent ) =>
             string.IsNullOrEmpty( jsonContent )
                 ? new ExpandoObject()
-                : JsonSerializer.Deserialize<ExpandoObject>( jsonContent, _converterOptions );
+                : JsonSerializer.Deserialize<ExpandoObject>( jsonContent, _converterOptions )!;
     }
 }

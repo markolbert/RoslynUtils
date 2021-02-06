@@ -21,7 +21,7 @@ namespace J4JSoftware.Roslyn.ProjectAssets
             if (string.IsNullOrEmpty(propName))
                 return false;
 
-            var asDict = (IDictionary<string, object>)container;
+            var asDict = (IDictionary<string, object>)container!;
 
             // ExpandoObject keys are always case sensitive...so if we want a case insensitive match we have to 
             // go a bit convoluted...

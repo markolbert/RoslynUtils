@@ -40,7 +40,7 @@ namespace J4JSoftware.Roslyn.ProjectAssets
             Dependencies.Clear();
 
             // dependencies are optional
-            var tgtDict = (IDictionary<string, object>) tgtInfo;
+            var tgtDict = (IDictionary<string, object>) tgtInfo!;
             if( !tgtDict.ContainsKey( DependencyKey ) )
                 return;
 

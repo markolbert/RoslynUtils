@@ -38,7 +38,7 @@ namespace J4JSoftware.Roslyn.ProjectAssets
             var asDict = (IDictionary<string, object>) GetProperty<ExpandoObject>(
                     restoreInfo, 
                     "sources", 
-                    optional: true );
+                    optional: true )!;
 
             Sources = asDict.Keys.ToList();
 
