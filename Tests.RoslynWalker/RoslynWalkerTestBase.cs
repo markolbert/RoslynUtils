@@ -22,13 +22,16 @@ namespace Tests.RoslynWalker
 
             result!.Count.Should().BeGreaterThan( 0 );
 
-            var context = ServiceProvider.Instance.GetRequiredService<ActionsContext>();
+            var walker = ServiceProvider.Instance.GetRequiredService<ISyntaxWalkerNG>();
+            walker.Process( result );
 
-            context.StopOnFirstError = true;
+            //var context = ServiceProvider.Instance.GetRequiredService<ActionsContext>();
 
-            var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
+            //context.StopOnFirstError = true;
 
-            walkers.Process(result).Should().BeTrue();
+            //var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
+
+            //walkers.Process(result).Should().BeTrue();
         }
     }
 }

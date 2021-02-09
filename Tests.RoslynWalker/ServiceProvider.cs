@@ -53,6 +53,9 @@ namespace Tests.RoslynWalker
                              && t.GetConstructors().Length > 0 )
                 .AsImplementedInterfaces();
 
+            builder.RegisterType<SyntaxWalkerNG>()
+                .AsImplementedInterfaces();
+
             builder.RegisterType<SyntaxWalkers>()
                 .AsSelf()
                 .SingleInstance();

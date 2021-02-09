@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneralRoslyn", "GeneralRoslyn\GeneralRoslyn.csproj", "{94FA291A-D44D-43E9-9B1A-66E89775C514}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectAssetsJson", "ProjectAssetsJson\ProjectAssetsJson.csproj", "{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "external", "external", "{D6E68EA2-FEF0-4FE6-96F6-60A909D632A8}"
 	ProjectSection(SolutionItems) = preProject
 		LICENSE = LICENSE
@@ -16,8 +14,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "J4JLogging", "..\J4JLogging\J4JLogging\J4JLogging.csproj", "{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoFacJ4JLogging", "..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj", "{7FC43F1C-DEC1-498A-BED6-55D30BCEBD1D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.ProjectAssetsJson", "Tests.ProjectAssetsJson\Tests.ProjectAssetsJson.csproj", "{886BE292-541F-4074-BED6-4ED2D6430663}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoslynWalker", "RoslynWalker\RoslynWalker.csproj", "{9C95475D-137D-442C-A2E0-86F7EFCC0C99}"
 EndProject
@@ -44,12 +40,6 @@ Global
 		{94FA291A-D44D-43E9-9B1A-66E89775C514}.NuGetRelease|Any CPU.Build.0 = Release|Any CPU
 		{94FA291A-D44D-43E9-9B1A-66E89775C514}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94FA291A-D44D-43E9-9B1A-66E89775C514}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.NuGetRelease|Any CPU.ActiveCfg = Release|Any CPU
-		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.NuGetRelease|Any CPU.Build.0 = Release|Any CPU
-		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C767F28A-7425-4C9F-B85E-DFAD96FFB17B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E9BDD92-9DC3-4841-AC19-5338743BD5C8}.NuGetRelease|Any CPU.ActiveCfg = NuGetRelease|Any CPU
@@ -62,12 +52,6 @@ Global
 		{7FC43F1C-DEC1-498A-BED6-55D30BCEBD1D}.NuGetRelease|Any CPU.Build.0 = NuGetRelease|Any CPU
 		{7FC43F1C-DEC1-498A-BED6-55D30BCEBD1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FC43F1C-DEC1-498A-BED6-55D30BCEBD1D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{886BE292-541F-4074-BED6-4ED2D6430663}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{886BE292-541F-4074-BED6-4ED2D6430663}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{886BE292-541F-4074-BED6-4ED2D6430663}.NuGetRelease|Any CPU.ActiveCfg = Release|Any CPU
-		{886BE292-541F-4074-BED6-4ED2D6430663}.NuGetRelease|Any CPU.Build.0 = Release|Any CPU
-		{886BE292-541F-4074-BED6-4ED2D6430663}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{886BE292-541F-4074-BED6-4ED2D6430663}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9C95475D-137D-442C-A2E0-86F7EFCC0C99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9C95475D-137D-442C-A2E0-86F7EFCC0C99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C95475D-137D-442C-A2E0-86F7EFCC0C99}.NuGetRelease|Any CPU.ActiveCfg = Release|Any CPU

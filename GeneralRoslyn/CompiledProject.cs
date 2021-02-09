@@ -12,7 +12,7 @@ namespace J4JSoftware.Roslyn
 {
     public class CompiledProject : IEnumerable<CompiledFile>
     {
-        private readonly List<CompiledFile> _results = new List<CompiledFile>();
+        private readonly List<CompiledFile> _results = new();
 
         public CompiledProject(
             IAnalyzerResults buildResults,
