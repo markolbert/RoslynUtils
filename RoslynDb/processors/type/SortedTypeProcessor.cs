@@ -1,10 +1,26 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
-using NuGet.Versioning;
 
 namespace J4JSoftware.Roslyn
 {
@@ -13,8 +29,8 @@ namespace J4JSoftware.Roslyn
         public SortedTypeProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger? logger)
-            : base("adding basic Types to the database", dataLayer, context, logger)
+            IJ4JLogger? logger )
+            : base( "adding basic Types to the database", dataLayer, context, logger )
         {
         }
 
@@ -23,7 +39,6 @@ namespace J4JSoftware.Roslyn
             var retVal = new List<ITypeSymbol>();
 
             foreach( var symbol in inputData )
-            {
                 switch( symbol )
                 {
                     case IDynamicTypeSymbol dtSymbol:
@@ -42,14 +57,13 @@ namespace J4JSoftware.Roslyn
                         retVal.Add( symbol );
                         break;
                 }
-            }
 
             return retVal;
         }
 
         protected override bool ProcessSymbol( ITypeSymbol typeSymbol )
         {
-            Logger?.Information<string>("Processing ITypeSymbol {0}", typeSymbol.ToUniqueName());
+            Logger?.Information<string>( "Processing ITypeSymbol {0}", typeSymbol.ToUniqueName() );
 
             if( DataLayer.GetUnspecifiedType( typeSymbol, true, true ) == null )
                 return false;

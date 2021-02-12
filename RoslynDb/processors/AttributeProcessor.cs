@@ -1,8 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
 using System.Text;
-using System.Xml.XPath;
 using J4JSoftware.Logging;
 using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
@@ -14,8 +29,8 @@ namespace J4JSoftware.Roslyn
         public AttributeProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger? logger)
-            : base("adding Attributes to the database", dataLayer, context, logger)
+            IJ4JLogger? logger )
+            : base( "adding Attributes to the database", dataLayer, context, logger )
         {
         }
 
@@ -62,11 +77,12 @@ namespace J4JSoftware.Roslyn
             var sb = new StringBuilder();
 
             if( typedConst.Value != null )
-                sb.Append( typedConst.Value.ToString() );
+            {
+                sb.Append( typedConst.Value );
+            }
             else
             {
                 if( typedConst.Values != null )
-                {
                     foreach( var tcValue in typedConst.Values )
                     {
                         if( sb.Length > 0 )
@@ -74,7 +90,6 @@ namespace J4JSoftware.Roslyn
 
                         sb.Append( tcValue.ToString() );
                     }
-                }
             }
 
             if( sb.Length == 0 )

@@ -1,10 +1,25 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -13,11 +28,11 @@ namespace J4JSoftware.Roslyn
 {
     public class SyntaxWalkerNG : ISyntaxWalkerNG
     {
-        private readonly List<SyntaxNode> _visitedNodes = new();
-        private readonly IJ4JLogger? _logger;
         private readonly List<SyntaxKind> _alwaysIgnore;
         private readonly List<SyntaxKind> _ignoreAfterProcessing;
+        private readonly IJ4JLogger? _logger;
         private readonly List<SyntaxKind> _passThru;
+        private readonly List<SyntaxNode> _visitedNodes = new();
 
         public SyntaxWalkerNG(
             IJ4JLogger? logger
@@ -72,7 +87,7 @@ namespace J4JSoftware.Roslyn
                 SyntaxKind.Block,
                 SyntaxKind.PredefinedType,
                 SyntaxKind.QualifiedName,
-                SyntaxKind.UsingDirective,
+                SyntaxKind.UsingDirective
             };
 
             _ignoreAfterProcessing = new List<SyntaxKind>
@@ -86,7 +101,7 @@ namespace J4JSoftware.Roslyn
                 SyntaxKind.Parameter,
                 SyntaxKind.PropertyDeclaration,
                 SyntaxKind.TypeParameter,
-                SyntaxKind.VariableDeclarator,
+                SyntaxKind.VariableDeclarator
             };
 
             _passThru = new List<SyntaxKind>
@@ -97,7 +112,7 @@ namespace J4JSoftware.Roslyn
                 SyntaxKind.ParameterList,
                 SyntaxKind.TypeArgumentList,
                 SyntaxKind.TypeParameterList,
-                SyntaxKind.VariableDeclaration,
+                SyntaxKind.VariableDeclaration
             };
         }
 
@@ -111,9 +126,7 @@ namespace J4JSoftware.Roslyn
             _visitedNodes.Clear();
 
             foreach( var compiledFile in projects.SelectMany( x => x ) )
-            {
                 TraverseInternal( compiledFile.RootSyntaxNode, compiledFile );
-            }
 
             _logger?.Information( "...finished" );
 
@@ -134,7 +147,7 @@ namespace J4JSoftware.Roslyn
             // don't re-visit nodes
             if( _visitedNodes.Any( vn => vn.Equals( node ) ) )
             {
-                CheckSymbolMapping( node, compiledFile, null);
+                CheckSymbolMapping( node, compiledFile, null );
                 return;
             }
 
@@ -148,7 +161,9 @@ namespace J4JSoftware.Roslyn
                 var mapper = NodeCollectors[ node ];
 
                 if( mapper == null )
+                {
                     _logger?.Warning( "No symbol mapper for {0} node", nodeKind );
+                }
                 else
                 {
                     switch( mapper.StoreSymbol( node, compiledFile, out var temp ) )
@@ -159,7 +174,7 @@ namespace J4JSoftware.Roslyn
 
                         case StoreSymbolResult.NotFound:
                             // ITypeParameter IdentifierName nodes are important, the rest, not so much...
-                            if( nodeKind != SyntaxKind.IdentifierName)
+                            if( nodeKind != SyntaxKind.IdentifierName )
                                 _logger?.Warning( "Failed to map {0} SyntaxNode to an ISymbol", nodeKind );
 
                             break;
@@ -171,10 +186,7 @@ namespace J4JSoftware.Roslyn
                 CheckSymbolMapping( node, compiledFile, mappedSymbol );
             }
 
-            foreach( var childNode in GetChildNodesToVisit( node ) )
-            {
-                TraverseInternal( childNode, compiledFile );
-            }
+            foreach( var childNode in GetChildNodesToVisit( node ) ) TraverseInternal( childNode, compiledFile );
         }
 
         [ Conditional( "DEBUG" ) ]
@@ -187,9 +199,9 @@ namespace J4JSoftware.Roslyn
                 : audited.Symbol;
 
             if( mappedSymbol == null && auditSymbol == null
-                || ( mappedSymbol != null && auditSymbol != null
-                                          && SymbolEqualityComparer.Default
-                                              .Equals( mappedSymbol, auditSymbol ) ) )
+                || mappedSymbol != null && auditSymbol != null
+                                        && SymbolEqualityComparer.Default
+                                            .Equals( mappedSymbol, auditSymbol ) )
                 return;
 
             _logger?.Debug<string, string>( "Mapping routine found {0}, audit routine found {1}",

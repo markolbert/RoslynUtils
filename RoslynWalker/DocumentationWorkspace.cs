@@ -1,4 +1,23 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,17 +26,16 @@ using System.Threading.Tasks;
 using Buildalyzer;
 using Buildalyzer.Workspaces;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.Roslyn
 {
     public class DocumentationWorkspace
     {
-        private readonly Func<IJ4JLogger> _loggerFactory;
-        private readonly AnalyzerManager _manager = new AnalyzerManager();
-        private readonly Dictionary<string, IAnalyzerResults> _buildResults = new Dictionary<string, IAnalyzerResults>();
+        private readonly Dictionary<string, IAnalyzerResults> _buildResults = new();
         private readonly IJ4JLogger _logger;
+        private readonly Func<IJ4JLogger> _loggerFactory;
+        private readonly AnalyzerManager _manager = new();
 
         public DocumentationWorkspace(
             Func<IJ4JLogger> loggerFactory
@@ -26,7 +44,7 @@ namespace J4JSoftware.Roslyn
             _loggerFactory = loggerFactory;
 
             _logger = loggerFactory();
-            _logger.SetLoggedType(this.GetType());
+            _logger.SetLoggedType( GetType() );
         }
 
         public bool AddProject( string csProjFile )
@@ -43,29 +61,29 @@ namespace J4JSoftware.Roslyn
 
                 return true;
             }
-            
+
             _logger.Error<string>( "Project analysis failed for '{0}'", csProjFile );
-            
+
             return false;
         }
 
-        public bool AddProjects(IEnumerable<string> csProjFiles)
+        public bool AddProjects( IEnumerable<string> csProjFiles )
         {
             var retVal = true;
 
-            foreach (var csProjFile in csProjFiles)
-            {
-                retVal &= AddProject(csProjFile);
-            }
+            foreach( var csProjFile in csProjFiles ) retVal &= AddProject( csProjFile );
 
             return retVal;
         }
 
-        public bool AddProjects( params string[] csProjFiles ) => AddProjects( csProjFiles.ToList() );
+        public bool AddProjects( params string[] csProjFiles )
+        {
+            return AddProjects( csProjFiles.ToList() );
+        }
 
         public bool AddSolutionProjects( string solFile )
         {
-            if( String.IsNullOrEmpty( solFile ) )
+            if( string.IsNullOrEmpty( solFile ) )
             {
                 _logger.Error<string>( "Empty or undefined {0}", nameof(solFile) );
                 return false;
@@ -179,7 +197,7 @@ namespace J4JSoftware.Roslyn
 
                 if( project == null )
                 {
-                    _logger.Error<ProjectId>( "Could not retrieve project with ID '{0}' from solution", projectID );
+                    _logger.Error( "Could not retrieve project with ID '{0}' from solution", projectID );
                     continue;
                 }
 
@@ -187,7 +205,7 @@ namespace J4JSoftware.Roslyn
 
                 if( compilation == null )
                 {
-                    _logger.Error<string>("Could not compile project '{0}' from solution", project.Name);
+                    _logger.Error<string>( "Could not compile project '{0}' from solution", project.Name );
                     continue;
                 }
 

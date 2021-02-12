@@ -1,10 +1,30 @@
-﻿using J4JSoftware.EFCoreUtilities;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 #pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn
 {
-    [EntityConfiguration(typeof(TypeImplementationConfigurator))]
+    [ EntityConfiguration( typeof(TypeImplementationConfigurator) ) ]
     public class TypeAncestorDb : ISynchronized
     {
         public int ChildTypeID { get; set; }
@@ -16,7 +36,7 @@ namespace J4JSoftware.Roslyn
 
     internal class TypeImplementationConfigurator : EntityConfigurator<TypeAncestorDb>
     {
-        protected override void Configure(EntityTypeBuilder<TypeAncestorDb> builder)
+        protected override void Configure( EntityTypeBuilder<TypeAncestorDb> builder )
         {
             builder.HasOne( x => x.AncestorType )
                 .WithMany( x => x.AncestorTypes )
@@ -26,5 +46,4 @@ namespace J4JSoftware.Roslyn
             builder.HasKey( x => new { x.ChildTypeID, x.AncestorTypeID } );
         }
     }
-
 }

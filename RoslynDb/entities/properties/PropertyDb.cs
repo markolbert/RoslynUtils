@@ -1,22 +1,38 @@
-﻿using System.Collections.Generic;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
 #pragma warning disable 8618
 #pragma warning disable 8603
 #pragma warning disable 8602
 
 namespace J4JSoftware.Roslyn
 {
-    [Table("Properties")]
-    [EntityConfiguration( typeof( PropertyConfigurator ) )]
+    [ Table( "Properties" ) ]
+    [ EntityConfiguration( typeof(PropertyConfigurator) ) ]
     public class PropertyDb : ISharpObject
     {
-        public int SharpObjectID { get; set; }
-        public SharpObject SharpObject { get; set; }
-
         public Accessibility Accessibility
         {
             get
@@ -31,7 +47,7 @@ namespace J4JSoftware.Roslyn
         public Accessibility? GetAccessibility { get; set; }
         public Accessibility? SetAccessibility { get; set; }
         public DeclarationModifier DeclarationModifier { get; set; }
-        
+
         public bool ReturnsByRef { get; set; }
         public bool ReturnsByRefReadOnly { get; set; }
 
@@ -53,6 +69,8 @@ namespace J4JSoftware.Roslyn
 
         public List<PropertyParameterDb> Parameters { get; set; }
         public List<AttributeArgumentDb> AttributeArgumentReferences { get; set; }
+        public int SharpObjectID { get; set; }
+        public SharpObject SharpObject { get; set; }
     }
 
     internal class PropertyConfigurator : EntityConfigurator<PropertyDb>
@@ -61,10 +79,10 @@ namespace J4JSoftware.Roslyn
         {
             builder.HasKey( x => x.SharpObjectID );
 
-            builder.HasOne(x => x.SharpObject)
-                .WithOne(x => x.Property)
-                .HasPrincipalKey<SharpObject>(x => x.ID)
-                .HasForeignKey<PropertyDb>(x => x.SharpObjectID);
+            builder.HasOne( x => x.SharpObject )
+                .WithOne( x => x.Property )
+                .HasPrincipalKey<SharpObject>( x => x.ID )
+                .HasForeignKey<PropertyDb>( x => x.SharpObjectID );
 
             builder.HasOne( x => x.DefiningType )
                 .WithMany( x => x.Properties )
@@ -78,13 +96,13 @@ namespace J4JSoftware.Roslyn
 
             builder.Ignore( x => x.Accessibility );
 
-            builder.Property(x => x.GetAccessibility)
+            builder.Property( x => x.GetAccessibility )
                 .HasConversion<string>();
 
-            builder.Property(x => x.SetAccessibility)
+            builder.Property( x => x.SetAccessibility )
                 .HasConversion<string>();
 
-            builder.Property(x => x.DeclarationModifier)
+            builder.Property( x => x.DeclarationModifier )
                 .HasConversion<string>();
         }
     }

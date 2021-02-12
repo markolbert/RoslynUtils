@@ -1,5 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'Tests.RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using Autofac;
 using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
@@ -13,16 +31,14 @@ namespace Tests.RoslynWalker
 {
     public class ServiceProvider
     {
-        public static IServiceProvider Instance { get; }
-
         static ServiceProvider()
         {
             var builder = new ContainerBuilder();
 
             var loggerConfig = new J4JLoggerConfiguration { EventElements = EventElements.All };
 
-            loggerConfig.Channels.Add( new ConsoleConfig() { MinimumLevel = LogEventLevel.Information } );
-            loggerConfig.Channels.Add( new DebugConfig() { MinimumLevel = LogEventLevel.Information } );
+            loggerConfig.Channels.Add( new ConsoleConfig { MinimumLevel = LogEventLevel.Information } );
+            loggerConfig.Channels.Add( new DebugConfig { MinimumLevel = LogEventLevel.Information } );
 
             builder.RegisterJ4JLogging( loggerConfig );
 
@@ -60,10 +76,10 @@ namespace Tests.RoslynWalker
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t => !t.IsAbstract
-                            && typeof(ISymbolSink).IsAssignableFrom(t)
-                            && t.GetConstructors().Length > 0)
+            builder.RegisterAssemblyTypes( typeof(RoslynDbContext).Assembly )
+                .Where( t => !t.IsAbstract
+                             && typeof(ISymbolSink).IsAssignableFrom( t )
+                             && t.GetConstructors().Length > 0 )
                 .AsImplementedInterfaces();
 
             builder.RegisterType<DefaultSymbolSink>()
@@ -78,8 +94,8 @@ namespace Tests.RoslynWalker
             RegisterSymbolProcessor<IMethodSymbol, MethodProcessors>( builder );
             RegisterSymbolProcessor<IPropertySymbol, PropertyProcessors>( builder );
             RegisterSymbolProcessor<IFieldSymbol, FieldProcessors>( builder );
-            RegisterSymbolProcessor<IEventSymbol, EventProcessors>(builder);
-            RegisterSymbolProcessor<ISymbol, AttributeProcessors>(builder);
+            RegisterSymbolProcessor<IEventSymbol, EventProcessors>( builder );
+            RegisterSymbolProcessor<ISymbol, AttributeProcessors>( builder );
 
             builder.RegisterType<SymbolCollector>()
                 .As<ISyntaxNodeSink>()
@@ -88,20 +104,26 @@ namespace Tests.RoslynWalker
             builder.RegisterType<WalkerContext>()
                 .AsSelf();
 
+            builder.RegisterType<TypeInfoCollection>()
+                .AsSelf();
+
             Instance = new AutofacServiceProvider( builder.Build() );
         }
 
-        private static IRegistrationBuilder<TProcessors, ConcreteReflectionActivatorData, SingleRegistrationStyle> RegisterSymbolProcessor<TSymbol, TProcessors>( ContainerBuilder builder )
+        public static IServiceProvider Instance { get; }
+
+        private static IRegistrationBuilder<TProcessors, ConcreteReflectionActivatorData, SingleRegistrationStyle>
+            RegisterSymbolProcessor<TSymbol, TProcessors>( ContainerBuilder builder )
             where TSymbol : ISymbol
             where TProcessors : RoslynDbProcessors<TSymbol>
         {
-            builder.RegisterAssemblyTypes(typeof(RoslynDbContext).Assembly)
-                .Where(t =>
+            builder.RegisterAssemblyTypes( typeof(RoslynDbContext).Assembly )
+                .Where( t =>
                 {
                     if( t.IsAbstract )
                         return false;
 
-                    if(!typeof(IAction).IsAssignableFrom( t ) )
+                    if( !typeof(IAction).IsAssignableFrom( t ) )
                         return false;
 
                     return t.GetConstructors().Length > 0;

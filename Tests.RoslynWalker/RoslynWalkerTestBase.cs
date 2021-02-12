@@ -1,10 +1,27 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'Tests.RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using FluentAssertions;
 using J4JSoftware.Roslyn;
-using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -36,7 +53,7 @@ namespace Tests.RoslynWalker
             CompareParsedToRoslynNamedTypes( walker, parsedTypes );
         }
 
-        private void CompareRoslynNamedTypesToParsed(ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
+        private void CompareRoslynNamedTypesToParsed( ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
         {
             var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
                                    .Cast<ITypeSymbol>()
@@ -66,7 +83,7 @@ namespace Tests.RoslynWalker
 
                 namedTypeInfo.Should().NotBeNull();
 
-                if( namedTypeInfo is not InterfaceInfo interfaceInfo ) 
+                if( namedTypeInfo is not InterfaceInfo interfaceInfo )
                     continue;
 
                 CompareElements<IMethodSymbol, MethodInfo>( ntSymbol!, interfaceInfo.Methods );
@@ -78,14 +95,14 @@ namespace Tests.RoslynWalker
             }
         }
 
-        private void CompareParsedToRoslynNamedTypes(ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
+        private void CompareParsedToRoslynNamedTypes( ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
         {
-            var rosylynTypes = walker.NodeCollectors.FirstOrDefault(x => x.SymbolType == typeof(ITypeSymbol))?
+            var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
                                    .Cast<ITypeSymbol>()
                                    .ToList()
                                ?? new List<ITypeSymbol>();
 
-            foreach ( var parsedType in parsedTypes )
+            foreach( var parsedType in parsedTypes )
             {
                 var roslynType = rosylynTypes
                     .Where( x =>
@@ -93,14 +110,14 @@ namespace Tests.RoslynWalker
                         if( !x.Name.Equals( parsedType.Name, StringComparison.Ordinal ) )
                             return false;
 
-                        if( x is not INamedTypeSymbol ntSymbol || parsedType is not ICodeElementTypeArguments typeArgsInfo ) 
+                        if( x is not INamedTypeSymbol ntSymbol ||
+                            parsedType is not ICodeElementTypeArguments typeArgsInfo )
                             return true;
 
                         return !ntSymbol.TypeArguments
                             .Where( ( t, idx ) =>
                                 !t.Name.Equals( typeArgsInfo.TypeArguments[ idx ], StringComparison.Ordinal ) )
                             .Any();
-
                     } )
                     .Cast<INamedTypeSymbol>()
                     .FirstOrDefault();
@@ -152,9 +169,7 @@ namespace Tests.RoslynWalker
         private void CompareTypeArguments( List<ITypeSymbol> symbols, ICodeElementTypeArguments typeArgsInfo )
         {
             for( var idx = 0; idx < symbols.Count; idx++ )
-            {
                 symbols[ idx ].Name.Should().Be( typeArgsInfo.TypeArguments[ idx ] );
-            }
         }
     }
 }

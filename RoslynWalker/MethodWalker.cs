@@ -1,4 +1,23 @@
-﻿using System.Collections.Generic;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
@@ -8,17 +27,17 @@ namespace J4JSoftware.Roslyn
 {
     public class MethodWalker : SyntaxWalker<IMethodSymbol>
     {
-        private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
+        private static readonly List<SyntaxKind> _ignoredNodeKinds = new();
 
         static MethodWalker()
         {
             _ignoredNodeKinds.Add( SyntaxKind.UsingDirective );
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
-            _ignoredNodeKinds.Add(SyntaxKind.SimpleLambdaExpression);
+            _ignoredNodeKinds.Add( SyntaxKind.SimpleLambdaExpression );
             _ignoredNodeKinds.Add( SyntaxKind.ParenthesizedLambdaExpression );
             _ignoredNodeKinds.Add( SyntaxKind.Attribute );
-            _ignoredNodeKinds.Add(SyntaxKind.GetAccessorDeclaration);
-            _ignoredNodeKinds.Add(SyntaxKind.SetAccessorDeclaration);
+            _ignoredNodeKinds.Add( SyntaxKind.GetAccessorDeclaration );
+            _ignoredNodeKinds.Add( SyntaxKind.SetAccessorDeclaration );
         }
 
         public MethodWalker(
@@ -32,7 +51,7 @@ namespace J4JSoftware.Roslyn
         {
         }
 
-        protected override bool NodeReferencesSymbol( SyntaxNode node, 
+        protected override bool NodeReferencesSymbol( SyntaxNode node,
             CompiledFile compiledFile,
             out IMethodSymbol? result )
         {

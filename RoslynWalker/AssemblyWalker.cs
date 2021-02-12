@@ -1,7 +1,25 @@
-﻿using System.Collections.Generic;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
-using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -9,7 +27,7 @@ namespace J4JSoftware.Roslyn
 {
     public class AssemblyWalker : SyntaxWalker<IAssemblySymbol>
     {
-        private static readonly List<SyntaxKind> _ignoredNodeKinds = new List<SyntaxKind>();
+        private static readonly List<SyntaxKind> _ignoredNodeKinds = new();
 
         static AssemblyWalker()
         {
@@ -17,18 +35,19 @@ namespace J4JSoftware.Roslyn
             _ignoredNodeKinds.Add( SyntaxKind.QualifiedName );
         }
 
-        public AssemblyWalker( 
+        public AssemblyWalker(
             ISymbolFullName symbolInfo,
             IDefaultSymbolSink defaultSymbolSink,
             WalkerContext context,
             IJ4JLogger? logger,
             ISymbolSink<IAssemblySymbol>? symbolSink = null
-            ) 
+        )
             : base( "Assembly walking", symbolInfo, defaultSymbolSink, context, logger, symbolSink )
         {
         }
 
-        protected override bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context, out IAssemblySymbol? result )
+        protected override bool NodeReferencesSymbol( SyntaxNode node, CompiledFile context,
+            out IAssemblySymbol? result )
         {
             result = null;
 
@@ -63,7 +82,7 @@ namespace J4JSoftware.Roslyn
                 return false;
 
             result = node.ChildNodes()
-                .Where(n => _ignoredNodeKinds.All(i => i != n.Kind()))
+                .Where( n => _ignoredNodeKinds.All( i => i != n.Kind() ) )
                 .ToList();
 
             return true;

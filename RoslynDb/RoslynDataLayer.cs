@@ -1,5 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
@@ -20,7 +38,48 @@ namespace J4JSoftware.Roslyn
             _dbContext = dbContext;
 
             _logger = logger;
-            _logger.SetLoggedType( this.GetType() );
+            _logger.SetLoggedType( GetType() );
+        }
+
+        public void SaveChanges()
+        {
+            _dbContext.SaveChanges();
+        }
+
+        public AssemblyNamespaceDb? GetAssemblyNamespace(
+            AssemblyDb assemblyDb,
+            NamespaceDb nsDb,
+            bool createIfMissing = false )
+        {
+            var retVal = _dbContext.AssemblyNamespaces.FirstOrDefault( x =>
+                x.AssemblyID == assemblyDb.SharpObjectID && x.NamespaceID == nsDb.SharpObjectID );
+
+            if( retVal != null )
+                return retVal;
+
+            if( !createIfMissing )
+            {
+                // make sure we can access the fully qualified names
+                LoadSharpObject( assemblyDb );
+                LoadSharpObject( nsDb );
+
+                _logger.Error<string, string>(
+                    "Couldn't create AssemblyNamespaceDb for assembly '{0}' and namespace '{1}' ",
+                    assemblyDb.SharpObject.FullyQualifiedName,
+                    nsDb.SharpObject.FullyQualifiedName );
+
+                return null;
+            }
+
+            retVal = new AssemblyNamespaceDb
+            {
+                Assembly = assemblyDb,
+                Namespace = nsDb
+            };
+
+            _dbContext.AssemblyNamespaces.Add( retVal );
+
+            return retVal;
         }
 
         #region clearing synchronization
@@ -56,8 +115,6 @@ namespace J4JSoftware.Roslyn
         }
 
         #endregion
-
-        public void SaveChanges() => _dbContext.SaveChanges();
 
         #region SharpObject
 
@@ -108,7 +165,7 @@ namespace J4JSoftware.Roslyn
 
             retVal = new AssemblyDb
             {
-                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Assembly )!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Assembly )!
             };
 
             _dbContext.Assemblies.Add( retVal );
@@ -250,7 +307,7 @@ namespace J4JSoftware.Roslyn
 
             retVal = new NamespaceDb
             {
-                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Namespace )!,
+                SharpObject = GetSharpObject( symbol, true, SharpObjectType.Namespace )!
             };
 
             _dbContext.Namespaces.Add( retVal );
@@ -274,42 +331,6 @@ namespace J4JSoftware.Roslyn
         }
 
         #endregion
-
-        public AssemblyNamespaceDb? GetAssemblyNamespace(
-            AssemblyDb assemblyDb,
-            NamespaceDb nsDb,
-            bool createIfMissing = false )
-        {
-            var retVal = _dbContext.AssemblyNamespaces.FirstOrDefault( x =>
-                x.AssemblyID == assemblyDb.SharpObjectID && x.NamespaceID == nsDb.SharpObjectID );
-
-            if( retVal != null )
-                return retVal;
-
-            if( !createIfMissing )
-            {
-                // make sure we can access the fully qualified names
-                LoadSharpObject( assemblyDb );
-                LoadSharpObject( nsDb );
-
-                _logger.Error<string, string>(
-                    "Couldn't create AssemblyNamespaceDb for assembly '{0}' and namespace '{1}' ",
-                    assemblyDb.SharpObject.FullyQualifiedName,
-                    nsDb.SharpObject.FullyQualifiedName );
-
-                return null;
-            }
-
-            retVal = new AssemblyNamespaceDb()
-            {
-                Assembly = assemblyDb,
-                Namespace = nsDb
-            };
-
-            _dbContext.AssemblyNamespaces.Add( retVal );
-
-            return retVal;
-        }
 
         #region Types
 
@@ -430,7 +451,7 @@ namespace J4JSoftware.Roslyn
             {
                 SharpObject = GetSharpObject( symbol, true, SharpObjectType.GenericType )!,
                 Assembly = assemblyDb!,
-                Namespace = nsDb!,
+                Namespace = nsDb!
             };
 
             _dbContext.GenericTypes.Add( retVal );
@@ -824,7 +845,7 @@ namespace J4JSoftware.Roslyn
 
             BaseTypeDb? unhandled()
             {
-                _logger.Error<string, Type>(
+                _logger.Error(
                     "ITypeSymbol '{0}' ({1}) is unsupported ",
                     symbol.ToFullName(),
                     symbol.GetType() );
@@ -1432,7 +1453,7 @@ namespace J4JSoftware.Roslyn
             if( !GetContainingAndReturnValueTypes( symbol, out var propDb, out var containingDb ) )
                 return null;
 
-            retVal = new EventDb()
+            retVal = new EventDb
             {
                 SharpObject = GetSharpObject( symbol, true, SharpObjectType.Field )!,
                 DefiningType = containingDb!,
@@ -1727,9 +1748,10 @@ namespace J4JSoftware.Roslyn
             {
                 LoadSharpObject( attrDb.AttributeType );
 
-                _logger.Error<string, string>("Couldn't create AttributeArgumentDb for named property '{0}' on type '{1}'",
+                _logger.Error<string, string>(
+                    "Couldn't create AttributeArgumentDb for named property '{0}' on type '{1}'",
                     propName,
-                    attrDb.AttributeType.SharpObject.FullyQualifiedName);
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName );
 
                 return null;
             }
@@ -1784,13 +1806,14 @@ namespace J4JSoftware.Roslyn
             if( retVal != null )
                 return retVal;
 
-            if (!createIfMissing)
+            if( !createIfMissing )
             {
-                LoadSharpObject(attrDb.AttributeType);
+                LoadSharpObject( attrDb.AttributeType );
 
-                _logger.Error<int, string>("Couldn't create AttributeArgumentDb for constructor argument #{0} on type '{1}'",
+                _logger.Error<int, string>(
+                    "Couldn't create AttributeArgumentDb for constructor argument #{0} on type '{1}'",
                     ctorArgOrdinal,
-                    attrDb.AttributeType.SharpObject.FullyQualifiedName);
+                    attrDb.AttributeType.SharpObject.FullyQualifiedName );
 
                 return null;
             }
@@ -1829,7 +1852,7 @@ namespace J4JSoftware.Roslyn
 
             if( soType == SharpObjectType.Unknown )
                 throw new ArgumentException(
-                    $"Can't create a SharpObject whose SharpObjectType is SharpObjectType.Unknown" );
+                    "Can't create a SharpObject whose SharpObjectType is SharpObjectType.Unknown" );
 
             retVal = new SharpObject
             {

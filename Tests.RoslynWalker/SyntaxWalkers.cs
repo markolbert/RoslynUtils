@@ -1,7 +1,25 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'Tests.RoslynWalker' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using J4JSoftware.Logging;
 using J4JSoftware.Roslyn;
 using J4JSoftware.Utilities;
@@ -11,9 +29,9 @@ namespace Tests.RoslynWalker
 {
     public sealed class SyntaxWalkers : Nodes<ISyntaxWalker>
     {
-        private readonly List<ISymbolSink> _sinks;
         private readonly ActionsContext _context;
         private readonly IJ4JLogger? _logger;
+        private readonly List<ISymbolSink> _sinks;
 
         public SyntaxWalkers(
             ISymbolFullName symbolNamer,
@@ -27,7 +45,7 @@ namespace Tests.RoslynWalker
             _context = context;
 
             _logger = loggerFactory?.Invoke();
-            _logger?.SetLoggedType( this.GetType() );
+            _logger?.SetLoggedType( GetType() );
 
             var node = AddIndependentNode( new AssemblyWalker( symbolNamer,
                 defaultSymbolSink,
@@ -41,47 +59,49 @@ namespace Tests.RoslynWalker
                 loggerFactory?.Invoke(),
                 GetSink<INamespaceSymbol>() ), node.Value );
 
-            node = AddDependentNode(new TypeWalker(symbolNamer,
+            node = AddDependentNode( new TypeWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory?.Invoke(),
-                GetSink<ITypeSymbol>()), node.Value);
+                GetSink<ITypeSymbol>() ), node.Value );
 
-            node = AddDependentNode(new MethodWalker(symbolNamer,
+            node = AddDependentNode( new MethodWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory?.Invoke(),
-                GetSink<IMethodSymbol>()), node.Value);
+                GetSink<IMethodSymbol>() ), node.Value );
 
-            node = AddDependentNode(new PropertyWalker(symbolNamer,
+            node = AddDependentNode( new PropertyWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory?.Invoke(),
-                GetSink<IPropertySymbol>()), node.Value);
+                GetSink<IPropertySymbol>() ), node.Value );
 
-            node = AddDependentNode(new FieldWalker(symbolNamer,
+            node = AddDependentNode( new FieldWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory?.Invoke(),
-                GetSink<IFieldSymbol>()), node.Value);
+                GetSink<IFieldSymbol>() ), node.Value );
 
-            node = AddDependentNode(new EventWalker(symbolNamer,
+            node = AddDependentNode( new EventWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory?.Invoke(),
-                GetSink<IEventSymbol>()), node.Value);
+                GetSink<IEventSymbol>() ), node.Value );
 
-            node = AddDependentNode(new AttributeWalker(symbolNamer,
+            node = AddDependentNode( new AttributeWalker( symbolNamer,
                 defaultSymbolSink,
                 context,
                 loggerFactory?.Invoke(),
-                GetSink<ISymbol>()), node.Value);
+                GetSink<ISymbol>() ), node.Value );
         }
 
         private ISymbolSink<TSymbol>? GetSink<TSymbol>()
-            where TSymbol : ISymbol =>
-            _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
+            where TSymbol : ISymbol
+        {
+            return _sinks.FirstOrDefault( x => x.SupportsSymbol( typeof(TSymbol) ) )
                 as ISymbolSink<TSymbol>;
+        }
 
         public bool Process( List<CompiledProject> projects )
         {
@@ -90,7 +110,7 @@ namespace Tests.RoslynWalker
             switch( numRoots )
             {
                 case 0:
-                    _logger?.Error("No initial ISyntaxWalker defined");
+                    _logger?.Error( "No initial ISyntaxWalker defined" );
                     return false;
 
                 case 1:
@@ -98,14 +118,13 @@ namespace Tests.RoslynWalker
                     break;
 
                 default:
-                    _logger?.Error("Multiple initial ISyntaxWalkers ({0}) defined", numRoots);
+                    _logger?.Error( "Multiple initial ISyntaxWalkers ({0}) defined", numRoots );
                     return false;
-
             }
 
             if( !Sort( out var walkerNodes, out var remainingEdges ) )
             {
-                _logger?.Error("Couldn't topologically sort ISyntaxWalkers"  );
+                _logger?.Error( "Couldn't topologically sort ISyntaxWalkers" );
                 return false;
             }
 

@@ -1,7 +1,27 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+
 #pragma warning disable 8618
 
 namespace J4JSoftware.Roslyn
@@ -10,9 +30,9 @@ namespace J4JSoftware.Roslyn
     {
         private readonly IDbContextFactoryConfiguration _config;
 
-        public RoslynDbContext(IDbContextFactoryConfiguration config)
+        public RoslynDbContext( IDbContextFactoryConfiguration config )
         {
-            _config = config ?? throw new NullReferenceException(nameof(config));
+            _config = config ?? throw new NullReferenceException( nameof(config) );
         }
 
         public DbSet<SharpObject> SharpObjects { get; set; }
@@ -45,24 +65,24 @@ namespace J4JSoftware.Roslyn
         public DbSet<AttributeDb> Attributes { get; set; }
         public DbSet<AttributeArgumentDb> AttributeArguments { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        protected override void OnConfiguring( DbContextOptionsBuilder optionsBuilder )
         {
-            base.OnConfiguring(optionsBuilder);
+            base.OnConfiguring( optionsBuilder );
 
             // we open the connection, and use the opened connection to initialize the entity
             // framework via optionsBuilder, to preserve the UDF configuration
-            var connection = new SqliteConnection($"DataSource={_config.DatabasePath}");
+            var connection = new SqliteConnection( $"DataSource={_config.DatabasePath}" );
             //var connection = new SqliteConnection($"DataSource=:memory:");
             connection.Open();
 
-            optionsBuilder.UseSqlite(connection);
+            optionsBuilder.UseSqlite( connection );
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating( ModelBuilder modelBuilder )
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating( modelBuilder );
 
-            modelBuilder.ConfigureEntities(this.GetType().Assembly);
+            modelBuilder.ConfigureEntities( GetType().Assembly );
         }
     }
 }

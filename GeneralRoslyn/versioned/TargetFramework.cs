@@ -1,4 +1,23 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'GeneralRoslyn' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using System.Linq;
 using System.Text;
 using NuGet.Versioning;
@@ -7,47 +26,67 @@ namespace J4JSoftware.Roslyn
 {
     public class TargetFramework : VersionedText, IEquatable<TargetFramework>
     {
-        public static bool Create(string text, TargetFrameworkTextStyle style, out TargetFramework result)
+        private TargetFramework()
+        {
+        }
+
+        public CSharpFramework Framework { get; private set; }
+
+        public bool Equals( TargetFramework? other )
+        {
+            if( ReferenceEquals( null, other ) )
+                return false;
+            if( ReferenceEquals( this, other ) )
+                return true;
+            return Framework == other.Framework && Equals( Version, other.Version );
+        }
+
+        public static bool Create( string text, TargetFrameworkTextStyle style, out TargetFramework result )
         {
             result = default!;
 
-            var (fwName, fwVersion ) = style switch
+            var (fwName, fwVersion) = style switch
             {
                 TargetFrameworkTextStyle.ExplicitVersion => ParseExplicit( text ),
                 TargetFrameworkTextStyle.Simple => ParseSimple( text ),
                 _ => throw new ArgumentOutOfRangeException( nameof(style), style, null )
             };
 
-            if (!Enum.TryParse(typeof(CSharpFramework), fwName, true, out var framework))
+            if( !Enum.TryParse( typeof(CSharpFramework), fwName, true, out var framework ) )
                 return false;
 
-            if (!SemanticVersion.TryParse(fwVersion, out var version))
+            if( !SemanticVersion.TryParse( fwVersion, out var version ) )
                 return false;
 
             result = new TargetFramework
             {
                 TextComponent = fwName,
-                Framework = (CSharpFramework)framework!
+                Framework = (CSharpFramework) framework!
             };
 
             // adjust the SemanticVersion for net stuff, which doesn't use periods
-            if (result.Framework == CSharpFramework.Net || result.Framework == CSharpFramework.NetFramework)
+            if( result.Framework == CSharpFramework.Net || result.Framework == CSharpFramework.NetFramework )
             {
-                if (version.Major < 10)
-                    result.Version = new SemanticVersion(version.Major, 0, 0);
+                if( version.Major < 10 )
+                {
+                    result.Version = new SemanticVersion( version.Major, 0, 0 );
+                }
                 else
                 {
-                    if (version.Major < 100)
-                        result.Version = new SemanticVersion(version.Major / 10, version.Major % 10, 0);
+                    if( version.Major < 100 )
+                        result.Version = new SemanticVersion( version.Major / 10, version.Major % 10, 0 );
                     else
                         result.Version = new SemanticVersion(
                             version.Major / 100,
-                            (version.Major % 100) / 10,
-                            (version.Major % 100) % 10
+                            version.Major % 100 / 10,
+                            version.Major % 100 % 10
                         );
                 }
             }
-            else result.Version = version;
+            else
+            {
+                result.Version = version;
+            }
 
             return true;
         }
@@ -56,11 +95,11 @@ namespace J4JSoftware.Roslyn
         {
             var textEnd = -1;
 
-            foreach (var curChar in text)
+            foreach( var curChar in text )
             {
                 textEnd++;
 
-                if (Char.IsDigit(curChar))
+                if( char.IsDigit( curChar ) )
                     break;
             }
 
@@ -69,40 +108,31 @@ namespace J4JSoftware.Roslyn
 
         private static (string fwName, string fwVersion) ParseExplicit( string text )
         {
-            var parts = text.Split(",Version=v", StringSplitOptions.RemoveEmptyEntries);
+            var parts = text.Split( ",Version=v", StringSplitOptions.RemoveEmptyEntries );
 
-            if (parts == null || parts.Length != 2)
-                return (string.Empty, string.Empty);
+            if( parts == null || parts.Length != 2 )
+                return ( string.Empty, string.Empty );
 
             // strip off the leading period
             var fwName = parts[ 0 ].Substring( 1 );
 
-            return ( fwName, FixUpVersion(parts[1]) );
+            return ( fwName, FixUpVersion( parts[ 1 ] ) );
         }
 
         private static string FixUpVersion( string rawVersion )
         {
-            var numLevels = rawVersion.Count(c => c == '.');
+            var numLevels = rawVersion.Count( c => c == '.' );
 
-            var retVal = new StringBuilder(rawVersion);
+            var retVal = new StringBuilder( rawVersion );
 
-            for (var idx = 0; idx < 2 - numLevels; idx++)
-            {
-                retVal.Append(".0");
-            }
+            for( var idx = 0; idx < 2 - numLevels; idx++ ) retVal.Append( ".0" );
 
             return retVal.ToString();
         }
 
-        private TargetFramework()
-        {
-        }
-
-        public CSharpFramework Framework { get; private set; }
-
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append( Framework );
 
@@ -127,19 +157,10 @@ namespace J4JSoftware.Roslyn
                 return false;
             if( ReferenceEquals( this, obj ) )
                 return true;
-            if( obj.GetType() != this.GetType() )
+            if( obj.GetType() != GetType() )
                 return false;
 
             return Equals( (TargetFramework) obj );
-        }
-
-        public bool Equals( TargetFramework? other )
-        {
-            if( ReferenceEquals( null, other ) )
-                return false;
-            if( ReferenceEquals( this, other ) )
-                return true;
-            return Framework == other.Framework && Equals( Version, other.Version );
         }
 
         public override int GetHashCode()

@@ -1,5 +1,23 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System.Collections.Generic;
 using J4JSoftware.Logging;
 using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
@@ -11,8 +29,8 @@ namespace J4JSoftware.Roslyn
         public AncestorProcessor(
             IRoslynDataLayer dataLayer,
             ActionsContext context,
-            IJ4JLogger? logger)
-            : base("adding Type Ancestors to the database", dataLayer, context, logger)
+            IJ4JLogger? logger )
+            : base( "adding Type Ancestors to the database", dataLayer, context, logger )
         {
         }
 
@@ -21,26 +39,24 @@ namespace J4JSoftware.Roslyn
             var retVal = new List<ITypeSymbol>();
 
             foreach( var symbol in inputData )
-            {
                 switch( symbol )
                 {
                     case IDynamicTypeSymbol dtSymbol:
-                        Logger?.Error<string>("IDynamicTypeSymbols are not supported ('{0}')", symbol.Name);
+                        Logger?.Error<string>( "IDynamicTypeSymbols are not supported ('{0}')", symbol.Name );
                         break;
 
                     case IPointerTypeSymbol ptSymbol:
-                        Logger?.Error<string>("IPointerTypeSymbols are not supported ('{0}')", symbol.Name);
+                        Logger?.Error<string>( "IPointerTypeSymbols are not supported ('{0}')", symbol.Name );
                         break;
 
                     case IErrorTypeSymbol errSymbol:
-                        Logger?.Error<string>("IErrorTypeSymbols are not supported ('{0}')", symbol.Name);
+                        Logger?.Error<string>( "IErrorTypeSymbols are not supported ('{0}')", symbol.Name );
                         break;
 
                     default:
                         retVal.Add( symbol );
                         break;
                 }
-            }
 
             return retVal;
         }
@@ -62,9 +78,7 @@ namespace J4JSoftware.Roslyn
             var allOkay = true;
 
             foreach( var interfaceSymbol in typeSymbol.Interfaces )
-            {
                 allOkay &= ProcessAncestor( typeDb!, interfaceSymbol );
-            }
 
             return allOkay;
         }

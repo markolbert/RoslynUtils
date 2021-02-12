@@ -1,10 +1,27 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
 using System.Collections.Generic;
 using System.Linq;
 using J4JSoftware.Logging;
 using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.Roslyn.Sinks
 {
@@ -43,14 +60,14 @@ namespace J4JSoftware.Roslyn.Sinks
             return true;
         }
 
-        public override bool FinalizeSink(ISyntaxWalker syntaxWalker)
+        public override bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            if (!base.FinalizeSink(syntaxWalker))
+            if( !base.FinalizeSink( syntaxWalker ) )
                 return false;
 
             if( _processors == null )
             {
-                Logger?.Error<Type>("No processors defined for {0}", this.GetType()  );
+                Logger?.Error( "No processors defined for {0}", GetType() );
                 return false;
             }
 
@@ -67,9 +84,9 @@ namespace J4JSoftware.Roslyn.Sinks
             return allOkay;
         }
 
-        public override bool OutputSymbol(ISyntaxWalker syntaxWalker, TSymbol symbol)
+        public override bool OutputSymbol( ISyntaxWalker syntaxWalker, TSymbol symbol )
         {
-            if (!base.OutputSymbol(syntaxWalker, symbol))
+            if( !base.OutputSymbol( syntaxWalker, symbol ) )
                 return false;
 
             Symbols.Add( symbol );

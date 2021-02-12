@@ -1,7 +1,25 @@
-﻿using System;
+﻿#region license
+
+// Copyright 2021 Mark A. Olbert
+// 
+// This library or program 'RoslynDb' is free software: you can redistribute it
+// and/or modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+// 
+// This library or program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this library or program.  If not, see <https://www.gnu.org/licenses/>.
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using J4JSoftware.Utilities;
 using Microsoft.CodeAnalysis;
@@ -11,37 +29,16 @@ namespace J4JSoftware.Roslyn
 {
     public class SymbolCollector : ISyntaxNodeSink
     {
-        private readonly List<string> _visitedSymbols = new List<string>();
-
-        private class SymbolComparer : IEqualityComparer<ISymbol>
-        {
-            public bool Equals(ISymbol? x, ISymbol? y)
-            {
-                if (x == null && y == null)
-                    return true;
-
-                if (x == null || y == null)
-                    return false;
-
-                return string.Equals(x.ToUniqueName(),
-                    y.ToUniqueName(),
-                    StringComparison.Ordinal);
-            }
-
-            public int GetHashCode(ISymbol obj)
-            {
-                return obj.GetHashCode();
-            }
-        }
-
-        private readonly List<SyntaxNode> _visitedNodes = new List<SyntaxNode>();
-
-        private readonly Nodes<ISymbol> _symbols =
-            new Nodes<ISymbol>( new SymbolComparer() );
+        private readonly WalkerContext _context;
 
         private readonly IRoslynDataLayer _dataLayer;
-        private readonly WalkerContext _context;
         private readonly IJ4JLogger _logger;
+
+        private readonly Nodes<ISymbol> _symbols =
+            new( new SymbolComparer() );
+
+        private readonly List<SyntaxNode> _visitedNodes = new();
+        private readonly List<string> _visitedSymbols = new();
 
         private SemanticModel _curModel;
 
@@ -55,14 +52,17 @@ namespace J4JSoftware.Roslyn
             _context = context;
 
             _logger = logger;
-            _logger.SetLoggedType( this.GetType() );
+            _logger.SetLoggedType( GetType() );
         }
 
-        public bool AlreadyProcessed( SyntaxNode node ) =>
-            _visitedNodes.Any(vn => vn.Equals(node));
+        public bool AlreadyProcessed( SyntaxNode node )
+        {
+            return _visitedNodes.Any( vn => vn.Equals( node ) );
+        }
 
-        public bool ProcessesNode(SyntaxNode node) =>
-            node.Kind() switch
+        public bool ProcessesNode( SyntaxNode node )
+        {
+            return node.Kind() switch
             {
                 SyntaxKind.ArrayType => true,
                 SyntaxKind.ClassDeclaration => true,
@@ -81,6 +81,7 @@ namespace J4JSoftware.Roslyn
                 SyntaxKind.VariableDeclarator => true,
                 _ => false
             };
+        }
 
         public bool DrillIntoNode( SyntaxNode node )
         {
@@ -101,7 +102,6 @@ namespace J4JSoftware.Roslyn
                 //SyntaxKind.FieldDeclaration => false,
                 _ => true
             };
-
         }
 
         public bool InitializeSink( SemanticModel model )
@@ -119,9 +119,9 @@ namespace J4JSoftware.Roslyn
             var node = nodeStack.Peek();
 
             // don't re-process nodes
-            if( AlreadyProcessed(node ) ) 
+            if( AlreadyProcessed( node ) )
             {
-                _logger.Verbose<SyntaxKind>("Already processed SyntaxNode {0}", node.Kind());
+                _logger.Verbose( "Already processed SyntaxNode {0}", node.Kind() );
                 return;
             }
 
@@ -130,7 +130,7 @@ namespace J4JSoftware.Roslyn
             // certain kinds of nodes we don't attempt to process
             if( !ProcessesNode( node ) )
             {
-                _logger.Verbose<SyntaxKind>("Node type {0} doesn't need to be processed directly", node.Kind());
+                _logger.Verbose( "Node type {0} doesn't need to be processed directly", node.Kind() );
                 return;
             }
 
@@ -138,7 +138,7 @@ namespace J4JSoftware.Roslyn
 
             if( symbol == null )
             {
-                _logger.Error<SyntaxKind>( "Couldn't find ISymbol for node {0}", node.Kind() );
+                _logger.Error( "Couldn't find ISymbol for node {0}", node.Kind() );
                 return;
             }
 
@@ -172,17 +172,17 @@ namespace J4JSoftware.Roslyn
 
                 case IFieldSymbol fieldSymbol:
                 case IEventSymbol eventSymbol:
-                    _symbols.AddDependentNode(symbol.ContainingType, symbol);
+                    _symbols.AddDependentNode( symbol.ContainingType, symbol );
 
-                    ProcessType( symbol.ContainingType/*, symbol.ContainingNamespace*/ );
-                    ProcessAttributes(symbol);
-                    
+                    ProcessType( symbol.ContainingType /*, symbol.ContainingNamespace*/ );
+                    ProcessAttributes( symbol );
+
                     break;
 
                 case ITypeSymbol typeSymbol:
-                    ProcessType( typeSymbol/*, typeSymbol.ContainingNamespace*/ );
-                    ProcessAttributes(symbol);
-                    
+                    ProcessType( typeSymbol /*, typeSymbol.ContainingNamespace*/ );
+                    ProcessAttributes( symbol );
+
                     break;
 
                 case IMethodSymbol methodSymbol:
@@ -195,16 +195,18 @@ namespace J4JSoftware.Roslyn
 
                 default:
                     DefaultNodeHandler( node, symbol );
-                    
+
                     break;
-            };
+            }
+
+            ;
         }
 
-        public bool FinalizeSink(ISyntaxWalker syntaxWalker)
+        public bool FinalizeSink( ISyntaxWalker syntaxWalker )
         {
-            if (!_symbols.Sort(out var sortedSymbols, out var remainingEdges))
+            if( !_symbols.Sort( out var sortedSymbols, out var remainingEdges ) )
             {
-                _logger.Error<int>( "Failed to sort ISymbols topologically, {0} edges remain", remainingEdges!.Count() );
+                _logger.Error( "Failed to sort ISymbols topologically, {0} edges remain", remainingEdges!.Count() );
                 return false;
             }
 
@@ -213,26 +215,26 @@ namespace J4JSoftware.Roslyn
 
             var allOkay = true;
 
-            foreach (var symbol in sortedSymbols!)
+            foreach( var symbol in sortedSymbols! )
             {
                 var updateSucceeded = symbol switch
                 {
-                    IAssemblySymbol assemblySymbol => UpdateAssemblyInDatabase(assemblySymbol),
-                    INamespaceSymbol nsSymbol => UpdateNamespaceInDatabase(nsSymbol),
-                    INamedTypeSymbol ntSymbol => UpdateNamedTypeInDatabase(ntSymbol),
-                    ITypeParameterSymbol tpSymbol => UpdateParametricTypeInDatabase(tpSymbol),
-                    IArrayTypeSymbol arraySymbol => UpdateArrayTypeInDatabase(arraySymbol),
-                    IMethodSymbol methodSymbol => UpdateMethodInDatabase(methodSymbol),
-                    IPropertySymbol propSymbol => UpdatePropertyInDatabase(propSymbol),
+                    IAssemblySymbol assemblySymbol => UpdateAssemblyInDatabase( assemblySymbol ),
+                    INamespaceSymbol nsSymbol => UpdateNamespaceInDatabase( nsSymbol ),
+                    INamedTypeSymbol ntSymbol => UpdateNamedTypeInDatabase( ntSymbol ),
+                    ITypeParameterSymbol tpSymbol => UpdateParametricTypeInDatabase( tpSymbol ),
+                    IArrayTypeSymbol arraySymbol => UpdateArrayTypeInDatabase( arraySymbol ),
+                    IMethodSymbol methodSymbol => UpdateMethodInDatabase( methodSymbol ),
+                    IPropertySymbol propSymbol => UpdatePropertyInDatabase( propSymbol ),
                     _ => false
                 };
 
-                if (updateSucceeded)
+                if( updateSucceeded )
                     _dataLayer.SaveChanges();
 
                 allOkay &= updateSucceeded;
 
-                if (!allOkay && _context.StopOnFirstError)
+                if( !allOkay && _context.StopOnFirstError )
                     break;
             }
 
@@ -246,21 +248,44 @@ namespace J4JSoftware.Roslyn
             return symbolInfo.Symbol ?? _curModel.GetDeclaredSymbol( node );
         }
 
-        private void DefaultNodeHandler( SyntaxNode node, ISymbol? symbol ) =>
-            _logger.Error<SyntaxKind>(
+        private void DefaultNodeHandler( SyntaxNode node, ISymbol? symbol )
+        {
+            _logger.Error(
                 symbol != null ? "Unsupported SyntaxNode {0}" : "Couldn't get ISymbol for node type {0}", node.Kind() );
+        }
 
-        private bool IsDuplicateSymbol(ISymbol symbol)
+        private bool IsDuplicateSymbol( ISymbol symbol )
         {
             // don't allow duplicate additions so we can avoid infinite loops
             var fullName = symbol.ToUniqueName();
 
-            if (_visitedSymbols.Any(x => x.Equals(fullName)))
+            if( _visitedSymbols.Any( x => x.Equals( fullName ) ) )
                 return true;
 
-            _visitedSymbols.Add(fullName);
+            _visitedSymbols.Add( fullName );
 
             return false;
+        }
+
+        private class SymbolComparer : IEqualityComparer<ISymbol>
+        {
+            public bool Equals( ISymbol? x, ISymbol? y )
+            {
+                if( x == null && y == null )
+                    return true;
+
+                if( x == null || y == null )
+                    return false;
+
+                return string.Equals( x.ToUniqueName(),
+                    y.ToUniqueName(),
+                    StringComparison.Ordinal );
+            }
+
+            public int GetHashCode( ISymbol obj )
+            {
+                return obj.GetHashCode();
+            }
         }
 
         #region symbol extraction methods
@@ -278,13 +303,13 @@ namespace J4JSoftware.Roslyn
 
         #region type symbol extraction methods
 
-        private NodeSinkResult ProcessType( ITypeSymbol symbol/*, INamespaceOrTypeSymbol parentSymbol*/ )
+        private NodeSinkResult ProcessType( ITypeSymbol symbol /*, INamespaceOrTypeSymbol parentSymbol*/ )
         {
             return symbol switch
             {
-                INamedTypeSymbol ntSymbol => ProcessNamedType( ntSymbol/*, parentSymbol*/ ),
-                ITypeParameterSymbol tpSymbol => ProcessTypeParameter( tpSymbol/*, parentSymbol*/ ),
-                IArrayTypeSymbol arraySymbol => ProcessArrayType( arraySymbol/*, parentSymbol*/ ),
+                INamedTypeSymbol ntSymbol => ProcessNamedType( ntSymbol /*, parentSymbol*/ ),
+                ITypeParameterSymbol tpSymbol => ProcessTypeParameter( tpSymbol /*, parentSymbol*/ ),
+                IArrayTypeSymbol arraySymbol => ProcessArrayType( arraySymbol /*, parentSymbol*/ ),
                 _ => unhandled()
             };
 
@@ -298,20 +323,21 @@ namespace J4JSoftware.Roslyn
             }
         }
 
-        private NodeSinkResult ProcessNamedType( INamedTypeSymbol ntSymbol/*, INamespaceOrTypeSymbol parentSymbol*/ )
+        private NodeSinkResult ProcessNamedType( INamedTypeSymbol ntSymbol /*, INamespaceOrTypeSymbol parentSymbol*/ )
         {
             if( ntSymbol.TypeKind == TypeKind.Interface )
-                return ProcessInterface( ntSymbol/*, parentSymbol*/ );
+                return ProcessInterface( ntSymbol /*, parentSymbol*/ );
 
-            return ProcessImplementableType( ntSymbol/*, parentSymbol*/ );
+            return ProcessImplementableType( ntSymbol /*, parentSymbol*/ );
         }
 
-        private NodeSinkResult ProcessInterface( INamedTypeSymbol interfaceSymbol/*, INamespaceOrTypeSymbol parentSymbol*/ )
+        private NodeSinkResult ProcessInterface(
+            INamedTypeSymbol interfaceSymbol /*, INamespaceOrTypeSymbol parentSymbol*/ )
         {
-            if (IsDuplicateSymbol(interfaceSymbol))
+            if( IsDuplicateSymbol( interfaceSymbol ) )
                 return NodeSinkResult.AlreadyProcessed;
 
-            if ( interfaceSymbol.TypeKind != TypeKind.Interface )
+            if( interfaceSymbol.TypeKind != TypeKind.Interface )
             {
                 _logger.Error<string>( "Non-interface '{0}' submitted to ProcessInterface()",
                     interfaceSymbol.ToFullName() );
@@ -332,12 +358,12 @@ namespace J4JSoftware.Roslyn
             if( interfaceSymbol.ContainingType == null )
                 _symbols.AddDependentNode( interfaceSymbol.ContainingNamespace, interfaceSymbol );
             else
-                _symbols.AddDependentNode(interfaceSymbol.ContainingType, interfaceSymbol);
+                _symbols.AddDependentNode( interfaceSymbol.ContainingType, interfaceSymbol );
 
             // add any type parameters and type arguments
-            foreach ( var tpSymbol in interfaceSymbol.TypeParameters )
+            foreach( var tpSymbol in interfaceSymbol.TypeParameters )
             {
-                var addResult = ProcessType( tpSymbol/*, interfaceSymbol*/ );
+                var addResult = ProcessType( tpSymbol /*, interfaceSymbol*/ );
 
                 if( addResult != NodeSinkResult.Okay )
                     return addResult;
@@ -345,7 +371,7 @@ namespace J4JSoftware.Roslyn
 
             foreach( var taSymbol in interfaceSymbol.TypeArguments.Where( x => !( x is ITypeParameterSymbol ) ) )
             {
-                var addResult = ProcessType( taSymbol/*, interfaceSymbol*/ );
+                var addResult = ProcessType( taSymbol /*, interfaceSymbol*/ );
 
                 if( addResult != NodeSinkResult.Okay )
                     return addResult;
@@ -354,69 +380,8 @@ namespace J4JSoftware.Roslyn
             return NodeSinkResult.Okay;
         }
 
-        private NodeSinkResult ProcessImplementableType( INamedTypeSymbol symbol/*, INamespaceOrTypeSymbol parentSymbol*/ )
-        {
-            if (IsDuplicateSymbol(symbol))
-                return NodeSinkResult.AlreadyProcessed;
-
-            // if the symbol isn't contained by a type it must be contained by a
-            // namespace
-            //if ( parentSymbol == null )
-            //    _symbols.Add( symbol.ContainingNamespace, symbol );
-            //else 
-            if( symbol.ContainingType == null )
-                _symbols.AddDependentNode( symbol.ContainingNamespace, symbol );
-            else
-                _symbols.AddDependentNode( symbol.ContainingType, symbol );
-
-            if ( symbol.BaseType != null )
-                ProcessImplementableType( symbol.BaseType/*, symbol*/ );
-
-            // add any interfaces
-            foreach( var interfaceSymbol in symbol.AllInterfaces )
-            {
-                var addResult = ProcessInterface( interfaceSymbol/*, symbol*/ );
-
-                if( addResult != NodeSinkResult.Okay )
-                    return addResult;
-            }
-
-            // add any type parameters and type arguments
-            foreach( var tpSymbol in symbol.TypeParameters )
-            {
-                var addResult = ProcessType( tpSymbol/*, symbol*/ );
-                if( addResult != NodeSinkResult.Okay )
-                    return addResult;
-
-                // add any interfaces
-                foreach( var interfaceSymbol in tpSymbol.AllInterfaces )
-                {
-                    addResult = ProcessInterface( interfaceSymbol/*, tpSymbol*/ );
-
-                    if( addResult != NodeSinkResult.Okay )
-                        return addResult;
-                }
-            }
-
-            foreach( var taSymbol in symbol.TypeArguments.Where( x => !( x is ITypeParameterSymbol ) ) )
-            {
-                var addResult = ProcessType( taSymbol/*, symbol*/ );
-                if( addResult != NodeSinkResult.Okay )
-                    return addResult;
-
-                // add any interfaces
-                foreach( var interfaceSymbol in taSymbol.AllInterfaces )
-                {
-                    addResult = ProcessInterface( interfaceSymbol/*, taSymbol*/ );
-                    if( addResult != NodeSinkResult.Okay )
-                        return addResult;
-                }
-            }
-
-            return NodeSinkResult.Okay;
-        }
-
-        private NodeSinkResult ProcessTypeParameter( ITypeParameterSymbol symbol/*, INamespaceOrTypeSymbol parentSymbol*/ )
+        private NodeSinkResult ProcessImplementableType(
+            INamedTypeSymbol symbol /*, INamespaceOrTypeSymbol parentSymbol*/ )
         {
             if( IsDuplicateSymbol( symbol ) )
                 return NodeSinkResult.AlreadyProcessed;
@@ -429,15 +394,78 @@ namespace J4JSoftware.Roslyn
             if( symbol.ContainingType == null )
                 _symbols.AddDependentNode( symbol.ContainingNamespace, symbol );
             else
-                _symbols.AddDependentNode(symbol.ContainingType, symbol);
+                _symbols.AddDependentNode( symbol.ContainingType, symbol );
 
-            if ( symbol.BaseType != null )
-                ProcessImplementableType( symbol.BaseType/*, symbol*/ );
+            if( symbol.BaseType != null )
+                ProcessImplementableType( symbol.BaseType /*, symbol*/ );
 
             // add any interfaces
             foreach( var interfaceSymbol in symbol.AllInterfaces )
             {
-                var addResult = ProcessInterface( interfaceSymbol/*, symbol*/ );
+                var addResult = ProcessInterface( interfaceSymbol /*, symbol*/ );
+
+                if( addResult != NodeSinkResult.Okay )
+                    return addResult;
+            }
+
+            // add any type parameters and type arguments
+            foreach( var tpSymbol in symbol.TypeParameters )
+            {
+                var addResult = ProcessType( tpSymbol /*, symbol*/ );
+                if( addResult != NodeSinkResult.Okay )
+                    return addResult;
+
+                // add any interfaces
+                foreach( var interfaceSymbol in tpSymbol.AllInterfaces )
+                {
+                    addResult = ProcessInterface( interfaceSymbol /*, tpSymbol*/ );
+
+                    if( addResult != NodeSinkResult.Okay )
+                        return addResult;
+                }
+            }
+
+            foreach( var taSymbol in symbol.TypeArguments.Where( x => !( x is ITypeParameterSymbol ) ) )
+            {
+                var addResult = ProcessType( taSymbol /*, symbol*/ );
+                if( addResult != NodeSinkResult.Okay )
+                    return addResult;
+
+                // add any interfaces
+                foreach( var interfaceSymbol in taSymbol.AllInterfaces )
+                {
+                    addResult = ProcessInterface( interfaceSymbol /*, taSymbol*/ );
+                    if( addResult != NodeSinkResult.Okay )
+                        return addResult;
+                }
+            }
+
+            return NodeSinkResult.Okay;
+        }
+
+        private NodeSinkResult ProcessTypeParameter(
+            ITypeParameterSymbol symbol /*, INamespaceOrTypeSymbol parentSymbol*/ )
+        {
+            if( IsDuplicateSymbol( symbol ) )
+                return NodeSinkResult.AlreadyProcessed;
+
+            // if the symbol isn't contained by a type it must be contained by a
+            // namespace
+            //if ( parentSymbol == null )
+            //    _symbols.Add( symbol.ContainingNamespace, symbol );
+            //else 
+            if( symbol.ContainingType == null )
+                _symbols.AddDependentNode( symbol.ContainingNamespace, symbol );
+            else
+                _symbols.AddDependentNode( symbol.ContainingType, symbol );
+
+            if( symbol.BaseType != null )
+                ProcessImplementableType( symbol.BaseType /*, symbol*/ );
+
+            // add any interfaces
+            foreach( var interfaceSymbol in symbol.AllInterfaces )
+            {
+                var addResult = ProcessInterface( interfaceSymbol /*, symbol*/ );
                 if( addResult != NodeSinkResult.Okay )
                     return addResult;
             }
@@ -445,9 +473,9 @@ namespace J4JSoftware.Roslyn
             return NodeSinkResult.Okay;
         }
 
-        private NodeSinkResult ProcessArrayType( IArrayTypeSymbol symbol/*, INamespaceOrTypeSymbol parentSymbol*/ )
+        private NodeSinkResult ProcessArrayType( IArrayTypeSymbol symbol /*, INamespaceOrTypeSymbol parentSymbol*/ )
         {
-            if (IsDuplicateSymbol(symbol))
+            if( IsDuplicateSymbol( symbol ) )
                 return NodeSinkResult.AlreadyProcessed;
 
             //// if the symbol isn't contained by a type it must be contained by a
@@ -458,19 +486,19 @@ namespace J4JSoftware.Roslyn
             if( symbol.ContainingType == null )
                 _symbols.AddDependentNode( symbol.ContainingNamespace, symbol );
             else
-                _symbols.AddDependentNode(symbol.ContainingType, symbol);
+                _symbols.AddDependentNode( symbol.ContainingType, symbol );
 
-            if ( symbol.BaseType != null )
-                ProcessImplementableType( symbol.BaseType/*, symbol*/ );
+            if( symbol.BaseType != null )
+                ProcessImplementableType( symbol.BaseType /*, symbol*/ );
 
-            var addResult = ProcessType( symbol.ElementType/*, symbol*/ );
+            var addResult = ProcessType( symbol.ElementType /*, symbol*/ );
             if( addResult != NodeSinkResult.Okay )
                 return addResult;
 
             // add any interfaces
             foreach( var interfaceSymbol in symbol.AllInterfaces )
             {
-                addResult = ProcessInterface( interfaceSymbol/*, symbol*/ );
+                addResult = ProcessInterface( interfaceSymbol /*, symbol*/ );
                 if( addResult != NodeSinkResult.Okay )
                     return addResult;
             }
@@ -486,35 +514,26 @@ namespace J4JSoftware.Roslyn
 
             ProcessType( symbol.ContainingType );
 
-            foreach( var tpSymbol in symbol.TypeArguments )
-            {
-                ProcessType( tpSymbol );
-            }
+            foreach( var tpSymbol in symbol.TypeArguments ) ProcessType( tpSymbol );
 
-            foreach( var paramSymbol in symbol.Parameters )
-            {
-                ProcessType( paramSymbol.Type );
-            }
+            foreach( var paramSymbol in symbol.Parameters ) ProcessType( paramSymbol.Type );
 
             ProcessType( symbol.ReturnType );
 
             ProcessAttributes( symbol );
         }
 
-        private void ProcessProperty(IPropertySymbol symbol)
+        private void ProcessProperty( IPropertySymbol symbol )
         {
-            _symbols.AddDependentNode(symbol.ContainingType, symbol);
+            _symbols.AddDependentNode( symbol.ContainingType, symbol );
 
-            ProcessType(symbol.ContainingType);
+            ProcessType( symbol.ContainingType );
 
-            foreach (var paramSymbol in symbol.Parameters)
-            {
-                ProcessType(paramSymbol.Type);
-            }
+            foreach( var paramSymbol in symbol.Parameters ) ProcessType( paramSymbol.Type );
 
-            ProcessType(symbol.Type);
+            ProcessType( symbol.Type );
 
-            ProcessAttributes(symbol);
+            ProcessAttributes( symbol );
         }
 
         private void ProcessAttributes( ISymbol symbol )
@@ -525,13 +544,14 @@ namespace J4JSoftware.Roslyn
                 {
                     _symbols.AddDependentNode( attrData.AttributeClass, symbol );
 
-                    ProcessNamespace(attrData.AttributeClass.ContainingNamespace);
+                    ProcessNamespace( attrData.AttributeClass.ContainingNamespace );
                     ProcessType( attrData.AttributeClass );
                 }
 
                 if( attrData.AttributeConstructor != null )
                 {
-                    _symbols.AddDependentNode( attrData.AttributeConstructor.ContainingType, attrData.AttributeConstructor );
+                    _symbols.AddDependentNode( attrData.AttributeConstructor.ContainingType,
+                        attrData.AttributeConstructor );
 
                     ProcessNamespace( attrData.AttributeConstructor.ContainingNamespace );
                     ProcessType( attrData.AttributeConstructor.ContainingType );
@@ -551,7 +571,7 @@ namespace J4JSoftware.Roslyn
             // have to save newly-added entity so it can be found
             _dataLayer.SaveChanges();
 
-            if ( _context.InDocumentationScope( symbol ) )
+            if( _context.InDocumentationScope( symbol ) )
                 return _dataLayer.GetInScopeAssemblyInfo( _context[ symbol ]!, true, true ) != null;
 
             return true;
@@ -559,20 +579,20 @@ namespace J4JSoftware.Roslyn
 
         private bool UpdateNamespaceInDatabase( INamespaceSymbol symbol )
         {
-            var assemblyDb = _dataLayer.GetAssembly(symbol.ContainingAssembly);
+            var assemblyDb = _dataLayer.GetAssembly( symbol.ContainingAssembly );
 
-            if (assemblyDb == null)
+            if( assemblyDb == null )
                 return false;
 
-            var nsDb = _dataLayer.GetNamespace(symbol, true, true);
+            var nsDb = _dataLayer.GetNamespace( symbol, true, true );
 
-            if (nsDb == null)
+            if( nsDb == null )
                 return false;
 
             // have to save newly-added entity so it can be found
             _dataLayer.SaveChanges();
 
-            return _dataLayer.GetAssemblyNamespace(assemblyDb, nsDb, true) != null;
+            return _dataLayer.GetAssemblyNamespace( assemblyDb, nsDb, true ) != null;
         }
 
         private bool UpdateNamedTypeInDatabase( INamedTypeSymbol symbol )
@@ -584,47 +604,45 @@ namespace J4JSoftware.Roslyn
 
             // update type arguments if this is a generic type
             if( typeDb is GenericTypeDb genericDb )
-            {
                 if( !UpdateTypeArgumentsInDatabase( symbol, genericDb ) )
                     return false;
-            }
 
-            if (symbol.BaseType == null)
+            if( symbol.BaseType == null )
                 return true;
 
-            if (!UpdateTypeAncestorsInDatabase(typeDb, symbol.BaseType))
+            if( !UpdateTypeAncestorsInDatabase( typeDb, symbol.BaseType ) )
                 return false;
 
             var allOkay = true;
 
-            foreach (var interfaceSymbol in symbol.Interfaces)
+            foreach( var interfaceSymbol in symbol.Interfaces )
             {
-                allOkay &= UpdateTypeAncestorsInDatabase(typeDb!, interfaceSymbol);
+                allOkay &= UpdateTypeAncestorsInDatabase( typeDb!, interfaceSymbol );
 
-                if (!allOkay && _context.StopOnFirstError)
+                if( !allOkay && _context.StopOnFirstError )
                     break;
             }
 
             return allOkay;
         }
 
-        private bool UpdateTypeArgumentsInDatabase( INamedTypeSymbol symbol, GenericTypeDb genericDb  )
+        private bool UpdateTypeArgumentsInDatabase( INamedTypeSymbol symbol, GenericTypeDb genericDb )
         {
             var allOkay = true;
 
-            for (var ordinal = 0; ordinal < symbol.TypeArguments.Length; ordinal++)
+            for( var ordinal = 0; ordinal < symbol.TypeArguments.Length; ordinal++ )
             {
-                var typeArgSymbol = symbol.TypeArguments[ordinal];
+                var typeArgSymbol = symbol.TypeArguments[ ordinal ];
 
-                if( _dataLayer.GetTypeArgument( genericDb, typeArgSymbol, ordinal, true ) != null ) 
+                if( _dataLayer.GetTypeArgument( genericDb, typeArgSymbol, ordinal, true ) != null )
                     continue;
 
-                _logger.Error<string>("Couldn't find type for type argument '{0}' in database ",
-                    typeArgSymbol.ToFullName());
+                _logger.Error<string>( "Couldn't find type for type argument '{0}' in database ",
+                    typeArgSymbol.ToFullName() );
 
                 allOkay = false;
 
-                if (_context.StopOnFirstError)
+                if( _context.StopOnFirstError )
                     break;
             }
 
@@ -636,7 +654,9 @@ namespace J4JSoftware.Roslyn
             BaseTypeDb? typeDb = null;
 
             if( symbol.DeclaringType != null )
+            {
                 typeDb = _dataLayer.GetParametricType( symbol, true, true );
+            }
             else
             {
                 if( symbol.DeclaringMethod != null )
@@ -660,9 +680,9 @@ namespace J4JSoftware.Roslyn
 
             var allOkay = true;
 
-            foreach (var interfaceSymbol in symbol.Interfaces)
+            foreach( var interfaceSymbol in symbol.Interfaces )
             {
-                allOkay &= UpdateTypeAncestorsInDatabase(typeDb!, interfaceSymbol);
+                allOkay &= UpdateTypeAncestorsInDatabase( typeDb!, interfaceSymbol );
 
                 if( !allOkay && _context.StopOnFirstError )
                     break;
@@ -680,27 +700,27 @@ namespace J4JSoftware.Roslyn
 
             var allOkay = true;
 
-            foreach (var interfaceSymbol in symbol.Interfaces)
+            foreach( var interfaceSymbol in symbol.Interfaces )
             {
-                allOkay &= UpdateTypeAncestorsInDatabase(typeDb!, interfaceSymbol);
+                allOkay &= UpdateTypeAncestorsInDatabase( typeDb!, interfaceSymbol );
 
-                if (!allOkay && _context.StopOnFirstError)
+                if( !allOkay && _context.StopOnFirstError )
                     break;
             }
 
             return allOkay;
         }
 
-        private bool UpdateTypeAncestorsInDatabase(BaseTypeDb typeDb, INamedTypeSymbol ancestorSymbol)
+        private bool UpdateTypeAncestorsInDatabase( BaseTypeDb typeDb, INamedTypeSymbol ancestorSymbol )
         {
-            var ancestorDb = _dataLayer.GetImplementableType(ancestorSymbol);
+            var ancestorDb = _dataLayer.GetImplementableType( ancestorSymbol );
 
-            if (ancestorDb == null)
+            if( ancestorDb == null )
                 return false;
 
-            var typeAncestorDb = _dataLayer.GetTypeAncestor(typeDb, ancestorDb!, true);
+            var typeAncestorDb = _dataLayer.GetTypeAncestor( typeDb, ancestorDb!, true );
 
-            if (typeAncestorDb == null)
+            if( typeAncestorDb == null )
                 return false;
 
             typeAncestorDb.Synchronized = true;
@@ -739,11 +759,11 @@ namespace J4JSoftware.Roslyn
 
             var allOkay = true;
 
-            foreach ( var paramSymbol in symbol.Parameters )
+            foreach( var paramSymbol in symbol.Parameters )
             {
                 allOkay &= _dataLayer.GetPropertyParameter( paramSymbol, true, true ) != null;
 
-                if (!allOkay && _context.StopOnFirstError)
+                if( !allOkay && _context.StopOnFirstError )
                     return false;
             }
 
