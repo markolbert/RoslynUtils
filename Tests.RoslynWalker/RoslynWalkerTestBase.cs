@@ -29,124 +29,132 @@ namespace Tests.RoslynWalker
             var walker = ServiceProvider.Instance.GetRequiredService<ISyntaxWalkerNG>();
             walker.Process( result );
 
-            CheckTypeSymbols( projFilePath, walker );
+            var parsedTypes = new TypeInfoCollection();
+            parsedTypes.ParseFile( projFilePath, out _ ).Should().BeTrue();
 
-            //var context = ServiceProvider.Instance.GetRequiredService<ActionsContext>();
-
-            //context.StopOnFirstError = true;
-
-            //var walkers = ServiceProvider.Instance.GetRequiredService<SyntaxWalkers>();
-
-            //walkers.Process(result).Should().BeTrue();
+            CompareRoslynNamedTypesToParsed( walker, parsedTypes );
+            CompareParsedToRoslynNamedTypes( walker, parsedTypes );
         }
 
-        private void CheckTypeSymbols( string projFilePath, ISyntaxWalkerNG walker )
+        private void CompareRoslynNamedTypesToParsed(ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
         {
-            var typesScanned = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
-                                     .Cast<ITypeSymbol>()
-                                     .ToList()
-                                 ?? new List<ITypeSymbol>();
+            var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
+                                   .Cast<ITypeSymbol>()
+                                   .ToList()
+                               ?? new List<ITypeSymbol>();
 
-            var typesFound = GetClasses( projFilePath );
-
-            foreach( var typeScanned in typesScanned )
+            foreach( var roslynType in rosylynTypes )
             {
-                var ntSymbol = typeScanned as INamedTypeSymbol;
+                var ntSymbol = roslynType as INamedTypeSymbol;
                 ntSymbol.Should().NotBeNull();
 
-                var typeFound = typesFound
-                    .FirstOrDefault( x => x.Name.Equals( typeScanned.Name, StringComparison.Ordinal )
-                                          && x.TypeArguments.Count == ntSymbol!.TypeArguments.Length );
-
-                typeFound.Should().NotBeNull();
-
-                for( var idx = 0; idx < ntSymbol!.TypeParameters.Length; idx++ )
-                {
-                    ntSymbol.TypeParameters[ idx ].Name.Should().Be( typeFound!.TypeArguments[ idx ] );
-                }
-            }
-
-            foreach( var typeFound in typesFound )
-            {
-                var typeScanned = typesScanned
+                var namedTypeInfo = parsedTypes
                     .Where( x =>
-                        x.Name.Equals( typeFound.Name, StringComparison.Ordinal )
-                        && x is INamedTypeSymbol ntSymbol
-                        && ntSymbol.TypeParameters.Length == typeFound.TypeArguments.Count )
+                    {
+                        if( !x.Name.Equals( roslynType.Name, StringComparison.Ordinal ) )
+                            return false;
+
+                        if( x is not ICodeElementTypeArguments typeArgsInfo )
+                            return false;
+
+                        return !ntSymbol!.TypeArguments
+                            .Where( ( t, idx ) => !ntSymbol.TypeArguments[ idx ].Name
+                                .Equals( typeArgsInfo.TypeArguments[ idx ], StringComparison.Ordinal ) )
+                            .Any();
+                    } )
+                    .FirstOrDefault();
+
+                namedTypeInfo.Should().NotBeNull();
+
+                if( namedTypeInfo is not InterfaceInfo interfaceInfo ) 
+                    continue;
+
+                CompareElements<IMethodSymbol, MethodInfo>( ntSymbol!, interfaceInfo.Methods );
+                CompareElements<IEventSymbol, EventInfo>( ntSymbol!, interfaceInfo.Events );
+                CompareElements<IPropertySymbol, PropertyInfo>( ntSymbol!, interfaceInfo.Properties );
+
+                if( interfaceInfo is ClassInfo classInfo )
+                    CompareElements<IFieldSymbol, FieldInfo>( ntSymbol!, classInfo.Fields );
+            }
+        }
+
+        private void CompareParsedToRoslynNamedTypes(ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
+        {
+            var rosylynTypes = walker.NodeCollectors.FirstOrDefault(x => x.SymbolType == typeof(ITypeSymbol))?
+                                   .Cast<ITypeSymbol>()
+                                   .ToList()
+                               ?? new List<ITypeSymbol>();
+
+            foreach ( var parsedType in parsedTypes )
+            {
+                var roslynType = rosylynTypes
+                    .Where( x =>
+                    {
+                        if( !x.Name.Equals( parsedType.Name, StringComparison.Ordinal ) )
+                            return false;
+
+                        if( x is not INamedTypeSymbol ntSymbol || parsedType is not ICodeElementTypeArguments typeArgsInfo ) 
+                            return true;
+
+                        return !ntSymbol.TypeArguments
+                            .Where( ( t, idx ) =>
+                                !t.Name.Equals( typeArgsInfo.TypeArguments[ idx ], StringComparison.Ordinal ) )
+                            .Any();
+
+                    } )
                     .Cast<INamedTypeSymbol>()
                     .FirstOrDefault();
 
-                typeScanned.Should().NotBeNull();
+                roslynType.Should().NotBeNull();
+            }
+        }
 
-                for( var idx = 0; idx < typeScanned!.TypeParameters.Length; idx++ )
+        private void CompareElements<TSymbol, TInfo>( INamedTypeSymbol ntSymbol, List<TInfo> infoCollection )
+            where TSymbol : ISymbol
+            where TInfo : ICodeElement
+        {
+            var symbols = ntSymbol.GetMembers().Where( x => x is TSymbol ).Cast<TSymbol>().ToList();
+
+            foreach( var symbol in symbols )
+            {
+                var infoItem =
+                    infoCollection.FirstOrDefault( x => x.Name.Equals( symbol.Name, StringComparison.Ordinal ) );
+
+                infoItem.Should().NotBeNull();
+
+                if( !typeof(IMethodSymbol).IsAssignableFrom( typeof(TSymbol) ) )
+                    continue;
+
+                if( infoItem is ICodeElementTypeArguments typeArgsInfo )
+                    CompareTypeArguments( ( (IMethodSymbol) symbol ).TypeArguments.ToList(), typeArgsInfo );
+                else
+                    throw new ArgumentException(
+                        $"{nameof(infoItem)} is not a {nameof(ICodeElementTypeArguments)} but should be" );
+            }
+
+            foreach( var infoItem in infoCollection )
+            {
+                var symbol = symbols.FirstOrDefault( x => x.Name.Equals( infoItem.Name ) );
+
+                symbol.Should().NotBeNull();
+
+                if( infoItem is ICodeElementTypeArguments typeArgsInfo )
                 {
-                    typeScanned.TypeParameters[ idx ].Name.Should().Be( typeFound.TypeArguments[ idx ] );
+                    if( symbol is IMethodSymbol methodSymbol )
+                        CompareTypeArguments( methodSymbol.TypeArguments.ToList(), typeArgsInfo );
+                    else
+                        throw new ArgumentException(
+                            $"{nameof(symbol)} should implement {nameof(IMethodSymbol)} but doesn't" );
                 }
             }
         }
 
-        private List<TypeInfo> GetClasses( string projPath )
+        private void CompareTypeArguments( List<ITypeSymbol> symbols, ICodeElementTypeArguments typeArgsInfo )
         {
-            var retVal = new List<TypeInfo>();
-
-            var projDir = new DirectoryInfo( Path.GetDirectoryName( projPath )! );
-
-            foreach( var csFile in projDir.GetFiles( "*.cs", SearchOption.AllDirectories ) )
+            for( var idx = 0; idx < symbols.Count; idx++ )
             {
-                foreach( var classLine in File.ReadAllLines( csFile.FullName ) )
-                {
-                    var isDelegate = classLine.IndexOf( "public delegate", StringComparison.Ordinal ) >= 0;
-                    var isClass =classLine.IndexOf( "public class ", StringComparison.Ordinal ) >= 0;
-                    var isInterface = classLine.IndexOf( "public interface", StringComparison.Ordinal ) >= 0;
-
-                    if( !( isDelegate || isClass || isInterface ) )
-                        continue;
-
-                    var parts = classLine.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-                    var rawName = parts.Length > 3
-                        ? isDelegate
-                            ? parts[ 3 ][..^1]
-                            : string.Join( " ", parts[ 2.. ] )
-                        : parts[ 2 ];
-
-                    var findColon = rawName.IndexOf( ":", StringComparison.Ordinal );
-                    if( findColon >= 0 )
-                        rawName = rawName[ ..( findColon - 1 ) ];
-
-                    var findLessThan = rawName.IndexOf( "<", StringComparison.Ordinal );
-
-                    TypeInfo? typeInfo = null;
-
-                    if( findLessThan >= 0 )
-                    {
-                        typeInfo = new TypeInfo { Name = rawName[ ..findLessThan ].Trim() };
-
-                        var typeArgs = rawName[ ( findLessThan + 1 )..^1 ]
-                            .Split( "," )
-                            .Select( x => x.Trim() )
-                            .ToList();
-
-                        typeInfo.TypeArguments = typeArgs.Select( x =>
-                            {
-                                var typeParts = x.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-                                return typeParts.Length == 1 ? typeParts[ 0 ] : typeParts[ ^1 ];
-                            } )
-                            .ToList();
-
-                    }
-                    else typeInfo = new TypeInfo { Name = rawName, TypeArguments = new List<string>() };
-
-                    typeInfo.IsClass = isClass;
-                    typeInfo.IsDelegate = isDelegate;
-                    typeInfo.IsInterface = isInterface;
-
-                    retVal.Add( typeInfo );
-                }
+                symbols[ idx ].Name.Should().Be( typeArgsInfo.TypeArguments[ idx ] );
             }
-
-            return retVal;
         }
     }
 }
