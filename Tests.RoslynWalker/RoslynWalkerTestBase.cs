@@ -46,14 +46,14 @@ namespace Tests.RoslynWalker
             var walker = ServiceProvider.Instance.GetRequiredService<ISyntaxWalkerNG>();
             walker.Process( result );
 
-            var parsedTypes = new TypeInfoCollection();
+            var parsedTypes = new NamespaceCollection();
             parsedTypes.ParseFile( projFilePath, out _ ).Should().BeTrue();
 
             CompareRoslynNamedTypesToParsed( walker, parsedTypes );
             CompareParsedToRoslynNamedTypes( walker, parsedTypes );
         }
 
-        private void CompareRoslynNamedTypesToParsed( ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
+        private void CompareRoslynNamedTypesToParsed( ISyntaxWalkerNG walker, NamespaceCollection parsedTypes )
         {
             var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
                                    .Cast<ITypeSymbol>()
@@ -95,7 +95,7 @@ namespace Tests.RoslynWalker
             }
         }
 
-        private void CompareParsedToRoslynNamedTypes( ISyntaxWalkerNG walker, TypeInfoCollection parsedTypes )
+        private void CompareParsedToRoslynNamedTypes( ISyntaxWalkerNG walker, NamespaceCollection parsedTypes )
         {
             var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
                                    .Cast<ITypeSymbol>()

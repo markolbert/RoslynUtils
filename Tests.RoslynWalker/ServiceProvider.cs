@@ -104,7 +104,7 @@ namespace Tests.RoslynWalker
             builder.RegisterType<WalkerContext>()
                 .AsSelf();
 
-            builder.RegisterType<TypeInfoCollection>()
+            builder.RegisterType<NamespaceCollection>()
                 .AsSelf();
 
             Instance = new AutofacServiceProvider( builder.Build() );

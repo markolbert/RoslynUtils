@@ -18,161 +18,635 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Xunit.Sdk;
 
 namespace Tests.RoslynWalker
 {
+    public static class SourceRegex
+    {
+        private static readonly Regex _ancestry = new Regex( @"\s*(.+):\s*(.*)", RegexOptions.Compiled );
+        private static readonly Regex _attributes = new Regex( @"\s*(\[.*\])\s*(.*)", RegexOptions.Compiled );
+        private static readonly Regex _firstAttr = new Regex( @"\s*\[(.+?)\]\s*(.*)", RegexOptions.Compiled );
+        private static readonly Regex _typeArgs = new Regex( @"\s*(.+?)\s*<(.*)>", RegexOptions.Compiled );
+        private static readonly Regex _firstTypeArg = new Regex( @"\s*(.+?),(.*)", RegexOptions.Compiled );
+        private static readonly Regex _event = new Regex(@"\s*(.*event)\s+(.*)\s+(.*)\s*");
+        private static readonly Regex _methodArgs = new Regex( @"\s*(.*)\((.*)\)" );
+
+        public static bool ExtractAncestry( string text, out string? attributedDeclaration, out string? ancestry )
+        {
+            attributedDeclaration = null;
+            ancestry = null;
+
+            var match = _ancestry.Match( text );
+
+            if( !match.Success )
+                return false;
+
+            ancestry = match.Groups[ 2 ].Value.Trim();
+            attributedDeclaration = match.Groups[ 1 ].Value.Trim();
+
+            return true;
+        }
+
+        public static string ExtractAttributes( string text, out List<string> attributes )
+        {
+            attributes = new List<string>();
+
+            var match = _attributes.Match( text );
+
+            if( !match.Success ) 
+                return text.Trim();
+
+            var remainder = match.Groups[ 1 ].Value.Trim();
+
+            do
+            {
+                var attrMatch = _firstAttr.Match( remainder );
+
+                if( attrMatch.Success )
+                {
+                    attributes.Add( attrMatch.Groups[ 1 ].Value.Trim() );
+                    remainder = attrMatch.Groups.Count > 2 ? attrMatch.Groups[ 2 ].Value.Trim() : null;
+                }
+            } while( !string.IsNullOrEmpty( remainder ) );
+
+            return match.Groups[ 2 ].Value.Trim();
+        }
+
+        public static string ExtractGenericArguments( string text, out List<string> typeArgs )
+        {
+            typeArgs = new List<string>();
+
+            var match = _typeArgs.Match( text );
+
+            if( !match.Success )
+                return text.Trim();
+
+            var remainder = match.Groups[ 2 ].Value.Trim();
+
+            do
+            {
+                var typeArgMatch = _firstTypeArg.Match( remainder );
+
+                if( typeArgMatch.Success )
+                {
+                    typeArgs.Add( typeArgMatch.Groups[ 1 ].Value.Trim() );
+                    remainder = typeArgMatch.Groups.Count > 2 ? typeArgMatch.Groups[ 2 ].Value.Trim() : null;
+                }
+                else
+                {
+                    typeArgs.Add( remainder );
+                    remainder = null;
+                }
+            } while( !string.IsNullOrEmpty( remainder ) );
+
+            return match.Groups[ 1 ].Value.Trim();
+        }
+
+        public static bool ParseNameAccessibility( string text, out Accessibility accessibility, out string? name )
+        {
+            accessibility = Accessibility.Undefined;
+
+            var parts = text.Split( " ", StringSplitOptions.RemoveEmptyEntries );
+
+            switch( parts.Length )
+            {
+                case 1:
+                    name = parts.Last();
+                    accessibility = Accessibility.Private;
+
+                    return true;
+
+                case 2:
+                    name = parts.Last();
+
+                    if( !ParseAccessibility( parts[ 0 ], out var temp ) ) 
+                        return false;
+
+                    accessibility = temp!;
+                    return true;
+
+                case 3:
+                    name = parts.Last();
+
+                    if( !ParseAccessibility( parts[ 0 ], out var temp2 ) ) 
+                        return false;
+
+                    accessibility = temp2!;
+                    return true;
+
+                case 4:
+                    name = parts.Last();
+
+                    if( !ParseAccessibility( $"{parts[ 0 ]}{parts[1]}", out var temp3 ) ) 
+                        return false;
+
+                    accessibility = temp3!;
+                    return true;
+
+
+                default:
+                    name = null;
+                    return false;
+            }
+        }
+
+        public static EventInfo? ParseEventInfo( string text )
+        {
+            var match = _event.Match( text );
+
+            if( !match.Success )
+                return null;
+
+            Accessibility accessibility = Accessibility.Private;
+
+            if( match.Groups.Count == 4 )
+            {
+                if( !ParseNameAccessibility( match.Groups[ 1 ].Value.Trim(), out var temp, out _ ) )
+                    return null;
+
+                accessibility = temp;
+            }
+
+            var nonGenericHandler = ExtractGenericArguments( match.Groups[ 2 ].Value.Trim(), out var typeArgs );
+
+            var retVal = new EventInfo
+            {
+                Name = match.Groups[3].Value.Trim(),
+                Accessibility = accessibility,
+                EventHandler = nonGenericHandler,
+            };
+
+            retVal.EventHandlerTypeArguments.AddRange( typeArgs );
+
+            return retVal;
+        }
+
+        public static bool ParseAccessibility( string toParse, out Accessibility result )
+        {
+            result = Accessibility.Undefined;
+
+            if( !Enum.TryParse( typeof(Accessibility),
+                toParse.Replace( " ", string.Empty ),
+                true,
+                out var parsed ) )
+                return false;
+
+            result = (Accessibility) parsed!;
+
+            return true;
+        }
+
+    }
+
     public class SourceLine
     {
         public static readonly string[] AccessTokens =
             { "public", "protected", "private", "internal", "protected internal", string.Empty };
 
-        private Accessibility _accessibility = Accessibility.Undefined;
-        private ElementNature _nature = ElementNature.Unknown;
+        private BaseInfo? _baseInfo;
 
-        public SourceLine( string line, LineBlock? lineBlock )
+        public SourceLine( string line, LineType lineType, LineBlock? lineBlock )
         {
-            Line = StripAttributes( line );
+            Line = line;
+            LineType = lineType;
             LineBlock = lineBlock;
         }
 
+        public bool Initialized { get; private set; }
         public string Line { get; }
+        public LineType LineType { get; }
         public LineBlock? LineBlock { get; }
 
-        public Accessibility Accessibility
+        public BaseInfo? Element
         {
             get
             {
-                if( _accessibility != Accessibility.Undefined )
-                    return _accessibility;
+                if( Initialized )
+                    return _baseInfo;
 
-                InitializeAccessibilityAndNature();
+                Initialize();
 
-                return _accessibility;
-            }
-        }
-
-        public ElementNature Nature
-        {
-            get
-            {
-                if( _nature != ElementNature.Unknown )
-                    return _nature;
-
-                InitializeAccessibilityAndNature();
-
-                return _nature;
+                return _baseInfo;
             }
         }
 
         public LineBlock? ChildBlock { get; set; }
 
-        private string StripAttributes( string line )
+        private void TestRegEx( string text )
         {
-            var startChar = 0;
-            var endChar = 0;
+            var okay = SourceRegex.ExtractAncestry( text, out var attributedDeclaration, out var ancestry );
+            var declaration = SourceRegex.ExtractAttributes( attributedDeclaration!, out var attributes );
+            var nonGenericDeclaration = SourceRegex.ExtractGenericArguments( declaration, out var typeArgs );
+            okay = SourceRegex.ParseNameAccessibility( nonGenericDeclaration, out var accessibility, out var name );
+        }
 
-            var sb = new StringBuilder();
+        private void Initialize()
+        {
+            // not yet true but it will be...
+            Initialized = true;
 
-            while( ( startChar = line[ startChar.. ].IndexOf( "[", StringComparison.Ordinal ) ) != 0 )
+            TestRegEx( " [attr1][attr2]  [attr3]   public class Wow<T1, T2<T3>>  :   AncestryText    " );
+            TestRegEx( " [attr1][attr2]  [attr3]   protected internal class Wow<T1, T2<T3>>  :   AncestryText    " );
+            TestRegEx( "   public class Wow<T1, T2<T3>>  :   AncestryText    " );
+            TestRegEx( "   protected internal class Wow<T1, T2<T3>>  :   AncestryText    " );
+            TestRegEx( " [attr1][attr2]  [attr3]   public class Wow  :   AncestryText    " );
+            TestRegEx( " [attr1][attr2]  [attr3]   protected internal class Wow  :   AncestryText    " );
+            TestRegEx( "   public class Wow  :   AncestryText    " );
+            TestRegEx( "   protected internal class Wow  :   AncestryText    " );
+
+            // we're not interested in BlockClosers
+            if( LineType == LineType.BlockCloser )
+                return;
+
+            foreach( var parser in new Func<BaseInfo?>[]
             {
-                if( startChar > endChar )
-                    sb.Append( line[ endChar..( startChar - 1 ) ] );
+                ParseAsNamespace,
+                ParseAsDelegate,
+                ParseAsClass, 
+                ParseAsInterface,
+                ParseAsEvent,
+                ParseAsMethod, 
+                ParseAsProperty
+            } )
+            {
+                var parsed = parser();
+                if( parsed == null )
+                    continue;
 
-                endChar = line[ startChar.. ].IndexOf( "]", StringComparison.Ordinal );
-
-                if( endChar < 0 )
-                    throw new ArgumentException( $"Unmatched attribute opener '[' in {line}" );
-
-                startChar = endChar + 1;
-
-                if( startChar >= line.Length )
-                    break;
+                _baseInfo = parsed;
             }
 
-            if( endChar < line.Length - 1 )
-                sb.Append( line[ endChar.. ] );
+            // we assume all statements at this point are fields (events are statements but
+            // we've already handled those). That's only true one level below named types...
+            // but we shouldn't ever drill down more than one level below named types
+            if( LineType != LineType.Statement ) 
+                return;
 
-            var retVal = sb.ToString();
+            var endOfName = GetStartOfDelimited( '(', ')' );
+            endOfName--;
 
-            while( retVal.IndexOf( "  ", StringComparison.Ordinal ) >= 0 ) retVal = retVal.Replace( "  ", " " );
+            if( endOfName <= 1 )
+                return;
+
+            if( !SetNameAndAccessibility<FieldInfo>( endOfName, out var elementInfo ) ) 
+                return;
+
+            // fields must be the child of either a class
+            elementInfo!.Parent = GetParent( ElementNature.Class );
+
+            _baseInfo = elementInfo;
+        }
+
+        private NamespaceInfo? ParseAsNamespace()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            var nsStart = Line.IndexOf( "namespace ", StringComparison.Ordinal );
+            if( nsStart < 0 )
+                return null;
+
+            var nsParts = Line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
+
+            if( nsParts.Length != 2 )
+                return null;
+
+            // namespaces can be nested so look to see if we're a child of a higher-level
+            // namespace
+            return new NamespaceInfo
+            {
+                Name = nsParts[ 1 ], 
+                Parent = (NamespaceInfo?) GetParent( ElementNature.Namespace )
+            };
+        }
+
+        private BaseInfo? GetParent( params ElementNature[] nature )
+        {
+            var curSrcLine = this;
+            BaseInfo? retVal = null;
+
+            while( curSrcLine?.LineBlock != null )
+            {
+                curSrcLine = curSrcLine.LineBlock.ParentLine;
+
+                if( curSrcLine == null )
+                    break;
+
+                if( nature.All( x => curSrcLine?.Element?.Nature != x ) ) 
+                    continue;
+
+                retVal = curSrcLine.Element;
+                break;
+            }
 
             return retVal;
         }
 
-        private void InitializeAccessibilityAndNature()
+        private ClassInfo? ParseAsClass()
         {
-            // this default isn't strictly speaking valid...but it is (I hope!) so long as one doesn't
-            // drill down more than one level below a NamedType
-            _nature = ElementNature.Field;
-            _accessibility = Accessibility.Private;
+            if( LineType != LineType.BlockOpener )
+                return null;
 
-            foreach( var accessToken in Enum.GetValues<Accessibility>().Where( x => x != Accessibility.Undefined ) )
-            foreach( var accessText in accessToken.GetType()
-                .GetCustomAttributes<AccessibilityTextAttribute>( false )
-                .Select( x => x.Text ) )
+            if( !SourceRegex.ExtractAncestry( Line, out var attributedDeclaration, out var ancestry ) )
+                return null;
+
+            var declaration = SourceRegex.ExtractAttributes( attributedDeclaration!, out var attributes );
+            var nonGenericDeclaration = SourceRegex.ExtractGenericArguments( declaration, out var typeArgs );
+
+            if( !SourceRegex.ParseNameAccessibility( nonGenericDeclaration, out var accessibility, out var name ) )
+                return null;
+
+            // classes can be nested, so look back up the source code tree to see if we
+            // are the child of a higher-level ClassInfo. if not we must be the child
+            // of a namespace
+            var retVal = new ClassInfo
             {
-                var separator = accessText.Length > 0 ? " " : string.Empty;
+                Accessibility = accessibility,
+                Ancestry = ancestry,
+                Name = name!
+            };
 
-                if( Line.IndexOf( $"{accessToken}{separator}delegate", StringComparison.Ordinal ) >= 0 )
+            retVal.Attributes.AddRange( attributes );
+
+            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
+                               ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
+
+            if( retVal.Parent == null )
+                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
+
+            return retVal;
+        }
+
+        private InterfaceInfo? ParseAsInterface()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            if( !SourceRegex.ExtractAncestry( Line, out var attributedDeclaration, out var ancestry ) )
+                return null;
+
+            var declaration = SourceRegex.ExtractAttributes( attributedDeclaration!, out var attributes );
+            var nonGenericDeclaration = SourceRegex.ExtractGenericArguments( declaration, out var typeArgs );
+
+            if( !SourceRegex.ParseNameAccessibility( nonGenericDeclaration, out var accessibility, out var name ) )
+                return null;
+
+            // classes can be nested, so look back up the source code tree to see if we
+            // are the child of a higher-level ClassInfo. if not we must be the child
+            // of a namespace
+            var retVal = new InterfaceInfo
+            {
+                Accessibility = accessibility,
+                Ancestry = ancestry,
+                Name = name!
+            };
+
+            retVal.Attributes.AddRange( attributes );
+
+            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
+                            ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
+
+            if( retVal.Parent == null )
+                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
+
+            return retVal;
+        }
+
+        private ElementInfo? ParseAsDelegate()
+        {
+            if( LineType != LineType.Statement )
+                return null;
+
+            var methodInfo = ParseAsMethod();
+            if( methodInfo == null )
+                return null;
+
+            var delegateInfo = new DelegateInfo
+            {
+                Accessibility = methodInfo.Accessibility,
+                Name = methodInfo.Name,
+                Parent = GetParent( ElementNature.Class, ElementNature.Interface )
+            };
+
+            delegateInfo.Attributes.AddRange( methodInfo.Attributes );
+
+            // delegates must be a child of a class or an interface
+            if( delegateInfo.Parent == null )
+                throw new NullException( $"Failed to find parent/container for delegate '{delegateInfo.FullName}'" );
+
+            return delegateInfo;
+        }
+
+        private (int startOfDeclaration, string? attrText) GetStartOfDeclaration( int natureStart  )
+        {
+            // the word immediately before the element nature, if any, defines the
+            // accessibility of the element...but we need to allow for attributes
+            var retVal = Line.LastIndexOf( "]", natureStart, StringComparison.Ordinal );
+
+            return retVal < 0 ? ( 0, null ) : ( retVal++, Line[ ..retVal ].Trim() );
+        }
+
+        private (int endOfDeclaration, string? genericText) ExtractGenericArguments( int natureStart )
+        {
+            // to extract generic argument text we need to see if there is a generic arguments
+            // clause starting before eol or any ':' character
+            var startOfGenerics = Line.IndexOf( "<", natureStart, StringComparison.Ordinal );
+
+            if( startOfGenerics < 0 )
+                return ( startOfGenerics, null );
+
+            // we need to find where the element's name ends, which is either the EOL or the ":"
+            // which introduces the ancestry clause for classes and interfaces
+            var endOfGenerics = GetEndOfDelimited( startOfGenerics, '<', '>', ':' );
+
+            return ( startOfGenerics--, Line[ startOfGenerics..endOfGenerics ] );
+        }
+
+        private EventInfo? ParseAsEvent() =>
+            LineType != LineType.Statement ? null : SourceRegex.ParseEventInfo( Line );
+
+        private ElementInfo? ParseAsMethod()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            // a delegate would trip the method detection algorithm but we've already
+            // handled delegates. However, we need to ensure we don't detect attributes
+            // so we work backwards
+
+            // if there's no trailing parenthesis it's not a method block
+            if( Line[ ^1 ] != ')' )
+                return null;
+
+            var startOfArgs = GetStartOfDelimited( '(', ')' );
+            
+            var endOfName = startOfArgs - 1;
+
+            if( endOfName <= 1 )
+                return null;
+
+            if( !SetNameAndAccessibility<MethodInfo>( endOfName, out var elementInfo) ) 
+                return null;
+
+            elementInfo!.Arguments
+                .AddRange( Line[ startOfArgs..^1 ]
+                    .Split( ",", StringSplitOptions.RemoveEmptyEntries )
+                    .Select( x => x.Trim() ) );
+
+            // methods must be the child of either an interface or a class
+            elementInfo.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+
+            return elementInfo;
+        }
+
+        private ElementInfo? ParseAsProperty()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            if( !( LineBlock?.Lines.First().Line.Equals( "get", StringComparison.Ordinal ) ?? false )
+                && !( LineBlock?.Lines.First().Line.Equals( "set", StringComparison.Ordinal ) ?? false ) )
+                return null;
+
+            var endOfName = GetStartOfDelimited( '[', ']' );
+            endOfName--;
+
+            if( endOfName <= 1 )
+                return null;
+
+            if( !SetNameAndAccessibility<PropertyInfo>( endOfName, out var elementInfo ) ) 
+                return null;
+
+            // properties must be the child of either an interface or a class
+            elementInfo!.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+
+            return elementInfo;
+        }
+
+        private int GetStartOfAccessibility( int startOfName )
+        {
+            // find the next preceding space. If it exists it marks the start of the 
+            // accessibility declaration. If it doesn't the method is private.
+            // Make sure to allow for attributes
+            var endOfAttributes = Line.LastIndexOf( "]", startOfName, StringComparison.Ordinal );
+
+            var retVal = Line.LastIndexOf( " ", startOfName - 2, StringComparison.Ordinal );
+
+            if( retVal < 0 ) 
+                return retVal;
+
+            if( endOfAttributes >= 0 && retVal < endOfAttributes )
+                retVal = endOfAttributes + 2;
+            else retVal++;
+
+            return retVal;
+        }
+
+        private int GetStartOfDelimited( char openingDelimiter, char closingDelimiter )
+        {
+            // walk backwards through the line until the "delimiter count" (+1 for closing,
+            // -1 for opening) is zero. That's the opening delimiter.
+            var delimiterCount = 1;
+            var retVal = Line.Length - 1;
+
+            while( retVal > 0 )
+            {
+                if( Line[ retVal ] == openingDelimiter )
+                    delimiterCount--;
+                else
                 {
-                    _accessibility = accessToken;
-                    _nature = ElementNature.Delegate;
-
-                    break;
+                    if( Line[ retVal ] == closingDelimiter )
+                        delimiterCount++;
                 }
 
-                if( Line.IndexOf( $"{accessToken}{separator}class", StringComparison.Ordinal ) >= 0 )
-                {
-                    _accessibility = accessToken;
-                    _nature = ElementNature.Class;
-
+                if( delimiterCount == 0 )
                     break;
-                }
 
-                if( Line.IndexOf( $"{accessToken}{separator}interface", StringComparison.Ordinal ) >= 0 )
-                {
-                    _accessibility = accessToken;
-                    _nature = ElementNature.Interface;
-
-                    break;
-                }
-
-                if( Line.IndexOf( $"{accessToken}{separator}event", StringComparison.Ordinal ) >= 0 )
-                {
-                    _accessibility = accessToken;
-                    _nature = ElementNature.Event;
-
-                    break;
-                }
-
-                // a delegate would trip this but we've already handled that
-                if( Line.IndexOf( "(", StringComparison.Ordinal ) >= 0 )
-                {
-                    _accessibility = accessToken;
-                    _nature = ElementNature.Method;
-
-                    break;
-                }
-
-                if( ( LineBlock?.Lines.First().Line.Equals( "get", StringComparison.Ordinal ) ?? false )
-                    || ( LineBlock?.Lines.First().Line.Equals( "set", StringComparison.Ordinal ) ?? false ) )
-                {
-                    _accessibility = accessToken;
-                    _nature = ElementNature.Property;
-
-                    break;
-                }
-
-                if( separator != " "
-                    && Line.IndexOf( $"{accessToken}{separator}", StringComparison.Ordinal ) >= 0 )
-                {
-                    _accessibility = accessToken;
-                    break;
-                }
+                retVal--;
             }
+
+            return retVal;
+        }
+
+        private int GetEndOfDelimited( int start, char openingDelimiter, char closingDelimiter, char stopChar )
+        {
+            // walk through the line until the "delimiter count" (+1 for opening,
+            // -1 for closing) is zero. That's the closing delimiter.
+            var delimiterCount = 0;
+            var retVal = start;
+
+            while( retVal < Line.Length )
+            {
+                if( Line[ retVal ] == stopChar )
+                {
+                    retVal--;
+                    break;
+                }
+
+                if( Line[ retVal ] == openingDelimiter )
+                    delimiterCount++;
+                else
+                {
+                    if( Line[ retVal ] == closingDelimiter )
+                        delimiterCount--;
+                }
+
+                if( delimiterCount == 0 )
+                    break;
+
+                retVal++;
+            }
+
+            return retVal;
+        }
+
+        private bool SetNameAndAccessibility<TElement>( int endOfName, out TElement? result )
+            where TElement : ElementInfo, new()
+        {
+            result = null;
+
+            var startOfAccessibility = -1;
+            var startOfName = Line.LastIndexOf( " ", endOfName, StringComparison.Ordinal );
+
+            if( startOfName < 0 )
+                startOfName = 0;
+            else
+            {
+                startOfName++;
+                startOfAccessibility = GetStartOfAccessibility( startOfName );
+            }
+
+            if( startOfAccessibility < 0 )
+            {
+                result = create_element( Accessibility.Private );
+                return true;
+            }
+
+            if( !Enum.TryParse( typeof(Accessibility),
+                Line[ startOfAccessibility..( startOfName - 1 ) ],
+                true,
+                out var temp ) )
+            {
+                _baseInfo = null;
+                return false;
+            }
+
+            result = create_element( (Accessibility) temp! );
+            return true;
+
+            TElement create_element( Accessibility accessibility ) =>
+                new TElement
+                {
+                    Accessibility = accessibility,
+                    Name = Line[ startOfName..^2 ]
+                };
         }
     }
 }

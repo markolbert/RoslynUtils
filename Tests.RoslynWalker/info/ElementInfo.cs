@@ -17,18 +17,18 @@
 
 #endregion
 
+using System.Collections.Generic;
+
 namespace Tests.RoslynWalker
 {
-    public enum ElementNature
+    public class ElementInfo : BaseInfo
     {
-        Class,
-        Delegate,
-        Event,
-        Field,
-        Interface,
-        Method,
-        Namespace,
-        Property,
-        NotSpecified
+        protected ElementInfo( ElementNature nature )
+            : base( nature )
+        {
+        }
+
+        public Accessibility Accessibility { get; set; } = Accessibility.Undefined;
+        public List<string> Attributes { get; } = new();
     }
 }

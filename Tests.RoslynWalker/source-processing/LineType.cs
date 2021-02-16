@@ -19,16 +19,10 @@
 
 namespace Tests.RoslynWalker
 {
-    public enum ElementNature
+    public enum LineType
     {
-        Class,
-        Delegate,
-        Event,
-        Field,
-        Interface,
-        Method,
-        Namespace,
-        Property,
-        NotSpecified
+        Statement,
+        BlockOpener,
+        BlockCloser
     }
 }

@@ -29,7 +29,7 @@ namespace Tests.RoslynWalker
         [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj" ) ]
         public void Parse( string projFilePath )
         {
-            var parser = ServiceProvider.Instance.GetRequiredService<TypeInfoCollection>();
+            var parser = ServiceProvider.Instance.GetRequiredService<NamespaceCollection>();
 
             parser.ParseFile( projFilePath, out _ ).Should().BeTrue();
         }

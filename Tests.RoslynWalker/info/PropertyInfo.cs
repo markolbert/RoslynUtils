@@ -24,23 +24,19 @@ using System.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class PropertyInfo : ICodeElement
+    public class PropertyInfo : ElementInfo
     {
-        private PropertyInfo( string name, Accessibility accessibility )
+        public PropertyInfo()
+            : base( ElementNature.Property )
         {
-            Name = name;
-            Accessibility = accessibility;
         }
 
-        public string Name { get; }
-        public Accessibility Accessibility { get; }
+        //public static PropertyInfo Create( SourceLine srcLine )
+        //{
+        //    var nameParts = srcLine.Line
+        //        .Split( " ", StringSplitOptions.RemoveEmptyEntries );
 
-        public static PropertyInfo Create( SourceLine srcLine )
-        {
-            var nameParts = srcLine.Line
-                .Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-            return new PropertyInfo( nameParts.Last(), srcLine.Accessibility );
-        }
+        //    return new PropertyInfo( nameParts.Last(), srcLine.Accessibility );
+        //}
     }
 }

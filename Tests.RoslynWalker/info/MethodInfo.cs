@@ -24,38 +24,39 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class MethodInfo : ICodeElement, ICodeElementTypeArguments
+    public class MethodInfo : ElementInfo
     {
-        public MethodInfo( string name, Accessibility accessibility )
+        public MethodInfo()
+            : base( ElementNature.Method )
         {
-            Name = name;
-            Accessibility = accessibility;
         }
 
         public List<string> Arguments { get; } = new();
-
-        public string Name { get; }
-        public Accessibility Accessibility { get; }
         public List<string> TypeArguments { get; } = new();
 
-        public static MethodInfo Create( SourceLine srcLine )
+        public override string FullName
         {
-            var openParenLoc = srcLine.Line.IndexOf( "(", StringComparison.Ordinal );
-            var lesserThanLoc = srcLine.Line.IndexOf( "<", StringComparison.Ordinal );
-            var closeParenLoc = srcLine.Line.IndexOf( ")", StringComparison.Ordinal );
+            get
+            {
+                var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
 
-            var nameParts = srcLine.Line[ ..( lesserThanLoc < 0 ? openParenLoc : lesserThanLoc ) ]
-                .Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-            var retVal = new MethodInfo( nameParts.Length > 1 ? nameParts[ 1 ] : nameParts[ 0 ],
-                srcLine.Accessibility );
-
-            if( lesserThanLoc >= 0 )
-                retVal.TypeArguments.AddRange( SourceText.GetTypeArgs( srcLine.Line[ lesserThanLoc.. ] ) );
-
-            retVal.Arguments.AddRange( SourceText.GetArgs( srcLine.Line[ openParenLoc.. ] ) );
-
-            return retVal;
+                return Parent == null ? $"{Name}{typeArgs}()" : $"{Parent.FullName}:{Name}{typeArgs}()";
+            }
         }
+
+        //public static MethodInfo Create( SourceLine srcLine )
+        //{
+        //    var openParenLoc = srcLine.Line.IndexOf( "(", StringComparison.Ordinal );
+        //    var lesserThanLoc = srcLine.Line.IndexOf( "<", StringComparison.Ordinal );
+
+        //    var retVal = new MethodInfo( srcLine.ElementName!, srcLine.Accessibility );
+
+        //    if( lesserThanLoc >= 0 )
+        //        retVal.TypeArguments.AddRange( SourceText.GetTypeArgs( srcLine.Line[ lesserThanLoc.. ] ) );
+
+        //    retVal.Arguments.AddRange( SourceText.GetArgs( srcLine.Line[ openParenLoc.. ] ) );
+
+        //    return retVal;
+        //}
     }
 }

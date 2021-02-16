@@ -21,18 +21,11 @@ namespace Tests.RoslynWalker
 {
     public enum Accessibility
     {
-        [ AccessibilityText( "public" ) ] Public,
-
-        [ AccessibilityText( "protected" ) ] Protected,
-
-        [ AccessibilityText( "private" ) ] [ AccessibilityText( "" ) ]
+        Public,
+        Protected,
         Private,
-
-        [ AccessibilityText( "internal" ) ] Internal,
-
-        [ AccessibilityText( "protected internal" ) ]
+        Internal,
         ProtectedInternal,
-
         Undefined
     }
 }

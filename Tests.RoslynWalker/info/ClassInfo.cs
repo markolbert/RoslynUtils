@@ -21,23 +21,23 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class ClassInfo : InterfaceInfo, ICodeElementTypeArguments
+    public class ClassInfo : InterfaceInfo
     {
-        private ClassInfo( string name, Accessibility accessibility )
-            : base( name, accessibility )
+        public ClassInfo()
+            : base( ElementNature.Class )
         {
         }
 
         public List<FieldInfo> Fields { get; } = new();
+        public List<DelegateInfo> Delegates { get; } = new();
 
-        public new static ClassInfo Create( SourceLine srcLine )
-        {
-            var (name, typeArgs) = GetNameAndTypeArguments( srcLine.Line );
+        //public new static ClassInfo Create( SourceLine srcLine )
+        //{
+        //    var retVal = new ClassInfo( srcLine.ElementName!, srcLine.Accessibility );
 
-            var retVal = new ClassInfo( name, srcLine.Accessibility );
-            retVal.TypeArguments.AddRange( typeArgs );
+        //    retVal.TypeArguments.AddRange( GetNamedTypeTypeArguments( srcLine.Line ) );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
     }
 }

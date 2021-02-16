@@ -21,7 +21,9 @@ namespace Tests.RoslynWalker
 {
     public interface ICodeElement
     {
+        ElementNature Nature {get;}
         string Name { get; }
         Accessibility Accessibility { get; }
+        string? Attributes { get; }
     }
 }

@@ -22,48 +22,62 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class InterfaceInfo : NamedTypeInfo, ICodeElementTypeArguments
+    public class InterfaceInfo : ElementInfo
     {
-        protected InterfaceInfo( string name, Accessibility accessibility )
-            : base( name, accessibility )
+        public InterfaceInfo()
+            : base( ElementNature.Interface )
+        {
+        }
+
+        protected InterfaceInfo( ElementNature nature )
+            : base( nature )
         {
         }
 
         public List<MethodInfo> Methods { get; } = new();
         public List<PropertyInfo> Properties { get; } = new();
         public List<EventInfo> Events { get; } = new();
+        public string? Ancestry {get; set; }
 
         public List<string> TypeArguments { get; } = new();
 
-        public static InterfaceInfo Create( SourceLine srcLine )
+        public override string FullName
         {
-            var (name, typeArgs) = GetNameAndTypeArguments( srcLine.Line );
+            get
+            {
+                var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
 
-            var retVal = new InterfaceInfo( name, srcLine.Accessibility );
-            retVal.TypeArguments.AddRange( typeArgs );
-
-            return retVal;
+                return Parent == null ? $"{Name}{typeArgs}" : $"{Parent.FullName}:{Name}{typeArgs}";
+            }
         }
 
-        public static (string name, List<string> typeArgs) GetNameAndTypeArguments( string line )
-        {
-            var parts = line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
+        //public static InterfaceInfo Create( SourceLine srcLine )
+        //{
+        //    var retVal = new InterfaceInfo( srcLine.ElementName!, srcLine.Accessibility );
 
-            var rawName = parts.Length > 3 ? string.Join( " ", parts[ 2.. ] ) : parts[ 2 ];
+        //    retVal.TypeArguments.AddRange( GetNamedTypeTypeArguments( srcLine.Line ) );
 
-            var findColon = rawName.IndexOf( ":", StringComparison.Ordinal );
-            if( findColon >= 0 )
-                rawName = rawName[ ..( findColon - 1 ) ];
+        //    return retVal;
+        //}
 
-            var typeArgs = new List<string>();
+        //protected static List<string> GetNamedTypeTypeArguments( string line )
+        //{
+        //    var parts = line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
 
-            var findLessThan = rawName.IndexOf( "<", StringComparison.Ordinal );
+        //    var rawName = parts.Length > 3 ? string.Join( " ", parts[ 2.. ] ) : parts[ 2 ];
 
-            if( findLessThan < 0 )
-                return ( rawName, typeArgs );
+        //    var findColon = rawName.IndexOf( ":", StringComparison.Ordinal );
+        //    if( findColon >= 0 )
+        //        rawName = rawName[ ..( findColon - 1 ) ];
 
-            return ( rawName[ ..findLessThan ].Trim(),
-                SourceText.GetTypeArgs( rawName[ ( findLessThan + 1 ).. ].Trim() ) );
-        }
+        //    var typeArgs = new List<string>();
+
+        //    var findLessThan = rawName.IndexOf( "<", StringComparison.Ordinal );
+
+        //    if( findLessThan < 0 )
+        //        return typeArgs;
+
+        //    return SourceText.GetTypeArgs( rawName[ ( findLessThan + 1 ).. ].Trim() );
+        //}
     }
 }

@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Tests.RoslynWalker
@@ -35,22 +36,21 @@ namespace Tests.RoslynWalker
 
         public SourceFile( string srcPath )
         {
-            _text = File.ReadAllText( srcPath )
-                .Replace( "\t", " " );
+            // read the file and remove preprocessor lines
+            var lines = File.ReadAllLines( srcPath );
 
-            _text = RemoveSingleLineComments( _text );
-            _text = _text.Replace( Environment.NewLine, " " );
+            // delete embedded single line comments
+            _text = RemoveSingleLineCommentsAndPreProcessorLines( lines );
+
+            // convert multiple spaces to a single space
             _text = ReplaceAllText( _text, "  ", " " );
-            _text = ReplaceAllText( _text, " {", "{" );
-            _text = ReplaceAllText( _text, "{ ", "{" );
-            _text = ReplaceAllText( _text, "} ", "}" );
-            _text = ReplaceAllText( _text, " }", "}" );
-            _text = ReplaceAllText( _text, "( ", "(" );
-            _text = ReplaceAllText( _text, " )", ")" );
-            _text = ReplaceAllText( _text, " [", "[" );
-            _text = ReplaceAllText( _text, "[ ", "[" );
-            _text = ReplaceAllText( _text, " ]", "]" );
-            _text = ReplaceAllText( _text, "] ", "]" );
+
+            // remove spacing around certain delimiting characters
+            foreach( var toTrim in new string[] { "{", "}", "(", ")", "[", "]", ":" } )
+            {
+                _text = ReplaceAllText( _text, " " + toTrim, toTrim );
+                _text = ReplaceAllText( _text, toTrim + " ", toTrim );
+            }
 
             _textLen = _text.Length;
 
@@ -88,23 +88,23 @@ namespace Tests.RoslynWalker
                 switch( CurrentChar )
                 {
                     case ';':
-                        block.AddLine( sb.ToString() );
+                        block.AddSourceLine( sb.ToString(), LineType.Statement );
                         sb.Clear();
 
                         break;
 
                     case '{':
-                        block.AddLine( sb.ToString() );
+                        block.AddSourceLine( sb.ToString(), LineType.BlockOpener );
                         sb.Clear();
 
                         block = new LineBlock( block.CurrentLine );
                         break;
 
                     case '}':
-                        block.AddLine( sb.ToString() );
+                        block.AddSourceLine( sb.ToString(), LineType.BlockCloser );
                         sb.Clear();
 
-                        block = block?.SourceLine?.LineBlock
+                        block = block?.ParentLine?.LineBlock
                                 ?? throw new NullReferenceException(
                                     "Attempted to move to an undefined parent LineBlock" );
                         break;
@@ -120,31 +120,25 @@ namespace Tests.RoslynWalker
             return retVal;
         }
 
-        private string RemoveSingleLineComments( string text )
+        private string RemoveSingleLineCommentsAndPreProcessorLines( string[] rawLines )
         {
-            var newLineLength = Environment.NewLine.Length;
-            var eol = -newLineLength;
-            var sb = new StringBuilder();
+            var lines = rawLines.Select( x => x.Trim() )
+                .Where( x => x.Length > 0 && x[ 0 ] != '#'  )
+                .ToList();
 
-            while( true )
+            for( var idx= 0; idx < lines.Count; idx++ )
             {
-                var commentStart = text.IndexOf( "//", eol + newLineLength, StringComparison.OrdinalIgnoreCase );
-
+                var commentStart = lines[idx].IndexOf( "//", StringComparison.OrdinalIgnoreCase );
                 if( commentStart < 0 )
-                {
-                    sb.Append( text[ ( eol + newLineLength ).. ] );
-                    break;
-                }
+                    continue;
 
-                sb.Append( text[ ( eol + newLineLength )..( commentStart - 1 ) ] );
-
-                eol = text.IndexOf( Environment.NewLine, commentStart, StringComparison.OrdinalIgnoreCase );
-
-                if( eol < 0 )
-                    break;
+                lines[ idx ] = lines[ idx ][ ..commentStart ];
             }
 
-            return sb.ToString();
+            // merge all lines together, separating each by a space
+            return string.Join(" ", lines  )
+                    .Replace( "\t", " " )
+                    .Trim();
         }
 
         private string ReplaceAllText( string text, string toFind, string replacement )

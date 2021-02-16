@@ -18,29 +18,29 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker
 {
-    public class EventInfo : ICodeElement
+    public class EventInfo : ElementInfo
     {
-        private EventInfo( string name, Accessibility accessibility )
+        public EventInfo()
+            : base( ElementNature.Event )
         {
-            Name = name;
-            Accessibility = accessibility;
         }
 
-        public string Name { get; }
-        public Accessibility Accessibility { get; }
+        public string EventHandler { get; set; }
+        public List<string> EventHandlerTypeArguments { get; } = new();
 
-        public static EventInfo Create( SourceLine srcLine )
-        {
-            var nameParts = srcLine.Line
-                .Split( " ", StringSplitOptions.RemoveEmptyEntries );
+        //public static EventInfo Create( SourceLine srcLine )
+        //{
+        //    var nameParts = srcLine.Line
+        //        .Split( " ", StringSplitOptions.RemoveEmptyEntries );
 
-            return new EventInfo( nameParts.Last(), srcLine.Accessibility );
-        }
+        //    return new EventInfo( nameParts.Last(), srcLine.Accessibility );
+        //}
     }
 }

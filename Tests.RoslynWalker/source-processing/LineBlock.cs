@@ -29,19 +29,19 @@ namespace Tests.RoslynWalker
 
         public LineBlock( SourceLine? srcLine )
         {
-            SourceLine = srcLine;
+            ParentLine = srcLine;
 
-            if( SourceLine != null )
-                SourceLine.ChildBlock = this;
+            if( ParentLine != null )
+                ParentLine.ChildBlock = this;
         }
 
-        public SourceLine? SourceLine { get; }
+        public SourceLine? ParentLine { get; }
         public ReadOnlyCollection<SourceLine> Lines => _lines.AsReadOnly();
         public SourceLine? CurrentLine => _lines.LastOrDefault();
 
-        public void AddLine( string line )
+        public void AddSourceLine( string line, LineType lineType )
         {
-            _lines.Add( new SourceLine( line, this ) );
+            _lines.Add( new SourceLine( line, lineType, this ) );
         }
     }
 }

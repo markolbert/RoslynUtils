@@ -22,28 +22,38 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class DelegateInfo : NamedTypeInfo
+    public class DelegateInfo : ElementInfo
     {
-        public DelegateInfo( string name, Accessibility accessibility )
-            : base( name, accessibility )
+        public DelegateInfo()
+            : base( ElementNature.Delegate )
         {
         }
 
         public List<string> TypeArguments { get; } = new();
         public List<string> DelegateArguments { get; } = new();
 
-        public static DelegateInfo Create( SourceLine srcLine )
+        public override string FullName
         {
-            var parts = srcLine.Line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-            var text = parts.Length > 3 ? parts[ 3 ][ ..^1 ] : parts[ 2 ];
+            get
+            {
+                var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
 
-            var openParenLoc = text.IndexOf( "(", StringComparison.Ordinal );
-
-            var retVal = new DelegateInfo( text[ ..openParenLoc ], srcLine.Accessibility );
-
-            retVal.DelegateArguments.AddRange( SourceText.GetArgs( text ) );
-
-            return retVal;
+                return Parent == null ? $"{Name}{typeArgs}()" : $"{Parent.FullName}:{Name}{typeArgs}()";
+            }
         }
+
+        //public static DelegateInfo Create( SourceLine srcLine )
+        //{
+        //    var parts = srcLine.Line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
+        //    var text = parts.Length > 3 ? parts[ 3 ][ ..^1 ] : parts[ 2 ];
+
+        //    var openParenLoc = text.IndexOf( "(", StringComparison.Ordinal );
+
+        //    var retVal = new DelegateInfo( text[ ..openParenLoc ], srcLine.Accessibility );
+
+        //    retVal.DelegateArguments.AddRange( SourceText.GetArgs( text ) );
+
+        //    return retVal;
+        //}
     }
 }

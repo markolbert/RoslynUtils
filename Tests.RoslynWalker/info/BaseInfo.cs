@@ -19,16 +19,16 @@
 
 namespace Tests.RoslynWalker
 {
-    public enum ElementNature
+    public class BaseInfo
     {
-        Class,
-        Delegate,
-        Event,
-        Field,
-        Interface,
-        Method,
-        Namespace,
-        Property,
-        NotSpecified
+        protected BaseInfo( ElementNature nature )
+        {
+            Nature = nature;
+        }
+
+        public ElementNature Nature { get; }
+        public BaseInfo? Parent { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public virtual string FullName => Parent == null ? Name : $"{Parent.FullName}:{Name}";
     }
 }

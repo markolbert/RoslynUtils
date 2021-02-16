@@ -17,18 +17,18 @@
 
 #endregion
 
+using System;
+
 namespace Tests.RoslynWalker
 {
-    public enum ElementNature
+    [AttributeUsage(AttributeTargets.Field)]
+    public class ElementKeywordAttribute : Attribute
     {
-        Class,
-        Delegate,
-        Event,
-        Field,
-        Interface,
-        Method,
-        Namespace,
-        Property,
-        NotSpecified
+        public ElementKeywordAttribute( string keyword )
+        {
+            Keyword = keyword;
+        }
+
+        public string Keyword { get; }
     }
 }
