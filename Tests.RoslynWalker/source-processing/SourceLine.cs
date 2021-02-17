@@ -18,193 +18,14 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Xunit.Sdk;
 
 namespace Tests.RoslynWalker
 {
-    public static class SourceRegex
-    {
-        private static readonly Regex _ancestry = new Regex( @"\s*(.+):\s*(.*)", RegexOptions.Compiled );
-        private static readonly Regex _attributes = new Regex( @"\s*(\[.*\])\s*(.*)", RegexOptions.Compiled );
-        private static readonly Regex _firstAttr = new Regex( @"\s*\[(.+?)\]\s*(.*)", RegexOptions.Compiled );
-        private static readonly Regex _typeArgs = new Regex( @"\s*(.+?)\s*<(.*)>", RegexOptions.Compiled );
-        private static readonly Regex _firstTypeArg = new Regex( @"\s*(.+?),(.*)", RegexOptions.Compiled );
-        private static readonly Regex _event = new Regex(@"\s*(.*event)\s+(.*)\s+(.*)\s*");
-        private static readonly Regex _methodArgs = new Regex( @"\s*(.*)\((.*)\)" );
-
-        public static bool ExtractAncestry( string text, out string? attributedDeclaration, out string? ancestry )
-        {
-            attributedDeclaration = null;
-            ancestry = null;
-
-            var match = _ancestry.Match( text );
-
-            if( !match.Success )
-                return false;
-
-            ancestry = match.Groups[ 2 ].Value.Trim();
-            attributedDeclaration = match.Groups[ 1 ].Value.Trim();
-
-            return true;
-        }
-
-        public static string ExtractAttributes( string text, out List<string> attributes )
-        {
-            attributes = new List<string>();
-
-            var match = _attributes.Match( text );
-
-            if( !match.Success ) 
-                return text.Trim();
-
-            var remainder = match.Groups[ 1 ].Value.Trim();
-
-            do
-            {
-                var attrMatch = _firstAttr.Match( remainder );
-
-                if( attrMatch.Success )
-                {
-                    attributes.Add( attrMatch.Groups[ 1 ].Value.Trim() );
-                    remainder = attrMatch.Groups.Count > 2 ? attrMatch.Groups[ 2 ].Value.Trim() : null;
-                }
-            } while( !string.IsNullOrEmpty( remainder ) );
-
-            return match.Groups[ 2 ].Value.Trim();
-        }
-
-        public static string ExtractGenericArguments( string text, out List<string> typeArgs )
-        {
-            typeArgs = new List<string>();
-
-            var match = _typeArgs.Match( text );
-
-            if( !match.Success )
-                return text.Trim();
-
-            var remainder = match.Groups[ 2 ].Value.Trim();
-
-            do
-            {
-                var typeArgMatch = _firstTypeArg.Match( remainder );
-
-                if( typeArgMatch.Success )
-                {
-                    typeArgs.Add( typeArgMatch.Groups[ 1 ].Value.Trim() );
-                    remainder = typeArgMatch.Groups.Count > 2 ? typeArgMatch.Groups[ 2 ].Value.Trim() : null;
-                }
-                else
-                {
-                    typeArgs.Add( remainder );
-                    remainder = null;
-                }
-            } while( !string.IsNullOrEmpty( remainder ) );
-
-            return match.Groups[ 1 ].Value.Trim();
-        }
-
-        public static bool ParseNameAccessibility( string text, out Accessibility accessibility, out string? name )
-        {
-            accessibility = Accessibility.Undefined;
-
-            var parts = text.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-            switch( parts.Length )
-            {
-                case 1:
-                    name = parts.Last();
-                    accessibility = Accessibility.Private;
-
-                    return true;
-
-                case 2:
-                    name = parts.Last();
-
-                    if( !ParseAccessibility( parts[ 0 ], out var temp ) ) 
-                        return false;
-
-                    accessibility = temp!;
-                    return true;
-
-                case 3:
-                    name = parts.Last();
-
-                    if( !ParseAccessibility( parts[ 0 ], out var temp2 ) ) 
-                        return false;
-
-                    accessibility = temp2!;
-                    return true;
-
-                case 4:
-                    name = parts.Last();
-
-                    if( !ParseAccessibility( $"{parts[ 0 ]}{parts[1]}", out var temp3 ) ) 
-                        return false;
-
-                    accessibility = temp3!;
-                    return true;
-
-
-                default:
-                    name = null;
-                    return false;
-            }
-        }
-
-        public static EventInfo? ParseEventInfo( string text )
-        {
-            var match = _event.Match( text );
-
-            if( !match.Success )
-                return null;
-
-            Accessibility accessibility = Accessibility.Private;
-
-            if( match.Groups.Count == 4 )
-            {
-                if( !ParseNameAccessibility( match.Groups[ 1 ].Value.Trim(), out var temp, out _ ) )
-                    return null;
-
-                accessibility = temp;
-            }
-
-            var nonGenericHandler = ExtractGenericArguments( match.Groups[ 2 ].Value.Trim(), out var typeArgs );
-
-            var retVal = new EventInfo
-            {
-                Name = match.Groups[3].Value.Trim(),
-                Accessibility = accessibility,
-                EventHandler = nonGenericHandler,
-            };
-
-            retVal.EventHandlerTypeArguments.AddRange( typeArgs );
-
-            return retVal;
-        }
-
-        public static bool ParseAccessibility( string toParse, out Accessibility result )
-        {
-            result = Accessibility.Undefined;
-
-            if( !Enum.TryParse( typeof(Accessibility),
-                toParse.Replace( " ", string.Empty ),
-                true,
-                out var parsed ) )
-                return false;
-
-            result = (Accessibility) parsed!;
-
-            return true;
-        }
-
-    }
-
     public class SourceLine
     {
         public static readonly string[] AccessTokens =
@@ -239,27 +60,10 @@ namespace Tests.RoslynWalker
 
         public LineBlock? ChildBlock { get; set; }
 
-        private void TestRegEx( string text )
-        {
-            var okay = SourceRegex.ExtractAncestry( text, out var attributedDeclaration, out var ancestry );
-            var declaration = SourceRegex.ExtractAttributes( attributedDeclaration!, out var attributes );
-            var nonGenericDeclaration = SourceRegex.ExtractGenericArguments( declaration, out var typeArgs );
-            okay = SourceRegex.ParseNameAccessibility( nonGenericDeclaration, out var accessibility, out var name );
-        }
-
         private void Initialize()
         {
             // not yet true but it will be...
             Initialized = true;
-
-            TestRegEx( " [attr1][attr2]  [attr3]   public class Wow<T1, T2<T3>>  :   AncestryText    " );
-            TestRegEx( " [attr1][attr2]  [attr3]   protected internal class Wow<T1, T2<T3>>  :   AncestryText    " );
-            TestRegEx( "   public class Wow<T1, T2<T3>>  :   AncestryText    " );
-            TestRegEx( "   protected internal class Wow<T1, T2<T3>>  :   AncestryText    " );
-            TestRegEx( " [attr1][attr2]  [attr3]   public class Wow  :   AncestryText    " );
-            TestRegEx( " [attr1][attr2]  [attr3]   protected internal class Wow  :   AncestryText    " );
-            TestRegEx( "   public class Wow  :   AncestryText    " );
-            TestRegEx( "   protected internal class Wow  :   AncestryText    " );
 
             // we're not interested in BlockClosers
             if( LineType == LineType.BlockCloser )
@@ -357,10 +161,13 @@ namespace Tests.RoslynWalker
             if( !SourceRegex.ExtractAncestry( Line, out var attributedDeclaration, out var ancestry ) )
                 return null;
 
-            var declaration = SourceRegex.ExtractAttributes( attributedDeclaration!, out var attributes );
-            var nonGenericDeclaration = SourceRegex.ExtractGenericArguments( declaration, out var typeArgs );
+            if( !SourceRegex.ExtractAttributes( attributedDeclaration!, out var declaration, out var attributes ) )
+                return null;
 
-            if( !SourceRegex.ParseNameAccessibility( nonGenericDeclaration, out var accessibility, out var name ) )
+            if( !SourceRegex.ExtractTypeArguments( declaration!, out var nonGenericDeclaration, out var typeArgs ) )
+                return null;
+
+            if( !SourceRegex.ExtractNamedTypeNameAccessibility( nonGenericDeclaration!, "class", out var name, out var accessibility ) )
                 return null;
 
             // classes can be nested, so look back up the source code tree to see if we
@@ -392,10 +199,13 @@ namespace Tests.RoslynWalker
             if( !SourceRegex.ExtractAncestry( Line, out var attributedDeclaration, out var ancestry ) )
                 return null;
 
-            var declaration = SourceRegex.ExtractAttributes( attributedDeclaration!, out var attributes );
-            var nonGenericDeclaration = SourceRegex.ExtractGenericArguments( declaration, out var typeArgs );
+            if( !SourceRegex.ExtractAttributes( attributedDeclaration!, out var declaration, out var attributes ) )
+                return null;
 
-            if( !SourceRegex.ParseNameAccessibility( nonGenericDeclaration, out var accessibility, out var name ) )
+            if( !SourceRegex.ExtractTypeArguments( declaration!, out var nonGenericDeclaration, out var typeArgs ) )
+                return null;
+
+            if( !SourceRegex.ExtractNamedTypeNameAccessibility( nonGenericDeclaration!, "interface", out var name, out var accessibility ) )
                 return null;
 
             // classes can be nested, so look back up the source code tree to see if we
