@@ -31,6 +31,8 @@ namespace Tests.RoslynWalker
         {
         }
 
+        public string FieldType { get; set; }
+
         //public static FieldInfo Create( SourceLine srcLine )
         //{
         //    var nameParts = srcLine.Line

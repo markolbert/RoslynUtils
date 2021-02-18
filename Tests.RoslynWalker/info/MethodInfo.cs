@@ -33,6 +33,7 @@ namespace Tests.RoslynWalker
 
         public List<string> Arguments { get; } = new();
         public List<string> TypeArguments { get; } = new();
+        public string ReturnType { get; set; }
 
         public override string FullName
         {

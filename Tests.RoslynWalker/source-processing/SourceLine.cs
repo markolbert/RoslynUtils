@@ -71,13 +71,13 @@ namespace Tests.RoslynWalker
 
             foreach( var parser in new Func<BaseInfo?>[]
             {
-                ParseAsNamespace,
-                ParseAsDelegate,
-                ParseAsClass, 
-                ParseAsInterface,
-                ParseAsEvent,
-                ParseAsMethod, 
-                ParseAsProperty
+                ParseNamespace,
+                ParseDelegate,
+                ParseClass, 
+                ParseInterface,
+                ParseEvent,
+                ParseMethod, 
+                ParseProperty
             } )
             {
                 var parsed = parser();
@@ -93,42 +93,120 @@ namespace Tests.RoslynWalker
             if( LineType != LineType.Statement ) 
                 return;
 
-            var endOfName = GetStartOfDelimited( '(', ')' );
-            endOfName--;
-
-            if( endOfName <= 1 )
-                return;
-
-            if( !SetNameAndAccessibility<FieldInfo>( endOfName, out var elementInfo ) ) 
+            var fieldInfo = SourceRegex.ParseField( Line );
+            if( fieldInfo == null )
                 return;
 
             // fields must be the child of either a class
-            elementInfo!.Parent = GetParent( ElementNature.Class );
+            fieldInfo!.Parent = GetParent( ElementNature.Class );
 
-            _baseInfo = elementInfo;
+            _baseInfo = fieldInfo;
         }
 
-        private NamespaceInfo? ParseAsNamespace()
+        private NamespaceInfo? ParseNamespace()
         {
             if( LineType != LineType.BlockOpener )
                 return null;
 
-            var nsStart = Line.IndexOf( "namespace ", StringComparison.Ordinal );
-            if( nsStart < 0 )
-                return null;
-
-            var nsParts = Line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-            if( nsParts.Length != 2 )
+            var retVal = SourceRegex.ParseNamespace( Line );
+            if( retVal == null )
                 return null;
 
             // namespaces can be nested so look to see if we're a child of a higher-level
             // namespace
-            return new NamespaceInfo
-            {
-                Name = nsParts[ 1 ], 
-                Parent = (NamespaceInfo?) GetParent( ElementNature.Namespace )
-            };
+            retVal.Parent = (NamespaceInfo?) GetParent( ElementNature.Namespace );
+
+            return retVal;
+        }
+
+        private ClassInfo? ParseClass()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            var retVal = SourceRegex.ParseClass( Line );
+            if( retVal == null )
+                return null;
+
+            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
+                               ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
+
+            if( retVal.Parent == null )
+                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
+
+            return retVal;
+        }
+
+        private InterfaceInfo? ParseInterface()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            var retVal = SourceRegex.ParseInterface( Line );
+            if( retVal == null )
+                return null;
+
+            // classes can be nested, so look back up the source code tree to see if we
+            // are the child of a higher-level ClassInfo. if not we must be the child
+            // of a namespace
+            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
+                            ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
+
+            if( retVal.Parent == null )
+                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
+
+            return retVal;
+        }
+
+        private ElementInfo? ParseDelegate()
+        {
+            if( LineType != LineType.Statement )
+                return null;
+
+            var retVal = SourceRegex.ParseDelegate( Line );
+            if( retVal == null )
+                return null;
+
+            // delegates must be a child of a class or an interface
+            if( retVal.Parent == null )
+                throw new NullException( $"Failed to find parent/container for delegate '{Line}'" );
+
+            return retVal;
+        }
+
+        private EventInfo? ParseEvent() =>
+            LineType != LineType.Statement ? null : SourceRegex.ParseEvent( Line );
+
+        private ElementInfo? ParseMethod()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            // a delegate would trip the method detection algorithm but we've already
+            // handled delegates.
+            var retVal = SourceRegex.ParseMethod( Line );
+            if( retVal == null )
+                return null;
+
+            // methods must be the child of either an interface or a class
+            retVal.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+
+            return retVal;
+        }
+
+        private ElementInfo? ParseProperty()
+        {
+            if( LineType != LineType.BlockOpener )
+                return null;
+
+            var retVal = SourceRegex.ParseProperty( Line );
+            if( retVal == null )
+                return null;
+
+            // properties must be the child of either an interface or a class
+            retVal!.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+
+            return retVal;
         }
 
         private BaseInfo? GetParent( params ElementNature[] nature )
@@ -151,193 +229,6 @@ namespace Tests.RoslynWalker
             }
 
             return retVal;
-        }
-
-        private ClassInfo? ParseAsClass()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
-
-            if( !SourceRegex.ExtractAncestry( Line, out var attributedDeclaration, out var ancestry ) )
-                return null;
-
-            if( !SourceRegex.ExtractAttributes( attributedDeclaration!, out var declaration, out var attributes ) )
-                return null;
-
-            if( !SourceRegex.ExtractTypeArguments( declaration!, out var nonGenericDeclaration, out var typeArgs ) )
-                return null;
-
-            if( !SourceRegex.ExtractNamedTypeNameAccessibility( nonGenericDeclaration!, "class", out var name, out var accessibility ) )
-                return null;
-
-            // classes can be nested, so look back up the source code tree to see if we
-            // are the child of a higher-level ClassInfo. if not we must be the child
-            // of a namespace
-            var retVal = new ClassInfo
-            {
-                Accessibility = accessibility,
-                Ancestry = ancestry,
-                Name = name!
-            };
-
-            retVal.Attributes.AddRange( attributes );
-
-            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
-                               ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
-
-            if( retVal.Parent == null )
-                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
-
-            return retVal;
-        }
-
-        private InterfaceInfo? ParseAsInterface()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
-
-            if( !SourceRegex.ExtractAncestry( Line, out var attributedDeclaration, out var ancestry ) )
-                return null;
-
-            if( !SourceRegex.ExtractAttributes( attributedDeclaration!, out var declaration, out var attributes ) )
-                return null;
-
-            if( !SourceRegex.ExtractTypeArguments( declaration!, out var nonGenericDeclaration, out var typeArgs ) )
-                return null;
-
-            if( !SourceRegex.ExtractNamedTypeNameAccessibility( nonGenericDeclaration!, "interface", out var name, out var accessibility ) )
-                return null;
-
-            // classes can be nested, so look back up the source code tree to see if we
-            // are the child of a higher-level ClassInfo. if not we must be the child
-            // of a namespace
-            var retVal = new InterfaceInfo
-            {
-                Accessibility = accessibility,
-                Ancestry = ancestry,
-                Name = name!
-            };
-
-            retVal.Attributes.AddRange( attributes );
-
-            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
-                            ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
-
-            if( retVal.Parent == null )
-                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
-
-            return retVal;
-        }
-
-        private ElementInfo? ParseAsDelegate()
-        {
-            if( LineType != LineType.Statement )
-                return null;
-
-            var methodInfo = ParseAsMethod();
-            if( methodInfo == null )
-                return null;
-
-            var delegateInfo = new DelegateInfo
-            {
-                Accessibility = methodInfo.Accessibility,
-                Name = methodInfo.Name,
-                Parent = GetParent( ElementNature.Class, ElementNature.Interface )
-            };
-
-            delegateInfo.Attributes.AddRange( methodInfo.Attributes );
-
-            // delegates must be a child of a class or an interface
-            if( delegateInfo.Parent == null )
-                throw new NullException( $"Failed to find parent/container for delegate '{delegateInfo.FullName}'" );
-
-            return delegateInfo;
-        }
-
-        private (int startOfDeclaration, string? attrText) GetStartOfDeclaration( int natureStart  )
-        {
-            // the word immediately before the element nature, if any, defines the
-            // accessibility of the element...but we need to allow for attributes
-            var retVal = Line.LastIndexOf( "]", natureStart, StringComparison.Ordinal );
-
-            return retVal < 0 ? ( 0, null ) : ( retVal++, Line[ ..retVal ].Trim() );
-        }
-
-        private (int endOfDeclaration, string? genericText) ExtractGenericArguments( int natureStart )
-        {
-            // to extract generic argument text we need to see if there is a generic arguments
-            // clause starting before eol or any ':' character
-            var startOfGenerics = Line.IndexOf( "<", natureStart, StringComparison.Ordinal );
-
-            if( startOfGenerics < 0 )
-                return ( startOfGenerics, null );
-
-            // we need to find where the element's name ends, which is either the EOL or the ":"
-            // which introduces the ancestry clause for classes and interfaces
-            var endOfGenerics = GetEndOfDelimited( startOfGenerics, '<', '>', ':' );
-
-            return ( startOfGenerics--, Line[ startOfGenerics..endOfGenerics ] );
-        }
-
-        private EventInfo? ParseAsEvent() =>
-            LineType != LineType.Statement ? null : SourceRegex.ParseEventInfo( Line );
-
-        private ElementInfo? ParseAsMethod()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
-
-            // a delegate would trip the method detection algorithm but we've already
-            // handled delegates. However, we need to ensure we don't detect attributes
-            // so we work backwards
-
-            // if there's no trailing parenthesis it's not a method block
-            if( Line[ ^1 ] != ')' )
-                return null;
-
-            var startOfArgs = GetStartOfDelimited( '(', ')' );
-            
-            var endOfName = startOfArgs - 1;
-
-            if( endOfName <= 1 )
-                return null;
-
-            if( !SetNameAndAccessibility<MethodInfo>( endOfName, out var elementInfo) ) 
-                return null;
-
-            elementInfo!.Arguments
-                .AddRange( Line[ startOfArgs..^1 ]
-                    .Split( ",", StringSplitOptions.RemoveEmptyEntries )
-                    .Select( x => x.Trim() ) );
-
-            // methods must be the child of either an interface or a class
-            elementInfo.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
-
-            return elementInfo;
-        }
-
-        private ElementInfo? ParseAsProperty()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
-
-            if( !( LineBlock?.Lines.First().Line.Equals( "get", StringComparison.Ordinal ) ?? false )
-                && !( LineBlock?.Lines.First().Line.Equals( "set", StringComparison.Ordinal ) ?? false ) )
-                return null;
-
-            var endOfName = GetStartOfDelimited( '[', ']' );
-            endOfName--;
-
-            if( endOfName <= 1 )
-                return null;
-
-            if( !SetNameAndAccessibility<PropertyInfo>( endOfName, out var elementInfo ) ) 
-                return null;
-
-            // properties must be the child of either an interface or a class
-            elementInfo!.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
-
-            return elementInfo;
         }
 
         private int GetStartOfAccessibility( int startOfName )

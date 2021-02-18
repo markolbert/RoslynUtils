@@ -18,6 +18,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 #pragma warning disable 8618
@@ -30,6 +31,9 @@ namespace Tests.RoslynWalker
             : base( ElementNature.Property )
         {
         }
+
+        public string PropertyType { get; set; }
+        public List<string> Indexers { get; } = new List<string>();
 
         //public static PropertyInfo Create( SourceLine srcLine )
         //{
