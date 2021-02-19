@@ -32,6 +32,7 @@ namespace Tests.RoslynWalker
         }
 
         public string FieldType { get; set; }
+        public string AssignmentClause { get; set; }
 
         //public static FieldInfo Create( SourceLine srcLine )
         //{

@@ -19,12 +19,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker
 {
-    public class MethodInfo : ElementInfo
+    public class MethodInfo : ElementInfo, IArguments
     {
         public MethodInfo()
             : base( ElementNature.Method )
@@ -40,8 +41,9 @@ namespace Tests.RoslynWalker
             get
             {
                 var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
+                var args = Arguments.Any() ? $"( {string.Join(", ", Arguments)} )" : "()";
 
-                return Parent == null ? $"{Name}{typeArgs}()" : $"{Parent.FullName}:{Name}{typeArgs}()";
+                return $"{FullNameWithoutArguments}{typeArgs}{args}";
             }
         }
 

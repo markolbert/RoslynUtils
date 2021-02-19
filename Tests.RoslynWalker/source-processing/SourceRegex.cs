@@ -31,7 +31,7 @@ namespace Tests.RoslynWalker
 
         private static string _accessibilityClause = @"private|public|protected internal|protected|internal";
 
-        private static readonly Regex _ancestry = new( @"\s*(.+):\s*(.*)", RegexOptions.Compiled );
+        private static readonly Regex _ancestry = new( @"\s*([^:]+):?\s*(.*)", RegexOptions.Compiled );
         private static readonly Regex _attributeGroup = new( @"\s*(\[.*\])\s*(.*)", RegexOptions.Compiled );
         private static readonly Regex _attributes = new( @$"\[([^]]*)\]", RegexOptions.Compiled );
         private static readonly Regex _typeArgsGroup = new( @$"\s*([^<>]*)<(.*)>", RegexOptions.Compiled );
@@ -55,6 +55,9 @@ namespace Tests.RoslynWalker
 
         private static readonly Regex _delegateGroup =
             new( @"\s*([^()]*)\s*(delegate)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled );
+
+        private static readonly Regex _fieldGroup =
+            new Regex( @"\s*(private|public)?\s*([^<>]+)(<.+>)?\s*(\w+)\s*=?\s*(.*)?", RegexOptions.Compiled );
 
         #endregion
 
@@ -143,18 +146,18 @@ namespace Tests.RoslynWalker
                 PropertyType = propertyType!
             };
 
-            retVal.Indexers.AddRange( indexers );
+            retVal.Arguments.AddRange( indexers );
 
             return retVal;
         }
 
         public static FieldInfo? ParseField( string text )
         {
-            // fields aren't properties...but their syntax is interestingly similar
-            if( !ExtractPropertyNameTypeAccessibility( 
+            if( !ExtractFieldComponents( 
                 text, 
                 out var name, 
-                out var fieldType,
+                out var type,
+                out var assignmentClause,
                 out Accessibility accessibility ) )
                 return null;
 
@@ -162,7 +165,8 @@ namespace Tests.RoslynWalker
             {
                 Accessibility = accessibility,
                 Name = name!,
-                FieldType = fieldType!
+                FieldType = type!,
+                AssignmentClause = assignmentClause!
             };
         }
 
@@ -204,7 +208,7 @@ namespace Tests.RoslynWalker
             };
 
             retVal.TypeArguments.AddRange( typeArguments );
-            retVal.DelegateArguments.AddRange( arguments );
+            retVal.Arguments.AddRange( arguments );
 
             return retVal;
         }
@@ -350,6 +354,39 @@ namespace Tests.RoslynWalker
                 return true;
 
             arguments.AddRange( ParseArguments( remainder, true ) );
+
+            return true;
+        }
+
+        public static bool ExtractFieldComponents( 
+            string text, 
+            out string? name, 
+            out string? type,
+            out string? assignmentClause, 
+            out Accessibility accessibility )
+        {
+            name = null;
+            type = null;
+            assignmentClause = null;
+            accessibility = Accessibility.Undefined;
+
+            var groupMatch = _fieldGroup.Match( text );
+
+            if( !groupMatch.Success
+                || groupMatch.Groups.Count != 6
+                || !ParseAccessibility( groupMatch.Groups[ 2 ].Value.Trim(), out var tempAccessibility )
+            )
+                return false;
+
+            accessibility = tempAccessibility!;
+            name = groupMatch.Groups[ 4 ].Value.Trim();
+            assignmentClause = groupMatch.Groups[ 5 ].Value.Trim();
+
+            type = groupMatch.Groups[ 2 ].Value.Trim()
+                .Split( " ", StringSplitOptions.RemoveEmptyEntries )
+                .Last();
+
+            type += groupMatch.Groups[ 3 ].Value.Trim();
 
             return true;
         }

@@ -19,10 +19,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class DelegateInfo : ElementInfo
+    public class DelegateInfo : ElementInfo, ITypeArguments, IArguments
     {
         public DelegateInfo()
             : base( ElementNature.Delegate )
@@ -30,15 +31,16 @@ namespace Tests.RoslynWalker
         }
 
         public List<string> TypeArguments { get; } = new();
-        public List<string> DelegateArguments { get; } = new();
+        public List<string> Arguments { get; } = new();
 
         public override string FullName
         {
             get
             {
                 var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
+                var args = Arguments.Any() ? $"( {string.Join(", ", Arguments)} )" : "()";
 
-                return Parent == null ? $"{Name}{typeArgs}()" : $"{Parent.FullName}:{Name}{typeArgs}()";
+                return $"{FullNameWithoutArguments}{typeArgs}{args}";
             }
         }
 
@@ -51,7 +53,7 @@ namespace Tests.RoslynWalker
 
         //    var retVal = new DelegateInfo( text[ ..openParenLoc ], srcLine.Accessibility );
 
-        //    retVal.DelegateArguments.AddRange( SourceText.GetArgs( text ) );
+        //    retVal.Arguments.AddRange( SourceText.GetArgs( text ) );
 
         //    return retVal;
         //}

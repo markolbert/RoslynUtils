@@ -22,7 +22,7 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class InterfaceInfo : ElementInfo
+    public class InterfaceInfo : ElementInfo, ITypeArguments
     {
         public InterfaceInfo()
             : base( ElementNature.Interface )
@@ -39,7 +39,7 @@ namespace Tests.RoslynWalker
         public List<EventInfo> Events { get; } = new();
         public string? Ancestry {get; set; }
 
-        public List<string> TypeArguments { get; } = new();
+        public List<string> TypeArguments { get; init; }
 
         public override string FullName
         {

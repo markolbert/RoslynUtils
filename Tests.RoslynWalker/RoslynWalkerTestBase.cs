@@ -71,7 +71,7 @@ namespace Tests.RoslynWalker
                         if( !x.Name.Equals( roslynType.Name, StringComparison.Ordinal ) )
                             return false;
 
-                        if( x is not ICodeElementTypeArguments typeArgsInfo )
+                        if( x is not ITypeArguments typeArgsInfo )
                             return false;
 
                         return !ntSymbol!.TypeArguments
@@ -83,14 +83,11 @@ namespace Tests.RoslynWalker
 
                 namedTypeInfo.Should().NotBeNull();
 
-                if( namedTypeInfo is not InterfaceInfo interfaceInfo )
-                    continue;
+                CompareElements<IMethodSymbol, MethodInfo>( ntSymbol!, namedTypeInfo!.Methods );
+                CompareElements<IEventSymbol, EventInfo>( ntSymbol!, namedTypeInfo.Events );
+                CompareElements<IPropertySymbol, PropertyInfo>( ntSymbol!, namedTypeInfo.Properties );
 
-                CompareElements<IMethodSymbol, MethodInfo>( ntSymbol!, interfaceInfo.Methods );
-                CompareElements<IEventSymbol, EventInfo>( ntSymbol!, interfaceInfo.Events );
-                CompareElements<IPropertySymbol, PropertyInfo>( ntSymbol!, interfaceInfo.Properties );
-
-                if( interfaceInfo is ClassInfo classInfo )
+                if( namedTypeInfo is ClassInfo classInfo )
                     CompareElements<IFieldSymbol, FieldInfo>( ntSymbol!, classInfo.Fields );
             }
         }
@@ -111,7 +108,7 @@ namespace Tests.RoslynWalker
                             return false;
 
                         if( x is not INamedTypeSymbol ntSymbol ||
-                            parsedType is not ICodeElementTypeArguments typeArgsInfo )
+                            parsedType is not ITypeArguments typeArgsInfo )
                             return true;
 
                         return !ntSymbol.TypeArguments
@@ -128,7 +125,7 @@ namespace Tests.RoslynWalker
 
         private void CompareElements<TSymbol, TInfo>( INamedTypeSymbol ntSymbol, List<TInfo> infoCollection )
             where TSymbol : ISymbol
-            where TInfo : ICodeElement
+            where TInfo : ElementInfo
         {
             var symbols = ntSymbol.GetMembers().Where( x => x is TSymbol ).Cast<TSymbol>().ToList();
 
@@ -142,11 +139,20 @@ namespace Tests.RoslynWalker
                 if( !typeof(IMethodSymbol).IsAssignableFrom( typeof(TSymbol) ) )
                     continue;
 
-                if( infoItem is ICodeElementTypeArguments typeArgsInfo )
-                    CompareTypeArguments( ( (IMethodSymbol) symbol ).TypeArguments.ToList(), typeArgsInfo );
+                if( infoItem is ITypeArguments typeArgsInfo )
+                    CompareArguments( ( (IMethodSymbol) symbol ).TypeArguments.ToList(), typeArgsInfo.TypeArguments );
                 else
                     throw new ArgumentException(
-                        $"{nameof(infoItem)} is not a {nameof(ICodeElementTypeArguments)} but should be" );
+                        $"{nameof(infoItem)} is not a {nameof(ITypeArguments)} but should be" );
+
+                if( infoItem is IArguments argsInfo )
+                    CompareArguments( ( (IMethodSymbol) symbol ).Parameters
+                        .Select( p => p.Type )
+                        .ToList(),
+                        argsInfo.Arguments );
+                else
+                    throw new ArgumentException(
+                        $"{nameof(infoItem)} is not a {nameof(ITypeArguments)} but should be" );
             }
 
             foreach( var infoItem in infoCollection )
@@ -155,21 +161,50 @@ namespace Tests.RoslynWalker
 
                 symbol.Should().NotBeNull();
 
-                if( infoItem is ICodeElementTypeArguments typeArgsInfo )
+                if( infoItem is ITypeArguments typeArgsInfo )
                 {
                     if( symbol is IMethodSymbol methodSymbol )
-                        CompareTypeArguments( methodSymbol.TypeArguments.ToList(), typeArgsInfo );
+                        CompareArguments( methodSymbol.TypeArguments.ToList(), typeArgsInfo.TypeArguments );
                     else
                         throw new ArgumentException(
                             $"{nameof(symbol)} should implement {nameof(IMethodSymbol)} but doesn't" );
                 }
+
+                if( infoItem is IArguments argsInfo )
+                {
+                    switch( symbol )
+                    {
+                        case IMethodSymbol methodSymbol:
+                            CompareArguments( methodSymbol.Parameters
+                                .Select( p => p.Type )
+                                .ToList(),
+                                argsInfo.Arguments );
+
+                            break;
+
+                        case IPropertySymbol propSymbol:
+                            CompareArguments( propSymbol.Parameters
+                                    .Select( p => p.Type )
+                                    .ToList(),
+                                argsInfo.Arguments );
+
+                            break;
+
+                        default:
+                            throw new ArgumentException(
+                                $"{nameof(symbol)} should implement {nameof(IMethodSymbol)} or {nameof(IPropertySymbol)} but doesn't" );
+                    }
+                }
+                else
+                    throw new ArgumentException(
+                        $"{nameof(infoItem)} is not a {nameof(ITypeArguments)} but should be" );
             }
         }
 
-        private void CompareTypeArguments( List<ITypeSymbol> symbols, ICodeElementTypeArguments typeArgsInfo )
+        private void CompareArguments( List<ITypeSymbol> symbols, List<string> typeArgs )
         {
             for( var idx = 0; idx < symbols.Count; idx++ )
-                symbols[ idx ].Name.Should().Be( typeArgsInfo.TypeArguments[ idx ] );
+                symbols[ idx ].Name.Should().Be( typeArgs[ idx ] );
         }
     }
 }

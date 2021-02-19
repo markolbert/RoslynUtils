@@ -25,7 +25,7 @@ using System.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class PropertyInfo : ElementInfo
+    public class PropertyInfo : ElementInfo, IArguments
     {
         public PropertyInfo()
             : base( ElementNature.Property )
@@ -33,7 +33,19 @@ namespace Tests.RoslynWalker
         }
 
         public string PropertyType { get; set; }
-        public List<string> Indexers { get; } = new List<string>();
+        public List<string> Arguments { get; } = new List<string>();
+
+        public override string FullName
+        {
+            get
+            {
+                var nameArgs = Arguments.Any()
+                    ? $"{FullNameWithoutArguments} this [ {string.Join( ", ", Arguments )} ]"
+                    : $"{FullNameWithoutArguments}";
+
+                return $"{PropertyType} {FullNameWithoutArguments}{nameArgs}";
+            }
+        }
 
         //public static PropertyInfo Create( SourceLine srcLine )
         //{

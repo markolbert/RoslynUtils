@@ -17,19 +17,17 @@
 
 #endregion
 
-#pragma warning disable 8618
+using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class NamedTypeInfo : ICodeElement
+    public interface ITypeArguments
     {
-        protected NamedTypeInfo( string name, Accessibility accessibility )
-        {
-            Name = name;
-            Accessibility = accessibility;
-        }
+        List<string> TypeArguments { get; }
+    }
 
-        public string Name { get; }
-        public Accessibility Accessibility { get; }
+    public interface IArguments
+    {
+        List<string> Arguments { get; }
     }
 }

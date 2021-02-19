@@ -85,6 +85,7 @@ namespace Tests.RoslynWalker
                     continue;
 
                 _baseInfo = parsed;
+                return;
             }
 
             // we assume all statements at this point are fields (events are statements but
@@ -128,8 +129,7 @@ namespace Tests.RoslynWalker
             if( retVal == null )
                 return null;
 
-            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
-                               ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
+            retVal.Parent = GetParent( ElementNature.Namespace, ElementNature.Class );
 
             if( retVal.Parent == null )
                 throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
@@ -168,6 +168,8 @@ namespace Tests.RoslynWalker
                 return null;
 
             // delegates must be a child of a class or an interface
+            retVal.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+
             if( retVal.Parent == null )
                 throw new NullException( $"Failed to find parent/container for delegate '{Line}'" );
 
@@ -229,125 +231,6 @@ namespace Tests.RoslynWalker
             }
 
             return retVal;
-        }
-
-        private int GetStartOfAccessibility( int startOfName )
-        {
-            // find the next preceding space. If it exists it marks the start of the 
-            // accessibility declaration. If it doesn't the method is private.
-            // Make sure to allow for attributes
-            var endOfAttributes = Line.LastIndexOf( "]", startOfName, StringComparison.Ordinal );
-
-            var retVal = Line.LastIndexOf( " ", startOfName - 2, StringComparison.Ordinal );
-
-            if( retVal < 0 ) 
-                return retVal;
-
-            if( endOfAttributes >= 0 && retVal < endOfAttributes )
-                retVal = endOfAttributes + 2;
-            else retVal++;
-
-            return retVal;
-        }
-
-        private int GetStartOfDelimited( char openingDelimiter, char closingDelimiter )
-        {
-            // walk backwards through the line until the "delimiter count" (+1 for closing,
-            // -1 for opening) is zero. That's the opening delimiter.
-            var delimiterCount = 1;
-            var retVal = Line.Length - 1;
-
-            while( retVal > 0 )
-            {
-                if( Line[ retVal ] == openingDelimiter )
-                    delimiterCount--;
-                else
-                {
-                    if( Line[ retVal ] == closingDelimiter )
-                        delimiterCount++;
-                }
-
-                if( delimiterCount == 0 )
-                    break;
-
-                retVal--;
-            }
-
-            return retVal;
-        }
-
-        private int GetEndOfDelimited( int start, char openingDelimiter, char closingDelimiter, char stopChar )
-        {
-            // walk through the line until the "delimiter count" (+1 for opening,
-            // -1 for closing) is zero. That's the closing delimiter.
-            var delimiterCount = 0;
-            var retVal = start;
-
-            while( retVal < Line.Length )
-            {
-                if( Line[ retVal ] == stopChar )
-                {
-                    retVal--;
-                    break;
-                }
-
-                if( Line[ retVal ] == openingDelimiter )
-                    delimiterCount++;
-                else
-                {
-                    if( Line[ retVal ] == closingDelimiter )
-                        delimiterCount--;
-                }
-
-                if( delimiterCount == 0 )
-                    break;
-
-                retVal++;
-            }
-
-            return retVal;
-        }
-
-        private bool SetNameAndAccessibility<TElement>( int endOfName, out TElement? result )
-            where TElement : ElementInfo, new()
-        {
-            result = null;
-
-            var startOfAccessibility = -1;
-            var startOfName = Line.LastIndexOf( " ", endOfName, StringComparison.Ordinal );
-
-            if( startOfName < 0 )
-                startOfName = 0;
-            else
-            {
-                startOfName++;
-                startOfAccessibility = GetStartOfAccessibility( startOfName );
-            }
-
-            if( startOfAccessibility < 0 )
-            {
-                result = create_element( Accessibility.Private );
-                return true;
-            }
-
-            if( !Enum.TryParse( typeof(Accessibility),
-                Line[ startOfAccessibility..( startOfName - 1 ) ],
-                true,
-                out var temp ) )
-            {
-                _baseInfo = null;
-                return false;
-            }
-
-            result = create_element( (Accessibility) temp! );
-            return true;
-
-            TElement create_element( Accessibility accessibility ) =>
-                new TElement
-                {
-                    Accessibility = accessibility,
-                    Name = Line[ startOfName..^2 ]
-                };
         }
     }
 }

@@ -8,7 +8,6 @@
 
 	<ItemGroup>
 	  <Compile Remove="info\NamedTypeInfo.cs" />
-	  <Compile Remove="RoslynWalkerTestBase.cs" />
 	  <Compile Remove="TopologicalCollection.cs" />
 	</ItemGroup>
 

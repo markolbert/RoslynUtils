@@ -29,6 +29,8 @@ namespace Tests.RoslynWalker
         public ElementNature Nature { get; }
         public BaseInfo? Parent { get; set; }
         public string Name { get; set; } = string.Empty;
-        public virtual string FullName => Parent == null ? Name : $"{Parent.FullName}:{Name}";
+
+        public virtual string FullName => FullNameWithoutArguments;
+        protected virtual string FullNameWithoutArguments => Parent == null ? Name : $"{Parent.FullNameWithoutArguments}:{Name}";
     }
 }
