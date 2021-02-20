@@ -17,9 +17,6 @@
 
 #endregion
 
-using System;
-using System.Linq;
-
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker

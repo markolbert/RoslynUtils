@@ -21,7 +21,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -149,10 +148,19 @@ namespace Tests.RoslynWalker
                     break;
             }
 
-            foreach( var childLine in srcLine.ChildBlock?.Lines
-                                      ?? Enumerable.Empty<SourceLine>() )
+            // we only drill into certain block openers
+            switch( srcLine.Element )
             {
-                ParseSourceLine( childLine );
+                case ClassInfo:
+                case InterfaceInfo:
+                case NamespaceInfo:
+                    foreach( var childLine in srcLine.ChildBlock?.Lines
+                                              ?? Enumerable.Empty<SourceLine>() )
+                    {
+                        ParseSourceLine( childLine );
+                    }
+
+                    break;
             }
         }
     }

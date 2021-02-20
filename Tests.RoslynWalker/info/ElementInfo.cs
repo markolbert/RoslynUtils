@@ -17,8 +17,6 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
     public class ElementInfo : BaseInfo

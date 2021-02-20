@@ -1,19 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Autofac.Diagnostics;
 using FluentAssertions;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Tests.RoslynWalker
 {
     public class RegexTest
     {
+        [Theory]
+        [InlineData("using", false)]
+        [InlineData("using Ralph", true)]
+        [InlineData("  using  ", true)]
+        [InlineData("  using    Ralph", true)]
+        public void UsingDirective( string text, bool success )
+        {
+            SourceRegex.IsUsingDirective( text ).Should().Be( success );
+        }
+
         [ Theory ]
         [ InlineData( "[attr1][attr2]  [attr3]", "public class Wow<T1, T2<T3>>" ) ]
         [ InlineData( "[attr1][attr2]  [attr3]", "protected internal class Wow<T1, T2<T3>>" ) ]

@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -32,6 +31,7 @@ namespace Tests.RoslynWalker
 
         private static string _accessibilityClause = @"private|public|protected internal|protected|internal";
 
+        private static readonly Regex _usingClause = new Regex( @"\s*using[\w\s]+", RegexOptions.Compiled );
         private static readonly Regex _ancestry = new( @"\s*([^:]+):?\s*(.*)", RegexOptions.Compiled );
         private static readonly Regex _attributeGroup = new( @"\s*(\[.*\])\s*(.*)", RegexOptions.Compiled );
         private static readonly Regex _attributes = new( @$"\[([^]]*)\]", RegexOptions.Compiled );
@@ -61,6 +61,8 @@ namespace Tests.RoslynWalker
             new Regex( @"\s*(private|public)?\s*([^<>]+)(<.+>)?\s*(\w+)\s*=?\s*(.*)?", RegexOptions.Compiled );
 
         #endregion
+
+        public static bool IsUsingDirective( string text ) => _usingClause.IsMatch( text );
 
         public static NamespaceInfo? ParseNamespace( string text )
         {
@@ -303,14 +305,12 @@ namespace Tests.RoslynWalker
 
             var groupMatch = _fieldGroup.Match( text );
 
-            if( !groupMatch.Success
-                || groupMatch.Groups.Count != 6
-                || !ParseAccessibility( groupMatch.Groups[ 2 ].Value.Trim(), out var tempAccessibility )
-            )
+            if( !groupMatch.Success 
+                || groupMatch.Groups.Count != 6 )
                 return false;
 
             result = new FieldSource( groupMatch.Groups[ 4 ].Value.Trim(),
-                groupMatch.Groups[ 2 ].Value.Trim(),
+                groupMatch.Groups[ 1 ].Value.Trim(),
                 groupMatch.Groups[ 2 ].Value.Trim()
                     .Split( " ", StringSplitOptions.RemoveEmptyEntries )
                     .Last()

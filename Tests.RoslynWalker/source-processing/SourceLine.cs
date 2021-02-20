@@ -19,9 +19,6 @@
 
 using System;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Reflection;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Xunit.Sdk;
 
 namespace Tests.RoslynWalker
@@ -65,8 +62,8 @@ namespace Tests.RoslynWalker
             // not yet true but it will be...
             Initialized = true;
 
-            // we're not interested in BlockClosers
-            if( LineType == LineType.BlockCloser )
+            // we're not interested in BlockClosers or using directives
+            if( LineType == LineType.BlockCloser || SourceRegex.IsUsingDirective(Line) )
                 return;
 
             foreach( var parser in new Func<BaseInfo?>[]
@@ -176,8 +173,7 @@ namespace Tests.RoslynWalker
             return retVal;
         }
 
-        private EventInfo? ParseEvent() =>
-            LineType != LineType.Statement ? null : SourceRegex.ParseEvent( Line );
+        private EventInfo? ParseEvent() => SourceRegex.ParseEvent( Line );
 
         private ElementInfo? ParseMethod()
         {
