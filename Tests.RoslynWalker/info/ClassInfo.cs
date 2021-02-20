@@ -21,42 +21,14 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class NamedTypeSource
-    {
-        public string Accessibility { get; init; }
-        public string Ancestry {get; init; }
-        public string Name { get; init; }
-        public List<string> TypeArguments { get; init; }
-    }
-
     public class ClassInfo : InterfaceInfo
     {
         public ClassInfo( NamedTypeSource src )
-            : base( ElementNature.Class )
-        {
-            Name = src.Name;
-            Ancestry = src.Ancestry;
-            Accessibility = SourceRegex.ParseAccessibility( src.Accessibility, out var temp )
-                ? temp!
-                : Accessibility.Undefined;
-            TypeArguments = src.TypeArguments;
-        }
-
-        public ClassInfo()
-            : base( ElementNature.Class )
+            : base( ElementNature.Class, src )
         {
         }
 
         public List<FieldInfo> Fields { get; } = new();
         public List<DelegateInfo> Delegates { get; } = new();
-
-        //public new static ClassInfo Create( SourceLine srcLine )
-        //{
-        //    var retVal = new ClassInfo( srcLine.ElementName!, srcLine.Accessibility );
-
-        //    retVal.TypeArguments.AddRange( GetNamedTypeTypeArguments( srcLine.Line ) );
-
-        //    return retVal;
-        //}
     }
 }

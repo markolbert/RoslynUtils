@@ -27,14 +27,17 @@ namespace Tests.RoslynWalker
 {
     public class MethodInfo : ElementInfo, IArguments
     {
-        public MethodInfo()
-            : base( ElementNature.Method )
+        public MethodInfo( ReturnTypeSource src, List<string> typeArgs, List<string> args )
+            : base( ElementNature.Method, src )
         {
+            TypeArguments = typeArgs;
+            Arguments = args;
+            ReturnType = src.ReturnType;
         }
 
-        public List<string> Arguments { get; } = new();
-        public List<string> TypeArguments { get; } = new();
-        public string ReturnType { get; set; }
+        public List<string> Arguments { get; }
+        public List<string> TypeArguments { get; }
+        public string ReturnType { get; }
 
         public override string FullName
         {
@@ -46,20 +49,5 @@ namespace Tests.RoslynWalker
                 return $"{FullNameWithoutArguments}{typeArgs}{args}";
             }
         }
-
-        //public static MethodInfo Create( SourceLine srcLine )
-        //{
-        //    var openParenLoc = srcLine.Line.IndexOf( "(", StringComparison.Ordinal );
-        //    var lesserThanLoc = srcLine.Line.IndexOf( "<", StringComparison.Ordinal );
-
-        //    var retVal = new MethodInfo( srcLine.ElementName!, srcLine.Accessibility );
-
-        //    if( lesserThanLoc >= 0 )
-        //        retVal.TypeArguments.AddRange( SourceText.GetTypeArgs( srcLine.Line[ lesserThanLoc.. ] ) );
-
-        //    retVal.Arguments.AddRange( SourceText.GetArgs( srcLine.Line[ openParenLoc.. ] ) );
-
-        //    return retVal;
-        //}
     }
 }

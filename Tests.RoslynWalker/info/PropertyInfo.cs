@@ -27,13 +27,15 @@ namespace Tests.RoslynWalker
 {
     public class PropertyInfo : ElementInfo, IArguments
     {
-        public PropertyInfo()
-            : base( ElementNature.Property )
+        public PropertyInfo( ReturnTypeSource src, List<string> arguments )
+            : base( ElementNature.Property, src )
         {
+            PropertyType = src.ReturnType;
+            Arguments = arguments;
         }
 
-        public string PropertyType { get; set; }
-        public List<string> Arguments { get; } = new List<string>();
+        public string PropertyType { get; }
+        public List<string> Arguments { get; }
 
         public override string FullName
         {
@@ -46,13 +48,5 @@ namespace Tests.RoslynWalker
                 return $"{PropertyType} {FullNameWithoutArguments}{nameArgs}";
             }
         }
-
-        //public static PropertyInfo Create( SourceLine srcLine )
-        //{
-        //    var nameParts = srcLine.Line
-        //        .Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-        //    return new PropertyInfo( nameParts.Last(), srcLine.Accessibility );
-        //}
     }
 }

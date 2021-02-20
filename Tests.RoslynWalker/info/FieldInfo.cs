@@ -26,20 +26,14 @@ namespace Tests.RoslynWalker
 {
     public class FieldInfo : ElementInfo
     {
-        public FieldInfo()
-            : base( ElementNature.Field )
+        public FieldInfo( FieldSource src )
+            : base( ElementNature.Field, src )
         {
+            FieldType = src.FieldType;
+            AssignmentClause = src.AssignmentClause;
         }
 
-        public string FieldType { get; set; }
-        public string AssignmentClause { get; set; }
-
-        //public static FieldInfo Create( SourceLine srcLine )
-        //{
-        //    var nameParts = srcLine.Line
-        //        .Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-        //    return new FieldInfo( nameParts.Last(), srcLine.Accessibility );
-        //}
+        public string FieldType { get; }
+        public string AssignmentClause { get; }
     }
 }

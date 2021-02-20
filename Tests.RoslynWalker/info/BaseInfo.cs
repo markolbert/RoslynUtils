@@ -17,18 +17,22 @@
 
 #endregion
 
+using System.Collections.Generic;
+
 namespace Tests.RoslynWalker
 {
     public class BaseInfo
     {
-        protected BaseInfo( ElementNature nature )
+        protected BaseInfo( ElementNature nature, string elementName )
         {
+            Name = elementName;
             Nature = nature;
         }
 
         public ElementNature Nature { get; }
+        public string Name { get; }
+
         public BaseInfo? Parent { get; set; }
-        public string Name { get; set; } = string.Empty;
 
         public virtual string FullName => FullNameWithoutArguments;
         protected virtual string FullNameWithoutArguments => Parent == null ? Name : $"{Parent.FullNameWithoutArguments}:{Name}";

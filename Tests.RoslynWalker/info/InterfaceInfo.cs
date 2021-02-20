@@ -24,22 +24,24 @@ namespace Tests.RoslynWalker
 {
     public class InterfaceInfo : ElementInfo, ITypeArguments
     {
-        public InterfaceInfo()
-            : base( ElementNature.Interface )
+        public InterfaceInfo( NamedTypeSource src )
+            : this( ElementNature.Interface, src )
         {
         }
 
-        protected InterfaceInfo( ElementNature nature )
-            : base( nature )
+        protected InterfaceInfo( ElementNature nature, NamedTypeSource src )
+            : base( nature, src )
         {
+            TypeArguments = src.TypeArguments;
+            Ancestry = src.Ancestry;
         }
+
+        public string? Ancestry { get; }
+        public List<string> TypeArguments { get; }
 
         public List<MethodInfo> Methods { get; } = new();
         public List<PropertyInfo> Properties { get; } = new();
         public List<EventInfo> Events { get; } = new();
-        public string? Ancestry {get; set; }
-
-        public List<string> TypeArguments { get; init; }
 
         public override string FullName
         {
@@ -50,34 +52,5 @@ namespace Tests.RoslynWalker
                 return Parent == null ? $"{Name}{typeArgs}" : $"{Parent.FullName}:{Name}{typeArgs}";
             }
         }
-
-        //public static InterfaceInfo Create( SourceLine srcLine )
-        //{
-        //    var retVal = new InterfaceInfo( srcLine.ElementName!, srcLine.Accessibility );
-
-        //    retVal.TypeArguments.AddRange( GetNamedTypeTypeArguments( srcLine.Line ) );
-
-        //    return retVal;
-        //}
-
-        //protected static List<string> GetNamedTypeTypeArguments( string line )
-        //{
-        //    var parts = line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-        //    var rawName = parts.Length > 3 ? string.Join( " ", parts[ 2.. ] ) : parts[ 2 ];
-
-        //    var findColon = rawName.IndexOf( ":", StringComparison.Ordinal );
-        //    if( findColon >= 0 )
-        //        rawName = rawName[ ..( findColon - 1 ) ];
-
-        //    var typeArgs = new List<string>();
-
-        //    var findLessThan = rawName.IndexOf( "<", StringComparison.Ordinal );
-
-        //    if( findLessThan < 0 )
-        //        return typeArgs;
-
-        //    return SourceText.GetTypeArgs( rawName[ ( findLessThan + 1 ).. ].Trim() );
-        //}
     }
 }

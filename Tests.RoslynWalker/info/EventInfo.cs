@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 
 #pragma warning disable 8618
@@ -27,20 +28,14 @@ namespace Tests.RoslynWalker
 {
     public class EventInfo : ElementInfo
     {
-        public EventInfo()
-            : base( ElementNature.Event )
+        public EventInfo( EventSource src )
+            : base( ElementNature.Event, src )
         {
+            EventHandler = src.EventHandler;
+            EventHandlerTypeArguments = src.EventHandlerTypeArguments;
         }
 
-        public string EventHandler { get; set; }
-        public List<string> EventHandlerTypeArguments { get; } = new();
-
-        //public static EventInfo Create( SourceLine srcLine )
-        //{
-        //    var nameParts = srcLine.Line
-        //        .Split( " ", StringSplitOptions.RemoveEmptyEntries );
-
-        //    return new EventInfo( nameParts.Last(), srcLine.Accessibility );
-        //}
+        public string EventHandler { get; }
+        public List<string> EventHandlerTypeArguments { get; }
     }
 }

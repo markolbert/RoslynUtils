@@ -25,13 +25,15 @@ namespace Tests.RoslynWalker
 {
     public class DelegateInfo : ElementInfo, ITypeArguments, IArguments
     {
-        public DelegateInfo()
-            : base( ElementNature.Delegate )
+        public DelegateInfo( DelegateSource src )
+            : base( ElementNature.Delegate, src )
         {
+            TypeArguments = src.TypeArguments;
+            Arguments = src.Arguments;
         }
 
-        public List<string> TypeArguments { get; } = new();
-        public List<string> Arguments { get; } = new();
+        public List<string> TypeArguments { get; }
+        public List<string> Arguments { get; }
 
         public override string FullName
         {
@@ -43,19 +45,5 @@ namespace Tests.RoslynWalker
                 return $"{FullNameWithoutArguments}{typeArgs}{args}";
             }
         }
-
-        //public static DelegateInfo Create( SourceLine srcLine )
-        //{
-        //    var parts = srcLine.Line.Split( " ", StringSplitOptions.RemoveEmptyEntries );
-        //    var text = parts.Length > 3 ? parts[ 3 ][ ..^1 ] : parts[ 2 ];
-
-        //    var openParenLoc = text.IndexOf( "(", StringComparison.Ordinal );
-
-        //    var retVal = new DelegateInfo( text[ ..openParenLoc ], srcLine.Accessibility );
-
-        //    retVal.Arguments.AddRange( SourceText.GetArgs( text ) );
-
-        //    return retVal;
-        //}
     }
 }

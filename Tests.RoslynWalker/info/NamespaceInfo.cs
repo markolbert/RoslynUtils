@@ -29,8 +29,8 @@ namespace Tests.RoslynWalker
         private readonly List<InterfaceInfo> _interfaces = new();
         private readonly List<ClassInfo> _classes = new();
 
-        public NamespaceInfo()
-            : base( ElementNature.Namespace )
+        public NamespaceInfo( string name )
+            : base( ElementNature.Namespace, name)
         {
         }
 

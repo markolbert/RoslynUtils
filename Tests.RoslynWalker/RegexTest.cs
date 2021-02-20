@@ -170,14 +170,16 @@ namespace Tests.RoslynWalker
                 ? "class"
                 : "interface";
 
-            SourceRegex.ExtractNamedTypeNameAccessibility( text, target, out var matchName, out var matchAccessibility )
+            SourceRegex.ExtractNamedTypeArguments( text, target, out var ntSource )
                 .Should().Be( success );
 
             if( !success )
                 return;
 
-            matchName.Should().Be( name );
-            matchAccessibility.Should().Be( accessibility );
+            ntSource.Should().NotBeNull();
+            ntSource!.Name.Should().Be( name );
+            SourceRegex.ParseAccessibility( ntSource.Accessibility, out var temp ).Should().BeTrue();
+            temp.Should().Be( accessibility );
         }
 
         [ Theory ]
@@ -186,17 +188,18 @@ namespace Tests.RoslynWalker
         public void MethodNameTypeAccessibilityExtractor( string text, bool success, string name, string retType,
             Accessibility accessibility )
         {
-            SourceRegex.ExtractMethodNameTypeAccessibility( text, out var matchName, out var matchReturnType,
-                    out var matchAccessibility )
+            SourceRegex.ExtractMethodElements( text, out var methodSource )
                 .Should()
                 .Be( success );
 
             if( !success )
                 return;
 
-            accessibility.Should().Be( matchAccessibility );
-            matchReturnType.Should().Be( retType.Trim() );
-            matchName.Should().Be( name.Trim() );
+            methodSource.Should().NotBeNull();
+            SourceRegex.ParseAccessibility( methodSource.Accessibility, out var temp ).Should().BeTrue();
+            temp.Should().Be( accessibility );
+            methodSource.ReturnType.Should().Be( retType.Trim() );
+            methodSource.Name.Should().Be( name.Trim() );
         }
 
         [ Theory ]
@@ -249,17 +252,18 @@ namespace Tests.RoslynWalker
         public void PropertyNameTypeAccessibilityExtractor( string text, bool success, string name, string propType,
             Accessibility accessibility )
         {
-            SourceRegex.ExtractPropertyNameTypeAccessibility( text, out var matchName, out var matchPropType,
-                    out var matchAccessibility )
+            SourceRegex.ExtractPropertyElements( text, out var propertySource )
                 .Should()
                 .Be( success );
 
             if( !success )
                 return;
 
-            accessibility.Should().Be( matchAccessibility );
-            matchPropType.Should().Be( propType.Trim() );
-            matchName.Should().Be( name.Trim() );
+            propertySource.Should().NotBeNull();
+            SourceRegex.ParseAccessibility( propertySource!.Accessibility, out var temp ).Should().BeTrue();
+            temp.Should().Be( accessibility );
+            propertySource.ReturnType.Should().Be( propType.Trim() );
+            propertySource.Name.Should().Be( name.Trim() );
         }
 
         [ Theory ]
@@ -316,18 +320,19 @@ namespace Tests.RoslynWalker
                     break;
             }
 
-            SourceRegex.ExtractDelegateArguments( sb.ToString(), out var matchName, out var matchAccessibility,
-                    out var matchTypeArgs, out var matchArguments )
+            SourceRegex.ExtractDelegateArguments( sb.ToString(), out var delegateSource )
                 .Should()
                 .Be( success );
 
             if( !success )
                 return;
 
-            matchAccessibility!.Should().Be( accessibility );
-            matchTypeArgs.Should().BeEquivalentTo( typeArgs );
-            matchArguments.Should().BeEquivalentTo( arguments );
-            matchName.Should().Be( name );
+            delegateSource.Should().NotBeNull();
+            SourceRegex.ParseAccessibility( delegateSource!.Accessibility, out var temp ).Should().BeTrue();
+            temp.Should().Be( accessibility );
+            delegateSource.TypeArguments.Should().BeEquivalentTo( typeArgs );
+            delegateSource.Arguments.Should().BeEquivalentTo( arguments );
+            delegateSource.Name.Should().Be( name );
         }
     }
 }

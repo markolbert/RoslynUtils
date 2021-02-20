@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -61,8 +62,6 @@ namespace Tests.RoslynWalker
 
         #endregion
 
-        #region info object parsers
-
         public static NamespaceInfo? ParseNamespace( string text )
         {
             var match = _namespace.Match( text );
@@ -71,151 +70,45 @@ namespace Tests.RoslynWalker
                 || match.Groups.Count != 3 )
                 return null;
 
-            return new NamespaceInfo { Name = match.Groups[2].Value.Trim() };
+            return new NamespaceInfo(match.Groups[2].Value.Trim() );
         }
 
-        public static ClassInfo? ParseClass( string text ) => ParseNamedType<ClassInfo>( text );
-        public static InterfaceInfo? ParseInterface( string text ) => ParseNamedType<InterfaceInfo>( text );
+        #region named types
 
-        private static TNamed? ParseNamedType<TNamed>( string text )
-            where TNamed : InterfaceInfo, new()
+        public static ClassInfo? ParseClass( string text ) =>
+            !ExtractNamedTypeArguments( text, "class", out var ntSource )
+                ? null
+                : new ClassInfo( ntSource! );
+
+        public static InterfaceInfo? ParseInterface( string text ) =>
+            !ExtractNamedTypeArguments( text, "interface", out var ntSource )
+                ? null
+                : new ClassInfo( ntSource! );
+
+        public static bool ExtractNamedTypeArguments( string text, string nature, out NamedTypeSource? result )
         {
+            result = null;
+
             if( !ExtractAncestry( text, out var fullDecl, out var ancestry ) )
-                return null;
+                return false;
 
             if( !ExtractTypeArguments( fullDecl!, out var baseDecl, out var typeArgs ) )
-                return null;
+                return false;
 
-            var target = typeof(TNamed) == typeof(ClassInfo) ? "class" : "interface";
+            var match = _namedType.Match( text );
 
-            if( !ExtractNamedTypeNameAccessibility( baseDecl!, target, out var name, out var accessibility ) )
-                return null;
+            if( !match.Success
+                || match.Groups.Count != 4
+                || !match.Groups[2].Value.Trim().Equals(nature, StringComparison.Ordinal) )
+                return false;
 
-            var retVal= new TNamed
-            {
-                Accessibility = accessibility,
-                Ancestry = ancestry,
-                Name = name!
-            };
+            result = new NamedTypeSource( match.Groups[ 3 ].Value.Trim(),
+                match.Groups[ 1 ].Value.Trim().Replace( " ", "" ),
+                ancestry!,
+                typeArgs );
 
-            retVal.TypeArguments.AddRange(typeArgs);
-
-            return retVal;
+            return true;
         }
-
-        public static MethodInfo? ParseMethod( string text )
-        {
-            if( !ExtractMethodArguments( text, out var fullDecl, out var arguments ) )
-                return null;
-
-            if( !ExtractTypeArguments( fullDecl!, out var typeName, out var typeArguments ) )
-                return null;
-
-            if( !ExtractMethodNameTypeAccessibility( typeName!, out var name, out var returnType,
-                out var accessibility ) )
-                return null;
-
-            var retVal = new MethodInfo
-            {
-                Accessibility = accessibility!,
-                Name = name!,
-                ReturnType = returnType!
-            };
-
-            retVal.TypeArguments.AddRange( typeArguments );
-            retVal.Arguments.AddRange( arguments );
-
-            return retVal;
-        }
-
-        public static PropertyInfo? ParseProperty( string text )
-        {
-            if( !ExtractPropertyIndexers( text, out var preamble, out var indexers ) )
-                return null;
-
-            if( !ExtractPropertyNameTypeAccessibility( preamble!, 
-                out var name,
-                out var propertyType, 
-                out Accessibility accessibility ) )
-                return null;
-
-            var retVal = new PropertyInfo
-            {
-                Accessibility = accessibility,
-                Name = name!,
-                PropertyType = propertyType!
-            };
-
-            retVal.Arguments.AddRange( indexers );
-
-            return retVal;
-        }
-
-        public static FieldInfo? ParseField( string text )
-        {
-            if( !ExtractFieldComponents( 
-                text, 
-                out var name, 
-                out var type,
-                out var assignmentClause,
-                out Accessibility accessibility ) )
-                return null;
-
-            return new FieldInfo
-            {
-                Accessibility = accessibility,
-                Name = name!,
-                FieldType = type!,
-                AssignmentClause = assignmentClause!
-            };
-        }
-
-        public static EventInfo? ParseEvent( string text )
-        {
-            var match = _eventGroup.Match( text );
-
-            if( !match.Success 
-                || match.Groups.Count != 4 
-                ||!ParseAccessibility(match.Groups[1].Value.Replace("event",string.Empty).Trim(), out var tempAccessibility)
-                || !ExtractTypeArguments(match.Groups[2].Value.Trim(), out var baseType, out var typeArgs) )
-                return null;
-
-            var retVal = new EventInfo
-            {
-                Name = match.Groups[3].Value.Trim(),
-                Accessibility = tempAccessibility!,
-                EventHandler = baseType!
-            };
-
-            retVal.EventHandlerTypeArguments.AddRange( typeArgs );
-
-            return retVal;
-        }
-
-        public static DelegateInfo? ParseDelegate( string text )
-        {
-            if( !ExtractDelegateArguments( text, 
-                out var name, 
-                out Accessibility accessibility, 
-                out var typeArguments,
-                out var arguments ) )
-                return null;
-
-            var retVal = new DelegateInfo
-            {
-                Name = name!,
-                Accessibility = accessibility,
-            };
-
-            retVal.TypeArguments.AddRange( typeArguments );
-            retVal.Arguments.AddRange( arguments );
-
-            return retVal;
-        }
-
-        #endregion
-
-        #region segment extractors
 
         public static bool ExtractAncestry( string text, out string? preamble, out string? ancestry )
         {
@@ -235,6 +128,259 @@ namespace Tests.RoslynWalker
 
             return true;
         }
+
+        #endregion
+
+        #region methods 
+
+        public static MethodInfo? ParseMethod( string text )
+        {
+            if( !ExtractMethodArguments( text, out var fullDecl, out var arguments ) )
+                return null;
+
+            if( !ExtractTypeArguments( fullDecl!, out var typeName, out var typeArguments ) )
+                return null;
+
+            if( !ExtractMethodElements( typeName!, out var methodSrc ) )
+                return null;
+
+            return new MethodInfo( methodSrc!, typeArguments!, arguments! );
+        }
+
+        public static bool ExtractMethodArguments( string text, out string? preamble, out List<string> arguments )
+        {
+            preamble = null;
+            arguments = new List<string>();
+
+            var groupMatch = _methodArgsGroup.Match( text );
+
+            if( !groupMatch.Success 
+                || groupMatch.Groups.Count!=3)
+                return false;
+
+            preamble = groupMatch.Groups[ 1 ].Value.Trim();
+            
+            var remainder = groupMatch.Groups[ 2 ].Value.Trim();
+
+            // if no arguments we're done
+            if( string.IsNullOrEmpty( remainder ) )
+                return true;
+
+            arguments.AddRange( ParseArguments( remainder, true ) );
+
+            return true;
+        }
+
+        public static bool ExtractMethodElements( 
+            string text, 
+            out ReturnTypeSource? result )
+        {
+            result = null;
+
+            var match = _methodGroup.Match( text );
+
+            if( !match.Success
+                || match.Groups.Count != 4 )
+                return false;
+
+            result = new ReturnTypeSource( 
+                match.Groups[ 3 ].Value.Trim(), 
+                match.Groups[ 1 ].Value.Trim(),
+                match.Groups[ 2 ].Value.Trim() );
+
+            return true;
+        }
+
+        #endregion
+
+        #region properties
+
+        public static PropertyInfo? ParseProperty( string text )
+        {
+            if( !ExtractPropertyIndexers( text, out var preamble, out var indexers ) )
+                return null;
+
+            return !ExtractPropertyElements( preamble!, out var propSrc )
+                ? null
+                : new PropertyInfo( propSrc!, indexers );
+        }
+
+        public static bool ExtractPropertyIndexers( string text, out string? preamble, out List<string> indexers )
+        {
+            preamble = null;
+            indexers = new List<string>();
+
+            var groupMatch = _propertyGroup.Match( text );
+
+            if( !groupMatch.Success
+                || groupMatch.Groups.Count != 4 )
+                return false;
+
+            var firstNonEmptyGroup = groupMatch.Groups.Values
+                .Select( ( x, i ) => new { Group = x, Index = i } )
+                .FirstOrDefault( x => x.Index > 0 && !string.IsNullOrEmpty( x.Group.Value ) );
+
+            if( firstNonEmptyGroup == null )
+                return false;
+
+            preamble = firstNonEmptyGroup.Group.Value.Trim();
+
+            var secondNonEmptyGroup = groupMatch.Groups.Values
+                .Select( ( x, i ) => new { Group = x, Index = i } )
+                .FirstOrDefault( x => !string.IsNullOrEmpty( x.Group.Value ) && x.Index > firstNonEmptyGroup.Index );
+
+            // if there isn't an indexer clause, we're done
+            if( secondNonEmptyGroup == null )
+                return true;
+
+            var indexerMatch = _propertyIndexer.Match(secondNonEmptyGroup.Group.Value.Trim());
+
+            if( !indexerMatch.Success
+                || !indexerMatch.Value.Trim().Equals( "this", StringComparison.Ordinal )
+            )
+                return false;
+
+            var typeMatch = indexerMatch;
+
+            while( ( typeMatch = typeMatch.NextMatch() ).Success )
+            {
+                var nameMatch = typeMatch.NextMatch();
+
+                if( !nameMatch.Success )
+                    return false;
+
+                indexers.Add( $"{typeMatch.Value.Trim()} {nameMatch.Value.Trim()}" );
+
+                typeMatch = nameMatch;
+            }
+
+            return true;
+        }
+
+        public static bool ExtractPropertyElements( string text, out ReturnTypeSource? result )
+        {
+            result = null;
+
+            var match = _property.Match( text );
+
+            if( !match.Success )
+                return false;
+
+            switch( match.Groups.Count )
+            {
+                case 3:
+                    result = new ReturnTypeSource( match.Groups[ 2 ].Value.Trim(), 
+                        string.Empty,
+                        match.Groups[ 1 ].Value.Trim() );
+
+                    break;
+
+                case 4:
+                    result = new ReturnTypeSource( match.Groups[ 3 ].Value.Trim(), 
+                        match.Groups[ 1 ].Value.Trim(),
+                        match.Groups[ 2 ].Value.Trim() );
+
+                    break;
+
+                default:
+                    return false;
+            }
+
+            return true;
+        }
+
+        #endregion
+
+        #region fields
+
+        public static FieldInfo? ParseField( string text ) => !ExtractFieldComponents( text, out var fieldSrc )
+            ? null
+            : new FieldInfo( fieldSrc! );
+
+        public static bool ExtractFieldComponents( string text, out FieldSource? result )
+        {
+            result = null;
+
+            var groupMatch = _fieldGroup.Match( text );
+
+            if( !groupMatch.Success
+                || groupMatch.Groups.Count != 6
+                || !ParseAccessibility( groupMatch.Groups[ 2 ].Value.Trim(), out var tempAccessibility )
+            )
+                return false;
+
+            result = new FieldSource( groupMatch.Groups[ 4 ].Value.Trim(),
+                groupMatch.Groups[ 2 ].Value.Trim(),
+                groupMatch.Groups[ 2 ].Value.Trim()
+                    .Split( " ", StringSplitOptions.RemoveEmptyEntries )
+                    .Last()
+                + groupMatch.Groups[ 3 ].Value.Trim(),
+                groupMatch.Groups[ 5 ].Value.Trim() );
+
+            return true;
+        }
+
+        #endregion
+
+        #region events
+
+        public static EventInfo? ParseEvent( string text ) => !ExtractEventArguments( text, out var eventSource )
+            ? null
+            : new EventInfo( eventSource! );
+
+        public static bool ExtractEventArguments( string text, out EventSource? result )
+        {
+            result = null;
+
+            var match = _eventGroup.Match( text );
+
+            if( !match.Success 
+                || match.Groups.Count != 4 
+                || !ExtractTypeArguments(match.Groups[2].Value.Trim(), out var baseType, out var typeArgs) )
+                return false;
+
+            result = new EventSource( match.Groups[ 3 ].Value.Trim(),
+                match.Groups[ 1 ].Value.Replace( "event", string.Empty ).Trim(),
+                baseType!,
+                typeArgs );
+
+            return true;
+        }
+
+        #endregion
+
+        #region delegates
+
+        public static DelegateInfo? ParseDelegate( string text ) =>
+            !ExtractDelegateArguments( text, out var delegateSrc )
+                ? null
+                : new DelegateInfo( delegateSrc! );
+
+        public static bool ExtractDelegateArguments( string text, out DelegateSource? result )
+        {
+            result = null;
+
+            var groupMatch = _delegateGroup.Match( text );
+
+            if( !groupMatch.Success
+                || groupMatch.Groups.Count != 5
+                || !groupMatch.Groups[ 2 ].Value.Trim().Equals( "delegate", StringComparison.Ordinal )
+                || !ExtractTypeArguments( groupMatch.Groups[ 3 ].Value.Trim(), out var tempName, out var tempTypeArgs )
+            )
+                return false;
+
+
+            result = new DelegateSource( tempName!,
+                groupMatch.Groups[ 1 ].Value.Trim(),
+                tempTypeArgs,
+                ParseArguments( groupMatch.Groups[ 4 ].Value.Trim(), true ) );
+
+            return true;
+        }
+
+        #endregion
+
+        #region utililty methods
 
         public static bool ExtractAttributes( string text, out string? postAttribute, out List<string> attributes )
         {
@@ -302,234 +448,6 @@ namespace Tests.RoslynWalker
 
             return true;
         }
-
-        public static bool ExtractDelegateArguments( 
-            string text, 
-            out string? name, 
-            out Accessibility accessibility,
-            out List<string> typeArguments,
-            out List<string> arguments )
-        {
-            name = null;
-            accessibility = Accessibility.Undefined;
-            typeArguments = new List<string>();
-            arguments = new List<string>();
-
-            var groupMatch = _delegateGroup.Match( text );
-
-            if( !groupMatch.Success
-                || groupMatch.Groups.Count != 5
-                || !groupMatch.Groups[ 2 ].Value.Trim().Equals( "delegate", StringComparison.Ordinal )
-                || !ParseAccessibility( groupMatch.Groups[ 1 ].Value.Trim(), out var tempAccessibility )
-                || !ExtractTypeArguments( groupMatch.Groups[ 3 ].Value.Trim(), out var tempName, out var tempTypeArgs )
-            )
-                return false;
-
-
-            name = tempName;
-            typeArguments.AddRange( tempTypeArgs );
-            arguments.AddRange( ParseArguments( groupMatch.Groups[ 4 ].Value.Trim(), true ) );
-            accessibility = tempAccessibility!;
-
-            return true;
-        }
-
-        public static bool ExtractMethodArguments( string text, out string? preamble, out List<string> arguments )
-        {
-            preamble = null;
-            arguments = new List<string>();
-
-            var groupMatch = _methodArgsGroup.Match( text );
-
-            if( !groupMatch.Success 
-                || groupMatch.Groups.Count!=3)
-                return false;
-
-            preamble = groupMatch.Groups[ 1 ].Value.Trim();
-            
-            var remainder = groupMatch.Groups[ 2 ].Value.Trim();
-
-            // if no arguments we're done
-            if( string.IsNullOrEmpty( remainder ) )
-                return true;
-
-            arguments.AddRange( ParseArguments( remainder, true ) );
-
-            return true;
-        }
-
-        public static bool ExtractFieldComponents( 
-            string text, 
-            out string? name, 
-            out string? type,
-            out string? assignmentClause, 
-            out Accessibility accessibility )
-        {
-            name = null;
-            type = null;
-            assignmentClause = null;
-            accessibility = Accessibility.Undefined;
-
-            var groupMatch = _fieldGroup.Match( text );
-
-            if( !groupMatch.Success
-                || groupMatch.Groups.Count != 6
-                || !ParseAccessibility( groupMatch.Groups[ 2 ].Value.Trim(), out var tempAccessibility )
-            )
-                return false;
-
-            accessibility = tempAccessibility!;
-            name = groupMatch.Groups[ 4 ].Value.Trim();
-            assignmentClause = groupMatch.Groups[ 5 ].Value.Trim();
-
-            type = groupMatch.Groups[ 2 ].Value.Trim()
-                .Split( " ", StringSplitOptions.RemoveEmptyEntries )
-                .Last();
-
-            type += groupMatch.Groups[ 3 ].Value.Trim();
-
-            return true;
-        }
-
-        public static bool ExtractNamedTypeNameAccessibility( string text, string nature, out string? name, out Accessibility accessibility )
-        {
-            accessibility = Accessibility.Undefined;
-            name = null;
-
-            var match = _namedType.Match( text );
-
-            if( !match.Success
-                || match.Groups.Count != 4
-                || !match.Groups[2].Value.Trim().Equals(nature, StringComparison.Ordinal)
-                || !ParseAccessibility( match.Groups[ 1 ].Value.Trim().Replace( " ", "" ), out var tempAccessibility ) )
-                return false;
-
-            accessibility = tempAccessibility!;
-            name = match.Groups[ 3 ].Value.Trim();
-
-            return true;
-        }
-
-        public static bool ExtractMethodNameTypeAccessibility( 
-            string text, 
-            out string? name, 
-            out string? returnType,
-            out Accessibility accessibility )
-        {
-            name = null;
-            returnType = null;
-            accessibility = Accessibility.Undefined;
-
-            var match = _methodGroup.Match( text );
-
-            if( !match.Success
-            || match.Groups.Count != 4
-            || !ParseAccessibility(match.Groups[ 1 ].Value.Trim().Replace( " ", "" ), out var tempAccessibility))
-                return false;
-
-            accessibility = tempAccessibility!;
-            returnType = match.Groups[ 2 ].Value.Trim();
-            name = match.Groups[ 3 ].Value.Trim();
-
-            return true;
-        }
-
-        public static bool ExtractPropertyIndexers( string text, out string? preamble, out List<string> indexers )
-        {
-            preamble = null;
-            indexers = new List<string>();
-
-            var groupMatch = _propertyGroup.Match( text );
-
-            if( !groupMatch.Success
-                || groupMatch.Groups.Count != 4 )
-                return false;
-
-            var firstNonEmptyGroup = groupMatch.Groups.Values
-                .Select( ( x, i ) => new { Group = x, Index = i } )
-                .FirstOrDefault( x => x.Index > 0 && !string.IsNullOrEmpty( x.Group.Value ) );
-
-            if( firstNonEmptyGroup == null )
-                return false;
-
-            preamble = firstNonEmptyGroup.Group.Value.Trim();
-
-            var secondNonEmptyGroup = groupMatch.Groups.Values
-                .Select( ( x, i ) => new { Group = x, Index = i } )
-                .FirstOrDefault( x => !string.IsNullOrEmpty( x.Group.Value ) && x.Index > firstNonEmptyGroup.Index );
-
-            // if there isn't an indexer clause, we're done
-            if( secondNonEmptyGroup == null )
-                return true;
-
-            var indexerMatch = _propertyIndexer.Match(secondNonEmptyGroup.Group.Value.Trim());
-
-            if( !indexerMatch.Success
-                || !indexerMatch.Value.Trim().Equals( "this", StringComparison.Ordinal )
-            )
-                return false;
-
-            var typeMatch = indexerMatch;
-
-            while( ( typeMatch = typeMatch.NextMatch() ).Success )
-            {
-                var nameMatch = typeMatch.NextMatch();
-
-                if( !nameMatch.Success )
-                    return false;
-
-                indexers.Add( $"{typeMatch.Value.Trim()} {nameMatch.Value.Trim()}" );
-
-                typeMatch = nameMatch;
-            }
-
-            return true;
-        }
-
-        public static bool ExtractPropertyNameTypeAccessibility( 
-            string text, 
-            out string? name, 
-            out string? propertyType,
-            out Accessibility accessibility )
-        {
-            name = null;
-            propertyType = null;
-            accessibility = Accessibility.Undefined;
-
-            var match = _property.Match( text );
-
-            if( !match.Success )
-                return false;
-
-            switch( match.Groups.Count )
-            {
-                case 3:
-                    accessibility = Accessibility.Private;
-                    propertyType = match.Groups[ 1 ].Value.Trim();
-                    name = match.Groups[ 2 ].Value.Trim();
-
-                    break;
-
-                case 4:
-                    if( !ParseAccessibility( match.Groups[ 1 ].Value.Trim(), out var tempAccessibility ) )
-                        return false;
-
-                    accessibility = tempAccessibility!;
-                    propertyType = match.Groups[ 2 ].Value.Trim();
-                    name = match.Groups[ 3 ].Value.Trim();
-
-                    break;
-
-                default:
-                    return false;
-            }
-
-            return true;
-        }
-
-        #endregion
-
-        #region utility methods
 
         public static List<string> ParseArguments( string text, bool isMethod )
         {

@@ -23,12 +23,14 @@ namespace Tests.RoslynWalker
 {
     public class ElementInfo : BaseInfo
     {
-        protected ElementInfo( ElementNature nature )
-            : base( nature )
+        protected ElementInfo( ElementNature nature, ElementSource src )
+            : base( nature, src.Name )
         {
+            Accessibility = SourceRegex.ParseAccessibility( src.Accessibility, out var temp )
+                ? temp
+                : Accessibility.Undefined;
         }
 
-        public Accessibility Accessibility { get; set; } = Accessibility.Undefined;
-        public List<string> Attributes { get; } = new();
+        public Accessibility Accessibility { get; }
     }
 }
