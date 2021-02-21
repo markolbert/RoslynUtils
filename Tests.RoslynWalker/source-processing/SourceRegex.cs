@@ -85,7 +85,7 @@ namespace Tests.RoslynWalker
         public static InterfaceInfo? ParseInterface( string text ) =>
             !ExtractNamedTypeArguments( text, "interface", out var ntSource )
                 ? null
-                : new ClassInfo( ntSource! );
+                : new InterfaceInfo( ntSource! );
 
         public static bool ExtractNamedTypeArguments( string text, string nature, out NamedTypeSource? result )
         {

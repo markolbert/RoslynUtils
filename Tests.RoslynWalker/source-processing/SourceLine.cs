@@ -19,14 +19,14 @@
 
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit.Sdk;
 
 namespace Tests.RoslynWalker
 {
     public class SourceLine
     {
-        public static readonly string[] AccessTokens =
-            { "public", "protected", "private", "internal", "protected internal", string.Empty };
+        private static readonly Regex _rxUsing = new Regex(@"\s*using[\w\s]+", RegexOptions.Compiled);
 
         private BaseInfo? _baseInfo;
 
@@ -62,6 +62,20 @@ namespace Tests.RoslynWalker
             // not yet true but it will be...
             Initialized = true;
 
+            switch( LineType )
+            {
+                case LineType.BlockOpener:
+                    break;
+
+                case LineType.Statement:
+                    if( _rxUsing.IsMatch( Line ) )
+                        return;
+
+                    break;
+
+                case LineType.BlockCloser:
+                    return;
+            }
             // we're not interested in BlockClosers or using directives
             if( LineType == LineType.BlockCloser || SourceRegex.IsUsingDirective(Line) )
                 return;
