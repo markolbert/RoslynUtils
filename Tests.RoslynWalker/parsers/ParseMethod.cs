@@ -7,21 +7,19 @@ namespace Tests.RoslynWalker
 {
     public class ParseMethod : ParseBase<MethodInfo>
     {
-        protected static readonly Regex RxMethodArgsGroup = new(@$"\s*([^()]*)\(\s*(.*)\)");
-        protected static readonly Regex RxMethodGroup = new(
+        private static readonly Regex _rxMethodArgsGroup = new(@$"\s*([^()]*)\(\s*(.*)\)");
+        private static readonly Regex _rxMethodGroup = new(
             @$"\s*({AccessibilityClause})?\s*([^\s]*)\s*([^\s]*)",
             RegexOptions.Compiled);
 
         public ParseMethod()
-            : base( ElementNature.Method, @".*\(.*\)" )
+            : base( ElementNature.Method, @".*\(.*\)", LineType.Statement )
         {
         }
 
-        public override MethodInfo? Parse( SourceLine srcLine )
+        protected override MethodInfo? Parse( SourceLine srcLine )
         {
-            var toProcess = GetSourceLineToProcess( srcLine );
-
-            if (!ExtractMethodArguments(toProcess.Line, out var fullDecl, out var arguments))
+            if (!ExtractMethodArguments(srcLine.Line, out var fullDecl, out var arguments))
                 return null;
 
             if (!ExtractTypeArguments(fullDecl!, out var typeName, out var typeArguments))
@@ -32,7 +30,7 @@ namespace Tests.RoslynWalker
 
             return new MethodInfo( methodSrc!, typeArguments!, arguments! )
             {
-                Parent = GetParent( toProcess, ElementNature.Class, ElementNature.Interface )
+                Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
         }
 
@@ -41,7 +39,7 @@ namespace Tests.RoslynWalker
             preamble = null;
             arguments = new List<string>();
 
-            var groupMatch = RxMethodArgsGroup.Match(text);
+            var groupMatch = _rxMethodArgsGroup.Match(text);
 
             if (!groupMatch.Success
                 || groupMatch.Groups.Count != 3)
@@ -64,7 +62,7 @@ namespace Tests.RoslynWalker
         {
             result = null;
 
-            var match = RxMethodGroup.Match(text);
+            var match = _rxMethodGroup.Match(text);
 
             if (!match.Success
                 || match.Groups.Count != 4)

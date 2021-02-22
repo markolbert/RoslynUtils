@@ -6,27 +6,26 @@ namespace Tests.RoslynWalker
 {
     public class ParseInterface : ParseBase<InterfaceInfo>
     {
-        protected static readonly Regex RxAncestry = new(@"\s*([^:]+):?\s*(.*)", RegexOptions.Compiled);
-        protected static readonly Regex RxNamedType = new(@$"\s*({AccessibilityClause})?\s*(class|interface)?\s*(.*)");
+        private static readonly Regex _rxAncestry = new(@"\s*([^:]+):?\s*(.*)", RegexOptions.Compiled);
+        private static readonly Regex _rxNamedType = new(@$"\s*({AccessibilityClause})?\s*(class|interface)?\s*(.*)");
 
         public ParseInterface()
-            : base( ElementNature.Interface, @"\s*interface\s+" )
-        {
-        }
-        protected ParseInterface( ElementNature nature, string matchText )
-            : base( nature, matchText )
+            : base( ElementNature.Interface, @"\s*interface\s+", LineType.BlockOpener )
         {
         }
 
-        public override InterfaceInfo? Parse( SourceLine srcLine )
+        protected ParseInterface( ElementNature nature, string matchText, LineType lineType )
+            : base( nature, matchText, lineType )
         {
-            var toProcess = GetSourceLineToProcess( srcLine );
+        }
 
-            return !ExtractNamedTypeArguments( toProcess.Line, "interface", out var ntSource )
+        protected override InterfaceInfo? Parse( SourceLine srcLine )
+        {
+            return !ExtractNamedTypeArguments( srcLine.Line, "interface", out var ntSource )
                 ? null
                 : new InterfaceInfo( ntSource! )
                 {
-                    Parent = GetParent( toProcess, ElementNature.Namespace, ElementNature.Class )
+                    Parent = GetParent( srcLine, ElementNature.Namespace, ElementNature.Class )
                 };
         }
 
@@ -40,7 +39,7 @@ namespace Tests.RoslynWalker
             if (!ExtractTypeArguments(fullDecl!, out var baseDecl, out var typeArgs))
                 return false;
 
-            var match = RxNamedType.Match(text);
+            var match = _rxNamedType.Match(text);
 
             if (!match.Success
                 || match.Groups.Count != 4
@@ -60,7 +59,7 @@ namespace Tests.RoslynWalker
             preamble = null;
             ancestry = null;
 
-            var match = RxAncestry.Match(text);
+            var match = _rxAncestry.Match(text);
 
             if (!match.Success)
                 return false;

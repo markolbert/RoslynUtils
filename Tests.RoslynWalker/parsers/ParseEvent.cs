@@ -9,15 +9,13 @@ namespace Tests.RoslynWalker
 
 
         public ParseEvent()
-            : base( ElementNature.Event, @"\s*event\s+")
+            : base( ElementNature.Event, @"\s*event\s+", new [] { LineType.BlockOpener, LineType.Statement } )
         {
         }
 
-        public override EventInfo? Parse( SourceLine srcLine )
+        protected override EventInfo? Parse( SourceLine srcLine )
         {
-            var toProcess = GetSourceLineToProcess( srcLine );
-
-            var match = RxEvent.Match(toProcess.Line);
+            var match = RxEvent.Match(srcLine.Line);
 
             if (!match.Success
                 || match.Groups.Count != 4
@@ -31,7 +29,7 @@ namespace Tests.RoslynWalker
 
             return new EventInfo( eventSrc )
             {
-                Parent = GetParent( toProcess, ElementNature.Class, ElementNature.Interface )
+                Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
         }
     }

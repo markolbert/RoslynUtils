@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -7,37 +8,52 @@ using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
 {
-    public abstract class ParseBase<TElement> : IParse<TElement>
+    public abstract class ParseBase<TElement> : IParse
         where TElement : BaseInfo
     {
-        protected static string AccessibilityClause = @"private|public|protected internal|protected|internal";
-
-        protected static readonly Regex RxTypeArgsGroup = new(@$"\s*([^<>]*)<(.*)>", RegexOptions.Compiled);
+        protected const string AccessibilityClause = @"private|public|protected internal|protected|internal";
+        private static readonly Regex _rxTypeArgsGroup = new(@$"\s*([^<>]*)<(.*)>", RegexOptions.Compiled);
 
         private readonly Regex _matcher;
-        private readonly ElementNature _nature;
+        private readonly List<LineType> _lineTypes;
 
         protected ParseBase( 
             ElementNature nature, 
             string matchText,
+            LineType[] lineTypes,
             bool skipOnMatch = false
             )
         {
-            _nature = nature;
             _matcher = new Regex(matchText, RegexOptions.Compiled);
+            _lineTypes = lineTypes.ToList();
 
             MatchText = matchText;
             SkipOnMatch = skipOnMatch;
         }
 
-        public abstract TElement? Parse( SourceLine srcLine );
+        protected ParseBase( 
+            ElementNature nature, 
+            string matchText,
+            LineType lineType,
+            bool skipOnMatch = false
+        )
+        {
+            _matcher = new Regex(matchText, RegexOptions.Compiled);
+            _lineTypes = new List<LineType> { lineType };
+
+            MatchText = matchText;
+            SkipOnMatch = skipOnMatch;
+        }
+
+        protected abstract TElement? Parse( SourceLine srcLine );
 
         public string MatchText { get; }
+        public ReadOnlyCollection<LineType> SupportedLineTypes => _lineTypes.AsReadOnly();
         public bool SkipOnMatch { get; }
+        public virtual bool TestFirstChild => false;
 
-        public virtual bool HandlesLine( SourceLine srcLine ) => !_matcher.IsMatch( GetSourceLineToProcess( srcLine ).Line );
-
-        protected virtual SourceLine GetSourceLineToProcess( SourceLine srcLine ) => srcLine;
+        public virtual bool HandlesLine( SourceLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType ) 
+                                                                 && _matcher.IsMatch( srcLine.Line );
 
         protected BaseInfo? GetParent(SourceLine srcLine, params ElementNature[] nature)
         {
@@ -66,7 +82,7 @@ namespace Tests.RoslynWalker
             preamble = null;
             typeArgs = new List<string>();
 
-            var groupMatch = RxTypeArgsGroup.Match(text);
+            var groupMatch = _rxTypeArgsGroup.Match(text);
 
             // if no type arguments return the entire text because it's just preamble
             if (!groupMatch.Success)
@@ -162,12 +178,6 @@ namespace Tests.RoslynWalker
             return true;
         }
 
-        BaseInfo? IParse.Parse( SourceLine srcLine, ElementNature nature )
-        {
-            if( nature != ElementNature.Namespace || !HandlesLine( srcLine ) )
-                return null;
-
-            return Parse( srcLine );
-        }
+        BaseInfo? IParse.Parse( SourceLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine );
     }
 }

@@ -6,19 +6,17 @@ namespace Tests.RoslynWalker
 {
     public class ParseDelegate : ParseBase<DelegateInfo>
     {
-        protected static readonly Regex RxDelegateGroup =
+        private static readonly Regex _rxDelegateGroup =
             new(@"\s*([^()]*)\s*(delegate)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled);
 
         public ParseDelegate()
-            : base( ElementNature.Interface, @"\s*delegate\s*\(")
+            : base( ElementNature.Interface, @"\s*delegate\s*\(", LineType.Statement)
         {
         }
 
-        public override DelegateInfo? Parse( SourceLine srcLine )
+        protected override DelegateInfo? Parse( SourceLine srcLine )
         {
-            var toProcess = GetSourceLineToProcess( srcLine );
-
-            var groupMatch = RxDelegateGroup.Match(toProcess.Line);
+            var groupMatch = _rxDelegateGroup.Match(srcLine.Line);
 
             if (!groupMatch.Success
                 || groupMatch.Groups.Count != 5
@@ -34,7 +32,7 @@ namespace Tests.RoslynWalker
 
             return new DelegateInfo( delegateSrc )
             {
-                Parent = GetParent( toProcess, ElementNature.Class, ElementNature.Interface )
+                Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
         }
     }

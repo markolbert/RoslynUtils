@@ -8,19 +8,17 @@ namespace Tests.RoslynWalker
     public class ParseClass : ParseInterface
     {
         public ParseClass()
-            : base( ElementNature.Class, @"\s*class\s+" )
+            : base( ElementNature.Class, @"\s*class\s+", LineType.BlockOpener )
         {
         }
 
-        public override ClassInfo? Parse( SourceLine srcLine )
+        protected override ClassInfo? Parse( SourceLine srcLine )
         {
-            var toProcess = GetSourceLineToProcess( srcLine );
-
-            return !ExtractNamedTypeArguments( toProcess.Line, "class", out var ntSource )
+            return !ExtractNamedTypeArguments( srcLine.Line, "class", out var ntSource )
                 ? null
                 : new ClassInfo( ntSource! )
                 {
-                    Parent = GetParent( toProcess, ElementNature.Namespace, ElementNature.Class )
+                    Parent = GetParent( srcLine, ElementNature.Namespace, ElementNature.Class )
                 };
         }
     }

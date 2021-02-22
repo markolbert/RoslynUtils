@@ -9,15 +9,13 @@ namespace Tests.RoslynWalker
 
 
         public ParseNamespace()
-            : base( ElementNature.Namespace, @"\s*namespace\s+")
+            : base( ElementNature.Namespace, @"\s*namespace\s+", LineType.BlockOpener)
         {
         }
 
-        public override NamespaceInfo? Parse( SourceLine srcLine )
+        protected override NamespaceInfo? Parse( SourceLine srcLine )
         {
-            var toProcess = GetSourceLineToProcess( srcLine );
-
-            var match = RxNamespaceGroup.Match( toProcess.Line );
+            var match = RxNamespaceGroup.Match( srcLine.Line );
 
             if (!match.Success
                 || match.Groups.Count != 3)
@@ -27,7 +25,7 @@ namespace Tests.RoslynWalker
             // namespace
             return new NamespaceInfo( match.Groups[ 2 ].Value.Trim() )
             {
-                Parent = (NamespaceInfo?) GetParent( toProcess, ElementNature.Namespace )
+                Parent = (NamespaceInfo?) GetParent( srcLine, ElementNature.Namespace )
             };
         }
     }
