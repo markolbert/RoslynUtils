@@ -26,9 +26,9 @@ namespace Tests.RoslynWalker
 {
     public class SourceLine
     {
-        private static readonly Regex _rxUsing = new Regex(@"\s*using[\w\s]+", RegexOptions.Compiled);
+        //private static readonly Regex _rxUsing = new Regex(@"\s*using[\w\s]+", RegexOptions.Compiled);
 
-        private BaseInfo? _baseInfo;
+        //private BaseInfo? _baseInfo;
 
         public SourceLine( string line, LineType lineType, LineBlock? lineBlock )
         {
@@ -37,210 +37,199 @@ namespace Tests.RoslynWalker
             LineBlock = lineBlock;
         }
 
-        public bool Initialized { get; private set; }
+        public bool Parsed { get; internal set; }
         public string Line { get; }
         public LineType LineType { get; }
         public LineBlock? LineBlock { get; }
 
-        public BaseInfo? Element
-        {
-            get
-            {
-                if( Initialized )
-                    return _baseInfo;
-
-                Initialize();
-
-                return _baseInfo;
-            }
-        }
+        public BaseInfo? Element { get; internal set; }
 
         public LineBlock? ChildBlock { get; set; }
 
-        private void Initialize()
-        {
-            // not yet true but it will be...
-            Initialized = true;
+        //private void Initialize()
+        //{
+        //    // not yet true but it will be...
+        //    Parsed = true;
 
-            switch( LineType )
-            {
-                case LineType.BlockOpener:
-                    break;
+        //    switch( LineType )
+        //    {
+        //        case LineType.BlockOpener:
+        //            break;
 
-                case LineType.Statement:
-                    if( _rxUsing.IsMatch( Line ) )
-                        return;
+        //        case LineType.Statement:
+        //            if( _rxUsing.IsMatch( Line ) )
+        //                return;
 
-                    break;
+        //            break;
 
-                case LineType.BlockCloser:
-                    return;
-            }
-            // we're not interested in BlockClosers or using directives
-            if( LineType == LineType.BlockCloser || SourceRegex.IsUsingDirective(Line) )
-                return;
+        //        case LineType.BlockCloser:
+        //            return;
+        //    }
+        //    // we're not interested in BlockClosers or using directives
+        //    if( LineType == LineType.BlockCloser || SourceRegex.IsUsingDirective(Line) )
+        //        return;
 
-            foreach( var parser in new Func<BaseInfo?>[]
-            {
-                ParseNamespace,
-                ParseDelegate,
-                ParseClass, 
-                ParseInterface,
-                ParseEvent,
-                ParseMethod, 
-                ParseProperty
-            } )
-            {
-                var parsed = parser();
-                if( parsed == null )
-                    continue;
+        //    foreach( var parser in new Func<BaseInfo?>[]
+        //    {
+        //        ParseNamespace,
+        //        ParseDelegate,
+        //        ParseClass, 
+        //        ParseInterface,
+        //        ParseEvent,
+        //        ParseMethod, 
+        //        ParseProperty
+        //    } )
+        //    {
+        //        var parsed = parser();
+        //        if( parsed == null )
+        //            continue;
 
-                _baseInfo = parsed;
-                return;
-            }
+        //        _baseInfo = parsed;
+        //        return;
+        //    }
 
-            // we assume all statements at this point are fields (events are statements but
-            // we've already handled those). That's only true one level below named types...
-            // but we shouldn't ever drill down more than one level below named types
-            if( LineType != LineType.Statement ) 
-                return;
+        //    // we assume all statements at this point are fields (events are statements but
+        //    // we've already handled those). That's only true one level below named types...
+        //    // but we shouldn't ever drill down more than one level below named types
+        //    if( LineType != LineType.Statement ) 
+        //        return;
 
-            var fieldInfo = SourceRegex.ParseField( Line );
-            if( fieldInfo == null )
-                return;
+        //    var fieldInfo = SourceRegex.ParseField( Line );
+        //    if( fieldInfo == null )
+        //        return;
 
-            // fields must be the child of either a class
-            fieldInfo!.Parent = GetParent( ElementNature.Class );
+        //    // fields must be the child of either a class
+        //    fieldInfo!.Parent = GetParent( ElementNature.Class );
 
-            _baseInfo = fieldInfo;
-        }
+        //    _baseInfo = fieldInfo;
+        //}
 
-        private NamespaceInfo? ParseNamespace()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
+        //private NamespaceInfo? ParseNamespace()
+        //{
+        //    if( LineType != LineType.BlockOpener )
+        //        return null;
 
-            var retVal = SourceRegex.ParseNamespace( Line );
-            if( retVal == null )
-                return null;
+        //    var retVal = SourceRegex.ParseNamespace( Line );
+        //    if( retVal == null )
+        //        return null;
 
-            // namespaces can be nested so look to see if we're a child of a higher-level
-            // namespace
-            retVal.Parent = (NamespaceInfo?) GetParent( ElementNature.Namespace );
+        //    // namespaces can be nested so look to see if we're a child of a higher-level
+        //    // namespace
+        //    retVal.Parent = (NamespaceInfo?) GetParent( ElementNature.Namespace );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        private ClassInfo? ParseClass()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
+        //private ClassInfo? ParseClass()
+        //{
+        //    if( LineType != LineType.BlockOpener )
+        //        return null;
 
-            var retVal = SourceRegex.ParseClass( Line );
-            if( retVal == null )
-                return null;
+        //    var retVal = SourceRegex.ParseClass( Line );
+        //    if( retVal == null )
+        //        return null;
 
-            retVal.Parent = GetParent( ElementNature.Namespace, ElementNature.Class );
+        //    retVal.Parent = GetParent( ElementNature.Namespace, ElementNature.Class );
 
-            if( retVal.Parent == null )
-                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
+        //    if( retVal.Parent == null )
+        //        throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        private InterfaceInfo? ParseInterface()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
+        //private InterfaceInfo? ParseInterface()
+        //{
+        //    if( LineType != LineType.BlockOpener )
+        //        return null;
 
-            var retVal = SourceRegex.ParseInterface( Line );
-            if( retVal == null )
-                return null;
+        //    var retVal = SourceRegex.ParseInterface( Line );
+        //    if( retVal == null )
+        //        return null;
 
-            // classes can be nested, so look back up the source code tree to see if we
-            // are the child of a higher-level ClassInfo. if not we must be the child
-            // of a namespace
-            retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
-                            ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
+        //    // classes can be nested, so look back up the source code tree to see if we
+        //    // are the child of a higher-level ClassInfo. if not we must be the child
+        //    // of a namespace
+        //    retVal.Parent = (ClassInfo?) GetParent( ElementNature.Class ) 
+        //                    ?? (BaseInfo?) GetParent( ElementNature.Namespace, ElementNature.Class );
 
-            if( retVal.Parent == null )
-                throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
+        //    if( retVal.Parent == null )
+        //        throw new NullException( $"Failed to find parent/container for class '{retVal.FullName}'" );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        private ElementInfo? ParseDelegate()
-        {
-            if( LineType != LineType.Statement )
-                return null;
+        //private ElementInfo? ParseDelegate()
+        //{
+        //    if( LineType != LineType.Statement )
+        //        return null;
 
-            var retVal = SourceRegex.ParseDelegate( Line );
-            if( retVal == null )
-                return null;
+        //    var retVal = SourceRegex.ParseDelegate( Line );
+        //    if( retVal == null )
+        //        return null;
 
-            // delegates must be a child of a class or an interface
-            retVal.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+        //    // delegates must be a child of a class or an interface
+        //    retVal.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
 
-            if( retVal.Parent == null )
-                throw new NullException( $"Failed to find parent/container for delegate '{Line}'" );
+        //    if( retVal.Parent == null )
+        //        throw new NullException( $"Failed to find parent/container for delegate '{Line}'" );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        private EventInfo? ParseEvent() => SourceRegex.ParseEvent( Line );
+        //private EventInfo? ParseEvent() => SourceRegex.ParseEvent( Line );
 
-        private ElementInfo? ParseMethod()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
+        //private ElementInfo? ParseMethod()
+        //{
+        //    if( LineType != LineType.BlockOpener )
+        //        return null;
 
-            // a delegate would trip the method detection algorithm but we've already
-            // handled delegates.
-            var retVal = SourceRegex.ParseMethod( Line );
-            if( retVal == null )
-                return null;
+        //    // a delegate would trip the method detection algorithm but we've already
+        //    // handled delegates.
+        //    var retVal = SourceRegex.ParseMethod( Line );
+        //    if( retVal == null )
+        //        return null;
 
-            // methods must be the child of either an interface or a class
-            retVal.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+        //    // methods must be the child of either an interface or a class
+        //    retVal.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        private ElementInfo? ParseProperty()
-        {
-            if( LineType != LineType.BlockOpener )
-                return null;
+        //private ElementInfo? ParseProperty()
+        //{
+        //    if( LineType != LineType.BlockOpener )
+        //        return null;
 
-            var retVal = SourceRegex.ParseProperty( Line );
-            if( retVal == null )
-                return null;
+        //    var retVal = SourceRegex.ParseProperty( Line );
+        //    if( retVal == null )
+        //        return null;
 
-            // properties must be the child of either an interface or a class
-            retVal!.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
+        //    // properties must be the child of either an interface or a class
+        //    retVal!.Parent = GetParent( ElementNature.Class, ElementNature.Interface );
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        private BaseInfo? GetParent( params ElementNature[] nature )
-        {
-            var curSrcLine = this;
-            BaseInfo? retVal = null;
+        //private BaseInfo? GetParent( params ElementNature[] nature )
+        //{
+        //    var curSrcLine = this;
+        //    BaseInfo? retVal = null;
 
-            while( curSrcLine?.LineBlock != null )
-            {
-                curSrcLine = curSrcLine.LineBlock.ParentLine;
+        //    while( curSrcLine?.LineBlock != null )
+        //    {
+        //        curSrcLine = curSrcLine.LineBlock.ParentLine;
 
-                if( curSrcLine == null )
-                    break;
+        //        if( curSrcLine == null )
+        //            break;
 
-                if( nature.All( x => curSrcLine?.Element?.Nature != x ) ) 
-                    continue;
+        //        if( nature.All( x => curSrcLine?.Element?.Nature != x ) ) 
+        //            continue;
 
-                retVal = curSrcLine.Element;
-                break;
-            }
+        //        retVal = curSrcLine.Element;
+        //        break;
+        //    }
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
     }
 }

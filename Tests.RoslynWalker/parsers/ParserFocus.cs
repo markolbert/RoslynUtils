@@ -19,17 +19,10 @@
 
 namespace Tests.RoslynWalker
 {
-    public enum ElementNature
+    public enum ParserFocus
     {
-        Class,
-        Delegate,
-        Event,
-        Field,
-        Interface,
-        Method,
-        Namespace,
-        Property,
-        Using,
-        NotSpecified
+        CurrentSourceLine,
+        FirstChildSourceLine,
+        DefaultParser
     }
 }

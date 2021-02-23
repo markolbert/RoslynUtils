@@ -10,7 +10,10 @@ namespace Tests.RoslynWalker
             new(@"\s*([^()]*)\s*(delegate)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled);
 
         public ParseDelegate()
-            : base( ElementNature.Interface, @"\s*delegate\s*\(", LineType.Statement)
+            : base( ElementNature.Interface, 
+                @$"({AccessibilityClause})?\s*delegate\s+[^\s\(]+\(",
+                ParserFocus.CurrentSourceLine, 
+                LineType.Statement )
         {
         }
 

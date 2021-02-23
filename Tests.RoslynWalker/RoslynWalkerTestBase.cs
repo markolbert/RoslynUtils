@@ -46,11 +46,11 @@ namespace Tests.RoslynWalker
             var walker = ServiceProvider.Instance.GetRequiredService<ISyntaxWalkerNG>();
             walker.Process( result );
 
-            var parsedTypes = new NamespaceCollection();
-            parsedTypes.ParseFile( projFilePath, out _ ).Should().BeTrue();
+            var namespaces = ServiceProvider.Instance.GetRequiredService<NamespaceCollection>();
+            namespaces.ParseFile( projFilePath, out _ ).Should().BeTrue();
 
-            CompareRoslynNamedTypesToParsed( walker, parsedTypes );
-            CompareParsedToRoslynNamedTypes( walker, parsedTypes );
+            CompareRoslynNamedTypesToParsed( walker, namespaces );
+            CompareParsedToRoslynNamedTypes( walker, namespaces );
         }
 
         private void CompareRoslynNamedTypesToParsed( ISyntaxWalkerNG walker, NamespaceCollection parsedTypes )

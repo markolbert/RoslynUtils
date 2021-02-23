@@ -30,9 +30,15 @@ namespace Tests.RoslynWalker
     public class NamespaceCollection : IEnumerable<InterfaceInfo>
     {
         private readonly List<NamespaceInfo> _namespaces = new();
+        private readonly ParserCollection _parsers;
 
         private NamespaceInfo? _curNS;
         private InterfaceInfo? _curNamedType;
+
+        public NamespaceCollection( ParserCollection parsers )
+        {
+            _parsers = parsers;
+        }
 
         public ReadOnlyCollection<NamespaceInfo> Namespaces => _namespaces.AsReadOnly();
 
@@ -94,6 +100,14 @@ namespace Tests.RoslynWalker
 
         private void ParseSourceLine( SourceLine srcLine )
         {
+            if( !srcLine.Parsed )
+            {
+                if( _parsers.HandlesLine( srcLine ) )
+                    srcLine.Element = _parsers.Parse( srcLine );
+
+                srcLine.Parsed = true;
+            }
+
             if( srcLine.Element == null )
                 return;
 

@@ -20,37 +20,36 @@ namespace Tests.RoslynWalker
         protected ParseBase( 
             ElementNature nature, 
             string matchText,
-            LineType[] lineTypes,
-            bool skipOnMatch = false
+            ParserFocus focus,
+            LineType[] lineTypes
             )
         {
             _matcher = new Regex(matchText, RegexOptions.Compiled);
             _lineTypes = lineTypes.ToList();
 
             MatchText = matchText;
-            SkipOnMatch = skipOnMatch;
+            Focus = focus;
         }
 
         protected ParseBase( 
             ElementNature nature, 
             string matchText,
-            LineType lineType,
-            bool skipOnMatch = false
+            ParserFocus focus,
+            LineType lineType
         )
         {
             _matcher = new Regex(matchText, RegexOptions.Compiled);
             _lineTypes = new List<LineType> { lineType };
 
             MatchText = matchText;
-            SkipOnMatch = skipOnMatch;
+            Focus = focus;
         }
 
         protected abstract TElement? Parse( SourceLine srcLine );
 
         public string MatchText { get; }
         public ReadOnlyCollection<LineType> SupportedLineTypes => _lineTypes.AsReadOnly();
-        public bool SkipOnMatch { get; }
-        public virtual bool TestFirstChild => false;
+        public virtual ParserFocus Focus {get;}
 
         public virtual bool HandlesLine( SourceLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType ) 
                                                                  && _matcher.IsMatch( srcLine.Line );

@@ -15,11 +15,12 @@ namespace Tests.RoslynWalker
             new( @$"\s*({AccessibilityClause})?\s*([\w\[\]\,]+)\s*(\w+)", RegexOptions.Compiled );
 
         public ParseProperty()
-            : base( ElementNature.Property, @".*\s+get\s*|^get\s*$|.*\s+set\s*|^set\s*$", LineType.BlockOpener)
+            : base( ElementNature.Property, 
+                @".*\s+get\s*|^get\s*$|.*\s+set\s*|^set\s*$",
+                ParserFocus.FirstChildSourceLine, 
+                LineType.BlockOpener )
         {
         }
-
-        public override bool TestFirstChild => true;
 
         public override bool HandlesLine( SourceLine srcLine )
         {

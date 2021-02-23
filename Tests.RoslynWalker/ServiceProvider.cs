@@ -18,6 +18,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using Autofac;
 using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
@@ -102,6 +103,15 @@ namespace Tests.RoslynWalker
                 .SingleInstance();
 
             builder.RegisterType<WalkerContext>()
+                .AsSelf();
+
+            builder.RegisterAssemblyTypes( typeof(ServiceProvider).Assembly )
+                .Where( t => !t.IsAbstract
+                             && typeof(IParse).IsAssignableFrom( t )
+                             && t.GetConstructors().Any() )
+                .AsImplementedInterfaces();
+
+            builder.RegisterType<ParserCollection>()
                 .AsSelf();
 
             builder.RegisterType<NamespaceCollection>()

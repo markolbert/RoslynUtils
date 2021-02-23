@@ -58,7 +58,7 @@ namespace Tests.RoslynWalker
             new( @"\s*([^()]*)\s*(delegate)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled );
 
         private static readonly Regex _fieldGroup =
-            new Regex( @"\s*(private|public)?\s*([^<>]+)(<.+>)?\s*(\w+)\s*=?\s*(.*)?", RegexOptions.Compiled );
+            new Regex( @$"\s*({_accessibilityClause})?\s*([^<>]+)(<.+>)?\s*(\w+)\s*=?\s*(.*)?", RegexOptions.Compiled );
 
         #endregion
 

@@ -13,7 +13,7 @@ namespace Tests.RoslynWalker
             RegexOptions.Compiled);
 
         public ParseMethod()
-            : base( ElementNature.Method, @".*\(.*\)", LineType.Statement )
+            : base( ElementNature.Method, @".*\(.*\)", ParserFocus.CurrentSourceLine, LineType.Statement )
         {
         }
 

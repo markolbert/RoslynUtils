@@ -1,13 +1,208 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tests.RoslynWalker
 {
     public class RegexTest
     {
+        private readonly ParserCollection _parsers = ServiceProvider.Instance.GetRequiredService<ParserCollection>();
+
+        [Theory]
+        [InlineData("public", "class", "Ralph", "", true, true,true, Accessibility.Public)]
+        [InlineData("public", "class", "Ralph", "", true, true,true, Accessibility.Public, "int", "bool", "T<string, T2<int, bool>>")]
+        [InlineData("public", "interface", "Ralph", "", true, true, false, Accessibility.Public)]
+        [InlineData("public", "event", "Ralph", "", true, false,false, Accessibility.Public)]
+        public void ParseClass(
+            string accessText, 
+            string nature, 
+            string name, 
+            string ancestry, 
+            bool parserExists, 
+            bool parseSuccess,
+            bool correctType,
+            Accessibility accessibility,  
+            params string[] typeArgs )
+        {
+            var sb = AggregateTypeArguments( typeArgs, out var taList );
+
+            sb.Insert( 0, $"{nature} {name}" );
+
+            if( !string.IsNullOrEmpty( accessText ) )
+                sb.Insert( 0, $"{accessText} " );
+
+            if( !string.IsNullOrEmpty( ancestry ) )
+                sb.Append( $":{ancestry}" );
+
+            var srcLine = new SourceLine( sb.ToString(), LineType.BlockOpener, null );
+
+            var toCheck = ParseEntity<ClassInfo>( srcLine, parserExists, parseSuccess, correctType );
+            if( toCheck == null )
+                return;
+
+            toCheck.Name.Should().Be( name );
+            toCheck.TypeArguments.Should().BeEquivalentTo( taList );
+            toCheck.Ancestry.Should().Be( ancestry );
+            toCheck.Accessibility.Should().Be( accessibility );
+        }
+
+        [Theory]
+        [InlineData("public", "interface", "Ralph", "", true, true,true, Accessibility.Public)]
+        [InlineData("public", "interface", "Ralph", "", true, true,true, Accessibility.Public, "int", "bool", "T<string, T2<int, bool>>")]
+        [InlineData("public", "class", "Ralph", "", true, true, false, Accessibility.Public)]
+        [InlineData("public", "event", "Ralph", "", true, false,false, Accessibility.Public)]
+        public void ParseInterface(
+            string accessText, 
+            string nature, 
+            string name, 
+            string ancestry, 
+            bool parserExists, 
+            bool parseSuccess,
+            bool correctType,
+            Accessibility accessibility,  
+            params string[] typeArgs )
+        {
+            var sb = AggregateTypeArguments( typeArgs, out var taList );
+
+            sb.Insert( 0, $"{nature} {name}" );
+
+            if( !string.IsNullOrEmpty( accessText ) )
+                sb.Insert( 0, $"{accessText} " );
+
+            if( !string.IsNullOrEmpty( ancestry ) )
+                sb.Append( $":{ancestry}" );
+
+            var srcLine = new SourceLine( sb.ToString(), LineType.BlockOpener, null );
+
+            var toCheck = ParseEntity<InterfaceInfo>( srcLine, parserExists, parseSuccess, correctType );
+            if( toCheck == null )
+                return;
+
+            toCheck.Name.Should().Be( name );
+            toCheck.TypeArguments.Should().BeEquivalentTo( taList );
+            toCheck.Ancestry.Should().Be( ancestry );
+            toCheck.Accessibility.Should().Be( accessibility );
+        }
+
+        [Theory]
+        [InlineData("public", "Ralph", true, true,true, Accessibility.Public, new string[0], new string[0])]
+        public void ParseDelegate(
+            string accessText,
+            string name,
+            bool parserExists,
+            bool parseSuccess,
+            bool correctType,
+            Accessibility accessibility,
+            string[] typeArgs,
+            string[] args )
+        {
+            var sb = AggregateTypeArguments( typeArgs, out var taList );
+            var sbArgs = AggregateMethodArguments( args, out var maList );
+
+            sb.Insert( 0, $"delegate {name}" );
+
+            if( !string.IsNullOrEmpty( accessText ) )
+                sb.Insert( 0, $"{accessText} " );
+
+            sb.Append( sbArgs );
+
+            var srcLine = new SourceLine( sb.ToString(), LineType.Statement, null );
+
+            var toCheck = ParseEntity<DelegateInfo>( srcLine, parserExists, parseSuccess, correctType );
+            if( toCheck == null )
+                return;
+
+            toCheck.Name.Should().Be( name );
+            toCheck.TypeArguments.Should().BeEquivalentTo( taList );
+            toCheck.Arguments.Should().BeEquivalentTo( maList );
+            toCheck.Accessibility.Should().Be( accessibility );
+        }
+
+        private StringBuilder AggregateTypeArguments( string[] typeArgs, out List<string> result )
+        {
+            result = typeArgs.Select( x => x.Replace( " ", string.Empty ) )
+                .ToList();
+
+            return AggregateArguments( result, '<', '>', false );
+        }
+
+        private StringBuilder AggregateMethodArguments( string[] args, out List<string> result )
+        {
+            result = args.Select( a =>
+                {
+                    var parts = a.Split( " ", StringSplitOptions.RemoveEmptyEntries );
+
+                    var sb = new StringBuilder();
+
+                    for( var idx = 0; idx < parts.Length; idx++)
+                    {
+                        sb.Append( idx != parts.Length - 1 ? parts[ idx ].Replace( " ", string.Empty ) : parts[ idx ] );
+                    }
+
+                    return sb.ToString();
+                } )
+                .ToList();
+
+            return AggregateArguments( result, '(', ')', true );
+        }
+
+        private StringBuilder AggregateArguments( List<string> args, char openDelim, char closeDelim, bool frameEmpty )
+        {
+            var sb = args.Aggregate(
+                new StringBuilder(),
+                ( s, a ) =>
+                {
+                    if( s.Length > 0 )
+                        s.Append( "," );
+
+                    s.Append( a );
+
+                    return s;
+                } );
+
+            if( sb.Length <= 0 && !frameEmpty ) 
+                return sb;
+
+            sb.Insert( 0, openDelim );
+            sb.Append( closeDelim );
+
+            return sb;
+        }
+
+        private TInfo? ParseEntity<TInfo>( SourceLine srcLine, bool parserExists, bool parseSuccess,
+            bool parseCorrectType )
+            where TInfo : BaseInfo
+        {
+            _parsers.HandlesLine( srcLine ).Should().Be( parserExists );
+
+            if( !parserExists )
+                return null;
+
+            var baseInfo = _parsers.Parse( srcLine );
+
+            if( parseSuccess )
+                baseInfo.Should().NotBeNull();
+            else
+            {
+                baseInfo.Should().BeNull();
+                return null;
+            }
+
+            if( parseCorrectType )
+            {
+                baseInfo!.GetType().Should().Be<TInfo>();
+                return (TInfo) baseInfo;
+            }
+
+            baseInfo!.GetType().Should().NotBe<TInfo>();
+            return null;
+        }
+
         [Theory]
         [InlineData("using", false)]
         [InlineData("using Ralph", true)]
@@ -200,7 +395,7 @@ namespace Tests.RoslynWalker
                 return;
 
             methodSource.Should().NotBeNull();
-            SourceRegex.ParseAccessibility( methodSource.Accessibility, out var temp ).Should().BeTrue();
+            SourceRegex.ParseAccessibility( methodSource!.Accessibility, out var temp ).Should().BeTrue();
             temp.Should().Be( accessibility );
             methodSource.ReturnType.Should().Be( retType.Trim() );
             methodSource.Name.Should().Be( name.Trim() );

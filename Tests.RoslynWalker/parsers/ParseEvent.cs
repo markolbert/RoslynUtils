@@ -5,17 +5,19 @@ namespace Tests.RoslynWalker
 {
     public class ParseEvent : ParseBase<EventInfo>
     {
-        private static readonly Regex RxEvent = new(@"\s*(.*)(?:event)\s+(.*)\s+(.*)\s*");
+        private static readonly Regex _rxEvent = new(@"\s*(.*)(?:event)\s+(.*)\s+(.*)\s*");
 
 
         public ParseEvent()
-            : base( ElementNature.Event, @"\s*event\s+", new [] { LineType.BlockOpener, LineType.Statement } )
+            : base( ElementNature.Event, 
+                @"\s*event\s+", ParserFocus.CurrentSourceLine,
+                new[] { LineType.BlockOpener, LineType.Statement } )
         {
         }
 
         protected override EventInfo? Parse( SourceLine srcLine )
         {
-            var match = RxEvent.Match(srcLine.Line);
+            var match = _rxEvent.Match(srcLine.Line);
 
             if (!match.Success
                 || match.Groups.Count != 4

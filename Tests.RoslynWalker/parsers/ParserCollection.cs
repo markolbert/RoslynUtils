@@ -4,28 +4,60 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using J4JSoftware.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit.Sdk;
+#pragma warning disable 8618
 
 namespace Tests.RoslynWalker
 {
     public class ParserCollection
     {
-        private readonly Regex? _rxMainFilter;
-        private readonly Regex? _rxFirstChildFilter;
-        private readonly List<IParse> _parsers;
-
-        public ParserCollection( IEnumerable<IParse> parsers )
+        private class ParserSet
         {
-            _parsers = parsers.ToList();
-
-            _rxMainFilter = AggregateMatchers( _parsers, false );
-            _rxFirstChildFilter = AggregateMatchers( _parsers, true );
+            public ParserFocus Focus { get; set; }
+            public List<IParse> Parsers { get; set; }
+            public Regex Filter { get; set; }
         }
 
-        private Regex? AggregateMatchers( List<IParse> parsers, bool firstChild )
+        private readonly List<IParse> _parsers;
+        private Dictionary<ParserFocus, Regex> _filters = new();
+        private readonly ParserFocus[] _focusSequence =
+            { ParserFocus.CurrentSourceLine, ParserFocus.FirstChildSourceLine, ParserFocus.DefaultParser };
+
+        public ParserCollection()
         {
-            var filterText = parsers.Where( p => p.TestFirstChild == firstChild )
+            _parsers = new List<IParse>
+            {
+                new ParseUsing(),
+                new ParseNamespace(),
+                new ParseClass(),
+                new ParseInterface(),
+                new ParseDelegate(),
+                new ParseMethod(),
+                new ParseProperty(),
+                new ParseEvent(),
+                new ParseField()
+            };
+
+            if( _parsers.Count( p => p.Focus == ParserFocus.DefaultParser ) > 1 )
+                throw new ArgumentException( $"More than one default {nameof(IParse)} object defined" );
+
+            foreach( var focus in Enum.GetValues<ParserFocus>() )
+            {
+                var filter = AggregateParserFilters( focus );
+
+                if( filter != null )
+                    _filters.Add( focus, filter! );
+            }
+        }
+
+        private Regex? AggregateParserFilters( ParserFocus focus )
+        {
+            if( _parsers.All( p => p.Focus != focus ) )
+                return null;
+
+            var filterText = _parsers.Where( p => p.Focus == focus )
                 .Aggregate(
                     new StringBuilder(),
                     ( sb, p ) =>
@@ -40,34 +72,46 @@ namespace Tests.RoslynWalker
                     sb => sb.ToString()
                 );
 
-            return string.IsNullOrEmpty( filterText ) ? null : new Regex( filterText, RegexOptions.Compiled );
+            return new Regex( filterText, RegexOptions.Compiled );
         }
-
-        public ReadOnlyCollection<IParse> Parsers => _parsers.AsReadOnly();
 
         public bool HandlesLine( SourceLine srcLine )
         {
-            if( _rxMainFilter?.IsMatch( srcLine.Line ) ?? false )
-                return true;
-
-            var toCheck = srcLine.LineBlock?.Lines.FirstOrDefault();
-            if( toCheck == null )
-                return false;
-
-            return _rxFirstChildFilter?.IsMatch( toCheck!.Line ) ?? false;
-        }
-
-        public BaseInfo Parse( SourceLine srcLine )
-        {
-            foreach( var parser in _parsers )
+            foreach( var focus in _focusSequence )
             {
-                var parsed = parser.Parse( srcLine );
+                foreach( var kvp in _filters.Where( p => p.Key == focus ) )
+                {
+                    var toCheck = focus switch
+                    {
+                        ParserFocus.FirstChildSourceLine => srcLine.LineBlock?.Lines.FirstOrDefault(),
+                        _ => srcLine
+                    };
 
-                if( parsed != null )
-                    return parsed;
+                    if( toCheck == null )
+                        continue;
+
+                    if( kvp.Value.IsMatch( toCheck.Line ) )
+                        return true;
+                }
             }
 
-            throw new NullReferenceException( $"Failed to parse '{srcLine.Line}'" );
+            return false;
+        }
+
+        public BaseInfo? Parse( SourceLine srcLine )
+        {
+            foreach( var focus in _focusSequence )
+            {
+                foreach( var parser in _parsers.Where( p => p.Focus == focus ) )
+                {
+                    var parsed = parser.Parse( srcLine );
+
+                    if( parsed != null )
+                        return parsed;
+                }
+            }
+
+            return null;
         }
     }
 }
