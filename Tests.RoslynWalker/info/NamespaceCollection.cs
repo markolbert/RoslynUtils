@@ -103,78 +103,78 @@ namespace Tests.RoslynWalker
             if( !srcLine.Parsed )
             {
                 if( _parsers.HandlesLine( srcLine ) )
-                    srcLine.Element = _parsers.Parse( srcLine );
+                    srcLine.Elements = _parsers.Parse( srcLine );
 
                 srcLine.Parsed = true;
             }
 
-            if( srcLine.Element == null )
+            if( srcLine.Elements == null )
                 return;
 
-            switch( srcLine.Element )
+            foreach( var curElement in srcLine.Elements )
             {
-                case NamespaceInfo nsInfo:
-                    _curNS = _namespaces.FirstOrDefault( x =>
-                        x.FullName.Equals( nsInfo.FullName, StringComparison.Ordinal ) );
+                switch( curElement )
+                {
+                    case NamespaceInfo nsInfo:
+                        _curNS = _namespaces.FirstOrDefault( x =>
+                            x.FullName.Equals( nsInfo.FullName, StringComparison.Ordinal ) );
 
-                    if( _curNS == null )
-                    {
-                        _namespaces.Add(nsInfo  );
-                        _curNS = nsInfo;
-                    }
+                        if( _curNS == null )
+                        {
+                            _namespaces.Add( nsInfo );
+                            _curNS = nsInfo;
+                        }
 
-                    break;
+                        break;
 
-                case DelegateInfo dInfo:
-                    if( _curNamedType is ClassInfo delClass )
-                        delClass.Delegates.Add( dInfo );
-                    else throw new ArgumentException( $"Trying to add a DelegateInfo to a {_curNamedType?.GetType()}" );
+                    case DelegateInfo dInfo:
+                        if( _curNamedType is ClassInfo delClass )
+                            delClass.Delegates.Add( dInfo );
+                        else
+                            throw new ArgumentException(
+                                $"Trying to add a DelegateInfo to a {_curNamedType?.GetType()}" );
 
-                    break;
+                        break;
 
-                case ClassInfo cInfo:
-                    _curNamedType = cInfo;
-                    break;
+                    case ClassInfo cInfo:
+                        _curNamedType = cInfo;
+                        break;
 
-                case InterfaceInfo iInfo:
-                    _curNamedType = iInfo;
-                    break;
+                    case InterfaceInfo iInfo:
+                        _curNamedType = iInfo;
+                        break;
 
-                case EventInfo eventInfo:
-                    _curNamedType!.Events.Add( eventInfo );
-                    break;
+                    case EventInfo eventInfo:
+                        _curNamedType!.Events.Add( eventInfo );
+                        break;
 
-                case FieldInfo fieldInfo:
-                    if( _curNamedType is ClassInfo classInfo )
-                        classInfo.Fields.Add( fieldInfo );
-                    else
-                        throw new ArgumentException(
-                            $"Trying to assign a {nameof(FieldInfo)} to a {_curNamedType!.GetType()}" );
+                    case FieldInfo fieldInfo:
+                        if( _curNamedType is ClassInfo classInfo )
+                            classInfo.Fields.Add( fieldInfo );
+                        else
+                            throw new ArgumentException(
+                                $"Trying to assign a {nameof(FieldInfo)} to a {_curNamedType!.GetType()}" );
 
-                    break;
+                        break;
 
-                case MethodInfo methodInfo:
-                    _curNamedType!.Methods.Add( methodInfo );
-                    break;
+                    case MethodInfo methodInfo:
+                        _curNamedType!.Methods.Add( methodInfo );
+                        break;
 
-                case PropertyInfo propertyInfo:
-                    _curNamedType!.Properties.Add( propertyInfo );
-                    break;
-            }
+                    case PropertyInfo propertyInfo:
+                        _curNamedType!.Properties.Add( propertyInfo );
+                        break;
+                }
 
-            // we only drill into certain block openers
-            switch( srcLine.Element )
-            {
-                case ClassInfo:
-                case InterfaceInfo:
-                case NamespaceInfo:
-                    foreach( var childLine in srcLine.ChildBlock?.Lines
-                                              ?? Enumerable.Empty<SourceLine>() )
-                    {
-                        ParseSourceLine( childLine );
-                    }
+                // we only drill into block openers
+                if( srcLine is not BlockOpeningLine blockOpeningLine ) 
+                    continue;
 
-                    break;
+                foreach( var childLine in blockOpeningLine.ChildBlock.Lines
+                                          ?? Enumerable.Empty<SourceLine>() )
+                {
+                    ParseSourceLine( childLine );
+                }
             }
         }
     }

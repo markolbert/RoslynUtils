@@ -135,161 +135,161 @@ namespace Tests.RoslynWalker
 
         #region methods 
 
-        public static MethodInfo? ParseMethod( string text )
-        {
-            if( !ExtractMethodArguments( text, out var fullDecl, out var arguments ) )
-                return null;
+        //public static MethodInfo? ParseMethod( string text )
+        //{
+        //    if( !ExtractMethodArguments( text, out var fullDecl, out var arguments ) )
+        //        return null;
 
-            if( !ExtractTypeArguments( fullDecl!, out var typeName, out var typeArguments ) )
-                return null;
+        //    if( !ExtractTypeArguments( fullDecl!, out var typeName, out var typeArguments ) )
+        //        return null;
 
-            if( !ExtractMethodElements( typeName!, out var methodSrc ) )
-                return null;
+        //    if( !ExtractMethodElements( typeName!, out var methodSrc ) )
+        //        return null;
 
-            return new MethodInfo( methodSrc!, typeArguments!, arguments! );
-        }
+        //    return new MethodInfo( methodSrc!, typeArguments!, arguments! );
+        //}
 
-        public static bool ExtractMethodArguments( string text, out string? preamble, out List<string> arguments )
-        {
-            preamble = null;
-            arguments = new List<string>();
+        //public static bool ExtractMethodArguments( string text, out string? preamble, out List<string> arguments )
+        //{
+        //    preamble = null;
+        //    arguments = new List<string>();
 
-            var groupMatch = _methodArgsGroup.Match( text );
+        //    var groupMatch = _methodArgsGroup.Match( text );
 
-            if( !groupMatch.Success 
-                || groupMatch.Groups.Count!=3)
-                return false;
+        //    if( !groupMatch.Success 
+        //        || groupMatch.Groups.Count!=3)
+        //        return false;
 
-            preamble = groupMatch.Groups[ 1 ].Value.Trim();
+        //    preamble = groupMatch.Groups[ 1 ].Value.Trim();
             
-            var remainder = groupMatch.Groups[ 2 ].Value.Trim();
+        //    var remainder = groupMatch.Groups[ 2 ].Value.Trim();
 
-            // if no arguments we're done
-            if( string.IsNullOrEmpty( remainder ) )
-                return true;
+        //    // if no arguments we're done
+        //    if( string.IsNullOrEmpty( remainder ) )
+        //        return true;
 
-            arguments.AddRange( ParseArguments( remainder, true ) );
+        //    arguments.AddRange( ParseArguments( remainder, true ) );
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        public static bool ExtractMethodElements( 
-            string text, 
-            out ReturnTypeSource? result )
-        {
-            result = null;
+        //public static bool ExtractMethodElements( 
+        //    string text, 
+        //    out MethodSource? result )
+        //{
+        //    result = null;
 
-            var match = _methodGroup.Match( text );
+        //    var match = _methodGroup.Match( text );
 
-            if( !match.Success
-                || match.Groups.Count != 4 )
-                return false;
+        //    if( !match.Success
+        //        || match.Groups.Count != 4 )
+        //        return false;
 
-            result = new ReturnTypeSource( 
-                match.Groups[ 3 ].Value.Trim(), 
-                match.Groups[ 1 ].Value.Trim(),
-                match.Groups[ 2 ].Value.Trim() );
+        //    result = new MethodSource( 
+        //        match.Groups[ 3 ].Value.Trim(), 
+        //        match.Groups[ 1 ].Value.Trim(),
+        //        match.Groups[ 2 ].Value.Trim() );
 
-            return true;
-        }
+        //    return true;
+        //}
 
         #endregion
 
         #region properties
 
-        public static PropertyInfo? ParseProperty( string text )
-        {
-            if( !ExtractPropertyIndexers( text, out var preamble, out var indexers ) )
-                return null;
+        //public static PropertyInfo? ParseProperty( string text )
+        //{
+        //    if( !ExtractPropertyIndexers( text, out var preamble, out var indexers ) )
+        //        return null;
 
-            return !ExtractPropertyElements( preamble!, out var propSrc )
-                ? null
-                : new PropertyInfo( propSrc!, indexers );
-        }
+        //    return !ExtractPropertyElements( preamble!, out var propSrc )
+        //        ? null
+        //        : new PropertyInfo( propSrc!, indexers );
+        //}
 
-        public static bool ExtractPropertyIndexers( string text, out string? preamble, out List<string> indexers )
-        {
-            preamble = null;
-            indexers = new List<string>();
+        //public static bool ExtractPropertyIndexers( string text, out string? preamble, out List<string> indexers )
+        //{
+        //    preamble = null;
+        //    indexers = new List<string>();
 
-            var groupMatch = _propertyGroup.Match( text );
+        //    var groupMatch = _propertyGroup.Match( text );
 
-            if( !groupMatch.Success
-                || groupMatch.Groups.Count != 4 )
-                return false;
+        //    if( !groupMatch.Success
+        //        || groupMatch.Groups.Count != 4 )
+        //        return false;
 
-            var firstNonEmptyGroup = groupMatch.Groups.Values
-                .Select( ( x, i ) => new { Group = x, Index = i } )
-                .FirstOrDefault( x => x.Index > 0 && !string.IsNullOrEmpty( x.Group.Value ) );
+        //    var firstNonEmptyGroup = groupMatch.Groups.Values
+        //        .Select( ( x, i ) => new { Group = x, Index = i } )
+        //        .FirstOrDefault( x => x.Index > 0 && !string.IsNullOrEmpty( x.Group.Value ) );
 
-            if( firstNonEmptyGroup == null )
-                return false;
+        //    if( firstNonEmptyGroup == null )
+        //        return false;
 
-            preamble = firstNonEmptyGroup.Group.Value.Trim();
+        //    preamble = firstNonEmptyGroup.Group.Value.Trim();
 
-            var secondNonEmptyGroup = groupMatch.Groups.Values
-                .Select( ( x, i ) => new { Group = x, Index = i } )
-                .FirstOrDefault( x => !string.IsNullOrEmpty( x.Group.Value ) && x.Index > firstNonEmptyGroup.Index );
+        //    var secondNonEmptyGroup = groupMatch.Groups.Values
+        //        .Select( ( x, i ) => new { Group = x, Index = i } )
+        //        .FirstOrDefault( x => !string.IsNullOrEmpty( x.Group.Value ) && x.Index > firstNonEmptyGroup.Index );
 
-            // if there isn't an indexer clause, we're done
-            if( secondNonEmptyGroup == null )
-                return true;
+        //    // if there isn't an indexer clause, we're done
+        //    if( secondNonEmptyGroup == null )
+        //        return true;
 
-            var indexerMatch = _propertyIndexer.Match(secondNonEmptyGroup.Group.Value.Trim());
+        //    var indexerMatch = _propertyIndexer.Match(secondNonEmptyGroup.Group.Value.Trim());
 
-            if( !indexerMatch.Success
-                || !indexerMatch.Value.Trim().Equals( "this", StringComparison.Ordinal )
-            )
-                return false;
+        //    if( !indexerMatch.Success
+        //        || !indexerMatch.Value.Trim().Equals( "this", StringComparison.Ordinal )
+        //    )
+        //        return false;
 
-            var typeMatch = indexerMatch;
+        //    var typeMatch = indexerMatch;
 
-            while( ( typeMatch = typeMatch.NextMatch() ).Success )
-            {
-                var nameMatch = typeMatch.NextMatch();
+        //    while( ( typeMatch = typeMatch.NextMatch() ).Success )
+        //    {
+        //        var nameMatch = typeMatch.NextMatch();
 
-                if( !nameMatch.Success )
-                    return false;
+        //        if( !nameMatch.Success )
+        //            return false;
 
-                indexers.Add( $"{typeMatch.Value.Trim()} {nameMatch.Value.Trim()}" );
+        //        indexers.Add( $"{typeMatch.Value.Trim()} {nameMatch.Value.Trim()}" );
 
-                typeMatch = nameMatch;
-            }
+        //        typeMatch = nameMatch;
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        public static bool ExtractPropertyElements( string text, out ReturnTypeSource? result )
-        {
-            result = null;
+        //public static bool ExtractPropertyElements( string text, out MethodSource? result )
+        //{
+        //    result = null;
 
-            var match = _property.Match( text );
+        //    var match = _property.Match( text );
 
-            if( !match.Success )
-                return false;
+        //    if( !match.Success )
+        //        return false;
 
-            switch( match.Groups.Count )
-            {
-                case 3:
-                    result = new ReturnTypeSource( match.Groups[ 2 ].Value.Trim(), 
-                        string.Empty,
-                        match.Groups[ 1 ].Value.Trim() );
+        //    switch( match.Groups.Count )
+        //    {
+        //        case 3:
+        //            result = new MethodSource( match.Groups[ 2 ].Value.Trim(), 
+        //                string.Empty,
+        //                match.Groups[ 1 ].Value.Trim() );
 
-                    break;
+        //            break;
 
-                case 4:
-                    result = new ReturnTypeSource( match.Groups[ 3 ].Value.Trim(), 
-                        match.Groups[ 1 ].Value.Trim(),
-                        match.Groups[ 2 ].Value.Trim() );
+        //        case 4:
+        //            result = new MethodSource( match.Groups[ 3 ].Value.Trim(), 
+        //                match.Groups[ 1 ].Value.Trim(),
+        //                match.Groups[ 2 ].Value.Trim() );
 
-                    break;
+        //            break;
 
-                default:
-                    return false;
-            }
+        //        default:
+        //            return false;
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         #endregion
 
@@ -324,28 +324,28 @@ namespace Tests.RoslynWalker
 
         #region events
 
-        public static EventInfo? ParseEvent( string text ) => !ExtractEventArguments( text, out var eventSource )
-            ? null
-            : new EventInfo( eventSource! );
+        //public static EventInfo? ParseEvent( string text ) => !ExtractEventArguments( text, out var eventSource )
+        //    ? null
+        //    : new EventInfo( eventSource! );
 
-        public static bool ExtractEventArguments( string text, out EventSource? result )
-        {
-            result = null;
+        //public static bool ExtractEventArguments( string text, out EventSource? result )
+        //{
+        //    result = null;
 
-            var match = _eventGroup.Match( text );
+        //    var match = _eventGroup.Match( text );
 
-            if( !match.Success 
-                || match.Groups.Count != 4 
-                || !ExtractTypeArguments(match.Groups[2].Value.Trim(), out var baseType, out var typeArgs) )
-                return false;
+        //    if( !match.Success 
+        //        || match.Groups.Count != 4 
+        //        || !ExtractTypeArguments(match.Groups[2].Value.Trim(), out var baseType, out var typeArgs) )
+        //        return false;
 
-            result = new EventSource( match.Groups[ 3 ].Value.Trim(),
-                match.Groups[ 1 ].Value.Replace( "event", string.Empty ).Trim(),
-                baseType!,
-                typeArgs );
+        //    result = new EventSource( match.Groups[ 3 ].Value.Trim(),
+        //        match.Groups[ 1 ].Value.Replace( "event", string.Empty ).Trim(),
+        //        baseType!,
+        //        typeArgs );
 
-            return true;
-        }
+        //    return true;
+        //}
 
         #endregion
 

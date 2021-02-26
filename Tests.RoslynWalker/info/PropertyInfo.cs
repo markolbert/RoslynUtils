@@ -26,11 +26,11 @@ namespace Tests.RoslynWalker
 {
     public class PropertyInfo : ElementInfo, IArguments
     {
-        public PropertyInfo( ReturnTypeSource src, List<string> arguments )
+        public PropertyInfo( MethodSource src )
             : base( ElementNature.Property, src )
         {
             PropertyType = src.ReturnType;
-            Arguments = arguments;
+            Arguments = src.Arguments;
         }
 
         public string PropertyType { get; }

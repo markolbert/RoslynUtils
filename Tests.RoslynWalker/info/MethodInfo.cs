@@ -26,11 +26,11 @@ namespace Tests.RoslynWalker
 {
     public class MethodInfo : ElementInfo, IArguments
     {
-        public MethodInfo( ReturnTypeSource src, List<string> typeArgs, List<string> args )
+        public MethodInfo( MethodSource src )
             : base( ElementNature.Method, src )
         {
-            TypeArguments = typeArgs;
-            Arguments = args;
+            TypeArguments = src.TypeArguments;
+            Arguments = src.Arguments;
             ReturnType = src.ReturnType;
         }
 

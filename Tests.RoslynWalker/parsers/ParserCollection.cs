@@ -83,7 +83,7 @@ namespace Tests.RoslynWalker
                 {
                     var toCheck = focus switch
                     {
-                        ParserFocus.FirstChildSourceLine => srcLine.LineBlock?.Lines.FirstOrDefault(),
+                        ParserFocus.FirstChildSourceLine => ((BlockOpeningLine)srcLine).ChildBlock?.Lines.FirstOrDefault(),
                         _ => srcLine
                     };
 
@@ -98,7 +98,7 @@ namespace Tests.RoslynWalker
             return false;
         }
 
-        public BaseInfo? Parse( SourceLine srcLine )
+        public List<BaseInfo>? Parse( SourceLine srcLine )
         {
             foreach( var focus in _focusSequence )
             {

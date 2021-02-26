@@ -88,23 +88,27 @@ namespace Tests.RoslynWalker
                 switch( CurrentChar )
                 {
                     case ';':
-                        block.AddSourceLine( sb.ToString(), LineType.Statement );
+                        block.AddStatement( sb.ToString() );
                         sb.Clear();
 
                         break;
 
                     case '{':
-                        block.AddSourceLine( sb.ToString(), LineType.BlockOpener );
+                        if( block.CurrentLine is not BlockOpeningLine blockOpeningLine )
+                            throw new ArgumentException(
+                                $"Trying to add an opening block to a SourceLine or a BlockClosingLine" );
+
+                        block.AddBlockOpener( sb.ToString() );
                         sb.Clear();
 
-                        block = new LineBlock( block.CurrentLine );
+                        block = new LineBlock( blockOpeningLine );
                         break;
 
                     case '}':
-                        block.AddSourceLine( sb.ToString(), LineType.BlockCloser );
+                        block.AddBlockCloser();
                         sb.Clear();
 
-                        block = block?.ParentLine?.LineBlock
+                        block = block.ParentLine?.Parent
                                 ?? throw new NullReferenceException(
                                     "Attempted to move to an undefined parent LineBlock" );
                         break;
@@ -174,10 +178,13 @@ namespace Tests.RoslynWalker
             {
                 yield return srcLine;
 
-                if( srcLine.ChildBlock == null )
+                if( srcLine is not BlockOpeningLine blockOpeningLine ) 
                     continue;
 
-                foreach( var childLine in EnumerateLineBlock( srcLine.ChildBlock ) ) yield return childLine;
+                foreach( var childLine in EnumerateLineBlock( blockOpeningLine.ChildBlock ) )
+                {
+                    yield return childLine;
+                }
             }
         }
     }

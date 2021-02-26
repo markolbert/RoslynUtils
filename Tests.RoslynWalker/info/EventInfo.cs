@@ -28,11 +28,9 @@ namespace Tests.RoslynWalker
         public EventInfo( EventSource src )
             : base( ElementNature.Event, src )
         {
-            EventHandler = src.EventHandler;
-            EventHandlerTypeArguments = src.EventHandlerTypeArguments;
+            EventArgType= src.EventArgType;
         }
 
-        public string EventHandler { get; }
-        public List<string> EventHandlerTypeArguments { get; }
+        public string EventArgType { get; }
     }
 }

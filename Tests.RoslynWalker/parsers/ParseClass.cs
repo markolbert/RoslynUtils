@@ -5,21 +5,26 @@ using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
 {
-    public class ParseClass : ParseInterface
+    public class ParseClass : ParseInterfaceClassBase<ClassInfo>
     {
         public ParseClass()
-            : base( ElementNature.Class, @"\s*class\s+", ParserFocus.CurrentSourceLine, LineType.BlockOpener )
+            : base( ElementNature.Class, @"(.*\s+class|^class)\s+", ParserFocus.CurrentSourceLine,
+                LineType.BlockOpener )
         {
         }
 
-        protected override ClassInfo? Parse( SourceLine srcLine )
+        protected override List<ClassInfo>? Parse( SourceLine srcLine )
         {
-            return !ExtractNamedTypeArguments( srcLine.Line, "class", out var ntSource )
-                ? null
-                : new ClassInfo( ntSource! )
-                {
-                    Parent = GetParent( srcLine, ElementNature.Namespace, ElementNature.Class )
-                };
+            var ntSource = ParseInternal( srcLine );
+            if( ntSource == null )
+                return null;
+
+            var info = new ClassInfo( ntSource )
+            {
+                Parent = GetParent( srcLine, ElementNature.Namespace, ElementNature.Class )
+            };
+
+            return new List<ClassInfo> { info };
         }
     }
 }

@@ -2,14 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
 {
     public class ParseProperty : ParseBase<PropertyInfo>
     {
-        private static readonly Regex _rxGroup = new( @"\s*(.*)\s*(this.*)|\s*(.*)\s*", RegexOptions.Compiled );
-        private static readonly Regex _rxIndexers = new( @"(\w+)<.*>|(\w+)", RegexOptions.Compiled );
+        private static readonly Regex _rxGroup =
+            new( @$"\s*({AccessibilityClause})?([^\[\]]*)(\[.*\])?", RegexOptions.Compiled );
 
         private static readonly Regex _rxProperty =
             new( @$"\s*({AccessibilityClause})?\s*([\w\[\]\,]+)\s*(\w+)", RegexOptions.Compiled );
@@ -26,109 +27,104 @@ namespace Tests.RoslynWalker
         {
             // to determine if this is a property line we check to see if the 
             // immediate child line is "get" or "set"
-            if( srcLine.LineType != LineType.BlockOpener )
+            if( srcLine is not BlockOpeningLine blockOpeningLine)
                 return false;
 
-            var toCheck = srcLine.ChildBlock?.Lines.FirstOrDefault();
-            return toCheck != null && toCheck.LineType == LineType.BlockOpener && HandlesLine( toCheck );
+            var toCheck = blockOpeningLine.ChildBlock.Lines.FirstOrDefault();
+
+            return toCheck != null 
+                   && toCheck.LineType == LineType.BlockOpener 
+                   && base.HandlesLine( toCheck );
         }
 
-        protected override PropertyInfo? Parse( SourceLine srcLine )
+        protected override List<PropertyInfo>? Parse( SourceLine srcLine )
         {
-            if( !ExtractPropertyIndexers( srcLine.Line, out var preamble, out var indexers ) )
-                return null;
-
-            // properties must be the child of either an interface or a class
-            return !ExtractPropertyElements( preamble!, out var propSrc )
-                ? null
-                : new PropertyInfo( propSrc!, indexers )
-                {
-                    Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
-                };
-        }
-
-        private bool ExtractPropertyIndexers( string text, out string? preamble, out List<string> indexers )
-        {
-            preamble = null;
-            indexers = new List<string>();
-
-            var groupMatch = _rxGroup.Match( text );
+            var groupMatch = _rxGroup.Match( srcLine.Line );
 
             if( !groupMatch.Success
                 || groupMatch.Groups.Count != 4 )
-                return false;
+                return null;
 
-            var firstNonEmptyGroup = groupMatch.Groups.Values
-                .Select( ( x, i ) => new { Group = x, Index = i } )
-                .FirstOrDefault( x => x.Index > 0 && !string.IsNullOrEmpty( x.Group.Value ) );
+            var indexers = groupMatch.Groups[ 3 ].Value.Trim();
 
-            if( firstNonEmptyGroup == null )
-                return false;
-
-            preamble = firstNonEmptyGroup.Group.Value.Trim();
-
-            var secondNonEmptyGroup = groupMatch.Groups.Values
-                .Select( ( x, i ) => new { Group = x, Index = i } )
-                .FirstOrDefault( x => !string.IsNullOrEmpty( x.Group.Value ) && x.Index > firstNonEmptyGroup.Index );
-
-            // if there isn't an indexer clause, we're done
-            if( secondNonEmptyGroup == null )
-                return true;
-
-            var indexerMatch = _rxIndexers.Match(secondNonEmptyGroup.Group.Value.Trim());
-
-            if( !indexerMatch.Success
-                || !indexerMatch.Value.Trim().Equals( "this", StringComparison.Ordinal )
-            )
-                return false;
-
-            var typeMatch = indexerMatch;
-
-            while( ( typeMatch = typeMatch.NextMatch() ).Success )
+            var propSource = ParseReturnTypeNameClause( groupMatch.Groups[ 2 ].Value.Trim() ) with
             {
-                var nameMatch = typeMatch.NextMatch();
+                Accessibility = groupMatch.Groups[ 1 ].Value.Trim(),
+                Arguments = string.IsNullOrEmpty( indexers ) ? new List<string>() : ParseArguments( indexers[ 1..^1 ] )
+            };
 
-                if( !nameMatch.Success )
-                    return false;
+            var info= new PropertyInfo( propSource )
+            {
+                Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
+            };
 
-                indexers.Add( $"{typeMatch.Value.Trim()} {nameMatch.Value.Trim()}" );
-
-                typeMatch = nameMatch;
-            }
-
-            return true;
+            return new List<PropertyInfo> { info };
         }
 
-        private bool ExtractPropertyElements( string text, out ReturnTypeSource? result )
+        private MethodSource ParseReturnTypeNameClause( string text )
         {
-            result = null;
+            var numAngleBrackets = 0;
+            var sb = new StringBuilder();
+            string? returnType = null;
 
-            var match = _rxProperty.Match( text );
-
-            if( !match.Success )
-                return false;
-
-            switch( match.Groups.Count )
+            foreach (var curChar in text)
             {
-                case 3:
-                    result = new ReturnTypeSource( match.Groups[ 2 ].Value.Trim(), 
-                        string.Empty,
-                        match.Groups[ 1 ].Value.Trim() );
+                switch (curChar)
+                {
+                    case ',':
+                        sb.Append(curChar);
+                        break;
 
-                    break;
+                    case '<':
+                        sb.Append( curChar );
+                        numAngleBrackets++;
 
-                case 4:
-                    result = new ReturnTypeSource( match.Groups[ 3 ].Value.Trim(), 
-                        match.Groups[ 1 ].Value.Trim(),
-                        match.Groups[ 2 ].Value.Trim() );
+                        break;
 
-                    break;
+                    case '>':
+                        // if we're inside a type argument clause a closing
+                        // angle bracket just means we're finishing an embedded type argument
+                        if( numAngleBrackets > 0)
+                            sb.Append(curChar);
 
-                default:
-                    return false;
+                        numAngleBrackets--;
+
+                        // when the number of angle brackets goes to zero we're at the end
+                        // of the return type clause
+                        if( numAngleBrackets == 0 )
+                        {
+                            returnType = sb.ToString();
+                            sb.Clear();
+                        }
+
+                        break;
+
+                    case ' ':
+                        // if we're not inside a type argument clause a space
+                        // means we've found the end of the return type clause
+                        if( numAngleBrackets <= 0 )
+                        {
+                            if( sb.Length > 0 )
+                            {
+                                returnType = sb.ToString();
+                                sb.Clear();
+                            }
+                        }
+                        else sb.Append( curChar );
+
+                        break;
+
+                    default:
+                        sb.Append(curChar);
+                        break;
+                }
             }
 
-            return true;
+            return new MethodSource( sb.ToString(), 
+                string.Empty, 
+                TypeArguments: new List<string>(), 
+                new List<string>(),
+                returnType! );
         }
     }
 }

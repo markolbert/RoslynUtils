@@ -27,21 +27,17 @@ namespace Tests.RoslynWalker
     {
         private readonly List<SourceLine> _lines = new();
 
-        public LineBlock( SourceLine? srcLine )
+        public LineBlock( BlockOpeningLine? srcLine )
         {
             ParentLine = srcLine;
-
-            if( ParentLine != null )
-                ParentLine.ChildBlock = this;
         }
 
-        public SourceLine? ParentLine { get; }
+        public BlockOpeningLine? ParentLine { get; }
         public ReadOnlyCollection<SourceLine> Lines => _lines.AsReadOnly();
         public SourceLine? CurrentLine => _lines.LastOrDefault();
 
-        public void AddSourceLine( string line, LineType lineType )
-        {
-            _lines.Add( new SourceLine( line, lineType, this ) );
-        }
+        public void AddStatement( string text ) => _lines.Add( new SourceLine( text, this ) );
+        public void AddBlockOpener( string text ) => _lines.Add( new BlockOpeningLine( text, this ) );
+        public void AddBlockCloser() => _lines.Add( new BlockClosingLine( this ) );
     }
 }

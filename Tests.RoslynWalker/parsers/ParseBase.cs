@@ -11,7 +11,7 @@ namespace Tests.RoslynWalker
     public abstract class ParseBase<TElement> : IParse
         where TElement : BaseInfo
     {
-        protected const string AccessibilityClause = @"private|public|protected internal|protected|internal";
+        protected const string AccessibilityClause = @"private\s+|public\s+|protected internal\s+|protected\s+|internal\s+";
         private static readonly Regex _rxTypeArgsGroup = new(@$"\s*([^<>]*)<(.*)>", RegexOptions.Compiled);
 
         private readonly Regex _matcher;
@@ -45,13 +45,13 @@ namespace Tests.RoslynWalker
             Focus = focus;
         }
 
-        protected abstract TElement? Parse( SourceLine srcLine );
+        protected abstract List<TElement>? Parse( SourceLine srcLine );
 
         public string MatchText { get; }
         public ReadOnlyCollection<LineType> SupportedLineTypes => _lineTypes.AsReadOnly();
         public virtual ParserFocus Focus {get;}
 
-        public virtual bool HandlesLine( SourceLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType ) 
+        public virtual bool HandlesLine( SourceLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType )
                                                                  && _matcher.IsMatch( srcLine.Line );
 
         protected BaseInfo? GetParent(SourceLine srcLine, params ElementNature[] nature)
@@ -59,17 +59,17 @@ namespace Tests.RoslynWalker
             var curSrcLine = srcLine;
             BaseInfo? retVal = null;
 
-            while (curSrcLine?.LineBlock != null)
+            while (curSrcLine.Parent != null)
             {
-                curSrcLine = curSrcLine.LineBlock.ParentLine;
+                curSrcLine = curSrcLine.Parent.ParentLine;
 
                 if (curSrcLine == null)
                     break;
 
-                if (nature.All(x => curSrcLine?.Element?.Nature != x))
+                if (nature.All(x => curSrcLine?.Elements?.FirstOrDefault()?.Nature != x))
                     continue;
 
-                retVal = curSrcLine.Element;
+                retVal = curSrcLine.Elements!.First();
                 break;
             }
 
@@ -95,16 +95,19 @@ namespace Tests.RoslynWalker
 
             preamble = groupMatch.Groups[1].Value.Trim();
 
-            typeArgs.AddRange(ParseArguments(groupMatch.Groups[2].Value.Trim(), false));
+            typeArgs.AddRange(ParseArguments(groupMatch.Groups[2].Value.Trim()));
 
             return true;
         }
 
-        protected List<string> ParseArguments(string text, bool isMethod)
+        protected List<string> ParseArguments(string? text)
         {
             var retVal = new List<string>();
+
+            if( string.IsNullOrEmpty( text ) )
+                return retVal;
+            
             var numLessThan = 0;
-            var foundArgStart = false;
             var sb = new StringBuilder();
 
             foreach (var curChar in text)
@@ -116,7 +119,6 @@ namespace Tests.RoslynWalker
                         {
                             retVal.Add(sb.ToString());
                             sb.Clear();
-                            foundArgStart = false;
                         }
                         else sb.Append(curChar);
 
@@ -134,16 +136,7 @@ namespace Tests.RoslynWalker
 
                         break;
 
-                    case ' ':
-                        // we only merge types and argument names for parsing method
-                        // arguments, since generic type arguments don't have argument names
-                        if (isMethod && foundArgStart)
-                            sb.Append(curChar);
-
-                        break;
-
                     default:
-                        foundArgStart = true;
                         sb.Append(curChar);
 
                         break;
@@ -177,6 +170,6 @@ namespace Tests.RoslynWalker
             return true;
         }
 
-        BaseInfo? IParse.Parse( SourceLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine );
+        List<BaseInfo>? IParse.Parse( SourceLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine )?.Cast<BaseInfo>().ToList();
     }
 }

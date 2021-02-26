@@ -17,6 +17,8 @@
 
 #endregion
 
+using System.Collections.Generic;
+
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker
@@ -27,10 +29,8 @@ namespace Tests.RoslynWalker
             : base( ElementNature.Field, src )
         {
             FieldType = src.FieldType;
-            AssignmentClause = src.AssignmentClause;
         }
 
         public string FieldType { get; }
-        public string AssignmentClause { get; }
     }
 }

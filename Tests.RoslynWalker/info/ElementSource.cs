@@ -33,8 +33,7 @@ namespace Tests.RoslynWalker
     public record EventSource(
             string Name,
             string Accessibility,
-            string EventHandler,
-            List<string> EventHandlerTypeArguments )
+            string EventArgType )
         : ElementSource( Name, Accessibility );
 
     public record FieldSource(
@@ -51,9 +50,11 @@ namespace Tests.RoslynWalker
             List<string> TypeArguments )
         : ElementSource( Name, Accessibility );
 
-    public record ReturnTypeSource(
+    public record MethodSource(
             string Name,
             string Accessibility,
+            List<string> TypeArguments,
+            List<string> Arguments,
             string ReturnType )
-        : ElementSource( Name, Accessibility );
+        : DelegateSource( Name, Accessibility, TypeArguments, Arguments );
 }

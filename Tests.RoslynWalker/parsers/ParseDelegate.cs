@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
@@ -11,13 +12,13 @@ namespace Tests.RoslynWalker
 
         public ParseDelegate()
             : base( ElementNature.Interface, 
-                @$"({AccessibilityClause})?\s*delegate\s+[^\s\(]+\(",
+                @"(.*\s+delegate|^delegate)\s+",
                 ParserFocus.CurrentSourceLine, 
                 LineType.Statement )
         {
         }
 
-        protected override DelegateInfo? Parse( SourceLine srcLine )
+        protected override List<DelegateInfo>? Parse( SourceLine srcLine )
         {
             var groupMatch = _rxDelegateGroup.Match(srcLine.Line);
 
@@ -31,12 +32,14 @@ namespace Tests.RoslynWalker
             var delegateSrc = new DelegateSource(tempName!,
                 groupMatch.Groups[1].Value.Trim(),
                 tempTypeArgs,
-                ParseArguments(groupMatch.Groups[4].Value.Trim(), true));
+                ParseArguments(groupMatch.Groups[4].Value.Trim()));
 
-            return new DelegateInfo( delegateSrc )
+            var info = new DelegateInfo( delegateSrc )
             {
                 Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
+
+            return new List<DelegateInfo> { info };
         }
     }
 }

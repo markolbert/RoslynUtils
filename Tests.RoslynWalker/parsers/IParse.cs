@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using J4JSoftware.Utilities;
 
@@ -11,6 +12,6 @@ namespace Tests.RoslynWalker
         bool HandlesLine(SourceLine srcLine);
         string MatchText { get; }
 
-        BaseInfo? Parse( SourceLine srcLine );
+        List<BaseInfo>? Parse( SourceLine srcLine );
     }
 }

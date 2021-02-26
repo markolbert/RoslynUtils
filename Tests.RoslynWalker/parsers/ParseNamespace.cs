@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
@@ -13,7 +14,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override NamespaceInfo? Parse( SourceLine srcLine )
+        protected override List<NamespaceInfo>? Parse( SourceLine srcLine )
         {
             var match = RxNamespaceGroup.Match( srcLine.Line );
 
@@ -23,10 +24,12 @@ namespace Tests.RoslynWalker
 
             // namespaces can be nested so look to see if we're a child of a higher-level
             // namespace
-            return new NamespaceInfo( match.Groups[ 2 ].Value.Trim() )
+            var info = new NamespaceInfo( match.Groups[ 2 ].Value.Trim() )
             {
                 Parent = (NamespaceInfo?) GetParent( srcLine, ElementNature.Namespace )
             };
+
+            return new List<NamespaceInfo> { info };
         }
     }
 }
