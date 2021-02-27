@@ -18,19 +18,20 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Tests.RoslynWalker
 {
     public class StatementLine
     {
-        public StatementLine( string line, LineBlock parent )
+        public StatementLine( string line, BlockLine parent )
         {
             Line = line;
             LineType = LineType.Statement;
             Parent = parent;
         }
 
-        protected StatementLine( string line, LineType lineType, LineBlock? parent )
+        protected StatementLine( string line, LineType lineType, BlockLine? parent )
         {
             Line = line;
             LineType = lineType;
@@ -40,13 +41,15 @@ namespace Tests.RoslynWalker
         public bool Parsed { get; private set; }
         public string Line { get; }
         public LineType LineType { get; }
-        public LineBlock? Parent { get; set; }
+        public BlockLine? Parent { get; set; }
         public List<BaseInfo>? Elements { get; private set; }
 
-        public void Parse( ParserCollection parsers )
+        public IEnumerable<BaseInfo> Parse( ParserCollection parsers )
         {
             Elements = parsers.Parse( this );
             Parsed = true;
+
+            return Elements ?? Enumerable.Empty<BaseInfo>();
         }
     }
 }

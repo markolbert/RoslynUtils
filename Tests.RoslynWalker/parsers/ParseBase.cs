@@ -51,20 +51,21 @@ namespace Tests.RoslynWalker
 
         protected BaseInfo? GetParent(StatementLine srcLine, params ElementNature[] nature)
         {
-            var curSrcLine = srcLine;
+            if( srcLine.Parent == null )
+                return null;
+
+            var curBlock = srcLine.Parent;
             BaseInfo? retVal = null;
 
-            while (curSrcLine.Parent != null)
+            while (curBlock != null)
             {
-                curSrcLine = curSrcLine.Parent.ParentLine;
-
-                if (curSrcLine == null)
-                    break;
-
-                if (nature.All(x => curSrcLine?.Elements?.FirstOrDefault()?.Nature != x))
+                if( nature.All( x => curBlock.Elements?.FirstOrDefault()?.Nature != x ) )
+                {
+                    curBlock = curBlock.Parent;
                     continue;
+                }
 
-                retVal = curSrcLine.Elements!.First();
+                retVal = curBlock.Elements!.First();
                 break;
             }
 

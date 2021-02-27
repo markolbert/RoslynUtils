@@ -27,12 +27,12 @@ namespace Tests.RoslynWalker
     {
         private readonly List<StatementLine> _lines = new();
 
-        public LineBlock( BlockOpeningLine? srcLine )
+        public LineBlock( BlockLine? srcLine )
         {
             ParentLine = srcLine;
         }
 
-        public BlockOpeningLine? ParentLine { get; }
+        public BlockLine? ParentLine { get; }
         public ReadOnlyCollection<StatementLine> Lines => _lines.AsReadOnly();
         public StatementLine? CurrentLine => _lines.LastOrDefault();
 
@@ -44,9 +44,9 @@ namespace Tests.RoslynWalker
             return retVal;
         }
 
-        public BlockOpeningLine AddBlockOpener( string text )
+        public BlockLine AddBlockOpener( string text )
         {
-            var retVal = new BlockOpeningLine( text, this );
+            var retVal = new BlockLine( text, this );
             _lines.Add( retVal );
 
             return retVal;

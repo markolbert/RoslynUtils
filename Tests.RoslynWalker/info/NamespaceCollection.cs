@@ -90,7 +90,7 @@ namespace Tests.RoslynWalker
                 var srcFile = new SourceFile( srcPath );
                 srcFile.ParseFile( _parsers );
 
-                foreach( var srcLine in srcFile.RootBlock!.Lines )
+                foreach( var srcLine in srcFile.RootBlock!.Children )
                 {
                     ParseSourceLine( srcLine );
                 }
@@ -164,11 +164,10 @@ namespace Tests.RoslynWalker
                 }
 
                 // we only drill into block openers
-                if( srcLine is not BlockOpeningLine blockOpeningLine ) 
+                if( srcLine is not BlockLine blockOpeningLine ) 
                     continue;
 
-                foreach( var childLine in blockOpeningLine.ChildBlock.Lines
-                                          ?? Enumerable.Empty<StatementLine>() )
+                foreach( var childLine in blockOpeningLine.Children )
                 {
                     ParseSourceLine( childLine );
                 }

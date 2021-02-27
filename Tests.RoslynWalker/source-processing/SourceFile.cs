@@ -54,10 +54,10 @@ namespace Tests.RoslynWalker
 
             _textLen = _text.Length;
 
-            RootBlock = new LineBlock( new BlockOpeningLine( string.Empty, null ) );
+            RootBlock = new BlockLine( string.Empty, null );
         }
 
-        public LineBlock RootBlock { get; }
+        public BlockLine RootBlock { get; }
 
         private char CurrentChar => _position < _textLen - 1 ? _text[ _position ] : _text[ ^1 ];
 
@@ -83,26 +83,19 @@ namespace Tests.RoslynWalker
             ParseBlock( RootBlock, parsers );
         }
 
-        private void ParseBlock( LineBlock lineBlock, ParserCollection parsers )
+        private void ParseBlock( BlockLine block, ParserCollection parsers )
         {
-            foreach( var srcLine in lineBlock.Lines )
+            foreach( var srcLine in block.Children )
             {
-                srcLine.Parse( parsers );
+                var elements = srcLine.Parse( parsers );
 
-                if( srcLine is not BlockOpeningLine childLine )
+                if( srcLine is not BlockLine childBlock )
                     continue;
 
-                var parseableChild = srcLine.Elements?.FirstOrDefault();
-                if( parseableChild == null )
-                    continue;
-
-                switch( parseableChild )
-                {
-                    case ClassInfo:
-                    case InterfaceInfo:
-                        ParseBlock(childLine.ChildBlock, parsers);
-                        break;
-                }
+                if( elements.Any( x => x is NamespaceInfo
+                                       || x is ClassInfo
+                                       || x is InterfaceInfo ) )
+                    ParseBlock( childBlock, parsers );
             }
         }
 
@@ -125,15 +118,14 @@ namespace Tests.RoslynWalker
                         break;
 
                     case '{':
-                        block = new LineBlock( block.AddBlockOpener( sb.ToString() ) );
+                        block = block.AddBlockOpener( sb.ToString() );
                         sb.Clear();
                         break;
 
                     case '}':
-                        block.AddBlockCloser();
                         sb.Clear();
 
-                        block = block.ParentLine?.Parent
+                        block = block.Parent
                                 ?? throw new NullReferenceException(
                                     "Attempted to move to an undefined parent LineBlock" );
                         break;
@@ -195,16 +187,16 @@ namespace Tests.RoslynWalker
             else _position += endOfComment - _position + 2;
         }
 
-        private IEnumerable<StatementLine> EnumerateLineBlock( LineBlock block )
+        private IEnumerable<StatementLine> EnumerateLineBlock( BlockLine block )
         {
-            foreach( var srcLine in block.Lines )
+            foreach( var srcLine in block.Children )
             {
                 yield return srcLine;
 
-                if( srcLine is not BlockOpeningLine blockOpeningLine ) 
+                if( srcLine is not BlockLine childBlock ) 
                     continue;
 
-                foreach( var childLine in EnumerateLineBlock( blockOpeningLine.ChildBlock ) )
+                foreach( var childLine in EnumerateLineBlock( childBlock ) )
                 {
                     yield return childLine;
                 }

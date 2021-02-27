@@ -17,6 +17,7 @@
 
 #endregion
 
+using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -32,6 +33,18 @@ namespace Tests.RoslynWalker
             var namespaces = ServiceProvider.Instance.GetRequiredService<NamespaceCollection>();
 
             namespaces.ParseFile( projFilePath, out _ ).Should().BeTrue();
+
+            namespaces.Count().Should().BeGreaterThan( 0 );
+
+            namespaces.Namespaces
+                .SelectMany( x => x.Classes )
+                .Count()
+                .Should().BeGreaterThan( 0 );
+
+            namespaces.Namespaces
+                .SelectMany(x => x.Interfaces)
+                .Count()
+                .Should().BeGreaterThan(0);
         }
     }
 }

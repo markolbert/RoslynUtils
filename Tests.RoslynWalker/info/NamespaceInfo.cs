@@ -58,7 +58,7 @@ namespace Tests.RoslynWalker
                 _classes.FirstOrDefault( x => x.FullName.Equals( toAdd.FullName, StringComparison.Ordinal ) );
 
             if( existing == null )
-                _interfaces.Add( toAdd );
+                _classes.Add( toAdd );
             else
             {
                 existing.Events.AddRange( toAdd.Events );

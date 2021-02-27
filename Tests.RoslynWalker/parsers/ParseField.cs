@@ -26,8 +26,8 @@ namespace Tests.RoslynWalker
         public override bool HandlesLine( StatementLine srcLine )
         {
             // fields must belong to a class
-            if( srcLine.Parent?.ParentLine == null
-                || !_rxClass.IsMatch( srcLine.Parent.ParentLine.Line ) )
+            if( srcLine.Parent == null
+                || !_rxClass.IsMatch( srcLine.Parent.Line ) )
                 return false;
 
             return base.HandlesLine( srcLine );

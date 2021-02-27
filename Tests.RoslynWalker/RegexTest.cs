@@ -38,7 +38,7 @@ namespace Tests.RoslynWalker
             if( !string.IsNullOrEmpty( ancestry ) )
                 sb.Append( $":{ancestry}" );
 
-            var srcLine = new BlockOpeningLine( sb.ToString(), null );
+            var srcLine = new BlockLine( sb.ToString(), null );
 
             var infoList = ParseSourceLine<ClassInfo>( srcLine, parseSuccess, correctType );
             if( infoList == null )
@@ -79,7 +79,7 @@ namespace Tests.RoslynWalker
             if( !string.IsNullOrEmpty( ancestry ) )
                 sb.Append( $":{ancestry}" );
 
-            var srcLine = new BlockOpeningLine( sb.ToString(), null );
+            var srcLine = new BlockLine( sb.ToString(), null );
 
             var infoList = ParseSourceLine<InterfaceInfo>( srcLine, parseSuccess, correctType );
             if( infoList == null )
@@ -120,10 +120,10 @@ namespace Tests.RoslynWalker
 
             sb.Append( sbArgs );
 
-            var container = new BlockOpeningLine( "public class TestClass", null );
-            container.ChildBlock.AddStatement( sb.ToString() );
+            var container = new BlockLine( "public class TestClass", null );
+            container.AddStatement( sb.ToString() );
 
-            var infoList = ParseSourceLine<DelegateInfo>( container.ChildBlock.Lines.First(), 
+            var infoList = ParseSourceLine<DelegateInfo>( container.Children.First(), 
                 parseSuccess, 
                 correctType );
 
@@ -167,10 +167,10 @@ namespace Tests.RoslynWalker
 
             sb.Append( sbArgs );
 
-            var container = new BlockOpeningLine( "public class Ralph", null );
-            container.ChildBlock.AddStatement( sb.ToString() );
+            var container = new BlockLine( "public class Ralph", null );
+            container.AddStatement( sb.ToString() );
 
-            var infoList = ParseSourceLine<MethodInfo>( container.ChildBlock.Lines.First(), 
+            var infoList = ParseSourceLine<MethodInfo>( container.Children.First(), 
                 parseSuccess,
                 correctType );
 
@@ -210,8 +210,8 @@ namespace Tests.RoslynWalker
             if( !string.IsNullOrEmpty( accessText ) )
                 sb.Insert( 0, $"{accessText} " );
 
-            var containerLine = new BlockOpeningLine( sb.ToString(), null );
-            containerLine.ChildBlock.AddBlockOpener( "get" );
+            var containerLine = new BlockLine( sb.ToString(), null );
+            containerLine.AddBlockOpener( "get" );
 
             var infoList = ParseSourceLine<PropertyInfo>( containerLine, parseSuccess, correctType );
             if( infoList == null )
@@ -256,20 +256,20 @@ namespace Tests.RoslynWalker
             if( !string.IsNullOrEmpty( accessText ) )
                 sb.Insert( 0, $"{accessText} " );
 
-            var container = new BlockOpeningLine( "public class Ralph", null );
+            var container = new BlockLine( "public class Ralph", null );
 
             switch( lineType )
             {
                 case LineType.BlockOpener:
-                    container.ChildBlock.AddBlockOpener( sb.ToString() );
+                    container.AddBlockOpener( sb.ToString() );
                     break;
 
                 case LineType.Statement:
-                    container.ChildBlock.AddStatement( sb.ToString() );
+                    container.AddStatement( sb.ToString() );
                     break;
             }
 
-            var infoList = ParseSourceLine<EventInfo>( container.ChildBlock.Lines.First(),
+            var infoList = ParseSourceLine<EventInfo>( container.Children.First(),
                 parseSuccess,
                 correctType );
             if( infoList == null )
@@ -325,10 +325,10 @@ namespace Tests.RoslynWalker
             if( !string.IsNullOrEmpty( accessText ) )
                 sb.Insert( 0, $"{accessText} " );
 
-            var classLine = new BlockOpeningLine( "public class TestClass", null );
-            classLine.ChildBlock.AddStatement( sb.ToString() );
+            var classLine = new BlockLine( "public class TestClass", null );
+            classLine.AddStatement( sb.ToString() );
 
-            var parsedFields = _parsers.Parse( classLine.ChildBlock.Lines.First() );
+            var parsedFields = _parsers.Parse( classLine.Children.First() );
 
             if( !parseSuccess )
             {

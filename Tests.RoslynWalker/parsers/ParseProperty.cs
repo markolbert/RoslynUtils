@@ -24,10 +24,10 @@ namespace Tests.RoslynWalker
         {
             // to determine if this is a property line we check to see if the 
             // immediate child line is "get" or "set"
-            if( srcLine is not BlockOpeningLine blockOpeningLine)
+            if( srcLine is not BlockLine block)
                 return false;
 
-            var toCheck = blockOpeningLine.ChildBlock.Lines.FirstOrDefault();
+            var toCheck = block.Children.FirstOrDefault();
 
             return toCheck != null 
                    && toCheck.LineType == LineType.BlockOpener 
