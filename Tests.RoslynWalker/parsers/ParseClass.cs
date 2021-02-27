@@ -8,8 +8,7 @@ namespace Tests.RoslynWalker
     public class ParseClass : ParseInterfaceClassBase<ClassInfo>
     {
         public ParseClass()
-            : base( ElementNature.Class, @"(.*\s+class|^class)\s+", ParserFocus.CurrentSourceLine,
-                LineType.BlockOpener )
+            : base( ElementNature.Class, @"(.*\s+class|^class)\s+", LineType.BlockOpener )
         {
         }
 

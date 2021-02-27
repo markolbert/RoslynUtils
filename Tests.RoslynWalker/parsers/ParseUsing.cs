@@ -7,7 +7,7 @@ namespace Tests.RoslynWalker
     public class ParseUsing : ParseBase<ElementInfo>
     {
         public ParseUsing()
-            : base( ElementNature.Using, @"\s*using[\w\s]+", ParserFocus.CurrentSourceLine, LineType.BlockOpener)
+            : base( ElementNature.Using, @"\s*using[\w\s]+", LineType.BlockOpener)
         {
         }
 

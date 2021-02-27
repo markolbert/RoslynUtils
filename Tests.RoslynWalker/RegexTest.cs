@@ -14,20 +14,20 @@ namespace Tests.RoslynWalker
     {
         private readonly ParserCollection _parsers = ServiceProvider.Instance.GetRequiredService<ParserCollection>();
 
-        [Theory]
-        [InlineData("public", "class", "Ralph", "", true, true,true, Accessibility.Public)]
-        [InlineData("public", "class", "Ralph", "", true, true,true, Accessibility.Public, "int", "bool", "T<string, T2<int, bool>>")]
-        [InlineData("public", "interface", "Ralph", "", true, true, false, Accessibility.Public)]
-        [InlineData("public", "event", "Ralph", "", true, false,false, Accessibility.Public)]
+        [ Theory ]
+        [ InlineData( "public", "class", "Ralph", "", true, true, Accessibility.Public ) ]
+        [ InlineData( "public", "class", "Ralph", "", true, true, Accessibility.Public, "int", "bool",
+            "T<string, T2<int, bool>>" ) ]
+        [ InlineData( "public", "interface", "Ralph", "", true, false, Accessibility.Public ) ]
+        [ InlineData( "public", "event", "Ralph", "", false, false, Accessibility.Public ) ]
         public void ParseClass(
-            string accessText, 
-            string nature, 
-            string name, 
-            string ancestry, 
-            bool parserExists, 
+            string accessText,
+            string nature,
+            string name,
+            string ancestry,
             bool parseSuccess,
             bool correctType,
-            Accessibility accessibility,  
+            Accessibility accessibility,
             params string[] typeArgs )
         {
             var sb = AggregateArguments( typeArgs, '<', '>', false );
@@ -42,48 +42,7 @@ namespace Tests.RoslynWalker
 
             var srcLine = new BlockOpeningLine( sb.ToString(), null );
 
-            var infoList = ParseSourceLine<ClassInfo>( srcLine, parserExists, parseSuccess, correctType );
-            if( infoList == null )
-                return;
-
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
-
-            toCheck.Name.Should().Be( name );
-            toCheck.TypeArguments.Should().BeEquivalentTo( typeArgs );
-            toCheck.Ancestry.Should().Be( ancestry );
-            toCheck.Accessibility.Should().Be( accessibility );
-        }
-
-        [Theory]
-        [InlineData("public", "interface", "Ralph", "", true, true,true, Accessibility.Public)]
-        [InlineData("public", "interface", "Ralph", "", true, true,true, Accessibility.Public, "int", "bool", "T<string, T2<int, bool>>")]
-        [InlineData("public", "class", "Ralph", "", true, true, false, Accessibility.Public)]
-        [InlineData("public", "event", "Ralph", "", true, false,false, Accessibility.Public)]
-        public void ParseInterface(
-            string accessText, 
-            string nature, 
-            string name, 
-            string ancestry, 
-            bool parserExists, 
-            bool parseSuccess,
-            bool correctType,
-            Accessibility accessibility,  
-            params string[] typeArgs )
-        {
-            var sb = AggregateArguments( typeArgs, '<', '>', false );
-
-            sb.Insert( 0, $"{nature} {name}" );
-
-            if( !string.IsNullOrEmpty( accessText ) )
-                sb.Insert( 0, $"{accessText} " );
-
-            if( !string.IsNullOrEmpty( ancestry ) )
-                sb.Append( $":{ancestry}" );
-
-            var srcLine = new BlockOpeningLine( sb.ToString(), null );
-
-            var infoList = ParseSourceLine<InterfaceInfo>( srcLine, parserExists, parseSuccess, correctType );
+            var infoList = ParseSourceLine<ClassInfo>( srcLine, parseSuccess, correctType );
             if( infoList == null )
                 return;
 
@@ -97,16 +56,56 @@ namespace Tests.RoslynWalker
         }
 
         [ Theory ]
-        [ InlineData( "public", "Ralph", true, true, true, Accessibility.Public, new string[0], new string[0] ) ]
-        [ InlineData( "public", "Ralph", true, true, true, Accessibility.Public,
+        [ InlineData( "public", "interface", "Ralph", "", true, true, Accessibility.Public ) ]
+        [ InlineData( "public", "interface", "Ralph", "", true, true, Accessibility.Public, "int", "bool",
+            "T<string, T2<int, bool>>" ) ]
+        [ InlineData( "public", "class", "Ralph", "", true, false, Accessibility.Public ) ]
+        [ InlineData( "public", "event", "Ralph", "", false, false, Accessibility.Public ) ]
+        public void ParseInterface(
+            string accessText,
+            string nature,
+            string name,
+            string ancestry,
+            bool parseSuccess,
+            bool correctType,
+            Accessibility accessibility,
+            params string[] typeArgs )
+        {
+            var sb = AggregateArguments( typeArgs, '<', '>', false );
+
+            sb.Insert( 0, $"{nature} {name}" );
+
+            if( !string.IsNullOrEmpty( accessText ) )
+                sb.Insert( 0, $"{accessText} " );
+
+            if( !string.IsNullOrEmpty( ancestry ) )
+                sb.Append( $":{ancestry}" );
+
+            var srcLine = new BlockOpeningLine( sb.ToString(), null );
+
+            var infoList = ParseSourceLine<InterfaceInfo>( srcLine, parseSuccess, correctType );
+            if( infoList == null )
+                return;
+
+            infoList.Count.Should().Be( 1 );
+            var toCheck = infoList[ 0 ];
+
+            toCheck.Name.Should().Be( name );
+            toCheck.TypeArguments.Should().BeEquivalentTo( typeArgs );
+            toCheck.Ancestry.Should().Be( ancestry );
+            toCheck.Accessibility.Should().Be( accessibility );
+        }
+
+        [ Theory ]
+        [ InlineData( "public", "Ralph", true, true, Accessibility.Public, new string[0], new string[0] ) ]
+        [ InlineData( "public", "Ralph", true, true, Accessibility.Public,
             new[] { "int", "bool", "T<string, T2<int, bool>>" }, new string[0] ) ]
-        [ InlineData( "", "Ralph", true, true, true, Accessibility.Private,
+        [ InlineData( "", "Ralph", true, true, Accessibility.Private,
             new[] { "int", "bool", "T<string, T2<int, bool>>" },
             new[] { "int arg1", "T<int, string, T2<int, bool>> arg2" } ) ]
         public void ParseDelegate(
             string accessText,
             string name,
-            bool parserExists,
             bool parseSuccess,
             bool correctType,
             Accessibility accessibility,
@@ -127,7 +126,6 @@ namespace Tests.RoslynWalker
             container.ChildBlock.AddStatement( sb.ToString() );
 
             var infoList = ParseSourceLine<DelegateInfo>( container.ChildBlock.Lines.First(), 
-                parserExists,
                 parseSuccess, 
                 correctType );
 
@@ -144,17 +142,16 @@ namespace Tests.RoslynWalker
         }
 
         [ Theory ]
-        [ InlineData( "public", "Ralph","int", true, true, true, Accessibility.Public, new string[0], new string[0] ) ]
-        [ InlineData( "public", "Ralph","T<int, bool, T2<string>>", true, true, true, Accessibility.Public,
+        [ InlineData( "public", "Ralph","int", true, true, Accessibility.Public, new string[0], new string[0] ) ]
+        [ InlineData( "public", "Ralph","T<int, bool, T2<string>>", true, true, Accessibility.Public,
             new[] { "int", "bool", "T<string, T2<int, bool>>" }, new string[0] ) ]
-        [ InlineData( "", "Ralph", "void", true, true, true, Accessibility.Private,
+        [ InlineData( "", "Ralph", "void", true, true, Accessibility.Private,
             new[] { "int", "bool", "T<string, T2<int, bool>>" },
             new[] { "int arg1", "T<int, string, T2<int, bool>> arg2" } ) ]
         public void ParseMethod(
             string accessText,
             string name,
             string returnType,
-            bool parserExists,
             bool parseSuccess,
             bool correctType,
             Accessibility accessibility,
@@ -176,7 +173,6 @@ namespace Tests.RoslynWalker
             container.ChildBlock.AddStatement( sb.ToString() );
 
             var infoList = ParseSourceLine<MethodInfo>( container.ChildBlock.Lines.First(), 
-                parserExists, 
                 parseSuccess,
                 correctType );
 
@@ -194,16 +190,15 @@ namespace Tests.RoslynWalker
         }
 
         [ Theory ]
-        [ InlineData( "public", "Ralph","int", true, true, true, Accessibility.Public, new string[0] ) ]
-        [ InlineData( "public", "Ralph","T<int, bool, T2<string>>", true, true, true, Accessibility.Public,
+        [ InlineData( "public", "Ralph","int", true, true, Accessibility.Public, new string[0] ) ]
+        [ InlineData( "public", "Ralph","T<int, bool, T2<string>>", true, true, Accessibility.Public,
             new[] { "int idx1", "bool idx2", "T<string, T2<int, bool>> idx3" } ) ]
-        [ InlineData( "", "Ralph", "void", true, true, true, Accessibility.Private,
+        [ InlineData( "", "Ralph", "void", true, true, Accessibility.Private,
             new[] { "int idx1", "T<int, string, T2<int, bool>> idx2" } ) ]
         public void ParseProperty(
             string accessText,
             string name,
             string propertyType,
-            bool parserExists,
             bool parseSuccess,
             bool correctType,
             Accessibility accessibility,
@@ -220,7 +215,7 @@ namespace Tests.RoslynWalker
             var containerLine = new BlockOpeningLine( sb.ToString(), null );
             containerLine.ChildBlock.AddBlockOpener( "get" );
 
-            var infoList = ParseSourceLine<PropertyInfo>( containerLine, parserExists, parseSuccess, correctType );
+            var infoList = ParseSourceLine<PropertyInfo>( containerLine, parseSuccess, correctType );
             if( infoList == null )
                 return;
 
@@ -234,18 +229,19 @@ namespace Tests.RoslynWalker
         }
 
         [ Theory ]
-        [ InlineData( "public", "Ralph","int", LineType.BlockOpener,true, true, true, Accessibility.Public ) ]
-        [ InlineData( "public", "Ralph","T<int, bool, T2<string>>",LineType.BlockOpener, true, true, true, Accessibility.Public ) ]
-        [ InlineData( "", "Ralph", "",LineType.BlockOpener, true, true, true, Accessibility.Private ) ]
-        [ InlineData( "public", "Ralph","int", LineType.Statement,true, true, true, Accessibility.Public ) ]
-        [ InlineData( "public", "Ralph","T<int, bool, T2<string>>",LineType.Statement, true, true, true, Accessibility.Public ) ]
-        [ InlineData( "", "Ralph", "",LineType.Statement, true, true, true, Accessibility.Private ) ]
+        [ InlineData( "public", "Ralph", "int", LineType.BlockOpener, true, true, Accessibility.Public ) ]
+        [ InlineData( "public", "Ralph", "T<int, bool, T2<string>>", LineType.BlockOpener, true, true,
+            Accessibility.Public ) ]
+        [ InlineData( "", "Ralph", "", LineType.BlockOpener, true, true, Accessibility.Private ) ]
+        [ InlineData( "public", "Ralph", "int", LineType.Statement, true, true, Accessibility.Public ) ]
+        [ InlineData( "public", "Ralph", "T<int, bool, T2<string>>", LineType.Statement, true, true,
+            Accessibility.Public ) ]
+        [ InlineData( "", "Ralph", "", LineType.Statement, true, true, Accessibility.Private ) ]
         public void ParseEvent(
             string accessText,
             string name,
             string eventArgType,
             LineType lineType,
-            bool parserExists,
             bool parseSuccess,
             bool correctType,
             Accessibility accessibility )
@@ -267,16 +263,15 @@ namespace Tests.RoslynWalker
             switch( lineType )
             {
                 case LineType.BlockOpener:
-                    container.ChildBlock.AddBlockOpener(sb.ToString());
+                    container.ChildBlock.AddBlockOpener( sb.ToString() );
                     break;
 
                 case LineType.Statement:
-                    container.ChildBlock.AddStatement(sb.ToString());
+                    container.ChildBlock.AddStatement( sb.ToString() );
                     break;
             }
 
-            var infoList = ParseSourceLine<EventInfo>( container.ChildBlock.Lines.First(), 
-                parserExists, 
+            var infoList = ParseSourceLine<EventInfo>( container.ChildBlock.Lines.First(),
                 parseSuccess,
                 correctType );
             if( infoList == null )
@@ -291,16 +286,16 @@ namespace Tests.RoslynWalker
         }
 
         [ Theory ]
-        [ InlineData( "public", "int", true, true, true, Accessibility.Public, "field1" ) ]
-        [ InlineData( "public", "T<int, bool, T2<string>>",true, true, true, Accessibility.Public, "field1", "field2" ) ]
-        [ InlineData( "", "",true, true, true, Accessibility.Private, "field1", "field2", "field3" ) ]
-        [ InlineData( "public", "int", true, true, true, Accessibility.Public, "field1=0" ) ]
-        [ InlineData( "public", "T<int, bool, T2<string>>",true, true, true, Accessibility.Public, "field1", "field2 = null" ) ]
-        [ InlineData( "", "int",true, true, true, Accessibility.Private, "field1=1", "field=2", "field3=3" ) ]
+        [ InlineData( "public", "int", true, true, Accessibility.Public, "field1" ) ]
+        [ InlineData( "public", "T<int, bool, T2<string>>", true, true, Accessibility.Public, "field1", "field2" ) ]
+        [ InlineData( "", "", false, true, Accessibility.Private, "field1", "field2", "field3" ) ]
+        [ InlineData( "public", "int", true, true, Accessibility.Public, "field1=0" ) ]
+        [ InlineData( "public", "T<int, bool, T2<string>>", true, true, Accessibility.Public, "field1",
+            "field2 = null" ) ]
+        [ InlineData( "", "int", true, true, Accessibility.Private, "field1=1", "field=2", "field3=3" ) ]
         public void ParseField(
             string accessText,
             string fieldType,
-            bool parserExists,
             bool parseSuccess,
             bool correctType,
             Accessibility accessibility,
@@ -335,19 +330,30 @@ namespace Tests.RoslynWalker
             var classLine = new BlockOpeningLine( "public class TestClass", null );
             classLine.ChildBlock.AddStatement( sb.ToString() );
 
-            var toCheck = ParseSourceLine<FieldInfo>( classLine.ChildBlock.Lines.First(), 
-                parserExists, 
-                parseSuccess,
-                correctType );
+            var parsedFields = _parsers.Parse( classLine.ChildBlock.Lines.First() );
 
-            if( toCheck == null )
+            if( !parseSuccess )
+            {
+                parsedFields?.Count.Should().NotBe( nameClauses.Length );
+                return;
+            }
+            
+            parsedFields.Should().NotBeNull();
+
+            parsedFields!.Count.Should().Be( nameClauses.Length );
+            parsedFields.Should().BeEquivalentTo( fields );
+
+            if( !correctType ) 
                 return;
 
-            toCheck.Should().BeEquivalentTo( fields );
-
-            foreach( var field in toCheck )
+            foreach (var info in parsedFields)
             {
-                field.Accessibility.Should().Be( accessibility );
+                info.GetType().Should().Be<FieldInfo>();
+            }
+
+            foreach (var field in parsedFields.Cast<FieldInfo>())
+            {
+                field.Accessibility.Should().Be(accessibility);
             }
         }
 
@@ -374,15 +380,9 @@ namespace Tests.RoslynWalker
             return sb;
         }
 
-        private List<TInfo>? ParseSourceLine<TInfo>( SourceLine srcLine, bool parserExists, bool parseSuccess,
-            bool parseCorrectType )
+        private List<TInfo>? ParseSourceLine<TInfo>( SourceLine srcLine, bool parseSuccess, bool parseCorrectType )
             where TInfo : BaseInfo
         {
-            _parsers.HandlesLine( srcLine ).Should().Be( parserExists );
-
-            if( !parserExists )
-                return null;
-
             var infoList = _parsers.Parse( srcLine );
 
             if( parseSuccess )

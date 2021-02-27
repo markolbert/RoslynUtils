@@ -41,11 +41,17 @@ namespace Tests.RoslynWalker
             Parent = parent;
         }
 
-        public bool Parsed { get; internal set; }
+        public bool Parsed { get; private set; }
         public string Line { get; }
         public LineType LineType { get; }
         public LineBlock? Parent { get; set; }
-        public List<BaseInfo>? Elements { get; internal set; }
+        public List<BaseInfo>? Elements { get; private set; }
+
+        public void Parse( ParserCollection parsers )
+        {
+            Elements = parsers.Parse( this );
+            Parsed = true;
+        }
     }
 
     public class BlockOpeningLine : SourceLine

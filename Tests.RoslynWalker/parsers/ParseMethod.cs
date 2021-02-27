@@ -17,7 +17,7 @@ namespace Tests.RoslynWalker
             RegexOptions.Compiled);
 
         public ParseMethod()
-            : base( ElementNature.Method, @".*\(.*\)", ParserFocus.CurrentSourceLine, LineType.Statement )
+            : base( ElementNature.Method, @".*\(.*\)", LineType.Statement )
         {
         }
 

@@ -20,7 +20,6 @@ namespace Tests.RoslynWalker
         protected ParseBase( 
             ElementNature nature, 
             string matchText,
-            ParserFocus focus,
             LineType[] lineTypes
             )
         {
@@ -28,13 +27,11 @@ namespace Tests.RoslynWalker
             _lineTypes = lineTypes.ToList();
 
             MatchText = matchText;
-            Focus = focus;
         }
 
         protected ParseBase( 
             ElementNature nature, 
             string matchText,
-            ParserFocus focus,
             LineType lineType
         )
         {
@@ -42,14 +39,12 @@ namespace Tests.RoslynWalker
             _lineTypes = new List<LineType> { lineType };
 
             MatchText = matchText;
-            Focus = focus;
         }
 
         protected abstract List<TElement>? Parse( SourceLine srcLine );
 
         public string MatchText { get; }
         public ReadOnlyCollection<LineType> SupportedLineTypes => _lineTypes.AsReadOnly();
-        public virtual ParserFocus Focus {get;}
 
         public virtual bool HandlesLine( SourceLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType )
                                                                  && _matcher.IsMatch( srcLine.Line );

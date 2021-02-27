@@ -53,11 +53,9 @@ namespace Tests.RoslynWalker
             }
 
             _textLen = _text.Length;
-
-            RootBlock = CreateBlocks();
         }
 
-        public LineBlock RootBlock { get; }
+        public LineBlock? RootBlock { get; private set; }
 
         private char CurrentChar => _position < _textLen - 1 ? _text[ _position ] : _text[ ^1 ];
 
@@ -65,12 +63,48 @@ namespace Tests.RoslynWalker
         {
             _parentLines.Clear();
 
-            foreach( var line in EnumerateLineBlock( RootBlock ) ) yield return line;
+            if( RootBlock == null )
+                yield break;
+
+            foreach( var line in EnumerateLineBlock( RootBlock ) )
+            {
+                yield return line;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public void ParseFile( ParserCollection parsers )
+        {
+            RootBlock = CreateBlocks();
+
+            ParseBlock( RootBlock, parsers );
+        }
+
+        private void ParseBlock( LineBlock lineBlock, ParserCollection parsers )
+        {
+            foreach( var srcLine in lineBlock.Lines )
+            {
+                srcLine.Parse( parsers );
+
+                if( srcLine is not BlockOpeningLine childLine )
+                    continue;
+
+                var parseableChild = srcLine.Elements?.FirstOrDefault();
+                if( parseableChild == null )
+                    continue;
+
+                switch( parseableChild )
+                {
+                    case ClassInfo:
+                    case InterfaceInfo:
+                        ParseBlock(childLine.ChildBlock, parsers);
+                        break;
+                }
+            }
         }
 
         private LineBlock CreateBlocks()

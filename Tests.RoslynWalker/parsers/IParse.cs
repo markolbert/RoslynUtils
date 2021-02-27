@@ -8,7 +8,6 @@ namespace Tests.RoslynWalker
     public interface IParse
     {
         ReadOnlyCollection<LineType> SupportedLineTypes {get;}
-        ParserFocus Focus { get; }
         bool HandlesLine(SourceLine srcLine);
         string MatchText { get; }
 

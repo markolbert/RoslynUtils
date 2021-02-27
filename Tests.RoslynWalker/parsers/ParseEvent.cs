@@ -11,7 +11,7 @@ namespace Tests.RoslynWalker
 
         public ParseEvent()
             : base( ElementNature.Event, 
-                @"(.*\s+event|^event)\s+", ParserFocus.CurrentSourceLine,
+                @"(.*\s+event|^event)\s+", 
                 new[] { LineType.BlockOpener, LineType.Statement } )
         {
         }

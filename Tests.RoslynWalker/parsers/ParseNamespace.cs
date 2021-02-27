@@ -10,7 +10,7 @@ namespace Tests.RoslynWalker
 
 
         public ParseNamespace()
-            : base( ElementNature.Namespace, @"\s*namespace\s+", ParserFocus.CurrentSourceLine, LineType.BlockOpener)
+            : base( ElementNature.Namespace, @"\s*namespace\s+", LineType.BlockOpener)
         {
         }
 

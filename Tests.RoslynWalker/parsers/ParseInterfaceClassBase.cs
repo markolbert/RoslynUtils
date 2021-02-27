@@ -11,8 +11,8 @@ namespace Tests.RoslynWalker
         private static readonly Regex _rxAncestry = new(@"\s*([^:]+):?\s*(.*)", RegexOptions.Compiled);
         private static readonly Regex _rxNamedType = new(@$"\s*({AccessibilityClause})?\s*(class|interface)?\s*(.*)");
 
-        protected ParseInterfaceClassBase( ElementNature nature, string matchText, ParserFocus focus, LineType lineType )
-            : base( nature, matchText, focus, lineType )
+        protected ParseInterfaceClassBase( ElementNature nature, string matchText, LineType lineType )
+            : base( nature, matchText, lineType )
         {
         }
 

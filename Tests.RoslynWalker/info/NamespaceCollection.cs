@@ -88,8 +88,9 @@ namespace Tests.RoslynWalker
                     continue;
 
                 var srcFile = new SourceFile( srcPath );
+                srcFile.ParseFile( _parsers );
 
-                foreach( var srcLine in srcFile.RootBlock.Lines )
+                foreach( var srcLine in srcFile.RootBlock!.Lines )
                 {
                     ParseSourceLine( srcLine );
                 }
@@ -100,14 +101,6 @@ namespace Tests.RoslynWalker
 
         private void ParseSourceLine( SourceLine srcLine )
         {
-            if( !srcLine.Parsed )
-            {
-                if( _parsers.HandlesLine( srcLine ) )
-                    srcLine.Elements = _parsers.Parse( srcLine );
-
-                srcLine.Parsed = true;
-            }
-
             if( srcLine.Elements == null )
                 return;
 

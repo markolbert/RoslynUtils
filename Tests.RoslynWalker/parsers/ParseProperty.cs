@@ -18,7 +18,6 @@ namespace Tests.RoslynWalker
         public ParseProperty()
             : base( ElementNature.Property, 
                 @".*\s+get\s*|^get\s*$|.*\s+set\s*|^set\s*$",
-                ParserFocus.FirstChildSourceLine, 
                 LineType.BlockOpener )
         {
         }

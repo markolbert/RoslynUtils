@@ -15,13 +15,12 @@ namespace Tests.RoslynWalker
             new( $@"\s*({AccessibilityClause})?(\w+)\s*(.*)", RegexOptions.Compiled );
 
         private static readonly Regex _rxFields = new(@"\s*([^,]+),?");
-        private static readonly Regex _rxName = new( @"(\w+)(?:\s*=\s*)?(\w+)", RegexOptions.Compiled );
+        private static readonly Regex _rxName = new( @"(\w+)(?:\s*=\s*)?(\w+)?", RegexOptions.Compiled );
         private static readonly Regex _rxClass = new( @"(.*\s+class|^class)\s+", RegexOptions.Compiled );
 
         public ParseField()
             : base( ElementNature.Field, 
                 $@"\s*({AccessibilityClause})?.+",
-                ParserFocus.DefaultParser,
                 LineType.Statement )
         {
         }
@@ -36,30 +35,15 @@ namespace Tests.RoslynWalker
             return base.HandlesLine( srcLine );
         }
 
-        protected override List<FieldInfo>? Parse( SourceLine srcLine )
-        {
-            return ParseGeneric( srcLine ) ?? ParseNonGeneric( srcLine );
-
-            //var fieldSrc = new FieldSource( match.Groups[ 4 ].Value.Trim(),
-            //    match.Groups[ 1 ].Value.Trim(),
-            //    match.Groups[ 2 ].Value.Trim()
-            //        .Split( " ", StringSplitOptions.RemoveEmptyEntries )
-            //        .Last()
-            //    + match.Groups[ 3 ].Value.Trim(),
-            //    match.Groups[ 5 ].Value.Trim() );
-
-            //return new FieldInfo( fieldSrc )
-            //{
-            //    Parent = GetParent( srcLine, ElementNature.Class )
-            //};
-        }
+        protected override List<FieldInfo>? Parse( SourceLine srcLine )=>
+            ParseGeneric( srcLine ) ?? ParseNonGeneric( srcLine );
 
         private List<FieldInfo>? ParseGeneric( SourceLine srcLine )
         {
             var match = _rxGeneric.Match(srcLine.Line);
 
             if( !match.Success
-                || match.Groups.Count != 4 )
+                || match.Groups.Count != 6 )
                 return null;
 
             return ParseCommon( srcLine, 
@@ -73,7 +57,7 @@ namespace Tests.RoslynWalker
             var match = _rxNonGeneric.Match(srcLine.Line);
 
             if( !match.Success
-                || match.Groups.Count != 3 )
+                || match.Groups.Count != 4 )
                 return null;
 
             return ParseCommon( srcLine, 
@@ -87,16 +71,11 @@ namespace Tests.RoslynWalker
         {
             var clauseMatch = _rxFields.Match( nameClause );
 
-            if( !clauseMatch.Success )
-                return null;
-
             var retVal = new List<FieldInfo>();
 
-            Match? nameMatch;
-
-            do
+            while( clauseMatch.Success )
             {
-                nameMatch = _rxName.Match( clauseMatch.Groups[ 1 ].Value.Trim() );
+                var nameMatch = _rxName.Match( clauseMatch.Groups[ 1 ].Value.Trim() );
                 if( !nameMatch.Success )
                     return null;
 
@@ -110,10 +89,10 @@ namespace Tests.RoslynWalker
                     Parent = GetParent( srcLine, ElementNature.Class )
                 } );
 
-                nameMatch = nameMatch.NextMatch();
-            } while( nameMatch.Success );
+                clauseMatch = clauseMatch.NextMatch();
+            }
 
-            return retVal;
+            return retVal.Count > 0 ? retVal : null;
         }
     }
 }

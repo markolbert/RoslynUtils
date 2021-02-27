@@ -13,7 +13,6 @@ namespace Tests.RoslynWalker
         public ParseDelegate()
             : base( ElementNature.Interface, 
                 @"(.*\s+delegate|^delegate)\s+",
-                ParserFocus.CurrentSourceLine, 
                 LineType.Statement )
         {
         }
