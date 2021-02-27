@@ -29,9 +29,9 @@ namespace Tests.RoslynWalker
         [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj" ) ]
         public void Parse( string projFilePath )
         {
-            var parser = ServiceProvider.Instance.GetRequiredService<NamespaceCollection>();
+            var namespaces = ServiceProvider.Instance.GetRequiredService<NamespaceCollection>();
 
-            parser.ParseFile( projFilePath, out _ ).Should().BeTrue();
+            namespaces.ParseFile( projFilePath, out _ ).Should().BeTrue();
         }
     }
 }

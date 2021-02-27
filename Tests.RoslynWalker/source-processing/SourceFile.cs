@@ -53,18 +53,17 @@ namespace Tests.RoslynWalker
             }
 
             _textLen = _text.Length;
+
+            RootBlock = new LineBlock( new BlockOpeningLine( string.Empty, null ) );
         }
 
-        public LineBlock? RootBlock { get; private set; }
+        public LineBlock RootBlock { get; }
 
         private char CurrentChar => _position < _textLen - 1 ? _text[ _position ] : _text[ ^1 ];
 
         public IEnumerator<StatementLine> GetEnumerator()
         {
             _parentLines.Clear();
-
-            if( RootBlock == null )
-                yield break;
 
             foreach( var line in EnumerateLineBlock( RootBlock ) )
             {
@@ -79,7 +78,7 @@ namespace Tests.RoslynWalker
 
         public void ParseFile( ParserCollection parsers )
         {
-            RootBlock = CreateBlocks();
+            CreateBlocks();
 
             ParseBlock( RootBlock, parsers );
         }
@@ -107,14 +106,12 @@ namespace Tests.RoslynWalker
             }
         }
 
-        private LineBlock CreateBlocks()
+        private void CreateBlocks()
         {
             _position = -1;
             MoveNext();
 
-            var block = new LineBlock( null );
-            var retVal = block;
-
+            var block = RootBlock;
             var sb = new StringBuilder();
 
             while( _position < _textLen )
@@ -128,14 +125,8 @@ namespace Tests.RoslynWalker
                         break;
 
                     case '{':
-                        if( block.CurrentLine is not BlockOpeningLine blockOpeningLine )
-                            throw new ArgumentException(
-                                $"Trying to add an opening block to a StatementLine or a BlockClosingLine" );
-
-                        block.AddBlockOpener( sb.ToString() );
+                        block = new LineBlock( block.AddBlockOpener( sb.ToString() ) );
                         sb.Clear();
-
-                        block = new LineBlock( blockOpeningLine );
                         break;
 
                     case '}':
@@ -154,8 +145,6 @@ namespace Tests.RoslynWalker
 
                 MoveNext();
             }
-
-            return retVal;
         }
 
         private string RemoveSingleLineCommentsAndPreProcessorLines( string[] rawLines )

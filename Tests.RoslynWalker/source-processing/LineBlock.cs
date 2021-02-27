@@ -36,8 +36,28 @@ namespace Tests.RoslynWalker
         public ReadOnlyCollection<StatementLine> Lines => _lines.AsReadOnly();
         public StatementLine? CurrentLine => _lines.LastOrDefault();
 
-        public void AddStatement( string text ) => _lines.Add( new StatementLine( text, this ) );
-        public void AddBlockOpener( string text ) => _lines.Add( new BlockOpeningLine( text, this ) );
-        public void AddBlockCloser() => _lines.Add( new BlockClosingLine( this ) );
+        public StatementLine AddStatement( string text )
+        {
+            var retVal = new StatementLine( text, this );
+            _lines.Add( retVal );
+
+            return retVal;
+        }
+
+        public BlockOpeningLine AddBlockOpener( string text )
+        {
+            var retVal = new BlockOpeningLine( text, this );
+            _lines.Add( retVal );
+
+            return retVal;
+        }
+
+        public BlockClosingLine AddBlockCloser()
+        {
+            var retVal = new BlockClosingLine( this );
+            _lines.Add( retVal );
+
+            return retVal;
+        }
     }
 }

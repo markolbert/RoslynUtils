@@ -131,10 +131,14 @@ namespace Tests.RoslynWalker
 
                     case ClassInfo cInfo:
                         _curNamedType = cInfo;
+                        _curNS!.AddClass(cInfo);
+
                         break;
 
                     case InterfaceInfo iInfo:
                         _curNamedType = iInfo;
+                        _curNS!.AddInterface( iInfo );
+
                         break;
 
                     case EventInfo eventInfo:
