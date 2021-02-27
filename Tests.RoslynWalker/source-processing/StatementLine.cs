@@ -17,24 +17,20 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using Xunit.Sdk;
 
 namespace Tests.RoslynWalker
 {
-    public class SourceLine
+    public class StatementLine
     {
-        public SourceLine( string line, LineBlock parent )
+        public StatementLine( string line, LineBlock parent )
         {
             Line = line;
             LineType = LineType.Statement;
             Parent = parent;
         }
 
-        protected SourceLine( string line, LineType lineType, LineBlock? parent )
+        protected StatementLine( string line, LineType lineType, LineBlock? parent )
         {
             Line = line;
             LineType = lineType;
@@ -51,25 +47,6 @@ namespace Tests.RoslynWalker
         {
             Elements = parsers.Parse( this );
             Parsed = true;
-        }
-    }
-
-    public class BlockOpeningLine : SourceLine
-    {
-        public BlockOpeningLine( string line, LineBlock? parent )
-            :base(line, LineType.BlockOpener, parent)
-        {
-            ChildBlock = new LineBlock( this );
-        }
-
-        public LineBlock ChildBlock { get; }
-    }
-
-    public class BlockClosingLine : SourceLine
-    {
-        public BlockClosingLine( LineBlock? parent )
-            : base( string.Empty, LineType.BlockCloser, parent )
-        {
         }
     }
 }

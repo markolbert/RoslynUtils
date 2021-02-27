@@ -26,7 +26,7 @@ using System.Text;
 
 namespace Tests.RoslynWalker
 {
-    public class SourceFile : IEnumerable<SourceLine>
+    public class SourceFile : IEnumerable<StatementLine>
     {
         private readonly string _text;
         private readonly int _textLen;
@@ -59,7 +59,7 @@ namespace Tests.RoslynWalker
 
         private char CurrentChar => _position < _textLen - 1 ? _text[ _position ] : _text[ ^1 ];
 
-        public IEnumerator<SourceLine> GetEnumerator()
+        public IEnumerator<StatementLine> GetEnumerator()
         {
             _parentLines.Clear();
 
@@ -130,7 +130,7 @@ namespace Tests.RoslynWalker
                     case '{':
                         if( block.CurrentLine is not BlockOpeningLine blockOpeningLine )
                             throw new ArgumentException(
-                                $"Trying to add an opening block to a SourceLine or a BlockClosingLine" );
+                                $"Trying to add an opening block to a StatementLine or a BlockClosingLine" );
 
                         block.AddBlockOpener( sb.ToString() );
                         sb.Clear();
@@ -206,7 +206,7 @@ namespace Tests.RoslynWalker
             else _position += endOfComment - _position + 2;
         }
 
-        private IEnumerable<SourceLine> EnumerateLineBlock( LineBlock block )
+        private IEnumerable<StatementLine> EnumerateLineBlock( LineBlock block )
         {
             foreach( var srcLine in block.Lines )
             {

@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Xunit;
 
 namespace Tests.RoslynWalker
@@ -380,7 +378,7 @@ namespace Tests.RoslynWalker
             return sb;
         }
 
-        private List<TInfo>? ParseSourceLine<TInfo>( SourceLine srcLine, bool parseSuccess, bool parseCorrectType )
+        private List<TInfo>? ParseSourceLine<TInfo>( StatementLine srcLine, bool parseSuccess, bool parseCorrectType )
             where TInfo : BaseInfo
         {
             var infoList = _parsers.Parse( srcLine );

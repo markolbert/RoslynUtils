@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using J4JSoftware.Utilities;
-using Microsoft.Extensions.Logging.Abstractions;
-using Xunit.Sdk;
+﻿using System.Collections.Generic;
+
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker
@@ -31,7 +24,7 @@ namespace Tests.RoslynWalker
             };
         }
 
-        public List<BaseInfo>? Parse( SourceLine srcLine )
+        public List<BaseInfo>? Parse( StatementLine srcLine )
         {
             foreach( var parser in _parsers )
             {

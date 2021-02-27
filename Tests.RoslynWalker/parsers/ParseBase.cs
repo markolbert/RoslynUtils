@@ -41,15 +41,15 @@ namespace Tests.RoslynWalker
             MatchText = matchText;
         }
 
-        protected abstract List<TElement>? Parse( SourceLine srcLine );
+        protected abstract List<TElement>? Parse( StatementLine srcLine );
 
         public string MatchText { get; }
         public ReadOnlyCollection<LineType> SupportedLineTypes => _lineTypes.AsReadOnly();
 
-        public virtual bool HandlesLine( SourceLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType )
+        public virtual bool HandlesLine( StatementLine srcLine ) => SupportedLineTypes.Any( x => x == srcLine.LineType )
                                                                  && _matcher.IsMatch( srcLine.Line );
 
-        protected BaseInfo? GetParent(SourceLine srcLine, params ElementNature[] nature)
+        protected BaseInfo? GetParent(StatementLine srcLine, params ElementNature[] nature)
         {
             var curSrcLine = srcLine;
             BaseInfo? retVal = null;
@@ -165,6 +165,6 @@ namespace Tests.RoslynWalker
             return true;
         }
 
-        List<BaseInfo>? IParse.Parse( SourceLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine )?.Cast<BaseInfo>().ToList();
+        List<BaseInfo>? IParse.Parse( StatementLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine )?.Cast<BaseInfo>().ToList();
     }
 }

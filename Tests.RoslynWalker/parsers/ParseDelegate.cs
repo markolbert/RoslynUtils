@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -17,7 +16,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<DelegateInfo>? Parse( SourceLine srcLine )
+        protected override List<DelegateInfo>? Parse( StatementLine srcLine )
         {
             var groupMatch = _rxDelegateGroup.Match(srcLine.Line);
 

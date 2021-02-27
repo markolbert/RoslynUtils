@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
@@ -12,6 +10,6 @@ namespace Tests.RoslynWalker
         }
 
         // we don't need to parse using clauses, we just skip them
-        protected override List<ElementInfo>? Parse( SourceLine srcLine ) => null;
+        protected override List<ElementInfo>? Parse( StatementLine srcLine ) => null;
     }
 }

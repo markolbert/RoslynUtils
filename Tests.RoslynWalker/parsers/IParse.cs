@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using J4JSoftware.Utilities;
 
 namespace Tests.RoslynWalker
 {
     public interface IParse
     {
         ReadOnlyCollection<LineType> SupportedLineTypes {get;}
-        bool HandlesLine(SourceLine srcLine);
+        bool HandlesLine(StatementLine srcLine);
         string MatchText { get; }
 
-        List<BaseInfo>? Parse( SourceLine srcLine );
+        List<BaseInfo>? Parse( StatementLine srcLine );
     }
 }

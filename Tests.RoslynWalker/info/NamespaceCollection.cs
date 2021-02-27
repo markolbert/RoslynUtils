@@ -99,7 +99,7 @@ namespace Tests.RoslynWalker
             return true;
         }
 
-        private void ParseSourceLine( SourceLine srcLine )
+        private void ParseSourceLine( StatementLine srcLine )
         {
             if( srcLine.Elements == null )
                 return;
@@ -164,7 +164,7 @@ namespace Tests.RoslynWalker
                     continue;
 
                 foreach( var childLine in blockOpeningLine.ChildBlock.Lines
-                                          ?? Enumerable.Empty<SourceLine>() )
+                                          ?? Enumerable.Empty<StatementLine>() )
                 {
                     ParseSourceLine( childLine );
                 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
@@ -12,7 +9,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<InterfaceInfo>? Parse( SourceLine srcLine )
+        protected override List<InterfaceInfo>? Parse( StatementLine srcLine )
         {
             var ntSource = ParseInternal( srcLine );
             if( ntSource == null )

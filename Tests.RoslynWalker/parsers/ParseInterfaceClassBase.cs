@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
@@ -16,7 +14,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected NamedTypeSource? ParseInternal( SourceLine srcLine ) =>
+        protected NamedTypeSource? ParseInternal( StatementLine srcLine ) =>
             ExtractNamedTypeArguments( srcLine.Line, typeof(TInfo) == typeof(ClassInfo) ? "class" : "interface" );
 
         private NamedTypeSource? ExtractNamedTypeArguments(string text, string nature)

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
@@ -16,7 +15,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<EventInfo>? Parse( SourceLine srcLine )
+        protected override List<EventInfo>? Parse( StatementLine srcLine )
         {
             var match = _rxEvent.Match(srcLine.Line);
 

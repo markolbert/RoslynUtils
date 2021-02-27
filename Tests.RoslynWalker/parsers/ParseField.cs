@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
@@ -25,7 +23,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        public override bool HandlesLine( SourceLine srcLine )
+        public override bool HandlesLine( StatementLine srcLine )
         {
             // fields must belong to a class
             if( srcLine.Parent?.ParentLine == null
@@ -35,10 +33,10 @@ namespace Tests.RoslynWalker
             return base.HandlesLine( srcLine );
         }
 
-        protected override List<FieldInfo>? Parse( SourceLine srcLine )=>
+        protected override List<FieldInfo>? Parse( StatementLine srcLine )=>
             ParseGeneric( srcLine ) ?? ParseNonGeneric( srcLine );
 
-        private List<FieldInfo>? ParseGeneric( SourceLine srcLine )
+        private List<FieldInfo>? ParseGeneric( StatementLine srcLine )
         {
             var match = _rxGeneric.Match(srcLine.Line);
 
@@ -52,7 +50,7 @@ namespace Tests.RoslynWalker
                 match.Groups[ 4 ].Value.Trim() );
         }
 
-        private List<FieldInfo>? ParseNonGeneric( SourceLine srcLine )
+        private List<FieldInfo>? ParseNonGeneric( StatementLine srcLine )
         {
             var match = _rxNonGeneric.Match(srcLine.Line);
 
@@ -66,7 +64,7 @@ namespace Tests.RoslynWalker
                 match.Groups[ 3 ].Value.Trim() );
         }
 
-        private List<FieldInfo>? ParseCommon( SourceLine srcLine, string accessibility, string fieldType,
+        private List<FieldInfo>? ParseCommon( StatementLine srcLine, string accessibility, string fieldType,
             string nameClause )
         {
             var clauseMatch = _rxFields.Match( nameClause );

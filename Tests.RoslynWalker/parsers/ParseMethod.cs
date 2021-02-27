@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -21,7 +19,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<MethodInfo>? Parse( SourceLine srcLine )
+        protected override List<MethodInfo>? Parse( StatementLine srcLine )
         {
             if (!ExtractMethodElements(srcLine.Line, out var methodSrc))
                 return null;

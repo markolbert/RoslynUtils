@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 	  <Compile Remove="info\NamedTypeInfo.cs" />
+	  <Compile Remove="source-processing\SourceRegex.cs" />
 	  <Compile Remove="TopologicalCollection.cs" />
 	</ItemGroup>
 

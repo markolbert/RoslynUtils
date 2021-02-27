@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,7 +20,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        public override bool HandlesLine( SourceLine srcLine )
+        public override bool HandlesLine( StatementLine srcLine )
         {
             // to determine if this is a property line we check to see if the 
             // immediate child line is "get" or "set"
@@ -36,7 +34,7 @@ namespace Tests.RoslynWalker
                    && base.HandlesLine( toCheck );
         }
 
-        protected override List<PropertyInfo>? Parse( SourceLine srcLine )
+        protected override List<PropertyInfo>? Parse( StatementLine srcLine )
         {
             var groupMatch = _rxGroup.Match( srcLine.Line );
 

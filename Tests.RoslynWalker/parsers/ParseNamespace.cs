@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Tests.RoslynWalker
@@ -14,7 +13,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<NamespaceInfo>? Parse( SourceLine srcLine )
+        protected override List<NamespaceInfo>? Parse( StatementLine srcLine )
         {
             var match = RxNamespaceGroup.Match( srcLine.Line );
 
