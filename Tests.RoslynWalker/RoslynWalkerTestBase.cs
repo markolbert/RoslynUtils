@@ -30,6 +30,19 @@ namespace Tests.RoslynWalker
 {
     public class RoslynWalkerTestBase
     {
+        private SymbolDisplayFormat _symbolFormat;
+
+        public RoslynWalkerTestBase()
+        {
+            _symbolFormat = new SymbolDisplayFormat(
+                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
+                                 | SymbolDisplayGenericsOptions.IncludeVariance,
+                memberOptions: SymbolDisplayMemberOptions.IncludeParameters | SymbolDisplayMemberOptions.IncludeType,
+                parameterOptions: SymbolDisplayParameterOptions.IncludeType | SymbolDisplayParameterOptions.IncludeName
+            );
+        }
+
         [ Theory ]
         [ InlineData( "C:\\Programming\\RoslynUtils\\RoslynNetStandardTestLib\\RoslynNetStandardTestLib.csproj" ) ]
         public async void WalkerTest( string projFilePath )
@@ -50,69 +63,74 @@ namespace Tests.RoslynWalker
             namespaces.ParseFile( projFilePath, out _ ).Should().BeTrue();
 
             CompareRoslynNamedTypesToParsed( walker, namespaces );
-            CompareParsedToRoslynNamedTypes( walker, namespaces );
+            //CompareParsedToRoslynNamedTypes( walker, namespaces );
         }
 
-        private void CompareRoslynNamedTypesToParsed( ISyntaxWalkerNG walker, NamespaceCollection parsedTypes )
+        private void CompareRoslynNamedTypesToParsed( ISyntaxWalkerNG walker, NamespaceCollection namespaces )
         {
             var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
                                    .Cast<ITypeSymbol>()
                                    .ToList()
                                ?? new List<ITypeSymbol>();
+
+            var ntNames = namespaces.NamedTypes.Select( x => x.FullName ).ToList();
 
             foreach( var roslynType in rosylynTypes )
             {
                 var ntSymbol = roslynType as INamedTypeSymbol;
                 ntSymbol.Should().NotBeNull();
 
-                var roslynName = roslynType.ToDisplayString();
+                var roslynName = roslynType.ToDisplayString(_symbolFormat);
 
-                var namedTypeInfo = parsedTypes
+                var namedTypeInfo = namespaces.NamedTypes
                     .FirstOrDefault( x => x.FullName.Equals( roslynName, StringComparison.Ordinal ) );
+
+                if( namedTypeInfo == null )
+                    System.Diagnostics.Debugger.Break();
 
                 continue;
 
-                namedTypeInfo.Should().NotBeNull();
+                //namedTypeInfo.Should().NotBeNull();
 
-                CompareElements<IMethodSymbol, MethodInfo>( ntSymbol!, namedTypeInfo!.Methods );
-                CompareElements<IEventSymbol, EventInfo>( ntSymbol!, namedTypeInfo.Events );
-                CompareElements<IPropertySymbol, PropertyInfo>( ntSymbol!, namedTypeInfo.Properties );
+                //CompareElements<IMethodSymbol, MethodInfo>( ntSymbol!, namedTypeInfo!.Methods );
+                //CompareElements<IEventSymbol, EventInfo>( ntSymbol!, namedTypeInfo.Events );
+                //CompareElements<IPropertySymbol, PropertyInfo>( ntSymbol!, namedTypeInfo.Properties );
 
-                if( namedTypeInfo is ClassInfo classInfo )
-                    CompareElements<IFieldSymbol, FieldInfo>( ntSymbol!, classInfo.Fields );
+                //if( namedTypeInfo is ClassInfo classInfo )
+                //    CompareElements<IFieldSymbol, FieldInfo>( ntSymbol!, classInfo.Fields );
             }
         }
 
-        private void CompareParsedToRoslynNamedTypes( ISyntaxWalkerNG walker, NamespaceCollection parsedTypes )
-        {
-            var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
-                                   .Cast<ITypeSymbol>()
-                                   .ToList()
-                               ?? new List<ITypeSymbol>();
+        //private void CompareParsedToRoslynNamedTypes( ISyntaxWalkerNG walker, NamespaceCollection parsedTypes )
+        //{
+        //    var rosylynTypes = walker.NodeCollectors.FirstOrDefault( x => x.SymbolType == typeof(ITypeSymbol) )?
+        //                           .Cast<ITypeSymbol>()
+        //                           .ToList()
+        //                       ?? new List<ITypeSymbol>();
 
-            foreach( var parsedType in parsedTypes )
-            {
-                var roslynType = rosylynTypes
-                    .Where( x =>
-                    {
-                        if( !x.Name.Equals( parsedType.Name, StringComparison.Ordinal ) )
-                            return false;
+        //    foreach( var parsedType in parsedTypes )
+        //    {
+        //        var roslynType = rosylynTypes
+        //            .Where( x =>
+        //            {
+        //                if( !x.Name.Equals( parsedType.Name, StringComparison.Ordinal ) )
+        //                    return false;
 
-                        if( x is not INamedTypeSymbol ntSymbol ||
-                            parsedType is not ITypeArguments typeArgsInfo )
-                            return true;
+        //                if( x is not INamedTypeSymbol ntSymbol ||
+        //                    parsedType is not ITypeArguments typeArgsInfo )
+        //                    return true;
 
-                        return !ntSymbol.TypeArguments
-                            .Where( ( t, idx ) =>
-                                !t.Name.Equals( typeArgsInfo.TypeArguments[ idx ], StringComparison.Ordinal ) )
-                            .Any();
-                    } )
-                    .Cast<INamedTypeSymbol>()
-                    .FirstOrDefault();
+        //                return !ntSymbol.TypeArguments
+        //                    .Where( ( t, idx ) =>
+        //                        !t.Name.Equals( typeArgsInfo.TypeArguments[ idx ], StringComparison.Ordinal ) )
+        //                    .Any();
+        //            } )
+        //            .Cast<INamedTypeSymbol>()
+        //            .FirstOrDefault();
 
-                roslynType.Should().NotBeNull();
-            }
-        }
+        //        roslynType.Should().NotBeNull();
+        //    }
+        //}
 
         private void CompareElements<TSymbol, TInfo>( INamedTypeSymbol ntSymbol, List<TInfo> infoCollection )
             where TSymbol : ISymbol

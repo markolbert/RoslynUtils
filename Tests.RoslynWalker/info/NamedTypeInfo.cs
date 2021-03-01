@@ -18,18 +18,27 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class DelegateInfo : NamedTypeInfo, IArguments
+    public class NamedTypeInfo : ElementInfo, ITypeArguments
     {
-        public DelegateInfo( DelegateSource src )
-            : base( ElementNature.Delegate, src )
+        protected NamedTypeInfo( ElementNature nature, NamedTypeSource src )
+            : base( nature, src )
         {
-            Arguments = src.Arguments;
+            TypeArguments = src.TypeArguments;
         }
 
-        public List<string> Arguments { get; }
+        public List<string> TypeArguments { get; }
+
+        public override string FullName
+        {
+            get
+            {
+                var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
+
+                return $"{FullNameWithoutArguments}{typeArgs}";
+            }
+        }
     }
 }

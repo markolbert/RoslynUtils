@@ -27,7 +27,7 @@ using System.Xml.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class NamespaceCollection : IEnumerable<InterfaceInfo>
+    public class NamespaceCollection
     {
         private readonly List<NamespaceInfo> _namespaces = new();
         private readonly ParserCollection _parsers;
@@ -41,9 +41,28 @@ namespace Tests.RoslynWalker
         }
 
         public ReadOnlyCollection<NamespaceInfo> Namespaces => _namespaces.AsReadOnly();
+        public int Count => _namespaces.Count;
 
-        public List<ClassInfo> Classes => _namespaces.SelectMany( x => x.Classes ).ToList();
-        public List<InterfaceInfo> Interfaces => _namespaces.SelectMany( x => x.Interfaces ).ToList();
+        public IEnumerable<NamedTypeInfo> NamedTypes
+        {
+            get
+            {
+                foreach( var item in _namespaces.SelectMany( x => x.Classes ) )
+                {
+                    yield return item;
+
+                    foreach( var delegateItem in item.Delegates )
+                    {
+                        yield return delegateItem;
+                    }
+                }
+
+                foreach( var item in _namespaces.SelectMany( x => x.Interfaces ) )
+                {
+                    yield return item;
+                }
+            }
+        }
 
         public bool ParseFile( string projFilePath, out string? error )
         {
@@ -157,24 +176,6 @@ namespace Tests.RoslynWalker
                     ParseSourceLine( childLine );
                 }
             }
-        }
-
-        public IEnumerator<InterfaceInfo> GetEnumerator()
-        {
-            foreach (var curInterface in _namespaces.SelectMany(x => x.Interfaces))
-            {
-                yield return curInterface;
-            }
-
-            foreach (var curClass in _namespaces.SelectMany(x => x.Classes))
-            {
-                yield return curClass;
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

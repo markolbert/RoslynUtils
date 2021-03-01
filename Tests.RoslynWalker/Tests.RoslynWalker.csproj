@@ -7,7 +7,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="info\NamedTypeInfo.cs" />
 	  <Compile Remove="source-processing\BlockClosingLine.cs" />
 	  <Compile Remove="source-processing\LineBlock.cs" />
 	  <Compile Remove="source-processing\SourceRegex.cs" />

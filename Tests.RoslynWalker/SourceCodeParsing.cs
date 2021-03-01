@@ -34,7 +34,7 @@ namespace Tests.RoslynWalker
 
             namespaces.ParseFile( projFilePath, out _ ).Should().BeTrue();
 
-            namespaces.Count().Should().BeGreaterThan( 0 );
+            namespaces.Count.Should().BeGreaterThan( 0 );
 
             namespaces.Namespaces
                 .SelectMany( x => x.Classes )

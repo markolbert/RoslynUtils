@@ -7,7 +7,7 @@ namespace Tests.RoslynWalker
     public class ParseDelegate : ParseBase<DelegateInfo>
     {
         private static readonly Regex _rxDelegateGroup =
-            new(@"\s*([^()]*)\s*(delegate)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled);
+            new(@"\s*([^()]*)\s*(delegate void)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled);
 
         public ParseDelegate()
             : base( ElementNature.Interface, 
@@ -22,7 +22,7 @@ namespace Tests.RoslynWalker
 
             if (!groupMatch.Success
                 || groupMatch.Groups.Count != 5
-                || !groupMatch.Groups[2].Value.Trim().Equals("delegate", StringComparison.Ordinal)
+                || !groupMatch.Groups[2].Value.Trim().Equals("delegate void", StringComparison.Ordinal)
                 || !ExtractTypeArguments(groupMatch.Groups[3].Value.Trim(), out var tempName, out var tempTypeArgs)
             )
                 return null;

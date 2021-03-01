@@ -21,35 +21,23 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public class InterfaceInfo : ElementInfo, ITypeArguments
+    public class InterfaceInfo : NamedTypeInfo, ITypeArguments
     {
-        public InterfaceInfo( NamedTypeSource src )
+        public InterfaceInfo( InterfaceSource src )
             : this( ElementNature.Interface, src )
         {
         }
 
-        protected InterfaceInfo( ElementNature nature, NamedTypeSource src )
+        protected InterfaceInfo( ElementNature nature, InterfaceSource src )
             : base( nature, src )
         {
-            TypeArguments = src.TypeArguments;
             Ancestry = src.Ancestry;
         }
 
         public string? Ancestry { get; }
-        public List<string> TypeArguments { get; }
 
         public List<MethodInfo> Methods { get; } = new();
         public List<PropertyInfo> Properties { get; } = new();
         public List<EventInfo> Events { get; } = new();
-
-        public override string FullName
-        {
-            get
-            {
-                var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
-
-                return Parent == null ? $"{Name}{typeArgs}" : $"{Parent.FullName}.{Name}{typeArgs}";
-            }
-        }
     }
 }

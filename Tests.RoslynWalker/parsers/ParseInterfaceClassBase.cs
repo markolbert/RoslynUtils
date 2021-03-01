@@ -14,10 +14,10 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected NamedTypeSource? ParseInternal( StatementLine srcLine ) =>
+        protected InterfaceSource? ParseInternal( StatementLine srcLine ) =>
             ExtractNamedTypeArguments( srcLine.Line, typeof(TInfo) == typeof(ClassInfo) ? "class" : "interface" );
 
-        private NamedTypeSource? ExtractNamedTypeArguments(string text, string nature)
+        private InterfaceSource? ExtractNamedTypeArguments(string text, string nature)
         {
             if (!ExtractAncestry(text, out var fullDecl, out var ancestry))
                 return null;
@@ -32,10 +32,10 @@ namespace Tests.RoslynWalker
                 || !match.Groups[2].Value.Trim().Equals(nature, StringComparison.Ordinal))
                 return null;
 
-            return new NamedTypeSource(match.Groups[3].Value.Trim(),
-                match.Groups[1].Value.Trim().Replace(" ", ""),
-                ancestry!,
-                typeArgs);
+            return new InterfaceSource( match.Groups[ 3 ].Value.Trim(),
+                match.Groups[ 1 ].Value.Trim().Replace( " ", "" ),
+                typeArgs,
+                ancestry! );
         }
 
         private bool ExtractAncestry(string text, out string? preamble, out string? ancestry)

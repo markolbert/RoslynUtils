@@ -23,7 +23,7 @@ namespace Tests.RoslynWalker
 {
     public class ClassInfo : InterfaceInfo
     {
-        public ClassInfo( NamedTypeSource src )
+        public ClassInfo( InterfaceSource src )
             : base( ElementNature.Class, src )
         {
         }

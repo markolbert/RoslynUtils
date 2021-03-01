@@ -28,7 +28,7 @@ namespace Tests.RoslynWalker
             string Accessibility,
             List<string> TypeArguments,
             List<string> Arguments )
-        : ElementSource( Name, Accessibility );
+        : NamedTypeSource( Name, Accessibility, TypeArguments );
 
     public record EventSource(
             string Name,
@@ -43,10 +43,16 @@ namespace Tests.RoslynWalker
             string AssignmentClause )
         : ElementSource( Name, Accessibility );
 
+    public record InterfaceSource(
+            string Name,
+            string Accessibility,
+            List<string> TypeArguments,
+            string Ancestry )
+        : NamedTypeSource( Name, Accessibility, TypeArguments );
+
     public record NamedTypeSource(
             string Name,
             string Accessibility,
-            string Ancestry,
             List<string> TypeArguments )
         : ElementSource( Name, Accessibility );
 
