@@ -65,21 +65,12 @@ namespace Tests.RoslynWalker
                 var ntSymbol = roslynType as INamedTypeSymbol;
                 ntSymbol.Should().NotBeNull();
 
+                var roslynName = roslynType.ToDisplayString();
+
                 var namedTypeInfo = parsedTypes
-                    .Where( x =>
-                    {
-                        if( !x.Name.Equals( roslynType.Name, StringComparison.Ordinal ) )
-                            return false;
+                    .FirstOrDefault( x => x.FullName.Equals( roslynName, StringComparison.Ordinal ) );
 
-                        if( x is not ITypeArguments typeArgsInfo )
-                            return false;
-
-                        return !ntSymbol!.TypeArguments
-                            .Where( ( t, idx ) => !ntSymbol.TypeArguments[ idx ].Name
-                                .Equals( typeArgsInfo.TypeArguments[ idx ], StringComparison.Ordinal ) )
-                            .Any();
-                    } )
-                    .FirstOrDefault();
+                continue;
 
                 namedTypeInfo.Should().NotBeNull();
 

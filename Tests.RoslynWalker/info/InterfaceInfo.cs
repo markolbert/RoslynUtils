@@ -48,7 +48,7 @@ namespace Tests.RoslynWalker
             {
                 var typeArgs = TypeArguments.Count > 0 ? $"<{string.Join( ", ", TypeArguments )}>" : string.Empty;
 
-                return Parent == null ? $"{Name}{typeArgs}" : $"{Parent.FullName}:{Name}{typeArgs}";
+                return Parent == null ? $"{Name}{typeArgs}" : $"{Parent.FullName}.{Name}{typeArgs}";
             }
         }
     }

@@ -33,6 +33,8 @@ namespace Tests.RoslynWalker
         public BaseInfo? Parent { get; set; }
 
         public virtual string FullName => FullNameWithoutArguments;
-        protected virtual string FullNameWithoutArguments => Parent == null ? Name : $"{Parent.FullNameWithoutArguments}:{Name}";
+
+        protected string FullNameWithoutArguments =>
+            Parent == null ? Name : $"{Parent.FullNameWithoutArguments}.{Name}";
     }
 }

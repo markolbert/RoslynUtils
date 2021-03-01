@@ -42,23 +42,8 @@ namespace Tests.RoslynWalker
 
         public ReadOnlyCollection<NamespaceInfo> Namespaces => _namespaces.AsReadOnly();
 
-        public IEnumerator<InterfaceInfo> GetEnumerator()
-        {
-            foreach( var curInterface in _namespaces.SelectMany(x=>x.Interfaces))
-            {
-                yield return curInterface;
-            }
-
-            foreach( var curClass in _namespaces.SelectMany(x=>x.Classes))
-            {
-                yield return curClass;
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        public List<ClassInfo> Classes => _namespaces.SelectMany( x => x.Classes ).ToList();
+        public List<InterfaceInfo> Interfaces => _namespaces.SelectMany( x => x.Interfaces ).ToList();
 
         public bool ParseFile( string projFilePath, out string? error )
         {
@@ -172,6 +157,24 @@ namespace Tests.RoslynWalker
                     ParseSourceLine( childLine );
                 }
             }
+        }
+
+        public IEnumerator<InterfaceInfo> GetEnumerator()
+        {
+            foreach (var curInterface in _namespaces.SelectMany(x => x.Interfaces))
+            {
+                yield return curInterface;
+            }
+
+            foreach (var curClass in _namespaces.SelectMany(x => x.Classes))
+            {
+                yield return curClass;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

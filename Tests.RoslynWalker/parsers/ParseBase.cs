@@ -113,7 +113,7 @@ namespace Tests.RoslynWalker
                     case ',':
                         if (numLessThan == 0)
                         {
-                            retVal.Add(sb.ToString());
+                            retVal.Add(sb.ToString().Trim());
                             sb.Clear();
                         }
                         else sb.Append(curChar);
@@ -140,7 +140,7 @@ namespace Tests.RoslynWalker
             }
 
             if (sb.Length > 0)
-                retVal.Add(sb.ToString());
+                retVal.Add(sb.ToString().Trim());
 
             return retVal;
         }
