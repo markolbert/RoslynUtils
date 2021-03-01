@@ -38,8 +38,11 @@ namespace Tests.RoslynWalker
                 typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
                 genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
                                  | SymbolDisplayGenericsOptions.IncludeVariance,
-                memberOptions: SymbolDisplayMemberOptions.IncludeParameters | SymbolDisplayMemberOptions.IncludeType,
-                parameterOptions: SymbolDisplayParameterOptions.IncludeType | SymbolDisplayParameterOptions.IncludeName
+                memberOptions: SymbolDisplayMemberOptions.IncludeParameters 
+                               | SymbolDisplayMemberOptions.IncludeContainingType
+                               | SymbolDisplayMemberOptions.IncludeType,
+                parameterOptions: SymbolDisplayParameterOptions.IncludeType 
+                                  | SymbolDisplayParameterOptions.IncludeName
             );
         }
 

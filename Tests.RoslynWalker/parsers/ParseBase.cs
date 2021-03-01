@@ -145,6 +145,100 @@ namespace Tests.RoslynWalker
             return retVal;
         }
 
+        protected MethodSource ParseReturnTypeName(string text)
+        {
+            var numAngleBrackets = 0;
+            var sb = new StringBuilder();
+            string? methodName = null;
+            string? returnType = null;
+            string? typeArgs = null;
+
+            foreach (var curChar in text)
+            {
+                switch (curChar)
+                {
+                    case ',':
+                        sb.Append(curChar);
+                        break;
+
+                    case '<':
+                        // if we're inside a type argument clause an opening
+                        // angle bracket just means we're finding an embedded type argument
+                        if( numAngleBrackets > 0 )
+                            sb.Append( curChar );
+                        else
+                        {
+                            //...but outside a type argument clause it means we have found 
+                            // the start of a generic return type or the end of a method name
+                            if( string.IsNullOrEmpty( returnType ) )
+                                sb.Append( curChar );
+                            else
+                            {
+                                methodName = sb.ToString();
+                                sb.Clear();
+                            }
+                        }
+
+                        numAngleBrackets++;
+
+                        break;
+
+                    case '>':
+                        if( numAngleBrackets > 0)
+                            sb.Append(curChar);
+
+                        numAngleBrackets--;
+
+                        // when the number of angle brackets goes to zero we're at the end
+                        // of a type argument clause
+                        if( numAngleBrackets == 0 )
+                        {
+                            if( string.IsNullOrEmpty( returnType ) )
+                                returnType = sb.ToString();
+                            else typeArgs = sb.ToString();
+
+                            sb.Clear();
+                        }
+
+                        break;
+
+                    case ' ':
+                        // if we're not inside a type argument clause a space
+                        // potentially means we've found the end of the return type (if it wasn't generic)
+                        // or the method name.
+                        if( numAngleBrackets <= 0 )
+                        {
+                            if( string.IsNullOrEmpty( returnType ) )
+                                returnType = sb.ToString();
+                            else methodName = sb.ToString();
+
+                            sb.Clear();
+                        }
+                        else sb.Append( curChar );
+
+                        break;
+
+                    default:
+                        sb.Append(curChar);
+                        break;
+                }
+            }
+
+            if( string.IsNullOrEmpty( methodName ) )
+                methodName = sb.ToString();
+
+            // for some reason my regex matcher returns an extra '>' at the
+            // end of the type argument string
+            if( !string.IsNullOrEmpty( typeArgs ) )
+                typeArgs = typeArgs[ ..^1 ];
+
+            return new MethodSource( methodName!, 
+                string.Empty, 
+                ParseArguments( typeArgs ), 
+                new List<string>(),
+                returnType! );
+        }
+
         protected bool ParseAccessibility(string toParse, out Accessibility result)
         {
             if (string.IsNullOrEmpty(toParse))

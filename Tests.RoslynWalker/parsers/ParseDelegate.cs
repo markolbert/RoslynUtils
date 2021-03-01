@@ -6,8 +6,10 @@ namespace Tests.RoslynWalker
 {
     public class ParseDelegate : ParseBase<DelegateInfo>
     {
-        private static readonly Regex _rxDelegateGroup =
-            new(@"\s*([^()]*)\s*(delegate void)\s*([^()]+)\(\s*(.*)\)", RegexOptions.Compiled);
+        // first group is accessibility clause, second group is return-type-typeargs,
+        // third group is method args
+        private static readonly Regex _rxGroup = new( @$"\s*({AccessibilityClause})?(.*)\((.*)\)",
+            RegexOptions.Compiled );
 
         public ParseDelegate()
             : base( ElementNature.Interface, 
@@ -18,19 +20,21 @@ namespace Tests.RoslynWalker
 
         protected override List<DelegateInfo>? Parse( StatementLine srcLine )
         {
-            var groupMatch = _rxDelegateGroup.Match(srcLine.Line);
+            var groupMatch = _rxGroup.Match(srcLine.Line);
 
             if (!groupMatch.Success
-                || groupMatch.Groups.Count != 5
-                || !groupMatch.Groups[2].Value.Trim().Equals("delegate void", StringComparison.Ordinal)
-                || !ExtractTypeArguments(groupMatch.Groups[3].Value.Trim(), out var tempName, out var tempTypeArgs)
-            )
+                || groupMatch.Groups.Count != 4)
                 return null;
 
-            var delegateSrc = new DelegateSource(tempName!,
+            var methodSource = ParseReturnTypeName( groupMatch.Groups[ 2 ]
+                .Value
+                .Replace( "delegate ", string.Empty )
+                .Trim() );
+
+            var delegateSrc = new DelegateSource( methodSource.Name,
                 groupMatch.Groups[1].Value.Trim(),
-                tempTypeArgs,
-                ParseArguments(groupMatch.Groups[4].Value.Trim()));
+                methodSource.TypeArguments,
+                ParseArguments( groupMatch.Groups[ 3 ].Value.Trim() ) );
 
             var info = new DelegateInfo( delegateSrc )
             {

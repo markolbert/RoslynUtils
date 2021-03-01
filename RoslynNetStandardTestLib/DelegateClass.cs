@@ -17,10 +17,17 @@
 
 #endregion
 
+// ReSharper disable TypeParameterCanBeVariant
 namespace J4JSoftware.Roslyn.Tests
 {
     public class DelegateClass
     {
         public delegate void TestDelegate( int param1, string param2 );
+
+        public delegate T TestDelegate<T>( int param1, string param2 );
+
+        public delegate int TestDelegate2<T1, T2>( int param1, SimpleGeneric<T1, T2> param2 )
+            where T1 : struct
+            where T2 : struct;
     }
 }
