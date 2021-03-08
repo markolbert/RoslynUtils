@@ -14,6 +14,21 @@ namespace Tests.RoslynWalker
         protected const string AccessibilityClause = @"private\s+|public\s+|protected internal\s+|protected\s+|internal\s+";
         private static readonly Regex _rxTypeArgsGroup = new(@$"\s*([^<>]*)<(.*)>", RegexOptions.Compiled);
 
+        // first capture is accessibility, second is return type, third is attribute clause,
+        // fourth is method-name-typeargs, fifth is argument clause
+        private static readonly Regex _rxMethodAttributes =
+            new( $@"\s*({AccessibilityClause})?([^\[]*)(\[.*\])([^\(]*)\((.*)\)",
+                RegexOptions.Compiled );
+
+        // first capture is accessibility, second is return-type-method-name-typeargs,
+        // third is argument clause
+        private static readonly Regex _rxMethodNoAttributes =
+            new( @$"\s*({AccessibilityClause})?([^\(]*)\((.*)\)", RegexOptions.Compiled );
+
+        private static readonly Regex _rxMethodStripWhere = new( @"(.+\))\s*where", RegexOptions.Compiled );
+
+        private static readonly Regex _rxParseAttributes = new( @"\[([^\[\]]*)\]", RegexOptions.Compiled );
+
         private readonly Regex _matcher;
         private readonly List<LineType> _lineTypes;
 
@@ -41,7 +56,7 @@ namespace Tests.RoslynWalker
             MatchText = matchText;
         }
 
-        protected abstract List<TElement>? Parse( StatementLine srcLine );
+        protected abstract List<BaseInfo>? Parse( StatementLine srcLine );
 
         public string MatchText { get; }
         public ReadOnlyCollection<LineType> SupportedLineTypes => _lineTypes.AsReadOnly();
@@ -72,194 +87,194 @@ namespace Tests.RoslynWalker
             return retVal;
         }
 
-        protected bool ExtractTypeArguments(string text, out string? preamble, out List<string> typeArgs)
-        {
-            preamble = null;
-            typeArgs = new List<string>();
+        //protected bool ExtractTypeArguments(string text, out string? preamble, out List<string> typeArgs)
+        //{
+        //    preamble = null;
+        //    typeArgs = new List<string>();
 
-            var groupMatch = _rxTypeArgsGroup.Match(text);
+        //    var groupMatch = _rxTypeArgsGroup.Match(text);
 
-            // if no type arguments return the entire text because it's just preamble
-            if (!groupMatch.Success)
-            {
-                preamble = text.Trim();
-                return true;
-            }
+        //    // if no type arguments return the entire text because it's just preamble
+        //    if (!groupMatch.Success)
+        //    {
+        //        preamble = text.Trim();
+        //        return true;
+        //    }
 
-            if (groupMatch.Groups.Count != 3)
-                return false;
+        //    if (groupMatch.Groups.Count != 3)
+        //        return false;
 
-            preamble = groupMatch.Groups[1].Value.Trim();
+        //    preamble = groupMatch.Groups[1].Value.Trim();
 
-            typeArgs.AddRange(ParseArguments(groupMatch.Groups[2].Value.Trim()));
+        //    typeArgs.AddRange(ParseArguments(groupMatch.Groups[2].Value.Trim()));
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        protected List<string> ParseArguments(string? text)
-        {
-            var retVal = new List<string>();
+        //protected List<string> ParseArguments(string? text)
+        //{
+        //    var retVal = new List<string>();
 
-            if( string.IsNullOrEmpty( text ) )
-                return retVal;
+        //    if( string.IsNullOrEmpty( text ) )
+        //        return retVal;
             
-            var numLessThan = 0;
-            var sb = new StringBuilder();
+        //    var numLessThan = 0;
+        //    var sb = new StringBuilder();
 
-            foreach (var curChar in text)
-            {
-                switch (curChar)
-                {
-                    case ',':
-                        if (numLessThan == 0)
-                        {
-                            retVal.Add(sb.ToString().Trim());
-                            sb.Clear();
-                        }
-                        else sb.Append(curChar);
+        //    foreach (var curChar in text)
+        //    {
+        //        switch (curChar)
+        //        {
+        //            case ',':
+        //                if (numLessThan == 0)
+        //                {
+        //                    retVal.Add(sb.ToString().Trim());
+        //                    sb.Clear();
+        //                }
+        //                else sb.Append(curChar);
 
-                        break;
+        //                break;
 
-                    case '<':
-                        sb.Append(curChar);
-                        numLessThan++;
+        //            case '<':
+        //                sb.Append(curChar);
+        //                numLessThan++;
 
-                        break;
+        //                break;
 
-                    case '>':
-                        sb.Append(curChar);
-                        numLessThan--;
+        //            case '>':
+        //                sb.Append(curChar);
+        //                numLessThan--;
 
-                        break;
+        //                break;
 
-                    default:
-                        sb.Append(curChar);
+        //            default:
+        //                sb.Append(curChar);
 
-                        break;
-                }
-            }
+        //                break;
+        //        }
+        //    }
 
-            if (sb.Length > 0)
-                retVal.Add(sb.ToString().Trim());
+        //    if (sb.Length > 0)
+        //        retVal.Add(sb.ToString().Trim());
 
-            return retVal;
-        }
+        //    return retVal;
+        //}
 
-        protected MethodSource ParseReturnTypeName(string text)
-        {
-            var numAngleBrackets = 0;
-            var sb = new StringBuilder();
-            string? methodName = null;
-            string? returnType = null;
-            string? typeArgs = null;
+        //protected MethodSource ParseReturnTypeName( string text )
+        //{
+        //    var numAngleBrackets = 0;
+        //    var sb = new StringBuilder();
+        //    string? methodName = null;
+        //    string? returnType = null;
+        //    string? typeArgs = null;
 
-            foreach (var curChar in text)
-            {
-                switch (curChar)
-                {
-                    case ',':
-                        sb.Append(curChar);
-                        break;
+        //    foreach( var curChar in text )
+        //    {
+        //        switch( curChar )
+        //        {
+        //            case ',':
+        //                sb.Append( curChar );
+        //                break;
 
-                    case '<':
-                        // if we're inside a type argument clause an opening
-                        // angle bracket just means we're finding an embedded type argument
-                        if( numAngleBrackets > 0 )
-                            sb.Append( curChar );
-                        else
-                        {
-                            //...but outside a type argument clause it means we have found 
-                            // the start of a generic return type or the end of a method name
-                            if( string.IsNullOrEmpty( returnType ) )
-                                sb.Append( curChar );
-                            else
-                            {
-                                methodName = sb.ToString();
-                                sb.Clear();
-                            }
-                        }
+        //            case '<':
+        //                // if we're inside a type argument clause an opening
+        //                // angle bracket just means we're finding an embedded type argument
+        //                if( numAngleBrackets > 0 )
+        //                    sb.Append( curChar );
+        //                else
+        //                {
+        //                    //...but outside a type argument clause it means we have found 
+        //                    // the start of a generic return type or the end of a method name
+        //                    if( string.IsNullOrEmpty( returnType ) )
+        //                        sb.Append( curChar );
+        //                    else
+        //                    {
+        //                        methodName = sb.ToString();
+        //                        sb.Clear();
+        //                    }
+        //                }
 
-                        numAngleBrackets++;
+        //                numAngleBrackets++;
 
-                        break;
+        //                break;
 
-                    case '>':
-                        if( numAngleBrackets > 0)
-                            sb.Append(curChar);
+        //            case '>':
+        //                if( numAngleBrackets > 0 )
+        //                    sb.Append( curChar );
 
-                        numAngleBrackets--;
+        //                numAngleBrackets--;
 
-                        // when the number of angle brackets goes to zero we're at the end
-                        // of a type argument clause
-                        if( numAngleBrackets == 0 )
-                        {
-                            if( string.IsNullOrEmpty( returnType ) )
-                                returnType = sb.ToString();
-                            else typeArgs = sb.ToString();
+        //                // when the number of angle brackets goes to zero we're at the end
+        //                // of a type argument clause
+        //                if( numAngleBrackets == 0 )
+        //                {
+        //                    if( string.IsNullOrEmpty( returnType ) )
+        //                        returnType = sb.ToString();
+        //                    else typeArgs = sb.ToString();
 
-                            sb.Clear();
-                        }
+        //                    sb.Clear();
+        //                }
 
-                        break;
+        //                break;
 
-                    case ' ':
-                        // if we're not inside a type argument clause a space
-                        // potentially means we've found the end of the return type (if it wasn't generic)
-                        // or the method name.
-                        if( numAngleBrackets <= 0 )
-                        {
-                            if( string.IsNullOrEmpty( returnType ) )
-                                returnType = sb.ToString();
-                            else methodName = sb.ToString();
+        //            case ' ':
+        //                // if we're not inside a type argument clause a space
+        //                // potentially means we've found the end of the return type (if it wasn't generic)
+        //                // or the method name.
+        //                if( numAngleBrackets <= 0 )
+        //                {
+        //                    if( string.IsNullOrEmpty( returnType ) )
+        //                        returnType = sb.ToString();
+        //                    else methodName = sb.ToString();
 
-                            sb.Clear();
-                        }
-                        else sb.Append( curChar );
+        //                    sb.Clear();
+        //                }
+        //                else sb.Append( curChar );
 
-                        break;
+        //                break;
 
-                    default:
-                        sb.Append(curChar);
-                        break;
-                }
-            }
+        //            default:
+        //                sb.Append( curChar );
+        //                break;
+        //        }
+        //    }
 
-            if( string.IsNullOrEmpty( methodName ) )
-                methodName = sb.ToString();
+        //    if( string.IsNullOrEmpty( methodName ) )
+        //        methodName = sb.ToString();
 
-            // for some reason my regex matcher returns an extra '>' at the
-            // end of the type argument string
-            if( !string.IsNullOrEmpty( typeArgs ) )
-                typeArgs = typeArgs[ ..^1 ];
+        //    // for some reason my regex matcher returns an extra '>' at the
+        //    // end of the type argument string
+        //    if( !string.IsNullOrEmpty( typeArgs ) )
+        //        typeArgs = typeArgs[ ..^1 ];
 
-            return new MethodSource( methodName!, 
-                string.Empty, 
-                ParseArguments( typeArgs ), 
-                new List<string>(),
-                returnType! );
-        }
+        //    return new MethodSource( methodName!,
+        //        string.Empty,
+        //        ParseArguments( typeArgs ),
+        //        new List<ArgumentSource>(),
+        //        returnType! );
+        //}
 
-        protected bool ParseAccessibility(string toParse, out Accessibility result)
-        {
-            if (string.IsNullOrEmpty(toParse))
-            {
-                result = Accessibility.Private;
-                return true;
-            }
+        //protected bool ParseAccessibility(string toParse, out Accessibility result)
+        //{
+        //    if (string.IsNullOrEmpty(toParse))
+        //    {
+        //        result = Accessibility.Private;
+        //        return true;
+        //    }
 
-            result = Accessibility.Undefined;
+        //    result = Accessibility.Undefined;
 
-            if (!Enum.TryParse(typeof(Accessibility),
-                toParse.Replace(" ", string.Empty),
-                true,
-                out var parsed))
-                return false;
+        //    if (!Enum.TryParse(typeof(Accessibility),
+        //        toParse.Replace(" ", string.Empty),
+        //        true,
+        //        out var parsed))
+        //        return false;
 
-            result = (Accessibility)parsed!;
+        //    result = (Accessibility)parsed!;
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        List<BaseInfo>? IParse.Parse( StatementLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine )?.Cast<BaseInfo>().ToList();
+        List<BaseInfo>? IParse.Parse( StatementLine srcLine ) => !HandlesLine( srcLine ) ? null : Parse( srcLine );
     }
 }

@@ -24,17 +24,25 @@ using System.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class PropertyInfo : ElementInfo, IArguments
+    public class PropertyInfo : ElementInfo, IArguments, IAttributable
     {
         public PropertyInfo( MethodSource src )
             : base( ElementNature.Property, src )
         {
             PropertyType = src.ReturnType;
-            Arguments = src.Arguments;
+
+            Arguments = src.Arguments
+                .Select( x => new ArgumentInfo( x ) )
+                .ToList();
+
+            Attributes = src.Attributes
+                .Select(x=>new AttributeInfo(x)  )
+                .ToList();
         }
 
         public string PropertyType { get; }
-        public List<string> Arguments { get; }
+        public List<ArgumentInfo> Arguments { get; }
+        public List<AttributeInfo> Attributes { get; }
 
         public override string FullName
         {

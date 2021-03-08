@@ -28,6 +28,6 @@ namespace Tests.RoslynWalker
 
     public interface IArguments
     {
-        List<string> Arguments { get; }
+        List<ArgumentInfo> Arguments { get; }
     }
 }

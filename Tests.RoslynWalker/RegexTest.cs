@@ -40,12 +40,14 @@ namespace Tests.RoslynWalker
 
             var srcLine = new BlockLine( sb.ToString(), null );
 
-            var infoList = ParseSourceLine<ClassInfo>( srcLine, parseSuccess, correctType );
-            if( infoList == null )
+            var elements = ParseSourceLine<ClassInfo>( srcLine, parseSuccess, correctType );
+            if( elements == null )
                 return;
 
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
+            elements!.Count.Should().Be( 1 );
+
+            elements[ 0 ].GetType().Should().Be<ClassInfo>();
+            var toCheck = (ClassInfo) elements[ 0 ];
 
             toCheck.Name.Should().Be( name );
             toCheck.TypeArguments.Should().BeEquivalentTo( typeArgs );
@@ -81,12 +83,14 @@ namespace Tests.RoslynWalker
 
             var srcLine = new BlockLine( sb.ToString(), null );
 
-            var infoList = ParseSourceLine<InterfaceInfo>( srcLine, parseSuccess, correctType );
-            if( infoList == null )
+            var elements = ParseSourceLine<InterfaceInfo>( srcLine, parseSuccess, correctType );
+            if( elements == null )
                 return;
 
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
+            elements.Count.Should().Be( 1 );
+
+            elements[ 0 ].GetType().Should().Be<InterfaceInfo>();
+            var toCheck = (InterfaceInfo) elements[ 0 ];
 
             toCheck.Name.Should().Be( name );
             toCheck.TypeArguments.Should().BeEquivalentTo( typeArgs );
@@ -95,14 +99,15 @@ namespace Tests.RoslynWalker
         }
 
         [ Theory ]
-        [ InlineData( "public", "Ralph", true, true, Accessibility.Public, new string[0], new string[0] ) ]
-        [ InlineData( "public", "Ralph", true, true, Accessibility.Public,
+        [ InlineData( "public", "void", "Ralph", true, true, Accessibility.Public, new string[0], new string[0] ) ]
+        [ InlineData( "public", "int", "Ralph", true, true, Accessibility.Public,
             new[] { "int", "bool", "T<string, T2<int, bool>>" }, new string[0] ) ]
-        [ InlineData( "", "Ralph", true, true, Accessibility.Private,
+        [ InlineData( "","T<string, T2<int, bool>>", "Ralph", true, true, Accessibility.Private,
             new[] { "int", "bool", "T<string, T2<int, bool>>" },
             new[] { "int arg1", "T<int, string, T2<int, bool>> arg2" } ) ]
         public void ParseDelegate(
             string accessText,
+            string returnType,
             string name,
             bool parseSuccess,
             bool correctType,
@@ -113,7 +118,7 @@ namespace Tests.RoslynWalker
             var sb = AggregateArguments( typeArgs, '<', '>', false );
             var sbArgs = AggregateArguments( args, '(', ')', true );
 
-            sb.Insert( 0, $"delegate {name}" );
+            sb.Insert( 0, $"{returnType} delegate {name}" );
 
             if( !string.IsNullOrEmpty( accessText ) )
                 sb.Insert( 0, $"{accessText} " );
@@ -123,15 +128,17 @@ namespace Tests.RoslynWalker
             var container = new BlockLine( "public class TestClass", null );
             container.AddStatement( sb.ToString() );
 
-            var infoList = ParseSourceLine<DelegateInfo>( container.Children.First(), 
+            var elements = ParseSourceLine<DelegateInfo>( container.Children.First(), 
                 parseSuccess, 
                 correctType );
 
-            if( infoList == null )
+            if( elements == null )
                 return;
 
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
+            elements.Count.Should().Be( 1 );
+
+            elements[ 0 ].GetType().Should().Be<DelegateInfo>();
+            var toCheck = (DelegateInfo) elements[ 0 ];
 
             toCheck.Name.Should().Be( name );
             toCheck.TypeArguments.Should().BeEquivalentTo( typeArgs );
@@ -170,15 +177,17 @@ namespace Tests.RoslynWalker
             var container = new BlockLine( "public class Ralph", null );
             container.AddStatement( sb.ToString() );
 
-            var infoList = ParseSourceLine<MethodInfo>( container.Children.First(), 
+            var elements = ParseSourceLine<MethodInfo>( container.Children.First(), 
                 parseSuccess,
                 correctType );
 
-            if( infoList == null )
+            if( elements == null )
                 return;
 
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
+            elements.Count.Should().Be( 1 );
+
+            elements[ 0 ].GetType().Should().Be<MethodInfo>();
+            var toCheck = (MethodInfo) elements[ 0 ];
 
             toCheck.Name.Should().Be( name );
             toCheck.TypeArguments.Should().BeEquivalentTo( typeArgs );
@@ -213,12 +222,14 @@ namespace Tests.RoslynWalker
             var containerLine = new BlockLine( sb.ToString(), null );
             containerLine.AddBlockOpener( "get" );
 
-            var infoList = ParseSourceLine<PropertyInfo>( containerLine, parseSuccess, correctType );
-            if( infoList == null )
+            var elements = ParseSourceLine<PropertyInfo>( containerLine, parseSuccess, correctType );
+            if( elements == null )
                 return;
 
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
+            elements.Count.Should().Be( 1 );
+
+            elements[ 0 ].GetType().Should().Be<PropertyInfo>();
+            var toCheck = (PropertyInfo) elements[ 0 ];
 
             toCheck.Name.Should().Be( name );
             toCheck.Arguments.Should().BeEquivalentTo( indexers );
@@ -269,14 +280,16 @@ namespace Tests.RoslynWalker
                     break;
             }
 
-            var infoList = ParseSourceLine<EventInfo>( container.Children.First(),
+            var elements = ParseSourceLine<EventInfo>( container.Children.First(),
                 parseSuccess,
                 correctType );
-            if( infoList == null )
+            if( elements == null )
                 return;
 
-            infoList.Count.Should().Be( 1 );
-            var toCheck = infoList[ 0 ];
+            elements.Count.Should().Be( 1 );
+
+            elements[ 0 ].GetType().Should().Be<EventInfo>();
+            var toCheck = (EventInfo) elements[ 0 ];
 
             toCheck.Name.Should().Be( name );
             toCheck.EventArgType.Should().Be( eventArgType );
@@ -328,28 +341,28 @@ namespace Tests.RoslynWalker
             var classLine = new BlockLine( "public class TestClass", null );
             classLine.AddStatement( sb.ToString() );
 
-            var parsedFields = _parsers.Parse( classLine.Children.First() );
+            var elements = _parsers.Parse( classLine.Children.First() );
 
             if( !parseSuccess )
             {
-                parsedFields?.Count.Should().NotBe( nameClauses.Length );
+                elements?.Count.Should().NotBe( nameClauses.Length );
                 return;
             }
             
-            parsedFields.Should().NotBeNull();
+            elements!.Should().NotBeNull();
 
-            parsedFields!.Count.Should().Be( nameClauses.Length );
-            parsedFields.Should().BeEquivalentTo( fields );
+            elements!.Count.Should().Be( nameClauses.Length );
+            elements.Should().BeEquivalentTo( fields );
 
             if( !correctType ) 
                 return;
 
-            foreach (var info in parsedFields)
+            foreach (var info in elements!)
             {
                 info.GetType().Should().Be<FieldInfo>();
             }
 
-            foreach (var field in parsedFields.Cast<FieldInfo>())
+            foreach (var field in elements!.Cast<FieldInfo>())
             {
                 field.Accessibility.Should().Be(accessibility);
             }
@@ -378,30 +391,33 @@ namespace Tests.RoslynWalker
             return sb;
         }
 
-        private List<TInfo>? ParseSourceLine<TInfo>( StatementLine srcLine, bool parseSuccess, bool parseCorrectType )
+        private List<ElementInfo>? ParseSourceLine<TInfo>( 
+            StatementLine srcLine, 
+            bool parseSuccess, 
+            bool parseCorrectType )
             where TInfo : BaseInfo
         {
-            var infoList = _parsers.Parse( srcLine );
+            var result = _parsers.Parse( srcLine );
 
             if( parseSuccess )
-                infoList.Should().NotBeNull();
+                result.Should().NotBeNull();
             else
             {
-                infoList.Should().BeNull();
+                result.Should().BeNull();
                 return null;
             }
 
             if( parseCorrectType )
             {
-                foreach( var info in infoList! )
+                foreach( var info in result! )
                 {
                     info.GetType().Should().Be<TInfo>();
                 }
 
-                return infoList.Cast<TInfo>().ToList();
+                return result;
             }
 
-            foreach( var info in infoList! )
+            foreach( var info in result! )
             {
                 info.GetType().Should().NotBe<TInfo>();
             }

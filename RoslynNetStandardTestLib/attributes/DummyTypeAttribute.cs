@@ -24,11 +24,13 @@ namespace J4JSoftware.Roslyn.Tests
     [ AttributeUsage( AttributeTargets.Class, AllowMultiple = true ) ]
     public class DummyTypeAttribute : Attribute
     {
-        public DummyTypeAttribute( Type dummyType )
+        public DummyTypeAttribute( Type dummyType, int arg = 0 )
         {
             DummyType = dummyType;
+            Argument = arg;
         }
 
         public Type DummyType { get; }
+        public int Argument { get; }
     }
 }

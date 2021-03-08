@@ -21,6 +21,8 @@ namespace Tests.RoslynWalker
 {
     public enum ElementNature
     {
+        Argument,
+        Attribute,
         Class,
         Delegate,
         Event,

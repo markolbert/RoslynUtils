@@ -27,9 +27,11 @@ namespace Tests.RoslynWalker
         public DelegateInfo( DelegateSource src )
             : base( ElementNature.Delegate, src )
         {
-            Arguments = src.Arguments;
+            Arguments = src.Arguments
+                .Select( x => new ArgumentInfo( x ) )
+                .ToList();
         }
 
-        public List<string> Arguments { get; }
+        public List<ArgumentInfo> Arguments { get; }
     }
 }

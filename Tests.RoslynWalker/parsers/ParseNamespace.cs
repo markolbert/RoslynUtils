@@ -13,7 +13,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<NamespaceInfo>? Parse( StatementLine srcLine )
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )
         {
             var match = RxNamespaceGroup.Match( srcLine.Line );
 
@@ -28,7 +28,7 @@ namespace Tests.RoslynWalker
                 Parent = (NamespaceInfo?) GetParent( srcLine, ElementNature.Namespace )
             };
 
-            return new List<NamespaceInfo> { info };
+            return new List<BaseInfo> { info };
         }
     }
 }

@@ -17,26 +17,13 @@
 
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
+using System.Collections.Generic;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace Tests.RoslynWalker
 {
-    public class BaseInfo
+    public interface IParseReturnTypeName
     {
-        protected BaseInfo( ElementNature nature, string elementName )
-        {
-            Name = elementName;
-            Nature = nature;
-        }
-
-        public ElementNature Nature { get; }
-        public string Name { get; }
-
-        public BaseInfo? Parent { get; set; }
-
-        public virtual string FullName => FullNameWithoutArguments;
-
-        protected string FullNameWithoutArguments =>
-            Parent == null ? Name : $"{Parent.FullNameWithoutArguments}.{Name}";
+        bool Parse( string text, out List<string> attributeClauses, out string? returnType, out string? name, out List<string> typeArgs );
     }
 }

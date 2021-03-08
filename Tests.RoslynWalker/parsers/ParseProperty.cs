@@ -34,7 +34,7 @@ namespace Tests.RoslynWalker
                    && base.HandlesLine( toCheck );
         }
 
-        protected override List<PropertyInfo>? Parse( StatementLine srcLine )
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )
         {
             var groupMatch = _rxGroup.Match( srcLine.Line );
 
@@ -55,7 +55,7 @@ namespace Tests.RoslynWalker
                 Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
 
-            return new List<PropertyInfo> { info };
+            return new List<BaseInfo>{ info };
         }
 
         private MethodSource ParseReturnTypeNameClause( string text )

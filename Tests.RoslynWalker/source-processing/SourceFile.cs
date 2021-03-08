@@ -26,46 +26,30 @@ using System.Text;
 
 namespace Tests.RoslynWalker
 {
-    public class SourceFile : IEnumerable<StatementLine>
+    public class SourceFile : IEnumerable<Statement>
     {
-        private readonly string _text;
-        private readonly int _textLen;
-        private readonly Stack<string?> _parentLines = new();
+        private readonly ITokenizer _tokenizer;
 
-        private int _position;
+        private List<Statement>? _statements;
 
-        public SourceFile( string srcPath )
+        public SourceFile( ITokenizer tokenizer )
         {
-            // read the file and remove preprocessor lines
-            var lines = File.ReadAllLines( srcPath );
-
-            // delete embedded single line comments
-            _text = RemoveSingleLineCommentsAndPreProcessorLines( lines );
-
-            // convert multiple spaces to a single space
-            _text = ReplaceAllText( _text, "  ", " " );
-
-            // remove spacing around certain delimiting characters
-            foreach( var toTrim in new string[] { "{", "}", "(", ")", "[", "]", ":" } )
-            {
-                _text = ReplaceAllText( _text, " " + toTrim, toTrim );
-                _text = ReplaceAllText( _text, toTrim + " ", toTrim );
-            }
-
-            _textLen = _text.Length;
-
-            RootBlock = new BlockLine( string.Empty, null );
+            _tokenizer = tokenizer;
         }
 
-        public BlockLine RootBlock { get; }
-
-        private char CurrentChar => _position < _textLen - 1 ? _text[ _position ] : _text[ ^1 ];
-
-        public IEnumerator<StatementLine> GetEnumerator()
+        public bool ParseFile( string srcPath )
         {
-            _parentLines.Clear();
+            if( !_tokenizer.Tokenize(srcPath, out var statements  ))
+                return false;
 
-            foreach( var line in EnumerateLineBlock( RootBlock ) )
+            _statements = statements!;
+
+            return true;
+        }
+
+        public IEnumerator<Statement> GetEnumerator()
+        {
+            foreach( var line in _statements ?? Enumerable.Empty<Statement>() )
             {
                 yield return line;
             }
@@ -74,133 +58,6 @@ namespace Tests.RoslynWalker
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
-        }
-
-        public void ParseFile( ParserCollection parsers )
-        {
-            CreateBlocks();
-
-            ParseBlock( RootBlock, parsers );
-        }
-
-        private void ParseBlock( BlockLine block, ParserCollection parsers )
-        {
-            foreach( var srcLine in block.Children )
-            {
-                var elements = srcLine.Parse( parsers );
-
-                if( srcLine is not BlockLine childBlock )
-                    continue;
-
-                if( elements.Any( x => x is NamespaceInfo
-                                       || x is ClassInfo
-                                       || x is InterfaceInfo ) )
-                    ParseBlock( childBlock, parsers );
-            }
-        }
-
-        private void CreateBlocks()
-        {
-            _position = -1;
-            MoveNext();
-
-            var block = RootBlock;
-            var sb = new StringBuilder();
-
-            while( _position < _textLen )
-            {
-                switch( CurrentChar )
-                {
-                    case ';':
-                        block.AddStatement( sb.ToString() );
-                        sb.Clear();
-
-                        break;
-
-                    case '{':
-                        block = block.AddBlockOpener( sb.ToString() );
-                        sb.Clear();
-                        break;
-
-                    case '}':
-                        sb.Clear();
-
-                        block = block.Parent
-                                ?? throw new NullReferenceException(
-                                    "Attempted to move to an undefined parent LineBlock" );
-                        break;
-
-                    default:
-                        sb.Append( CurrentChar );
-                        break;
-                }
-
-                MoveNext();
-            }
-        }
-
-        private string RemoveSingleLineCommentsAndPreProcessorLines( string[] rawLines )
-        {
-            var lines = rawLines.Select( x => x.Trim() )
-                .Where( x => x.Length > 0 && x[ 0 ] != '#'  )
-                .ToList();
-
-            for( var idx= 0; idx < lines.Count; idx++ )
-            {
-                var commentStart = lines[idx].IndexOf( "//", StringComparison.OrdinalIgnoreCase );
-                if( commentStart < 0 )
-                    continue;
-
-                lines[ idx ] = lines[ idx ][ ..commentStart ];
-            }
-
-            // merge all lines together, separating each by a space
-            return string.Join(" ", lines  )
-                    .Replace( "\t", " " )
-                    .Trim();
-        }
-
-        private string ReplaceAllText( string text, string toFind, string replacement )
-        {
-            while( text.IndexOf( toFind, StringComparison.OrdinalIgnoreCase ) >= 0 )
-                text = text.Replace( toFind, replacement );
-
-            return text;
-        }
-
-        private void MoveNext()
-        {
-            _position++;
-
-            // for multi line comments skip past closing */
-            var nextTwoChars = _position < _textLen - 2
-                ? _text[ _position..( _position + 1 ) ]
-                : _text[ _position.._position ];
-
-            if( !nextTwoChars.Equals( "/*", StringComparison.Ordinal ) )
-                return;
-
-            var endOfComment = _text.IndexOf( "*/", _position, StringComparison.Ordinal );
-
-            if( endOfComment < 0 )
-                _position = _textLen;
-            else _position += endOfComment - _position + 2;
-        }
-
-        private IEnumerable<StatementLine> EnumerateLineBlock( BlockLine block )
-        {
-            foreach( var srcLine in block.Children )
-            {
-                yield return srcLine;
-
-                if( srcLine is not BlockLine childBlock ) 
-                    continue;
-
-                foreach( var childLine in EnumerateLineBlock( childBlock ) )
-                {
-                    yield return childLine;
-                }
-            }
         }
     }
 }

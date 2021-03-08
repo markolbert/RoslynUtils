@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using J4JSoftware.Roslyn;
 
 namespace Tests.RoslynWalker
 {
@@ -42,11 +43,16 @@ namespace Tests.RoslynWalker
         public string Line { get; }
         public LineType LineType { get; }
         public BlockLine? Parent { get; set; }
+        public List<AttributeInfo>? Attributes { get; private set; }
         public List<BaseInfo>? Elements { get; private set; }
 
         public IEnumerable<BaseInfo> Parse( ParserCollection parsers )
         {
-            Elements = parsers.Parse( this );
+            var parsed = parsers.Parse( this );
+
+            Elements = parsed?.Elements;
+            Attributes = parsed?.Attributes;
+
             Parsed = true;
 
             return Elements ?? Enumerable.Empty<BaseInfo>();

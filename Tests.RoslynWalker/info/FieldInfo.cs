@@ -17,18 +17,26 @@
 
 #endregion
 
+using System.Collections.Generic;
+using System.Linq;
+
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker
 {
-    public class FieldInfo : ElementInfo
+    public class FieldInfo : ElementInfo, IAttributable
     {
         public FieldInfo( FieldSource src )
             : base( ElementNature.Field, src )
         {
             FieldType = src.FieldType;
+
+            Attributes = src.Attributes
+                .Select( x => new ArgumentInfo( x ) )
+                .ToList();
         }
 
         public string FieldType { get; }
+        public List<AttributeInfo> Attributes { get; }
     }
 }

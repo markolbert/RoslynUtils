@@ -15,7 +15,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<EventInfo>? Parse( StatementLine srcLine )
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )
         {
             var match = _rxEvent.Match(srcLine.Line);
 
@@ -38,7 +38,7 @@ namespace Tests.RoslynWalker
                 Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
 
-            return new List<EventInfo> { info };
+            return new List<BaseInfo> { info };
         }
     }
 }

@@ -17,18 +17,26 @@
 
 #endregion
 
+using System.Collections.Generic;
+using System.Linq;
+
 #pragma warning disable 8618
 
 namespace Tests.RoslynWalker
 {
-    public class EventInfo : ElementInfo
+    public class EventInfo : ElementInfo, IAttributable
     {
         public EventInfo( EventSource src )
             : base( ElementNature.Event, src )
         {
             EventArgType= src.EventArgType;
+
+            Attributes = src.Attributes
+                .Select( x => new AttributeInfo( x ) )
+                .ToList();
         }
 
         public string EventArgType { get; }
+        public List<AttributeInfo> Attributes { get; }
     }
 }

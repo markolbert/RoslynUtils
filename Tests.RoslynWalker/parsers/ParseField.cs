@@ -33,10 +33,10 @@ namespace Tests.RoslynWalker
             return base.HandlesLine( srcLine );
         }
 
-        protected override List<FieldInfo>? Parse( StatementLine srcLine )=>
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )=>
             ParseGeneric( srcLine ) ?? ParseNonGeneric( srcLine );
 
-        private List<FieldInfo>? ParseGeneric( StatementLine srcLine )
+        private List<BaseInfo>? ParseGeneric( StatementLine srcLine )
         {
             var match = _rxGeneric.Match(srcLine.Line);
 
@@ -50,7 +50,7 @@ namespace Tests.RoslynWalker
                 match.Groups[ 4 ].Value.Trim() );
         }
 
-        private List<FieldInfo>? ParseNonGeneric( StatementLine srcLine )
+        private List<BaseInfo>? ParseNonGeneric( StatementLine srcLine )
         {
             var match = _rxNonGeneric.Match(srcLine.Line);
 
@@ -64,12 +64,12 @@ namespace Tests.RoslynWalker
                 match.Groups[ 3 ].Value.Trim() );
         }
 
-        private List<FieldInfo>? ParseCommon( StatementLine srcLine, string accessibility, string fieldType,
+        private List<BaseInfo>? ParseCommon( StatementLine srcLine, string accessibility, string fieldType,
             string nameClause )
         {
             var clauseMatch = _rxFields.Match( nameClause );
 
-            var retVal = new List<FieldInfo>();
+            var retVal = new List<BaseInfo>();
 
             while( clauseMatch.Success )
             {

@@ -17,26 +17,16 @@
 
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
-
 namespace Tests.RoslynWalker
 {
-    public class BaseInfo
+    public class ArgumentInfo : BaseInfo
     {
-        protected BaseInfo( ElementNature nature, string elementName )
+        public ArgumentInfo( ArgumentSource src ) 
+            : base( ElementNature.Argument, src.Name )
         {
-            Name = elementName;
-            Nature = nature;
+            Type = src.Type;
         }
 
-        public ElementNature Nature { get; }
-        public string Name { get; }
-
-        public BaseInfo? Parent { get; set; }
-
-        public virtual string FullName => FullNameWithoutArguments;
-
-        protected string FullNameWithoutArguments =>
-            Parent == null ? Name : $"{Parent.FullNameWithoutArguments}.{Name}";
+        public string Type { get; }
     }
 }

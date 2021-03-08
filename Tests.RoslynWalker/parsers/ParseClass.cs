@@ -9,7 +9,7 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<ClassInfo>? Parse( StatementLine srcLine )
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )
         {
             var ntSource = ParseInternal( srcLine );
             if( ntSource == null )
@@ -20,7 +20,7 @@ namespace Tests.RoslynWalker
                 Parent = GetParent( srcLine, ElementNature.Namespace, ElementNature.Class )
             };
 
-            return new List<ClassInfo> { info };
+            return new List<BaseInfo>{ info };
         }
     }
 }

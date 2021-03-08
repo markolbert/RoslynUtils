@@ -7,9 +7,26 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="info\**" />
+	  <Compile Remove="parsers\**" />
+	  <EmbeddedResource Remove="info\**" />
+	  <EmbeddedResource Remove="parsers\**" />
+	  <None Remove="info\**" />
+	  <None Remove="parsers\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="RegexTest.cs" />
+	  <Compile Remove="RoslynWalkerTestBase.cs" />
 	  <Compile Remove="source-processing\BlockClosingLine.cs" />
+	  <Compile Remove="source-processing\BlockLine.cs" />
+	  <Compile Remove="source-processing\ITypeArguments.cs" />
 	  <Compile Remove="source-processing\LineBlock.cs" />
+	  <Compile Remove="source-processing\LineType.cs" />
 	  <Compile Remove="source-processing\SourceRegex.cs" />
+	  <Compile Remove="source-processing\SourceText.cs" />
+	  <Compile Remove="source-processing\StatementLine.cs" />
+	  <Compile Remove="SourceCodeParsing.cs" />
 	  <Compile Remove="TopologicalCollection.cs" />
 	</ItemGroup>
 

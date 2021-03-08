@@ -18,18 +18,23 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Tests.RoslynWalker
 {
-    public class NamedTypeInfo : ElementInfo, ITypeArguments
+    public class NamedTypeInfo : ElementInfo, ITypeArguments, IAttributable
     {
         protected NamedTypeInfo( ElementNature nature, NamedTypeSource src )
             : base( nature, src )
         {
             TypeArguments = src.TypeArguments;
+
+            Attributes = src.Attributes.Select( x => new AttributeInfo( x ) )
+                .ToList();
         }
 
         public List<string> TypeArguments { get; }
+        public List<AttributeInfo> Attributes { get; }
 
         public override string FullName
         {

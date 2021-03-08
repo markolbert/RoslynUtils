@@ -18,7 +18,11 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<DelegateInfo>? Parse( StatementLine srcLine )
+        public IParseReturnTypeName ReturnTypeNameParser { get; set; } = new ParseReturnTypeName();
+        public IParseMethodArguments MethodArgumentParser { get; set; } = new ParseMethodArguments();
+        public IParseAttribute AttributeParser { get; set; } = new ParseAttribute();
+
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )
         {
             var groupMatch = _rxGroup.Match(srcLine.Line);
 
@@ -26,22 +30,32 @@ namespace Tests.RoslynWalker
                 || groupMatch.Groups.Count != 4)
                 return null;
 
-            var methodSource = ParseReturnTypeName( groupMatch.Groups[ 2 ]
-                .Value
-                .Replace( "delegate ", string.Empty )
-                .Trim() );
+            if( !ReturnTypeNameParser.Parse( groupMatch.Groups[ 2 ].Value.Trim(), 
+                out var attributeClauses,
+                out var returnType, 
+                out var name, 
+                out var typeArgs ) )
+                return null;
 
-            var delegateSrc = new DelegateSource( methodSource.Name,
-                groupMatch.Groups[1].Value.Trim(),
-                methodSource.TypeArguments,
-                ParseArguments( groupMatch.Groups[ 3 ].Value.Trim() ) );
+            if( !AttributeParser.Parse( attributeClauses, out var attributes ) )
+                return null;
+
+            if( !MethodArgumentParser.Parse( groupMatch.Groups[ 3 ].Value.Trim(), out var arguments ) )
+                return null;
+
+            var delegateSrc = new DelegateSource( name!,
+                groupMatch.Groups[ 1 ].Value.Trim(),
+                returnType!,
+                typeArgs,
+                arguments,
+                attributes );
 
             var info = new DelegateInfo( delegateSrc )
             {
                 Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
 
-            return new List<DelegateInfo> { info };
+            return new List<BaseInfo> { info };
         }
     }
 }

@@ -10,6 +10,6 @@ namespace Tests.RoslynWalker
         }
 
         // we don't need to parse using clauses, we just skip them
-        protected override List<ElementInfo>? Parse( StatementLine srcLine ) => null;
+        protected override List<BaseInfo>? Parse( StatementLine srcLine ) => null;
     }
 }

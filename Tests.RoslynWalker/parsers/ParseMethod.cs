@@ -14,38 +14,42 @@ namespace Tests.RoslynWalker
         {
         }
 
-        protected override List<MethodInfo>? Parse( StatementLine srcLine )
+        public IParseReturnTypeName ReturnTypeNameParser { get; set; } = new ParseReturnTypeName();
+        public IParseMethodArguments MethodArgumentParser { get; set; } = new ParseMethodArguments();
+        public IParseAttribute AttributeParser { get; set; } = new ParseAttribute();
+
+        protected override List<BaseInfo>? Parse( StatementLine srcLine )
         {
-            if (!ExtractMethodElements(srcLine.Line, out var methodSrc))
+            var groupMatch = _rxGroup.Match( srcLine.Line );
+
+            if( !groupMatch.Success
+                || groupMatch.Groups.Count != 4 )
                 return null;
 
-            var info= new MethodInfo( methodSrc! )
+            if( !ReturnTypeNameParser.Parse( groupMatch.Groups[ 2 ].Value.Trim(),
+                out var attributeClauses,
+                out var returnType,
+                out var name,
+                out var typeArgs ) )
+                return null;
+
+            if( !AttributeParser.Parse( attributeClauses, out var attributes ) )
+                return null;
+
+            if( !MethodArgumentParser.Parse( groupMatch.Groups[ 3 ].Value.Trim(), out var arguments ) )
+                return null;
+
+            var info = new MethodInfo( new MethodSource(
+                name!,
+                groupMatch.Groups[ 1 ].Value.Trim(),
+                typeArgs,
+                arguments, returnType!,
+                attributes ) )
             {
                 Parent = GetParent( srcLine, ElementNature.Class, ElementNature.Interface )
             };
 
-            return new List<MethodInfo> { info };
-        }
-
-        protected bool ExtractMethodElements( string text, out MethodSource? result)
-        {
-            result = null;
-
-            var groupMatch = _rxGroup.Match(text);
-
-            if (!groupMatch.Success
-                || groupMatch.Groups.Count != 4)
-                return false;
-
-            var returnNameGenericSource = ParseReturnTypeName( groupMatch.Groups[ 2 ].Value.Trim() );
-
-            result = returnNameGenericSource with
-            {
-                Accessibility = groupMatch.Groups[ 1 ].Value.Trim(),
-                Arguments = ParseArguments( groupMatch.Groups[ 3 ].Value.Trim() )
-            };
-
-            return true;
+            return new List<BaseInfo> { info };
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Tests.RoslynWalker
             };
         }
 
-        public List<BaseInfo>? Parse( StatementLine srcLine )
+        public List<ElementInfo>? Parse( StatementLine srcLine )
         {
             foreach( var parser in _parsers )
             {

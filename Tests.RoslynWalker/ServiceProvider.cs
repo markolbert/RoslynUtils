@@ -105,17 +105,21 @@ namespace Tests.RoslynWalker
             builder.RegisterType<WalkerContext>()
                 .AsSelf();
 
-            builder.RegisterAssemblyTypes( typeof(ServiceProvider).Assembly )
-                .Where( t => !t.IsAbstract
-                             && typeof(IParse).IsAssignableFrom( t )
-                             && t.GetConstructors().Any() )
-                .AsImplementedInterfaces();
+            builder.RegisterType<Tokenizer>()
+                .As<ITokenizer>()
+                .SingleInstance();
 
-            builder.RegisterType<ParserCollection>()
-                .AsSelf();
+            //builder.RegisterAssemblyTypes( typeof(ServiceProvider).Assembly )
+            //    .Where( t => !t.IsAbstract
+            //                 && typeof(IParse).IsAssignableFrom( t )
+            //                 && t.GetConstructors().Any() )
+            //    .AsImplementedInterfaces();
 
-            builder.RegisterType<NamespaceCollection>()
-                .AsSelf();
+            //builder.RegisterType<ParserCollection>()
+            //    .AsSelf();
+
+            //builder.RegisterType<NamespaceCollection>()
+            //    .AsSelf();
 
             Instance = new AutofacServiceProvider( builder.Build() );
         }

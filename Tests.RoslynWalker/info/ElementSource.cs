@@ -21,46 +21,65 @@ using System.Collections.Generic;
 
 namespace Tests.RoslynWalker
 {
-    public record ElementSource( string Name, string Accessibility );
+    public record BaseSource( string Name );
+
+    public record ElementSource( string Name, string Accessibility )
+        : BaseSource( Name );
+
+    public record AttributeArgumentSource( string Name, string AssignmentClause )
+        : BaseSource( Name );
+
+    public record AttributeSource( string Name, List<AttributeArgumentSource> Arguments )
+        : BaseSource( Name );
+
+    public record ArgumentSource( string Name, string Type, List<string> attributeClauses )
+        : BaseSource( Name );
 
     public record DelegateSource(
             string Name,
             string Accessibility,
+            string ReturnType,
             List<string> TypeArguments,
-            List<string> Arguments )
-        : NamedTypeSource( Name, Accessibility, TypeArguments );
+            List<ArgumentSource> Arguments,
+            List<AttributeSource> Attributes )
+        : NamedTypeSource( Name, Accessibility, TypeArguments, Attributes );
 
     public record EventSource(
             string Name,
             string Accessibility,
-            string EventArgType )
+            string EventArgType,
+            List<AttributeSource> Attributes )
         : ElementSource( Name, Accessibility );
 
     public record FieldSource(
             string Name,
             string Accessibility,
             string FieldType,
-            string AssignmentClause )
+            string AssignmentClause,
+            List<AttributeSource> Attributes )
         : ElementSource( Name, Accessibility );
 
     public record InterfaceSource(
             string Name,
             string Accessibility,
             List<string> TypeArguments,
+            List<AttributeSource> Attributes,
             string Ancestry )
-        : NamedTypeSource( Name, Accessibility, TypeArguments );
+        : NamedTypeSource( Name, Accessibility, TypeArguments, Attributes );
 
     public record NamedTypeSource(
             string Name,
             string Accessibility,
-            List<string> TypeArguments )
+            List<string> TypeArguments,
+            List<AttributeSource> Attributes )
         : ElementSource( Name, Accessibility );
 
     public record MethodSource(
             string Name,
             string Accessibility,
             List<string> TypeArguments,
-            List<string> Arguments,
-            string ReturnType )
-        : DelegateSource( Name, Accessibility, TypeArguments, Arguments );
+            List<ArgumentSource> Arguments,
+            string ReturnType,
+            List<AttributeSource> Attributes )
+        : DelegateSource( Name, Accessibility, ReturnType, TypeArguments, Arguments, Attributes );
 }
