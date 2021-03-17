@@ -17,12 +17,19 @@
 
 #endregion
 
-using System.Collections.Generic;
+using System.Text;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class CommentTokenCleaner : TokenModifier, IModifyToken
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenModificationInfo ModifyActiveToken( Token.Statement statement )
+        {
+            var token = statement.GetActiveToken( true )!;
+
+            return token.Type != TokenType.MultiLineComment
+                ? new TokenModificationInfo(token)
+                : RemoveFromEnd( statement, "*/" );
+        }
     }
 }

@@ -17,12 +17,15 @@
 
 #endregion
 
-using System.Collections.Generic;
+using System;
+using System.Text;
+using Microsoft.CodeAnalysis;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class SpawnSingleLineComment : TokenSpawner, ISpawnToken
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenSpawnInfo SpawnToken( Token.Statement statement ) =>
+            SpawnToken( statement, TokenType.SingleLineComment, true, "//" );
     }
 }

@@ -19,22 +19,21 @@
 
 namespace Tests.RoslynWalker
 {
-    public enum TokenType
+    public enum StatementType
     {
-        Attribute,
-        Argument,
-        ArgumentList,
-        Assignment,
-        Cast,
+        Class,
         Comment,
+        Delegate,
+        Event,
+        Field,
+        Interface,
+        Method,
+        Namespace,
         Preprocessor,
-        PropertyIndexer,
-        ArgumentQualifier,
-        ArrayQualifier,
-        FieldQualifier,
-        MethodQualifier,
-        Text,
-        TypeArgument,
+        Property,
+        Record,
+        Struct,
+        Using,
         Undefined
     }
 }

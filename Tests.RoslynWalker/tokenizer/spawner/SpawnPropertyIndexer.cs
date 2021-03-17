@@ -17,12 +17,13 @@
 
 #endregion
 
-using System.Collections.Generic;
+using System.Text;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class SpawnPropertyIndexer : TokenSpawner, ISpawnToken
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenSpawnInfo SpawnToken( Token.Statement statement ) =>
+            SpawnToken( statement, TokenType.PropertyIndexer, true, "[" );
     }
 }

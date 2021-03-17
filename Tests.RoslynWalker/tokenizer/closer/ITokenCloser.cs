@@ -17,12 +17,12 @@
 
 #endregion
 
-using System.Collections.Generic;
+using System.Text;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public interface ITokenCloser
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        TokenClosingInfo CloseActiveToken( Token.Statement statement );
     }
 }

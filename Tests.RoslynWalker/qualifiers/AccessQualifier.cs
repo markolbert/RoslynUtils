@@ -17,12 +17,14 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public enum AccessQualifier
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        Public,
+        Internal,
+        Protected,
+        ProtectedInternal,
+        Private
     }
 }

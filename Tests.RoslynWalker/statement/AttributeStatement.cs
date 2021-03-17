@@ -17,12 +17,15 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class AttributeStatement : Statement
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public AttributeStatement( Statement associatedStatement )
+            : base( associatedStatement )
+        {
+        }
+
+        public string? Name { get; internal set; }
     }
 }

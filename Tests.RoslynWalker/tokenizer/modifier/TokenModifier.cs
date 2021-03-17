@@ -18,46 +18,36 @@
 #endregion
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Tests.RoslynWalker
 {
-    public class SourceFile : IEnumerable<Token.TokenCollection>
+    public class TokenModifier
     {
-        private readonly ITokenizer _tokenizer;
-
-        private List<Token.TokenCollection>? _statements;
-
-        public SourceFile( ITokenizer tokenizer )
+        protected TokenModifier()
         {
-            _tokenizer = tokenizer;
         }
 
-        public bool ParseFile( string srcPath )
+        protected TokenModificationInfo RemoveFromEnd( Token.Statement statement, params string[] closers )
         {
-            if( !_tokenizer.Tokenize(srcPath, out var statements  ))
-                return false;
+            var token = statement.GetActiveToken( true )!;
 
-            _statements = statements!;
+            if( !token.CanAcceptText )
+                return new TokenModificationInfo(token);
 
-            return true;
-        }
+            var location = -1;
 
-        public IEnumerator<Token.TokenCollection> GetEnumerator()
-        {
-            foreach( var line in _statements ?? Enumerable.Empty<Token.TokenCollection>() )
+            foreach( string closer in closers )
             {
-                yield return line;
-            }
-        }
+                location = token.Text.LastIndexOf( closer, StringComparison.Ordinal );
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+                if( location >= 0 )
+                    break;
+            }
+
+            return location < 0 
+                ? new TokenModificationInfo(token) 
+                : new TokenModificationInfo( token, token.Text[ location..^location ] );
         }
     }
 }

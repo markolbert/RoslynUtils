@@ -17,22 +17,18 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using J4JSoftware.Logging;
+
 namespace Tests.RoslynWalker
 {
-    public enum StatementType
+    public interface ITokenEvolver
     {
-        Preprocessor,
-        Comment,
-        Using,
-        Namespace,
-        Class,
-        Interface,
-        Delegate,
-        Struct,
-        Event,
-        Method,
-        Property,
-        Field,
-        Undefined
+        List<ITokenConverter> Converters { get; }
+        List<IModifyToken> Modifiers { get; }
+        List<ISpawnToken> Spawners { get; }
+        ITokenCloser Closer { get; }
+        Func<IJ4JLogger>? LoggerFactory { get; }
     }
 }

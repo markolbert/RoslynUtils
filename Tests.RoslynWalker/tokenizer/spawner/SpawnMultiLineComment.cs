@@ -17,12 +17,11 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class SpawnMultiLineComment : TokenSpawner, ISpawnToken
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenSpawnInfo SpawnToken( Token.Statement statement ) =>
+            SpawnToken( statement, TokenType.MultiLineComment, true, "/*" );
     }
 }

@@ -17,12 +17,17 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class NamedTypeStatement : ContainerStatement
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        protected NamedTypeStatement( ContainerStatement parent )
+            : base(parent)
+        {
+        }
+
+        public AccessQualifier Accessibility { get; internal set; }
+        public bool IsStatic { get; internal set; }
+        public bool IsSealed { get; internal set; }
     }
 }

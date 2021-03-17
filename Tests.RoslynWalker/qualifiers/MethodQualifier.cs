@@ -17,12 +17,12 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public enum MethodQualifier
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        Virtual,
+        Override,
+        New
     }
 }

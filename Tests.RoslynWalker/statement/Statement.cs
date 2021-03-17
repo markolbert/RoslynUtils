@@ -17,12 +17,29 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using FluentAssertions.Execution;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class Statement
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        protected Statement( ContainerStatement? parent )
+        {
+            Parent = parent;
+        }
+
+        protected Statement( Statement? parent )
+        {
+            Parent = parent;
+        }
+
+        public Statement? Parent { get; }
+        public List<AttributeStatement> Attributes { get; } = new();
     }
 }

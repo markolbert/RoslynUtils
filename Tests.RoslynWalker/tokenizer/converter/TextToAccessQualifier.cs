@@ -17,12 +17,11 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class TextToAccessQualifier : TextTokenConverter, ITokenConverter
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenConversionInfo ConvertActiveToken( Token.Statement statement )
+            => ConvertActiveTokenToQualifier<AccessQualifier>( statement, TokenType.AccessQualifier );
     }
 }

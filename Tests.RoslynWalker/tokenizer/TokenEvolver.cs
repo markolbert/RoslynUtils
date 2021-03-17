@@ -17,12 +17,33 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using J4JSoftware.Logging;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class TokenEvolver : ITokenEvolver
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenEvolver( 
+            IEnumerable<ITokenConverter> converters, 
+            IEnumerable<IModifyToken> modifiers,
+            IEnumerable<ISpawnToken> spawners,
+            ITokenCloser closer,
+            Func<IJ4JLogger>? loggerFactory )
+        {
+            Converters = converters.ToList();
+            Modifiers = modifiers.ToList();
+            Spawners = spawners.ToList();
+            Closer = closer;
+            LoggerFactory = loggerFactory;
+        }
+
+        public List<ITokenConverter> Converters { get; }
+        public List<IModifyToken> Modifiers { get; }
+        public List<ISpawnToken> Spawners { get; }
+        public ITokenCloser Closer {get;}
+        public Func<IJ4JLogger>? LoggerFactory { get; }
     }
 }

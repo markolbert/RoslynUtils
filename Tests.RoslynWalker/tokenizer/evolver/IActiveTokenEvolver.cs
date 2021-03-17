@@ -17,12 +17,10 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public interface IActiveTokenEvolver
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        bool EvolveActiveToken( Token.TokenCollection tokenCollection, out TokenEvolutionInfo? evolutionInfo );
     }
 }

@@ -17,12 +17,25 @@
 
 #endregion
 
-using System.Collections.Generic;
-
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public class TokenBase
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        public TokenBase(
+            TokenType type,
+            string text )
+        {
+            Type = type;
+            Text = text;
+        }
+
+        protected TokenBase( TokenType type )
+        {
+            Type = type;
+        }
+
+        public TokenType Type { get; protected set; }
+        public bool CanAcceptText { get; protected set; } = true;
+        public virtual string Text { get; } = string.Empty;
     }
 }

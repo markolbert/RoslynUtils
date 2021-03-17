@@ -18,11 +18,18 @@
 #endregion
 
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 namespace Tests.RoslynWalker
 {
-    public interface ITokenizer
+    public partial class ContainerStatement : Statement
     {
-        bool Tokenize( string srcPath, out List<Token.TokenCollection>? result );
+        protected ContainerStatement(
+            ContainerStatement? parent )
+            : base( parent )
+        {
+        }
+
+        public string? Name { get; internal set; }
     }
 }
