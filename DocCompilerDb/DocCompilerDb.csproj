@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net5.0</TargetFramework>
+		<AssemblyName>J4JSoftware.DocCompiler.Database</AssemblyName>
+		<RootNamespace>J4JSoftware.DocCompiler</RootNamespace>
+		<Nullable>enable</Nullable>
+		<Authors>Mark A. Olbert</Authors>
+		<Company>Jump for Joy Software</Company>
+		<Description>library for compiling C# projects to documentation</Description>
+		<Copyright>2021 all rights reserved</Copyright>
+		<AssemblyVersion>0.1.0.0</AssemblyVersion>
+		<FileVersion>0.1.0.0</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.4" />
+		<PackageReference Include="Microsoft.CodeAnalysis" Version="3.9.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\ProgrammingUtilities\EFCoreUtilities\EFCoreUtilities.csproj" />
+		<ProjectReference Include="..\..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj" />
+		<ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
+		<ProjectReference Include="..\DocCompilerCommon\DocCompilerCommon.csproj" />
+	</ItemGroup>
+
+</Project>

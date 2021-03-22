@@ -9,46 +9,16 @@
 	<ItemGroup>
 	  <Compile Remove="info\**" />
 	  <Compile Remove="parsers\**" />
-	  <Compile Remove="tokenizer\closer\**" />
-	  <Compile Remove="tokenizer\converter\**" />
-	  <Compile Remove="tokenizer\modifier\**" />
-	  <Compile Remove="tokenizer\spawner\**" />
 	  <EmbeddedResource Remove="info\**" />
 	  <EmbeddedResource Remove="parsers\**" />
-	  <EmbeddedResource Remove="tokenizer\closer\**" />
-	  <EmbeddedResource Remove="tokenizer\converter\**" />
-	  <EmbeddedResource Remove="tokenizer\modifier\**" />
-	  <EmbeddedResource Remove="tokenizer\spawner\**" />
 	  <None Remove="info\**" />
 	  <None Remove="parsers\**" />
-	  <None Remove="tokenizer\closer\**" />
-	  <None Remove="tokenizer\converter\**" />
-	  <None Remove="tokenizer\modifier\**" />
-	  <None Remove="tokenizer\spawner\**" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Remove="qualifiers\ArgumentQualifier.cs" />
-	  <Compile Remove="qualifiers\MethodQualifier.cs" />
-	  <Compile Remove="qualifiers\MiscellaneousQualifier.cs" />
-	  <Compile Remove="qualifiers\NamedClauseQualifier.cs" />
-	  <Compile Remove="qualifiers\PropertyMethod.cs" />
 	  <Compile Remove="RegexTest.cs" />
 	  <Compile Remove="RoslynWalkerTestBase.cs" />
-	  <Compile Remove="source-processing\BlockClosingLine.cs" />
-	  <Compile Remove="source-processing\BlockLine.cs" />
-	  <Compile Remove="source-processing\ITypeArguments.cs" />
-	  <Compile Remove="source-processing\LineBlock.cs" />
-	  <Compile Remove="source-processing\LineType.cs" />
-	  <Compile Remove="source-processing\SourceRegex.cs" />
-	  <Compile Remove="source-processing\SourceText.cs" />
-	  <Compile Remove="source-processing\StatementLine.cs" />
 	  <Compile Remove="SourceCodeParsing.cs" />
-	  <Compile Remove="tokenizer\evolver\MethodTokenConverter.cs" />
-	  <Compile Remove="tokenizer\evolver\TokenCloser.cs" />
-	  <Compile Remove="tokenizer\evolver\TokenSpawner.cs" />
-	  <Compile Remove="tokenizer\ITokenEvolver.cs" />
-	  <Compile Remove="tokenizer\TokenEvolver.cs" />
 	  <Compile Remove="TopologicalCollection.cs" />
 	</ItemGroup>
 
@@ -72,8 +42,6 @@
 		<ProjectReference Include="..\..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj" />
 		<ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
 		<ProjectReference Include="..\GeneralRoslyn\GeneralRoslyn.csproj" />
-		<ProjectReference Include="..\RoslynDb\RoslynDb.csproj" />
-		<ProjectReference Include="..\RoslynWalker\RoslynWalker.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

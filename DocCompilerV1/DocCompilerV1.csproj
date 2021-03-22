@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>J4JSoftware.DocCompiler</AssemblyName>
+    <RootNamespace>J4JSoftware.DocCompiler</RootNamespace>
+    <Nullable>enable</Nullable>
+	  <Authors>Mark A. Olbert</Authors>
+	  <Company>Jump for Joy Software</Company>
+	  <Description>library for compiling C# projects to documentation</Description>
+	  <Copyright>2021 all rights reserved</Copyright>
+	  <AssemblyVersion>0.1.0.0</AssemblyVersion>
+	  <FileVersion>0.1.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="evolver\MethodTokenConverter.cs" />
+    <Compile Remove="evolver\TokenRelativePosition.cs" />
+    <Compile Remove="evolver\TokenSpawner.cs" />
+    <Compile Remove="evolver\TokenSpawnInfo.cs" />
+  </ItemGroup>
+
+    <ItemGroup>
+	    <ProjectReference Include="..\..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj" />
+	    <ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,38 @@
+[
+  {
+    "SourceCode": "public class Ralph {}",
+    "Success":  true, 
+    "Tokens": [
+      {
+        "Type": "PublicAccess",
+        "Text": "public"
+      },
+      {
+        "Type": "ClassQualifier",
+        "Text": "class"
+      },
+      {
+        "Type": "Text",
+        "Text": "Ralph"
+      }
+    ]
+  },
+  {
+    "SourceCode": "public interface Ralph {}",
+    "Success": true,
+    "Tokens": [
+      {
+        "Type": "PublicAccess",
+        "Text": "public"
+      },
+      {
+        "Type": "InterfaceQualifier",
+        "Text": "class"
+      },
+      {
+        "Type": "Text",
+        "Text": "Ralph"
+      }
+    ]
+  }
+]

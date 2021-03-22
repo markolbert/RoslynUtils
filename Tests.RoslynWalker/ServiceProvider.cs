@@ -105,43 +105,6 @@ namespace Tests.RoslynWalker
             builder.RegisterType<WalkerContext>()
                 .AsSelf();
 
-            builder.RegisterType<Tokenizer>()
-                .As<ITokenizer>()
-                .SingleInstance();
-
-            builder.RegisterType<ActiveTokenEvolver>()
-                .As<IActiveTokenEvolver>()
-                .SingleInstance();
-
-            builder.RegisterType<TokenCollectionFactory>()
-                .As<ITokenCollectionFactory>()
-                .SingleInstance();
-
-            //builder.RegisterType<TokenEvolver>()
-            //    .As<ITokenEvolver>()
-            //    .SingleInstance();
-
-            //builder.RegisterAssemblyTypes( typeof(ServiceProvider).Assembly )
-            //    .Where( t => !t.IsAbstract
-            //                 && t.GetConstructors().Any( c => c.GetParameters().Length == 0 )
-            //                 && typeof(ITokenConverter).IsAssignableFrom( t )
-            //                 || typeof(ITokenCloser).IsAssignableFrom( t )
-            //                 || typeof(IModifyToken).IsAssignableFrom( t )
-            //                 || typeof(ISpawnToken).IsAssignableFrom( t ) )
-            //    .AsImplementedInterfaces();
-
-            //builder.RegisterAssemblyTypes( typeof(ServiceProvider).Assembly )
-            //    .Where( t => !t.IsAbstract
-            //                 && typeof(IParse).IsAssignableFrom( t )
-            //                 && t.GetConstructors().Any() )
-            //    .AsImplementedInterfaces();
-
-            //builder.RegisterType<ParserCollection>()
-            //    .AsSelf();
-
-            //builder.RegisterType<NamespaceCollection>()
-            //    .AsSelf();
-
             Instance = new AutofacServiceProvider( builder.Build() );
         }
 
