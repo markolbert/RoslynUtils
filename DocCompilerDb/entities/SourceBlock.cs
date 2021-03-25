@@ -18,9 +18,12 @@
 #endregion
 
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(SourceBlockConfigurator))]
     public class SourceBlock
     {
         public int ID { get; set; }
@@ -28,5 +31,20 @@ namespace J4JSoftware.DocCompiler
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
         public ICollection<Using> UsingStatements { get; set; }
+        public ICollection<NamedType> NamedTypes { get; set; }
+    }
+
+    internal class SourceBlockConfigurator : EntityConfigurator<SourceBlock>
+    {
+        protected override void Configure( EntityTypeBuilder<SourceBlock> builder )
+        {
+            builder.HasIndex( x => x.FullPath )
+                .IsUnique();
+
+            builder.HasOne( x => x.Assembly )
+                .WithMany( x => x.SourceBlocks )
+                .HasForeignKey( x => x.AssemblyID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+
+namespace J4JSoftware.DocCompiler
+{
+    public class DocDbContext : DbContext
+    {
+        public DocDbContext( DbContextOptions<DocDbContext> contextOptions )
+            : base( contextOptions )
+        {
+
+        }
+
+        public DbSet<Assembly> Assemblies { get; set; }
+        public DbSet<Namespace> Namespaces { get; set; }
+        public DbSet<Using> Usings { get; set; }
+        public DbSet<SourceBlock> SourceBlocks { get; set; }
+
+        public DbSet<Class> Classes { get; set; }
+        public DbSet<Interface> Interfaces { get; set; }
+        public DbSet<Struct> Structs { get; set; }
+        public DbSet<Record> Records { get; set; }
+
+        protected override void OnModelCreating( ModelBuilder modelBuilder )
+        {
+            base.OnModelCreating( modelBuilder );
+
+            modelBuilder.ConfigureEntities( GetType().Assembly );
+        }
+    }
+
+    public class DocDbContextFactory : IDesignTimeDbContextFactory<DocDbContext>
+    {
+        public DocDbContext CreateDbContext( string[] args )
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
+            optionsBuilder.UseSqlite($"Data Source={args[0]}");
+
+            return new DocDbContext( optionsBuilder.Options );
+        }
+    }
+}

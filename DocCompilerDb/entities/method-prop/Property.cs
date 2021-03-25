@@ -19,9 +19,12 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(PropertyConfigurator))]
     public class Property
     {
         public int ID { get;set; }
@@ -30,5 +33,19 @@ namespace J4JSoftware.DocCompiler
         public ICollection<PropertyArgument> Arguments { get; set; }
         public int PropertyTypeID { get; set; }
         public NamedTypeReference PropertyType { get;set; }
+    }
+
+    internal class PropertyConfigurator : EntityConfigurator<Property>
+    {
+        protected override void Configure( EntityTypeBuilder<Property> builder )
+        {
+            builder.HasMany( x => x.DeclaredIn )
+                .WithMany( x => x.Properties );
+
+            builder.HasOne( x => x.PropertyType )
+                .WithMany( x => x.PropertyReturnTypes )
+                .HasForeignKey( x => x.PropertyTypeID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

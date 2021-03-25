@@ -17,11 +17,26 @@
 
 #endregion
 
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(PropertyArgumentConfigurator))]
     public class PropertyArgument : Argument
     {
-        public int PropertyID { get; set; }
-        public Property Property { get; set; }
+        public int DeclaredInID { get; set; }
+        public Property DeclaredIn { get; set; }
+    }
+
+    internal class PropertyArgumentConfigurator : EntityConfigurator<PropertyArgument>
+    {
+        protected override void Configure( EntityTypeBuilder<PropertyArgument> builder )
+        {
+            builder.HasOne( x => x.DeclaredIn )
+                .WithMany( x => x.Arguments )
+                .HasForeignKey( x => x.DeclaredInID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

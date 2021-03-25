@@ -17,8 +17,10 @@
 
 #endregion
 
+using System;
 using Autofac;
 using J4JSoftware.DependencyInjection;
+using J4JSoftware.DocCompiler;
 using J4JSoftware.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -58,9 +60,25 @@ namespace Tests.DocCompiler
             StaticConfiguredLogging( loggerConfig );
         }
 
+        public DocNodeCollector DocNodeCollector => Host?.Services.GetRequiredService<DocNodeCollector>()!;
+        public ParsedProjectFactory ParsedProjectFactory => Host?.Services.GetRequiredService<ParsedProjectFactory>()!;
+
         protected override void SetupDependencyInjection( HostBuilderContext hbc, ContainerBuilder builder )
         {
             base.SetupDependencyInjection( hbc, builder );
+
+            builder.RegisterType<DocNodeCollector>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.Register( c =>
+                {
+                    var logger = c.Resolve<IJ4JLogger>();
+
+                    return new ParsedProjectFactory( StringComparison.OrdinalIgnoreCase, logger );
+                } )
+                .AsSelf()
+                .SingleInstance();
         }
     }
 }

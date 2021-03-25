@@ -17,12 +17,27 @@
 
 #endregion
 
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(UsingConfigurator))]
     public class Using
     {
         public int ID { get; set; }
-        public int NamespaceID { get; set; }
-        public Namespace Namespace { get; set; }
+        public int SourceBlockID { get; set; }
+        public SourceBlock SourceBlock { get; set; }
+    }
+
+    internal class UsingConfigurator : EntityConfigurator<Using>
+    {
+        protected override void Configure( EntityTypeBuilder<Using> builder )
+        {
+            builder.HasOne( x => x.SourceBlock )
+                .WithMany( x => x.UsingStatements )
+                .HasForeignKey( x => x.SourceBlockID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

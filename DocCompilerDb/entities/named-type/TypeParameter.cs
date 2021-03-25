@@ -17,14 +17,44 @@
 
 #endregion
 
+using System.Collections.Generic;
+using System.ComponentModel;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(TypeParameterConfigurator))]
     public class TypeParameter
     {
-        public int NamedTypeID { get; set; }
-        public NamedType NamedType { get; set; }
+        public int ID { get; set; }
+        public int DefinedInID { get; set; }
+        public NamedType DefinedIn { get; set; }
 
         public int Index { get; set; }
         public string Name { get; set; }
+
+        public ICollection<TypeConstraint> TypeConstraints { get; set; }
+        public OtherTypeConstraints OtherTypeConstraints { get; set; }
+    }
+
+    internal class TypeParameterConfigurator : EntityConfigurator<TypeParameter>
+    {
+        protected override void Configure( EntityTypeBuilder<TypeParameter> builder )
+        {
+            builder.HasKey( x => new { x.DefinedInID, x.Index } );
+
+            builder.HasIndex( x => x.Name )
+                .IsUnique();
+
+            builder.HasOne( x => x.DefinedIn )
+                .WithMany( x => x.TypeParameters )
+                .HasForeignKey( x => x.DefinedInID )
+                .HasPrincipalKey( x => x.ID );
+
+            builder.Property( x => x.OtherTypeConstraints )
+                .HasConversion<string>();
+        }
     }
 }

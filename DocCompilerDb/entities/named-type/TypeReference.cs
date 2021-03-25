@@ -18,14 +18,28 @@
 #endregion
 
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(TypeReferenceConfigurator))]
     public class TypeReference
     {
         public int ID { get; set; }
-        public int NamedTypeReferenceID { get; set; }
-        public NamedTypeReference NamedTypeReference { get; set; }
-        public ICollection<TypeArgument> TypeArguments { get; set; }
+        public int ReferencedTypeID { get; set; }
+        public NamedTypeReference ReferencedType { get; set; }
+        public ICollection<TypeArgument> UsedInTypeArguments { get; set; }
+    }
+
+    internal class TypeReferenceConfigurator : EntityConfigurator<TypeReference>
+    {
+        protected override void Configure( EntityTypeBuilder<TypeReference> builder )
+        {
+            builder.HasOne( x => x.ReferencedType )
+                .WithMany( x => x.UsedInReferences )
+                .HasForeignKey( x => x.ReferencedTypeID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

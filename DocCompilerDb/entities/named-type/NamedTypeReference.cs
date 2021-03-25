@@ -17,14 +17,16 @@
 
 #endregion
 
+using System.Collections;
+using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(NamedTypeReferenceConfigurator))]
     public class NamedTypeReference
     {
-        protected NamedTypeReference()
-        {
-        }
-
         public int ID { get; set; }
         public string Name { get; set; }
 
@@ -33,5 +35,28 @@ namespace J4JSoftware.DocCompiler
 
         public string? ExternalUrl { get; set; }
         public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );
+
+        public ICollection<TypeConstraint> UsedInConstraints { get; set; }
+        public ICollection<TypeReference> UsedInReferences { get;set; }
+        public ICollection<TypeAncestor> UsedInAncestors { get; set; }
+        public ICollection<Event> UsedInEvents { get;set; }
+        public ICollection<Property> PropertyReturnTypes { get; set; }
+        public ICollection<Method> MethodReturnTypes { get; set; }
+        public ICollection<Argument> UsedInArguments { get; set; }
+        public ICollection<Field> FieldTypes { get; set; }
+    }
+
+    internal class NamedTypeReferenceConfigurator : EntityConfigurator<NamedTypeReference>
+    {
+        protected override void Configure( EntityTypeBuilder<NamedTypeReference> builder )
+        {
+            builder.HasIndex( x => x.Name )
+                .IsUnique();
+
+            builder.HasOne( x => x.Namespace )
+                .WithMany( x => x.NamedTypeReferences )
+                .HasForeignKey( x => x.NamespaceID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

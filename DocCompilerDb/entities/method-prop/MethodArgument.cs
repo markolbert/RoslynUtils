@@ -17,12 +17,32 @@
 
 #endregion
 
+using System.Security.Cryptography.X509Certificates;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(MethodArgumentConfigurator))]
     public class MethodArgument : Argument
     {
         public string ArgumentName { get; set; }
-        public int MethodID { get; set; }
-        public Method Method { get; set; }
+        public int Index { get; set; }
+        public int DeclaredInID { get; set; }
+        public Method DeclaredIn { get; set; }
+    }
+
+    internal class MethodArgumentConfigurator : EntityConfigurator<MethodArgument>
+    {
+        protected override void Configure( EntityTypeBuilder<MethodArgument> builder )
+        {
+            builder.HasIndex( x => x.ArgumentName )
+                .IsUnique();
+
+            builder.HasOne( x => x.DeclaredIn )
+                .WithMany( x => x.Arguments )
+                .HasForeignKey( x => x.DeclaredInID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

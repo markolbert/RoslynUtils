@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
+using J4JSoftware.DocCompiler;
 using Xunit;
 
 namespace Tests.DocCompiler
@@ -8,29 +9,25 @@ namespace Tests.DocCompiler
     public class TokenizerTest
     {
         [ Theory ]
-        [ MemberData( nameof(TokenizerMemberData.GetTokenizerData), MemberType = typeof(TokenizerMemberData) ) ]
-        public void Test1( string source, bool success, List<TokenData> tokens )
+        //[ MemberData( nameof(TokenizerMemberData.GetTokenizerData), MemberType = typeof(TokenizerMemberData) ) ]
+        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\DelegateClass.cs", true)]
+        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\DelegateClassXXX.cs", false)]
+        public void SingleFileParsing( string filePath, bool success )
         {
-            //var tokenizer = CompositionRoot.Default.Tokenizer;
+            var nodeCollector = CompositionRoot.Default.DocNodeCollector;
 
-            //tokenizer.TokenizeText( source, out var tokenCollection )
-            //    .Should().Be( success );
+            nodeCollector.ParseSourceFile( filePath ).IsParsed.Should().Be( success );
+        }
 
-            //if( !success )
-            //    return;
+        [Theory]
+        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\TestLib.csproj", true)]
+        public void ProjectParsing( string projFilePath, bool success )
+        {
+            var nodeCollector = CompositionRoot.Default.DocNodeCollector;
 
-            //tokenCollection.Should().NotBeNull();
-
-            //tokenCollection!.Count.Should().Be( tokens.Count );
-
-            //for( var idx = 0; idx < tokenCollection.Count; idx++ )
-            //{
-            //    var parsedToken = tokenCollection.Tokens[ idx ];
-            //    var targetToken = tokens[ idx ];
-
-            //    parsedToken.Type.Should().Be( targetToken.Type );
-            //    parsedToken.Text.Should().Be( targetToken.Text );
-            //}
+            var parsedProject = nodeCollector.ParseProject( projFilePath );
+            parsedProject.Should().NotBeNull();
+            parsedProject!.IsParsed.Should().Be( success );
         }
     }
 }

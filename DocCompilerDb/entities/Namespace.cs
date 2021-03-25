@@ -19,16 +19,32 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(NamespaceConfigurator))]
     public class Namespace
     {
         public int ID { get; set; }
         public string Name { get; set; }
         public ICollection<Assembly> Assemblies { get; set; }
+        public ICollection<NamedTypeReference> NamedTypeReferences { get; set; }
 
         public string? ExternalUrl { get; set; }
         public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );
+    }
+
+    internal class NamespaceConfigurator : EntityConfigurator<Namespace>
+    {
+        protected override void Configure( EntityTypeBuilder<Namespace> builder )
+        {
+            builder.HasIndex( x => x.Name )
+                .IsUnique();
+
+            builder.HasMany( x => x.Assemblies )
+                .WithMany( x => x.Namespaces );
+        }
     }
 }

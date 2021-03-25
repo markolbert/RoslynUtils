@@ -19,9 +19,12 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(MethodConfigurator))]
     public class Method
     {
         public int ID { get;set; }
@@ -30,5 +33,19 @@ namespace J4JSoftware.DocCompiler
         public ICollection<MethodArgument> Arguments { get; set; }
         public int ReturnTypeID { get; set; }
         public NamedTypeReference ReturnType { get; set; }
+    }
+
+    internal class MethodConfigurator : EntityConfigurator<Method>
+    {
+        protected override void Configure( EntityTypeBuilder<Method> builder )
+        {
+            builder.HasMany( x => x.DeclaredIn )
+                .WithMany( x => x.Methods );
+
+            builder.HasOne( x => x.ReturnType )
+                .WithMany( x => x.MethodReturnTypes )
+                .HasForeignKey( x => x.ReturnTypeID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

@@ -19,9 +19,12 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(NamedTypeConfigurator))]
     public class NamedType : NamedTypeReference
     {
         protected NamedType()
@@ -31,12 +34,22 @@ namespace J4JSoftware.DocCompiler
         public int SourceBlockID { get; set; }
         public SourceBlock SourceBlock { get; set; }
         public ICollection<Method> Methods { get; set; }
-        public ICollection<Property> Properties { get; set; }
         public ICollection<Event> Events { get; set; }
         public ICollection<TypeParameter> TypeParameters { get; set; }
         public ICollection<TypeArgument> TypeArguments { get; set; }
-        public ICollection<TypeConstraint> TypeConstraints { get; set; }
-        public OtherTypeConstraints OtherTypeConstraints { get; set; }
         public ICollection<TypeAncestor> Ancestors { get; set; }
+        public ICollection<Property> Properties { get; set; }
+        public ICollection<Field> Fields { get; set; }
+    }
+
+    internal class NamedTypeConfigurator : EntityConfigurator<NamedType>
+    {
+        protected override void Configure( EntityTypeBuilder<NamedType> builder )
+        {
+            builder.HasOne( x => x.SourceBlock )
+                .WithMany( x => x.NamedTypes )
+                .HasForeignKey( x => x.SourceBlockID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

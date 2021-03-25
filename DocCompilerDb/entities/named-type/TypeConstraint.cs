@@ -17,14 +17,36 @@
 
 #endregion
 
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(TypeConstraintConfigurator))]
     public class TypeConstraint
     {
-        public int ConstrainedTypeID { get; set; }
-        public NamedType ConstrainedType { get; set; }
+        public int ConstrainedTypeParameterID { get; set; }
+        public TypeParameter ConstrainedTypeParameter { get; set; }
 
         public int ConstraintID { get; set; }
         public NamedTypeReference Constraint { get; set; }
+    }
+
+    internal class TypeConstraintConfigurator : EntityConfigurator<TypeConstraint>
+    {
+        protected override void Configure( EntityTypeBuilder<TypeConstraint> builder )
+        {
+            builder.HasKey( x => new { x.ConstrainedTypeParameterID, x.ConstraintID } );
+
+            builder.HasOne( x => x.Constraint )
+                .WithMany( x => x.UsedInConstraints )
+                .HasForeignKey( x => x.ConstraintID )
+                .HasPrincipalKey( x => x.ID );
+
+            builder.HasOne( x => x.ConstrainedTypeParameter )
+                .WithMany( x => x.TypeConstraints )
+                .HasForeignKey( x => x.ConstrainedTypeParameterID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

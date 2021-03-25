@@ -17,13 +17,35 @@
 
 #endregion
 
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(TypeAncestorConfigurator))]
     public class TypeAncestor
     {
         public int ChildID { get; set; }
         public NamedType ChildType { get; set; }
         public int AncestorID { get; set; }
         public NamedTypeReference AncestorType { get; set; }
+    }
+
+    internal class TypeAncestorConfigurator : EntityConfigurator<TypeAncestor>
+    {
+        protected override void Configure( EntityTypeBuilder<TypeAncestor> builder )
+        {
+            builder.HasKey( x => new { x.ChildID, x.AncestorID } );
+
+            builder.HasOne( x => x.ChildType )
+                .WithMany( x => x.Ancestors )
+                .HasForeignKey( x => x.ChildID )
+                .HasPrincipalKey( x => x.ID );
+
+            builder.HasOne( x => x.AncestorType )
+                .WithMany( x => x.UsedInAncestors )
+                .HasForeignKey( x => x.AncestorID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }

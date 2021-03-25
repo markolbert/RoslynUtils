@@ -17,12 +17,36 @@
 
 #endregion
 
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(TypeArgumentConfigurator))]
     public class TypeArgument
     {
-        public int TypeReferenceID { get; set; }
-        public TypeReference TypeReference { get; set; }
+        public int ReferencedTypeID { get; set; }
+        public TypeReference ReferencedType { get; set; }
+        public int DeclaringTypeID { get; set; }
+        public NamedType DeclaringType { get; set; }
         public int Index { get; set; }
+    }
+
+    internal class TypeArgumentConfigurator : EntityConfigurator<TypeArgument>
+    {
+        protected override void Configure( EntityTypeBuilder<TypeArgument> builder )
+        {
+            builder.HasKey( x => new { x.DeclaringTypeID, x.Index } );
+
+            builder.HasOne( x => x.DeclaringType )
+                .WithMany( x => x.TypeArguments )
+                .HasForeignKey( x => x.DeclaringTypeID )
+                .HasPrincipalKey( x => x.ID );
+
+            builder.HasOne( x => x.ReferencedType )
+                .WithMany( x => x.UsedInTypeArguments )
+                .HasForeignKey( x => x.ReferencedTypeID )
+                .HasPrincipalKey( x => x.ID );
+        }
     }
 }
