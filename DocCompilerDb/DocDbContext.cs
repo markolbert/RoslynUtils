@@ -18,14 +18,24 @@ namespace J4JSoftware.DocCompiler
         }
 
         public DbSet<Assembly> Assemblies { get; set; }
+        public DbSet<CodeFile> CodeFiles { get; set; }
+
         public DbSet<Namespace> Namespaces { get; set; }
         public DbSet<Using> Usings { get; set; }
-        public DbSet<SourceBlock> SourceBlocks { get; set; }
 
         public DbSet<Class> Classes { get; set; }
         public DbSet<Interface> Interfaces { get; set; }
         public DbSet<Struct> Structs { get; set; }
         public DbSet<Record> Records { get; set; }
+
+        public DbSet<Event> Events { get; set; }
+        public DbSet<Field> Fields { get; set; }
+
+        public DbSet<MethodArgument> MethodArguments { get; set; }
+        public DbSet<Method> Methods { get; set; }
+
+        public DbSet<PropertyArgument> PropertyArguments { get; set; }
+        public DbSet<Property> Properties { get;set; }
 
         protected override void OnModelCreating( ModelBuilder modelBuilder )
         {

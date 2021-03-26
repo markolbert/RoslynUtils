@@ -23,26 +23,25 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(SourceBlockConfigurator))]
-    public class SourceBlock
+    [EntityConfiguration(typeof(CodeFileConfigurator))]
+    public class CodeFile
     {
         public int ID { get; set; }
         public string FullPath { get; set; }
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
-        public ICollection<Using> UsingStatements { get; set; }
         public ICollection<NamedType> NamedTypes { get; set; }
     }
 
-    internal class SourceBlockConfigurator : EntityConfigurator<SourceBlock>
+    internal class CodeFileConfigurator : EntityConfigurator<CodeFile>
     {
-        protected override void Configure( EntityTypeBuilder<SourceBlock> builder )
+        protected override void Configure( EntityTypeBuilder<CodeFile> builder )
         {
             builder.HasIndex( x => x.FullPath )
                 .IsUnique();
 
             builder.HasOne( x => x.Assembly )
-                .WithMany( x => x.SourceBlocks )
+                .WithMany( x => x.CodeFiles )
                 .HasForeignKey( x => x.AssemblyID )
                 .HasPrincipalKey( x => x.ID );
         }

@@ -27,6 +27,11 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(NamespaceConfigurator))]
     public class Namespace
     {
+        private int _containerID;
+        private ContainerType _containerType = ContainerType.Undefined;
+        private CodeFile? _codeFileContainer;
+        private Namespace? _nsContainer;
+
         public int ID { get; set; }
         public string Name { get; set; }
         public ICollection<Assembly> Assemblies { get; set; }
@@ -34,6 +39,32 @@ namespace J4JSoftware.DocCompiler
 
         public string? ExternalUrl { get; set; }
         public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );
+
+        public int ContainerID => _containerID;
+        public ContainerType ContainerType => _containerType;
+
+        public object? GetContainer() => _containerType switch
+        {
+            ContainerType.Namespace => _nsContainer,
+            ContainerType.CodeFile => _codeFileContainer,
+            _ => null
+        };
+
+        public void SetContainer( CodeFile codeFile )
+        {
+            _nsContainer = null;
+            _containerID = codeFile.ID;
+            _containerType = ContainerType.CodeFile;
+            _codeFileContainer = codeFile;
+        }
+
+        public void SetContainer( Namespace ns )
+        {
+            _codeFileContainer = null;
+            _containerID = ns.ID;
+            _containerType = ContainerType.Namespace;
+            _nsContainer = ns;
+        }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>
@@ -45,6 +76,13 @@ namespace J4JSoftware.DocCompiler
 
             builder.HasMany( x => x.Assemblies )
                 .WithMany( x => x.Namespaces );
+
+            builder.Property("ContainerID")
+                .HasField( "_containerID" );
+
+            builder.Property("ContainerType")
+                .HasField( "_containerType" )
+                .HasConversion<string>();
         }
     }
 }

@@ -17,6 +17,8 @@
 
 #endregion
 
+using System;
+using System.Diagnostics;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,19 +27,54 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(UsingConfigurator))]
     public class Using
     {
+        private int _containerID;
+        private ContainerType _containerType = ContainerType.Undefined;
+        private CodeFile? _codeFileContainer;
+        private Namespace? _nsContainer;
+
         public int ID { get; set; }
-        public int SourceBlockID { get; set; }
-        public SourceBlock SourceBlock { get; set; }
+        public string Name { get;set; }
+
+        public int ContainerID => _containerID;
+        public ContainerType ContainerType => _containerType;
+
+        public object? GetContainer() => _containerType switch
+        {
+            ContainerType.Namespace => _nsContainer,
+            ContainerType.CodeFile => _codeFileContainer,
+            _ => null
+        };
+
+        public void SetContainer( CodeFile codeFile )
+        {
+            _nsContainer = null;
+            _containerID = codeFile.ID;
+            _containerType = ContainerType.CodeFile;
+            _codeFileContainer = codeFile;
+        }
+
+        public void SetContainer( Namespace ns )
+        {
+            _codeFileContainer = null;
+            _containerID = ns.ID;
+            _containerType = ContainerType.Namespace;
+            _nsContainer = ns;
+        }
     }
 
     internal class UsingConfigurator : EntityConfigurator<Using>
     {
         protected override void Configure( EntityTypeBuilder<Using> builder )
         {
-            builder.HasOne( x => x.SourceBlock )
-                .WithMany( x => x.UsingStatements )
-                .HasForeignKey( x => x.SourceBlockID )
-                .HasPrincipalKey( x => x.ID );
+            builder.HasIndex( x => x.Name )
+                .IsUnique();
+
+            builder.Property( "ContainerID" )
+                .HasField( "_containerID" );
+
+            builder.Property( "ContainerType" )
+                .HasField("_containerType")
+                .HasConversion<string>();
         }
     }
 }

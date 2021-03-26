@@ -27,12 +27,18 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(NamedTypeConfigurator))]
     public class NamedType : NamedTypeReference
     {
+        private int _containerID;
+        private ContainerType _containerType = ContainerType.Undefined;
+        private CodeFile? _codeFileContainer;
+        private Namespace? _nsContainer;
+        private Class? _classContainer;
+
         protected NamedType()
         {
         }
 
         public int SourceBlockID { get; set; }
-        public SourceBlock SourceBlock { get; set; }
+        public CodeFile CodeFile { get; set; }
         public ICollection<Method> Methods { get; set; }
         public ICollection<Event> Events { get; set; }
         public ICollection<TypeParameter> TypeParameters { get; set; }
@@ -40,16 +46,61 @@ namespace J4JSoftware.DocCompiler
         public ICollection<TypeAncestor> Ancestors { get; set; }
         public ICollection<Property> Properties { get; set; }
         public ICollection<Field> Fields { get; set; }
+
+        public int ContainerID => _containerID;
+        public ContainerType ContainerType => _containerType;
+
+        public object? GetContainer() => _containerType switch
+        {
+            ContainerType.Namespace => _nsContainer,
+            ContainerType.CodeFile => _codeFileContainer,
+            ContainerType.Class => _classContainer,
+            _ => null
+        };
+
+        public void SetContainer( CodeFile codeFile )
+        {
+            _nsContainer = null;
+            _classContainer = null;
+            _containerID = codeFile.ID;
+            _containerType = ContainerType.CodeFile;
+            _codeFileContainer = codeFile;
+        }
+
+        public void SetContainer( Namespace ns )
+        {
+            _codeFileContainer = null;
+            _classContainer = null;
+            _containerID = ns.ID;
+            _containerType = ContainerType.Namespace;
+            _nsContainer = ns;
+        }
+
+        public void SetContainer( Class classEntity )
+        {
+            _codeFileContainer = null;
+            _nsContainer = null;
+            _containerID = classEntity.ID;
+            _containerType = ContainerType.Class;
+            _classContainer = classEntity;
+        }
     }
 
     internal class NamedTypeConfigurator : EntityConfigurator<NamedType>
     {
         protected override void Configure( EntityTypeBuilder<NamedType> builder )
         {
-            builder.HasOne( x => x.SourceBlock )
+            builder.HasOne( x => x.CodeFile )
                 .WithMany( x => x.NamedTypes )
                 .HasForeignKey( x => x.SourceBlockID )
                 .HasPrincipalKey( x => x.ID );
+
+            builder.Property("ContainerID")
+                .HasField( "_containerID" );
+
+            builder.Property("ContainerType")
+                .HasField( "_containerType" )
+                .HasConversion<string>();
         }
     }
 }
