@@ -34,6 +34,8 @@ namespace J4JSoftware.DocCompiler
         public DbSet<PropertyArgument> PropertyArguments { get; set; }
         public DbSet<Property> Properties { get;set; }
 
+        public DbSet<Author> Authors { get; set; }
+
         protected override void OnModelCreating( ModelBuilder modelBuilder )
         {
             base.OnModelCreating( modelBuilder );

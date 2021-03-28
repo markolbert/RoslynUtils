@@ -18,6 +18,7 @@
 #endregion
 
 using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
@@ -30,6 +31,7 @@ namespace J4JSoftware.DocCompiler
         }
 
         public int ID { get; set; }
+        public bool Deprecated { get; set; }
         public bool HasThis {get; set; }
         public int ArgumentTypeID { get; set; }
         public NamedType ArgumentType { get; set; }

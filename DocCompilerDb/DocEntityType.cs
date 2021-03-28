@@ -17,20 +17,18 @@
 
 #endregion
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-
 namespace J4JSoftware.DocCompiler
 {
-    public class Assembly
+    public enum DocEntityType
     {
-        public int ID { get; set; }
-        public string Name { get; set; }
-        public bool Deprecated { get; set; }
-        public string Version { get; set; }
-        public DateTime Timestamp { get; set; }
-        public ICollection<Namespace> Namespaces { get; set; }
-        public ICollection<CodeFile> CodeFiles { get; set; }
+        Assembly,
+        Event,
+        Field,
+        Method,
+        Namespace,
+        NamedType,
+        Property,
+        Using,
+        Undefined
     }
 }

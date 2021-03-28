@@ -18,19 +18,18 @@
 #endregion
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class Assembly
+    [Flags]
+    public enum AccessRights
     {
-        public int ID { get; set; }
-        public string Name { get; set; }
-        public bool Deprecated { get; set; }
-        public string Version { get; set; }
-        public DateTime Timestamp { get; set; }
-        public ICollection<Namespace> Namespaces { get; set; }
-        public ICollection<CodeFile> CodeFiles { get; set; }
+        EditAll = 1 << 0,
+        Edit = 1 << 1,
+        View = 1 << 2,
+
+        Administrator = EditAll | Edit | View,
+        Editor = Edit | View,
+        Viewer = View
     }
 }

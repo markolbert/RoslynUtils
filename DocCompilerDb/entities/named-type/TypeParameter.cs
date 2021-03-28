@@ -29,6 +29,7 @@ namespace J4JSoftware.DocCompiler
     public class TypeParameter
     {
         public int ID { get; set; }
+        public bool Deprecated { get; set; }
         public int DefinedInID { get; set; }
         public NamedType DefinedIn { get; set; }
 

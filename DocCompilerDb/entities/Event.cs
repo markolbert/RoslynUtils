@@ -13,6 +13,7 @@ namespace J4JSoftware.DocCompiler
     {
         public int ID { get; set; }
         public string Name { get; set; }
+        public bool Deprecated { get; set; }
         public int EventTypeID { get; set; }
         public NamedType EventType { get; set; }
 

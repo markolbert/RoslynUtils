@@ -37,6 +37,7 @@ namespace J4JSoftware.DocCompiler
         public int ID { get; set; }
         public string Name { get; set; }
 
+        public bool Deprecated { get; set; }
         public NamedTypeKind Kind { get; set; }
 
         public string? ExternalUrl { get; set; }

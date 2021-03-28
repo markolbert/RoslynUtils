@@ -17,34 +17,29 @@
 
 #endregion
 
-using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(CodeFileConfigurator))]
-    public class CodeFile
+    [EntityConfiguration(typeof(AuthorConfigurator))]
+    public class Author
     {
         public int ID { get; set; }
-        public bool Deprecated { get; set; }
-        public string FullPath { get; set; }
-        public int AssemblyID { get; set; }
-        public Assembly Assembly { get; set; }
-        public ICollection<NamedType> NamedTypes { get; set; }
+        public string Name { get; set; }
+        public AccessRights AccessRights { get; set; }
     }
 
-    internal class CodeFileConfigurator : EntityConfigurator<CodeFile>
+    internal class AuthorConfigurator : EntityConfigurator<Author>
     {
-        protected override void Configure( EntityTypeBuilder<CodeFile> builder )
+        protected override void Configure( EntityTypeBuilder<Author> builder )
         {
-            builder.HasIndex( x => x.FullPath )
+            builder.HasIndex( x => x.Name )
                 .IsUnique();
 
-            builder.HasOne( x => x.Assembly )
-                .WithMany( x => x.CodeFiles )
-                .HasForeignKey( x => x.AssemblyID )
-                .HasPrincipalKey( x => x.ID );
+            builder.Property( x => x.AccessRights )
+                .HasConversion<string>();
         }
     }
 }

@@ -29,6 +29,7 @@ namespace J4JSoftware.DocCompiler
     {
         public int ID { get;set; }
         public string Name { get;set; }
+        public bool Deprecated { get; set; }
         public ICollection<NamedType> DeclaredIn { get; set; }
         public ICollection<PropertyArgument> Arguments { get; set; }
         public int PropertyTypeID { get; set; }

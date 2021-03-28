@@ -14,6 +14,7 @@ namespace J4JSoftware.DocCompiler
     {
         public int ID { get; set; }
         public string Name { get; set; }
+        public bool Deprecated { get; set; }
         public int DeclaredInID { get; set; }
         public NamedType DeclaredIn { get; set; }
         public int FieldTypeID { get; set; }
