@@ -17,6 +17,7 @@
 
 #endregion
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
@@ -25,28 +26,25 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(NamedTypeConfigurator))]
-    public class NamedType : NamedTypeReference
+    public class NamedType
     {
         private int _containerID;
         private ContainerType _containerType = ContainerType.Undefined;
         private CodeFile? _codeFileContainer;
         private Namespace? _nsContainer;
-        private Class? _classContainer;
+        private NamedType? _classContainer;
 
-        protected NamedType()
-        {
-        }
+        public int ID { get; set; }
+        public string Name { get; set; }
 
-        public int SourceBlockID { get; set; }
-        public CodeFile CodeFile { get; set; }
-        public ICollection<Method> Methods { get; set; }
-        public ICollection<Event> Events { get; set; }
-        public ICollection<TypeParameter> TypeParameters { get; set; }
-        public ICollection<TypeArgument> TypeArguments { get; set; }
-        public ICollection<TypeAncestor> Ancestors { get; set; }
-        public ICollection<Property> Properties { get; set; }
-        public ICollection<Field> Fields { get; set; }
+        public NamedTypeKind Kind { get; set; }
 
+        public string? ExternalUrl { get; set; }
+        public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );
+
+        public int CodeFileID { get; set; }
+        public CodeFile? CodeFile { get; set; }
+        
         public int ContainerID => _containerID;
         public ContainerType ContainerType => _containerType;
 
@@ -76,14 +74,35 @@ namespace J4JSoftware.DocCompiler
             _nsContainer = ns;
         }
 
-        public void SetContainer( Class classEntity )
+        public void SetContainer( NamedType classEntity )
         {
+            if( classEntity.Kind != NamedTypeKind.Class )
+                throw new ArgumentException(
+                    $"Trying to set a {classEntity.Kind} NamedType as a container, which is not allowed" );
+
             _codeFileContainer = null;
             _nsContainer = null;
             _containerID = classEntity.ID;
             _containerType = ContainerType.Class;
             _classContainer = classEntity;
         }
+
+        public ICollection<TypeConstraint> UsedInConstraints { get; set; }
+        public ICollection<TypeReference> UsedInReferences { get;set; }
+        public ICollection<TypeAncestor> UsedInAncestors { get; set; }
+        public ICollection<Event> UsedInEvents { get;set; }
+        public ICollection<Property> PropertyReturnTypes { get; set; }
+        public ICollection<Method> MethodReturnTypes { get; set; }
+        public ICollection<Argument> UsedInArguments { get; set; }
+        public ICollection<Field> FieldTypes { get; set; }
+
+        public ICollection<Method> Methods { get; set; }
+        public ICollection<Event> Events { get; set; }
+        public ICollection<TypeParameter> TypeParameters { get; set; }
+        public ICollection<TypeArgument> TypeArguments { get; set; }
+        public ICollection<TypeAncestor> Ancestors { get; set; }
+        public ICollection<Property> Properties { get; set; }
+        public ICollection<Field> Fields { get; set; }
     }
 
     internal class NamedTypeConfigurator : EntityConfigurator<NamedType>
@@ -92,7 +111,7 @@ namespace J4JSoftware.DocCompiler
         {
             builder.HasOne( x => x.CodeFile )
                 .WithMany( x => x.NamedTypes )
-                .HasForeignKey( x => x.SourceBlockID )
+                .HasForeignKey( x => x.CodeFileID )
                 .HasPrincipalKey( x => x.ID );
 
             builder.Property("ContainerID")

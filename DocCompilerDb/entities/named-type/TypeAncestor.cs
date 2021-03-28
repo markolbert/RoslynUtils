@@ -28,7 +28,7 @@ namespace J4JSoftware.DocCompiler
         public int ChildID { get; set; }
         public NamedType ChildType { get; set; }
         public int AncestorID { get; set; }
-        public NamedTypeReference AncestorType { get; set; }
+        public NamedType AncestorType { get; set; }
     }
 
     internal class TypeAncestorConfigurator : EntityConfigurator<TypeAncestor>

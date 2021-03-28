@@ -17,7 +17,7 @@ namespace J4JSoftware.DocCompiler
         public int DeclaredInID { get; set; }
         public NamedType DeclaredIn { get; set; }
         public int FieldTypeID { get; set; }
-        public NamedTypeReference FieldType { get; set; }
+        public NamedType FieldType { get; set; }
     }
 
     internal class FieldConfigurator : EntityConfigurator<Field>

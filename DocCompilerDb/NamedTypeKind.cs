@@ -17,32 +17,13 @@
 
 #endregion
 
-using J4JSoftware.EFCoreUtilities;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(ArgumentConfigurator))]
-    public class Argument
+    public enum NamedTypeKind
     {
-        protected Argument()
-        {
-        }
-
-        public int ID { get; set; }
-        public bool HasThis {get; set; }
-        public int ArgumentTypeID { get; set; }
-        public NamedType ArgumentType { get; set; }
-    }
-
-    internal class ArgumentConfigurator : EntityConfigurator<Argument>
-    {
-        protected override void Configure( EntityTypeBuilder<Argument> builder )
-        {
-            builder.HasOne( x => x.ArgumentType )
-                .WithMany( x => x.UsedInArguments )
-                .HasForeignKey( x => x.ArgumentTypeID )
-                .HasPrincipalKey( x => x.ID );
-        }
+        Class,
+        Interface,
+        Record,
+        Struct
     }
 }

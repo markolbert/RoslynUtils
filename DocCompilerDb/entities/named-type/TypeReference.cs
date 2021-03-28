@@ -28,7 +28,7 @@ namespace J4JSoftware.DocCompiler
     {
         public int ID { get; set; }
         public int ReferencedTypeID { get; set; }
-        public NamedTypeReference ReferencedType { get; set; }
+        public NamedType ReferencedType { get; set; }
         public ICollection<TypeArgument> UsedInTypeArguments { get; set; }
     }
 

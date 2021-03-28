@@ -35,7 +35,7 @@ namespace J4JSoftware.DocCompiler
         public int ID { get; set; }
         public string Name { get; set; }
         public ICollection<Assembly> Assemblies { get; set; }
-        public ICollection<NamedTypeReference> NamedTypeReferences { get; set; }
+        public ICollection<NamedType> NamedTypes { get; set; }
 
         public string? ExternalUrl { get; set; }
         public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );

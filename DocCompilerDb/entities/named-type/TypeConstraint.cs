@@ -29,7 +29,7 @@ namespace J4JSoftware.DocCompiler
         public TypeParameter ConstrainedTypeParameter { get; set; }
 
         public int ConstraintID { get; set; }
-        public NamedTypeReference Constraint { get; set; }
+        public NamedType Constraint { get; set; }
     }
 
     internal class TypeConstraintConfigurator : EntityConfigurator<TypeConstraint>

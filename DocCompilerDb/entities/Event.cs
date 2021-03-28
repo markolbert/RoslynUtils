@@ -13,9 +13,10 @@ namespace J4JSoftware.DocCompiler
     {
         public int ID { get; set; }
         public string Name { get; set; }
-        public ICollection<NamedType> DeclaredIn { get; set; }
         public int EventTypeID { get; set; }
-        public NamedTypeReference EventType { get; set; }
+        public NamedType EventType { get; set; }
+
+        public ICollection<NamedType> DeclaredIn { get; set; }
     }
 
     internal class EventConfigurator : EntityConfigurator<Event>

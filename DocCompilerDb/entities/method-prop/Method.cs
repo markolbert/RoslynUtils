@@ -32,7 +32,7 @@ namespace J4JSoftware.DocCompiler
         public ICollection<NamedType> DeclaredIn { get; set; }
         public ICollection<MethodArgument> Arguments { get; set; }
         public int ReturnTypeID { get; set; }
-        public NamedTypeReference ReturnType { get; set; }
+        public NamedType ReturnType { get; set; }
     }
 
     internal class MethodConfigurator : EntityConfigurator<Method>

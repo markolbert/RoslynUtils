@@ -23,10 +23,7 @@ namespace J4JSoftware.DocCompiler
         public DbSet<Namespace> Namespaces { get; set; }
         public DbSet<Using> Usings { get; set; }
 
-        public DbSet<Class> Classes { get; set; }
-        public DbSet<Interface> Interfaces { get; set; }
-        public DbSet<Struct> Structs { get; set; }
-        public DbSet<Record> Records { get; set; }
+        public DbSet<NamedType> NamedTypes { get; set; }
 
         public DbSet<Event> Events { get; set; }
         public DbSet<Field> Fields { get; set; }

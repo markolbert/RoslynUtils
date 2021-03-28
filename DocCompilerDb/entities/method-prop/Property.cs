@@ -32,7 +32,7 @@ namespace J4JSoftware.DocCompiler
         public ICollection<NamedType> DeclaredIn { get; set; }
         public ICollection<PropertyArgument> Arguments { get; set; }
         public int PropertyTypeID { get; set; }
-        public NamedTypeReference PropertyType { get;set; }
+        public NamedType PropertyType { get;set; }
     }
 
     internal class PropertyConfigurator : EntityConfigurator<Property>
