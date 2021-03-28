@@ -17,17 +17,12 @@
 
 #endregion
 
-using J4JSoftware.Logging;
+using System.Collections.Generic;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectFile : StandaloneFile
+    public interface IScannedFileFactory
     {
-        internal ProjectFile( ProjectInfo projInfo )
-        {
-            BelongsTo = projInfo;
-        }
-
-        public ProjectInfo BelongsTo { get; }
+        bool Create( string sourceFilePath, out List<StandaloneFile>? result );
     }
 }

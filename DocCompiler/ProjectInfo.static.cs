@@ -120,81 +120,81 @@ namespace J4JSoftware.DocCompiler
             return allOkay;
         }
 
-        public static bool ParseProjectFile( 
-            string projFilePath, 
-            StringComparison osFileComparison, 
-            IJ4JLogger? logger,
-            out ProjectInfo? result )
-        {
-            result = null;
+        //public static bool ParseProjectFile( 
+        //    string projFilePath, 
+        //    StringComparison osFileComparison, 
+        //    IJ4JLogger? logger,
+        //    out ProjectInfo? result )
+        //{
+        //    result = null;
 
-            if( !File.Exists( projFilePath ) )
-            {
-                logger?.Error<string>( "Source file '{0}' does not exist", projFilePath );
-                return false;
-            }
+        //    if( !File.Exists( projFilePath ) )
+        //    {
+        //        logger?.Error<string>( "Source file '{0}' does not exist", projFilePath );
+        //        return false;
+        //    }
 
-            if( !Path.GetExtension( projFilePath ).Equals( ".csproj", osFileComparison ) )
-            {
-                logger?.Error<string>( "Source file '{0}' is not a .csproj file", projFilePath );
-                return false;
-            }
+        //    if( !Path.GetExtension( projFilePath ).Equals( ".csproj", osFileComparison ) )
+        //    {
+        //        logger?.Error<string>( "Source file '{0}' is not a .csproj file", projFilePath );
+        //        return false;
+        //    }
 
-            var projDoc = CreateProjectDocument( projFilePath, logger );
+        //    var projDoc = CreateProjectDocument( projFilePath, logger );
 
-            if( projDoc?.Root == null )
-            {
-                logger?.Error<string>( "Could not parse '{0}' as a C# project file", projFilePath );
-                return false;
-            }
+        //    if( projDoc?.Root == null )
+        //    {
+        //        logger?.Error<string>( "Could not parse '{0}' as a C# project file", projFilePath );
+        //        return false;
+        //    }
 
-            var projElem = projDoc.Root
-                .DescendantsAndSelf()
-                .FirstOrDefault( e => e.Name == "TargetFramework" || e.Name == "TargetFrameworks" )
-                ?.Parent;
+        //    var projElem = projDoc.Root
+        //        .DescendantsAndSelf()
+        //        .FirstOrDefault( e => e.Name == "TargetFramework" || e.Name == "TargetFrameworks" )
+        //        ?.Parent;
 
-            if( projElem == null )
-            {
-                logger?.Error<string>( "Project file '{0}' has no project element", projFilePath );
-                return false;
-            }
+        //    if( projElem == null )
+        //    {
+        //        logger?.Error<string>( "Project file '{0}' has no project element", projFilePath );
+        //        return false;
+        //    }
 
-            result = new ProjectInfo( Path.GetDirectoryName( projFilePath )!, projDoc, projElem, osFileComparison )
-            {
-            };
+        //    result = new ProjectInfo( Path.GetDirectoryName( projFilePath )!, projDoc, projElem, osFileComparison )
+        //    {
+        //    };
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        private static XDocument? CreateProjectDocument( string projFilePath, IJ4JLogger? logger )
-        {
-            XDocument? retVal = null;
+        //private static XDocument? CreateProjectDocument( string projFilePath, IJ4JLogger? logger )
+        //{
+        //    XDocument? retVal = null;
 
-            try
-            {
-                // this convoluted approach is needed because XDocument.Parse() does not 
-                // properly handle the invisible UTF hint codes in files
-                using var fs = File.OpenText( projFilePath );
-                using var reader = new XmlTextReader( fs );
+        //    try
+        //    {
+        //        // this convoluted approach is needed because XDocument.Parse() does not 
+        //        // properly handle the invisible UTF hint codes in files
+        //        using var fs = File.OpenText( projFilePath );
+        //        using var reader = new XmlTextReader( fs );
 
-                retVal = XDocument.Load( reader );
-            }
-            catch( Exception e )
-            {
-                logger?.Error<string, string>( "Could not parse project file '{0}', exception was: {1}",
-                    projFilePath,
-                    e.Message );
+        //        retVal = XDocument.Load( reader );
+        //    }
+        //    catch( Exception e )
+        //    {
+        //        logger?.Error<string, string>( "Could not parse project file '{0}', exception was: {1}",
+        //            projFilePath,
+        //            e.Message );
 
-                return null;
-            }
+        //        return null;
+        //    }
 
-            if( retVal.Root != null )
-                return retVal;
+        //    if( retVal.Root != null )
+        //        return retVal;
 
-            logger?.Error<string>( "Undefined root node in project file '{0}'", projFilePath );
+        //    logger?.Error<string>( "Undefined root node in project file '{0}'", projFilePath );
 
-            return null;
-        }
+        //    return null;
+        //}
 
     }
 }

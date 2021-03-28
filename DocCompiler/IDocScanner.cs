@@ -17,17 +17,10 @@
 
 #endregion
 
-using J4JSoftware.Logging;
-
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectFile : StandaloneFile
+    public interface IDocScanner : IScanResults
     {
-        internal ProjectFile( ProjectInfo projInfo )
-        {
-            BelongsTo = projInfo;
-        }
-
-        public ProjectInfo BelongsTo { get; }
+        bool Scan( string fileToScan );
     }
 }

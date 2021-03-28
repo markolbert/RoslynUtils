@@ -25,89 +25,61 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class DocNodeWalker : CSharpSyntaxWalker, IScanResults
+    public class DocNodeWalker : CSharpSyntaxWalker
     {
-        private readonly IJ4JLogger? _logger;
+        private StandaloneFile _scanFile;
 
-        public DocNodeWalker(
-            IJ4JLogger? logger )
+        internal DocNodeWalker(
+            StandaloneFile scanFile )
         {
-            _logger = logger;
-            _logger?.SetLoggedType( GetType() );
+            _scanFile = scanFile;
         }
 
-        public string SourceFilePath { get; internal set; } = string.Empty;
-        public bool IsParsed { get; private set; }
-
-        public List<UsingStatementSyntax> Usings { get; } = new();
-        public List<NamespaceDeclarationSyntax> Namespaces { get; } = new();
-        public List<ClassDeclarationSyntax> Classes { get; } = new();
-        public List<InterfaceDeclarationSyntax> Interfaces { get; } = new();
-        public List<StructDeclarationSyntax> Structs { get; } = new();
-        public List<RecordDeclarationSyntax> Records { get; } = new();
-
-        public override void Visit( SyntaxNode? node )
+        public void Visit()
         {
-            IsParsed = false;
-
-            if( node == null )
-            {
-                _logger?.Error("Undefined root SyntaxNode"  );
-                return;
-            }
-
-            Usings.Clear();
-            Namespaces.Clear();
-            Classes.Clear();
-            Interfaces.Clear();
-            Structs.Clear();
-            Records.Clear();
-
-            base.Visit( node );
-
-            IsParsed = true;
+            base.Visit( _scanFile.RootNode );
         }
 
         public override void VisitUsingStatement( UsingStatementSyntax node )
         {
             base.VisitUsingStatement( node );
 
-            Usings.Add( node );
+            _scanFile.Usings.Add( node );
         }
 
         public override void VisitNamespaceDeclaration( NamespaceDeclarationSyntax node )
         {
             base.VisitNamespaceDeclaration( node );
 
-            Namespaces.Add( node );
+            _scanFile.Namespaces.Add( node );
         }
 
         public override void VisitClassDeclaration( ClassDeclarationSyntax node )
         {
             base.VisitClassDeclaration( node );
 
-            Classes.Add( node );
+            _scanFile.Classes.Add( node );
         }
 
         public override void VisitInterfaceDeclaration( InterfaceDeclarationSyntax node )
         {
             base.VisitInterfaceDeclaration( node );
 
-            Interfaces.Add( node );
+            _scanFile.Interfaces.Add( node );
         }
 
         public override void VisitStructDeclaration( StructDeclarationSyntax node )
         {
             base.VisitStructDeclaration( node );
             
-            Structs.Add( node );
+            _scanFile.Structs.Add( node );
         }
 
         public override void VisitRecordDeclaration( RecordDeclarationSyntax node )
         {
             base.VisitRecordDeclaration( node );
 
-            Records.Add( node );
+            _scanFile.Records.Add( node );
         }
     }
 }

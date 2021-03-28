@@ -60,15 +60,30 @@ namespace Tests.DocCompiler
             StaticConfiguredLogging( loggerConfig );
         }
 
-        public DocScanner DocScanner => Host?.Services.GetRequiredService<DocScanner>()!;
+        public IDocScanner DocScanner => Host?.Services.GetRequiredService<IDocScanner>()!;
 
         protected override void SetupDependencyInjection( HostBuilderContext hbc, ContainerBuilder builder )
         {
             base.SetupDependencyInjection( hbc, builder );
 
-            builder.RegisterType<DocScanner>()
-                .AsSelf()
+            builder.Register( c =>
+                {
+                    var logger = c.Resolve<IJ4JLogger>();
+
+                    return new ScannedFileFactory( StringComparison.OrdinalIgnoreCase, logger );
+                } )
+                .As<IScannedFileFactory>()
                 .SingleInstance();
+
+            builder.Register( c =>
+                {
+                    var factory = c.Resolve<IScannedFileFactory>();
+
+                    return new DocScanner( factory );
+                } )
+                .As<IDocScanner>()
+                .SingleInstance();
+
         }
     }
 }

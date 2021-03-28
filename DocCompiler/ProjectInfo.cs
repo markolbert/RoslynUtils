@@ -31,12 +31,14 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.DocCompiler
 {
-    public partial class ProjectInfo
+    public class ProjectInfo
     {
+        public static string[] ExcludedProjectDirectories = new[] { "bin", "obj" };
+
         private readonly List<string> _excludedFiles;
         private readonly List<string> _sourceFiles;
 
-        private ProjectInfo(
+        internal ProjectInfo(
             string projDir,
             XDocument projDoc,
             XElement projElem,

@@ -32,69 +32,24 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class DocScanner : CSharpSyntaxWalker, IScanResults
+    public class DocScanner : CSharpSyntaxWalker, IDocScanner
     {
-        private readonly DocNodeWalker _nodeWalker;
-        private readonly StringComparison _osFileComparison;
+        private readonly IScannedFileFactory _scannerFactory;
         private readonly List<StandaloneFile> _scannedFiles = new();
-        private readonly IJ4JLogger? _logger;
 
         public DocScanner(
-            DocNodeWalker nodeWalker,
-            StringComparison osFileComparison,
-            IJ4JLogger? logger
+            IScannedFileFactory scannerFactory
         )
         {
-            _nodeWalker = nodeWalker;
-            _osFileComparison = osFileComparison;
-
-            _logger = logger;
-            _logger?.SetLoggedType( GetType() );
+            _scannerFactory = scannerFactory;
         }
 
-        public bool ScanSolution( string solutionPath )
+        public bool Scan( string fileToScan )
         {
-            if( !ProjectInfo.ParseSolutionFile(solutionPath, _osFileComparison, _logger, out var projects))
+            if( !_scannerFactory.Create( fileToScan, out var scannedFiles ) )
                 return false;
 
-            var allOkay = true;
-
-            foreach( var projInfo in projects )
-            {
-                foreach( var srcFile in projInfo.SourceCodeFiles )
-                {
-                    if( ProjectFile.ParseFileInProject( projInfo, srcFile, _nodeWalker, _logger, out var result ) )
-                        _scannedFiles.Add( result! );
-                    else allOkay = false;
-                }
-            }
-
-            return allOkay;
-        }
-
-        public bool ScanProject( string projPath )
-        {
-            if( !ProjectInfo.ParseProjectFile( projPath, _osFileComparison, _logger, out var projInfo ) )
-                return false;
-
-            var allOkay = true;
-
-            foreach( var srcFile in projInfo!.SourceCodeFiles )
-            {
-                if( ProjectFile.ParseFileInProject( projInfo, srcFile, _nodeWalker, _logger, out var result ) )
-                    _scannedFiles.Add( result! );
-                else allOkay = false;
-            }
-
-            return allOkay;
-        }
-
-        public bool ScanSourceFile( string filePath )
-        {
-            if( !StandaloneFile.ParseStandaloneFile( filePath, _nodeWalker, _logger, out var result ) )
-                return false;
-
-            _scannedFiles.Add( result! );
+            _scannedFiles.AddRange( scannedFiles! );
 
             return true;
         }
