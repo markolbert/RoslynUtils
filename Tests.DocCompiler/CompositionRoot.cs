@@ -60,23 +60,13 @@ namespace Tests.DocCompiler
             StaticConfiguredLogging( loggerConfig );
         }
 
-        public DocNodeCollector DocNodeCollector => Host?.Services.GetRequiredService<DocNodeCollector>()!;
-        public ParsedProjectFactory ParsedProjectFactory => Host?.Services.GetRequiredService<ParsedProjectFactory>()!;
+        public DocScanner DocScanner => Host?.Services.GetRequiredService<DocScanner>()!;
 
         protected override void SetupDependencyInjection( HostBuilderContext hbc, ContainerBuilder builder )
         {
             base.SetupDependencyInjection( hbc, builder );
 
-            builder.RegisterType<DocNodeCollector>()
-                .AsSelf()
-                .SingleInstance();
-
-            builder.Register( c =>
-                {
-                    var logger = c.Resolve<IJ4JLogger>();
-
-                    return new ParsedProjectFactory( StringComparison.OrdinalIgnoreCase, logger );
-                } )
+            builder.RegisterType<DocScanner>()
                 .AsSelf()
                 .SingleInstance();
         }

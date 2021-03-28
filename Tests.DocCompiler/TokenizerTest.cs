@@ -14,20 +14,18 @@ namespace Tests.DocCompiler
         [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\DelegateClassXXX.cs", false)]
         public void SingleFileParsing( string filePath, bool success )
         {
-            var nodeCollector = CompositionRoot.Default.DocNodeCollector;
+            var nodeCollector = CompositionRoot.Default.DocScanner;
 
-            nodeCollector.ParseSourceFile( filePath ).IsParsed.Should().Be( success );
+            nodeCollector.ScanSourceFile( filePath ).Should().Be( success );
         }
 
         [Theory]
         [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\TestLib.csproj", true)]
         public void ProjectParsing( string projFilePath, bool success )
         {
-            var nodeCollector = CompositionRoot.Default.DocNodeCollector;
+            var nodeCollector = CompositionRoot.Default.DocScanner;
 
-            var parsedProject = nodeCollector.ParseProject( projFilePath );
-            parsedProject.Should().NotBeNull();
-            parsedProject!.IsParsed.Should().Be( success );
+            nodeCollector.ScanProject( projFilePath ).Should().Be( success );
         }
     }
 }
