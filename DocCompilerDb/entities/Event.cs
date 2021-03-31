@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(EventConfigurator))]
-    public class Event
+    public class Event : IDeprecation
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -18,6 +14,7 @@ namespace J4JSoftware.DocCompiler
         public NamedType EventType { get; set; }
 
         public ICollection<NamedType> DeclaredIn { get; set; }
+        public Documentation Documentation { get; set; }
     }
 
     internal class EventConfigurator : EntityConfigurator<Event>

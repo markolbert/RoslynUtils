@@ -17,7 +17,6 @@
 
 #endregion
 
-using System.Collections;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -25,7 +24,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(MethodConfigurator))]
-    public class Method
+    public class Method : IDeprecation
     {
         public int ID { get;set; }
         public string Name { get;set; }
@@ -34,6 +33,7 @@ namespace J4JSoftware.DocCompiler
         public ICollection<MethodArgument> Arguments { get; set; }
         public int ReturnTypeID { get; set; }
         public NamedType ReturnType { get; set; }
+        public Documentation Documentation { get; set; }
     }
 
     internal class MethodConfigurator : EntityConfigurator<Method>

@@ -19,13 +19,8 @@
 
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectFile : ScannedFile
+    public interface IDocDbUpdater
     {
-        internal ProjectFile( ProjectInfo projInfo )
-        {
-            BelongsTo = projInfo;
-        }
-
-        public ProjectInfo BelongsTo { get; }
+        bool UpdateDatabase( IDocScanner docScanner );
     }
 }

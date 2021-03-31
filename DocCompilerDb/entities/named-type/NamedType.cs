@@ -18,7 +18,6 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -26,7 +25,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(NamedTypeConfigurator))]
-    public class NamedType
+    public class NamedType : IDeprecation
     {
         private int _containerID;
         private ContainerType _containerType = ContainerType.Undefined;
@@ -39,6 +38,7 @@ namespace J4JSoftware.DocCompiler
 
         public bool Deprecated { get; set; }
         public NamedTypeKind Kind { get; set; }
+        public Documentation Documentation { get; set; }
 
         public string? ExternalUrl { get; set; }
         public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );

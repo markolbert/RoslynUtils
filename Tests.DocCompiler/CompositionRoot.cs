@@ -18,10 +18,12 @@
 #endregion
 
 using System;
+using System.IO;
 using Autofac;
 using J4JSoftware.DependencyInjection;
 using J4JSoftware.DocCompiler;
 using J4JSoftware.Logging;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -61,29 +63,44 @@ namespace Tests.DocCompiler
         }
 
         public IDocScanner DocScanner => Host?.Services.GetRequiredService<IDocScanner>()!;
+        public IDocDbUpdater DbUpdater => Host?.Services.GetRequiredService<IDocDbUpdater>()!;
 
         protected override void SetupDependencyInjection( HostBuilderContext hbc, ContainerBuilder builder )
         {
             base.SetupDependencyInjection( hbc, builder );
 
-            builder.Register( c =>
-                {
-                    var logger = c.Resolve<IJ4JLogger>();
-
-                    return new ScannedFileFactory( StringComparison.OrdinalIgnoreCase, logger );
-                } )
+            builder.RegisterType<ScannedFileFactory>()
                 .As<IScannedFileFactory>()
                 .SingleInstance();
 
-            builder.Register( c =>
-                {
-                    var factory = c.Resolve<IScannedFileFactory>();
-
-                    return new DocScanner( factory );
-                } )
+            builder.RegisterType<DocScanner>()
                 .As<IDocScanner>()
                 .SingleInstance();
 
+            builder.RegisterType<DataLayer>()
+                .As<IDataLayer>()
+                .SingleInstance();
+
+            builder.RegisterType<DocDbUpdater>()
+                .As<IDocDbUpdater>()
+                .SingleInstance();
+
+            builder.Register( c =>
+                {
+                    //var dbPath = Path.Combine( Environment.CurrentDirectory, "DocCompiler.db" );
+
+                    //if( File.Exists(dbPath))
+                    //    File.Delete(dbPath);
+
+                    var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
+                    optionsBuilder.UseSqlite( "Data Source=DocCompiler.db" );
+
+                    var retVal = new DocDbContext( optionsBuilder.Options );
+                    retVal.Database.EnsureCreated();
+
+                    return retVal;
+                } )
+                .AsSelf();
         }
     }
 }

@@ -18,112 +18,107 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.EFCoreUtilities;
-using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
+    [EntityConfiguration(typeof(DocumentationConfigurator))]
     public class Documentation
     {
-        private DocEntityType _entityType = DocEntityType.Undefined;
-        private int _entityID;
-        private Assembly? _assembly;
-        private Event? _event;
-        private Field? _field;
-        private Method? _method;
-        private Namespace? _namespace;
-        private NamedType? _namedType;
-        private Property? _property;
-        private Using? _using;
+        private int _assemblyID;
+        private int _eventID;
+        private int _fieldID;
+        private int _methodID;
+        private int _methodArgID;
+        private int _namespaceID;
+        private int _namedTypeID;
+        private int _propertyID;
+        private int _propertyArgID;
 
         public int ID { get; set; }
+        public string? AssetRootPath { get;set; }
+        public ICollection<DocumentationEntry> Entries { get; set; }
 
-        public DocEntityType EntityType => _entityType;
-        public int EntityID => _entityID;
+        [DocumentedType("Assembly", "_assemblyID")]
+        public int AssemblyID => _assemblyID;
+        [DocumentedType("Event", "_eventID")]
+        public int EventID => _eventID;
+        [DocumentedType("Field", "_fieldID")]
+        public int FieldID => _fieldID;
+        [DocumentedType("Method", "_methodID")]
+        public int MethodID => _methodID;
+        [DocumentedType("MethodArgument", "_methodArgID")]
+        public int MethodArgumentID => _methodArgID;
+        [DocumentedType("Namespace", "_namespaceID")]
+        public int NamespaceID => _namespaceID;
+        [DocumentedType("NamedType", "_namedTypeID")]
+        public int NamedTypeID => _namedTypeID;
+        [DocumentedType("Property", "_propertyID")]
+        public int PropertyID => _propertyID;
+        [DocumentedType("PropertyArgument", "_propertyArgID")]
+        public int PropertyArgumentID => _propertyArgID;
 
-        public object? Entity => _entityType switch
-        {
-            DocEntityType.Assembly => _assembly,
-            DocEntityType.Event => _event,
-            DocEntityType.Field => _field,
-            DocEntityType.Method => _method,
-            DocEntityType.Namespace => _namespace,
-            DocEntityType.NamedType => _namedType,
-            DocEntityType.Property => _property,
-            DocEntityType.Using => _using,
-            _ => null
-        };
+        public Assembly? Assembly { get; set; }
+        public Event? Event { get; set; }
+        public Field? Field { get; set; }
+        public Method? Method { get;set; }
+        public MethodArgument? MethodArgument { get; set; }
+        public Namespace? Namespace { get; set; }
+        public NamedType? NamedType { get; set; }
+        public Property? Property { get; set; }
+        public PropertyArgument? PropertyArgument { get; set; }
 
         public void AssociateWith( object entity )
         {
-            _assembly = null;
-            _event = null;
-            _field = null;
-            _method = null;
-            _namespace = null;
-            _namedType = null;
-            _property = null;
-            _using = null;
-
-            _entityType = DocEntityType.Undefined;
+            _assemblyID = 0;
+            _eventID = 0;
+            _fieldID = 0;
+            _methodID = 0;
+            _methodArgID = 0;
+            _namedTypeID = 0;
+            _namespaceID = 0;
+            _propertyID = 0;
+            _propertyArgID = 0;
 
             switch( entity )
             {
                 case Assembly anAssembly:
-                    _assembly = anAssembly;
-                    _entityID = anAssembly.ID;
-                    _entityType = DocEntityType.Assembly;
-
+                    _assemblyID = anAssembly.ID;
                     break;
 
                 case Event anEvent:
-                    _event = anEvent;
-                    _entityID = anEvent.ID;
-                    _entityType = DocEntityType.Event;
-
+                    _eventID = anEvent.ID;
                     break;
 
                 case Field aField:
-                    _field = aField;
-                    _entityID = aField.ID;
-                    _entityType = DocEntityType.Field;
-
+                    _fieldID = aField.ID;
                     break;
 
                 case Method aMethod:
-                    _method = aMethod;
-                    _entityID = aMethod.ID;
-                    _entityType = DocEntityType.Method;
+                    _methodID = aMethod.ID;
+                    break;
 
+                case MethodArgument aMethodArg:
+                    _methodArgID = aMethodArg.ID;
                     break;
 
                 case Namespace aNamespace:
-                    _namespace = aNamespace;
-                    _entityID = aNamespace.ID;
-                    _entityType = DocEntityType.Namespace;
-
+                    _namespaceID = aNamespace.ID;
                     break;
 
                 case NamedType aNamedType:
-                    _namedType = aNamedType;
-                    _entityID = aNamedType.ID;
-                    _entityType = DocEntityType.NamedType;
-
+                    _namedTypeID = aNamedType.ID;
                     break;
 
                 case Property aProperty:
-                    _property = aProperty;
-                    _entityID = aProperty.ID;
-                    _entityType = DocEntityType.Property;
-
+                    _propertyID = aProperty.ID;
                     break;
 
-                case Using aUsing:
-                    _using = aUsing;
-                    _entityID = aUsing.ID;
-                    _entityType = DocEntityType.Using;
-
+                case PropertyArgument aPropertyArg:
+                    _propertyArgID = aPropertyArg.ID;
                     break;
 
                 default:
@@ -137,16 +132,23 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<Documentation> builder )
         {
-            builder.Ignore( x => x.Entity );
-            builder.Ignore( x => x.EntityID );
-            builder.Ignore( x => x.EntityType );
+            var documentedProps = typeof(Documentation).GetProperties()
+                .Where( p => p.GetCustomAttributes( typeof(DocumentedTypeAttribute), false ).Any() )
+                .Select( p => new
+                {
+                    PropertyName = p.Name,
+                    AttributeInfo = (DocumentedTypeAttribute) p.GetCustomAttributes( typeof(DocumentedTypeAttribute), false ).First()
+                } );
 
-            builder.Property( "EntityType" ).HasField( "_entityType" );
-            builder.Property( "EntityID" ).HasField( "_entityID" );
-
-            foreach( var entityName in Enum.GetNames<DocEntityType>() )
+            foreach( var docPropInfo in documentedProps )
             {
-                builder.Property( entityName ).HasField( $"_{entityName.ToLower()}" );
+                builder.Property( docPropInfo.PropertyName )
+                    .HasField( docPropInfo.AttributeInfo.BackingField );
+
+                builder.HasOne( docPropInfo.AttributeInfo.EntityType )
+                    .WithOne( "Documentation" )
+                    .HasForeignKey( "Documentation", docPropInfo.PropertyName )
+                    .HasPrincipalKey( docPropInfo.AttributeInfo.EntityType, "ID" );
             }
         }
     }

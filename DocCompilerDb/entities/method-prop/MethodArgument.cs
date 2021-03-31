@@ -17,7 +17,6 @@
 
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -30,6 +29,7 @@ namespace J4JSoftware.DocCompiler
         public int Index { get; set; }
         public int DeclaredInID { get; set; }
         public Method DeclaredIn { get; set; }
+        public Documentation Documentation { get; set; }
     }
 
     internal class MethodArgumentConfigurator : EntityConfigurator<MethodArgument>

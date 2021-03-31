@@ -24,6 +24,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using J4JSoftware.EFCoreUtilities;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -33,20 +34,17 @@ namespace J4JSoftware.DocCompiler
 {
     public class ScannedFileFactory : IScannedFileFactory
     {
-        private readonly StringComparison _osFileComparison;
         private readonly IJ4JLogger? _logger;
 
         public ScannedFileFactory(
-            StringComparison osFileComparison,
-            IJ4JLogger? logger )
+            IJ4JLogger? logger 
+            )
         {
-            _osFileComparison = osFileComparison;
-
             _logger = logger;
             _logger?.SetLoggedType( GetType() );
         }
 
-        public bool Create( string sourceFilePath, out List<StandaloneFile>? result )
+        public bool Create( string sourceFilePath, out List<ScannedFile>? result )
         {
             result = null;
 
@@ -58,38 +56,40 @@ namespace J4JSoftware.DocCompiler
 
             return Path.GetExtension( sourceFilePath ).ToLower() switch
             {
-                ".cs" => CreateStandaloneFile( sourceFilePath,
-                    ( p, r ) => new StandaloneFile() { SourceFilePath = p, RootNode = r }, 
-                    out result ),
+                //".cs" => CreateStandaloneFile( sourceFilePath,
+                //    ( p, r ) => new ScannedFile() { SourceFilePath = p, RootNode = r }, 
+                //    out result ),
 
-                ".csproj" => CreateProjectFiles( sourceFilePath, out result ),
-                ".sln" => CreateSolutionFiles( sourceFilePath, out result ),
+                ".csproj" => ScanProject( sourceFilePath, out result ),
+                ".sln" => ScanSolution( sourceFilePath, out result ),
                 _ => false
             };
         }
 
-        private bool CreateStandaloneFile( string sourceFilePath,
-            Func<string, SyntaxNode, StandaloneFile> scannedFileCreator, 
-            out List<StandaloneFile>? result )
+        private bool CreateScannedFile(string sourceFilePath, ProjectInfo projInfo, out ScannedFile? result)
         {
             result = null;
 
             try
             {
-                using var fileStream = File.OpenRead( sourceFilePath );
-                var srcText = SourceText.From( fileStream );
+                using var fileStream = File.OpenRead(sourceFilePath);
+                var srcText = SourceText.From(fileStream);
 
-                var syntaxTree = CSharpSyntaxTree.ParseText( srcText );
+                var syntaxTree = CSharpSyntaxTree.ParseText(srcText);
 
-                var scannedFile = scannedFileCreator( sourceFilePath, syntaxTree.GetRoot() );
-                result = new List<StandaloneFile> { scannedFile };
+                result = new ScannedFile
+                {
+                    BelongsTo = projInfo,
+                    RootNode = syntaxTree.GetRoot(), 
+                    SourceFilePath = sourceFilePath
+                };
 
-                var nodeWalker = new DocNodeWalker( scannedFile );
+                var nodeWalker = new DocNodeWalker(result);
                 nodeWalker.Visit();
             }
-            catch( Exception e )
+            catch (Exception e)
             {
-                _logger?.Error<string>( "Parsing failed, exception was '{0}'", e.Message );
+                _logger?.Error<string>("Parsing failed, exception was '{0}'", e.Message);
 
                 return false;
             }
@@ -97,7 +97,7 @@ namespace J4JSoftware.DocCompiler
             return true;
         }
 
-        private bool CreateProjectFiles( string projFilePath, out List<StandaloneFile>? result )
+        private bool ScanProject( string projFilePath, out List<ScannedFile>? result )
         {
             result = null;
 
@@ -120,21 +120,16 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            var projInfo = new ProjectInfo( Path.GetDirectoryName( projFilePath )!,
-                projDoc,
-                projElem,
-                _osFileComparison );
+            var projInfo = new ProjectInfo( Path.GetDirectoryName( projFilePath )!, projDoc, projElem );
 
-            result = new List<StandaloneFile>();
+            result = new List<ScannedFile>();
 
             var allOkay = true;
 
             foreach( var srcFile in projInfo!.SourceCodeFiles )
             {
-                if( CreateStandaloneFile( srcFile,
-                    ( p, r ) => new ProjectFile( projInfo ) { SourceFilePath = srcFile, RootNode = r }, 
-                    out var temp ) )
-                    result.Add( temp![ 0 ] );
+                if( CreateScannedFile( srcFile, projInfo, out var temp) )
+                    result.Add( temp! );
                 else allOkay = false;
             }
 
@@ -171,7 +166,7 @@ namespace J4JSoftware.DocCompiler
             return null;
         }
 
-        private bool CreateSolutionFiles( string slnFilePath, out List<StandaloneFile>? result )
+        private bool ScanSolution( string slnFilePath, out List<ScannedFile>? result )
         {
             result = null;
 
@@ -216,11 +211,11 @@ namespace J4JSoftware.DocCompiler
                     return false;
             }
 
-            var projectEntries = lines.Where( x => x.StartsWith( "Project(", StringComparison.OrdinalIgnoreCase ) );
+            var projectEntries = lines.Where( x => x.StartsWith( "Project(", OsUtilities.FileSystemComparison ) );
 
             var solutionDir = Path.GetDirectoryName( slnFilePath ) ?? string.Empty;
             
-            result = new List<StandaloneFile>();
+            result = new List<ScannedFile>();
             var allOkay = true;
 
             foreach( var projText in projectEntries )
@@ -255,7 +250,7 @@ namespace J4JSoftware.DocCompiler
 
                 var projFilePath = Path.Combine( solutionDir, args[ 1 ].Replace( "\"", "" ).Trim() );
 
-                if( CreateProjectFiles( projFilePath, out var temp ) )
+                if( ScanProject( projFilePath, out var temp ) )
                     result.AddRange( temp! );
                 else allOkay = false;
             }

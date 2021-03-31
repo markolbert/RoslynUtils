@@ -17,25 +17,18 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Xml;
-using System.Xml.Linq;
-using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 namespace J4JSoftware.DocCompiler
 {
     public class DocScanner : CSharpSyntaxWalker, IDocScanner
     {
         private readonly IScannedFileFactory _scannerFactory;
-        private readonly List<StandaloneFile> _scannedFiles = new();
+        private readonly List<IScannedFile> _scanResults = new();
 
         public DocScanner(
             IScannedFileFactory scannerFactory
@@ -49,18 +42,23 @@ namespace J4JSoftware.DocCompiler
             if( !_scannerFactory.Create( fileToScan, out var scannedFiles ) )
                 return false;
 
-            _scannedFiles.AddRange( scannedFiles! );
+            _scanResults.AddRange( scannedFiles! );
 
             return true;
         }
 
-        public ReadOnlyCollection<StandaloneFile> ScannedFiles => _scannedFiles.AsReadOnly();
+        public ReadOnlyCollection<IScannedFile> ScannedFiles => _scanResults.AsReadOnly();
 
-        public List<UsingStatementSyntax> Usings => _scannedFiles.SelectMany( x => x.Usings ).ToList();
-        public List<NamespaceDeclarationSyntax> Namespaces => _scannedFiles.SelectMany( x => x.Namespaces ).ToList();
-        public List<ClassDeclarationSyntax> Classes => _scannedFiles.SelectMany( x => x.Classes ).ToList();
-        public List<InterfaceDeclarationSyntax> Interfaces => _scannedFiles.SelectMany( x => x.Interfaces ).ToList();
-        public List<StructDeclarationSyntax> Structs => _scannedFiles.SelectMany( x => x.Structs ).ToList();
-        public List<RecordDeclarationSyntax> Records => _scannedFiles.SelectMany( x => x.Records ).ToList();
+        public ReadOnlyCollection<IProjectInfo> Projects => _scanResults
+            .Select( x => x.BelongsTo )
+            .ToList()
+            .AsReadOnly();
+
+        public List<UsingStatementSyntax> Usings => _scanResults.SelectMany( x => x.Usings ).ToList();
+        public List<NamespaceDeclarationSyntax> Namespaces => _scanResults.SelectMany( x => x.Namespaces ).ToList();
+        public List<ClassDeclarationSyntax> Classes => _scanResults.SelectMany( x => x.Classes ).ToList();
+        public List<InterfaceDeclarationSyntax> Interfaces => _scanResults.SelectMany( x => x.Interfaces ).ToList();
+        public List<StructDeclarationSyntax> Structs => _scanResults.SelectMany( x => x.Structs ).ToList();
+        public List<RecordDeclarationSyntax> Records => _scanResults.SelectMany( x => x.Records ).ToList();
     }
 }

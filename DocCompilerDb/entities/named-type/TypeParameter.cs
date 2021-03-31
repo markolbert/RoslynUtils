@@ -18,15 +18,13 @@
 #endregion
 
 using System.Collections.Generic;
-using System.ComponentModel;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(TypeParameterConfigurator))]
-    public class TypeParameter
+    public class TypeParameter : IDeprecation
     {
         public int ID { get; set; }
         public bool Deprecated { get; set; }

@@ -17,15 +17,30 @@
 
 #endregion
 
+using System.Collections.ObjectModel;
+using System.Xml.Linq;
+using Microsoft.CodeAnalysis;
+
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectFile : ScannedFile
+    public interface IProjectInfo
     {
-        internal ProjectFile( ProjectInfo projInfo )
-        {
-            BelongsTo = projInfo;
-        }
-
-        public ProjectInfo BelongsTo { get; }
+        string ProjectDirectory { get; }
+        string AssemblyName { get; }
+        string RootNamespace { get; }
+        NullableContextOptions NullableContextOptions { get; }
+        string TargetFrameworks { get; }
+        string Authors { get; }
+        string Company { get; }
+        string Description { get; }
+        string Copyright { get; }
+        string PackageDescription { get; }
+        string PackageLicense { get; }
+        string RepositoryUrl { get; }
+        string RepositoryType { get; }
+        string Version { get; }
+        string AssemblyVersion { get; }
+        string FileVersion { get; }
+        ReadOnlyCollection<string> SourceCodeFiles { get; }
     }
 }

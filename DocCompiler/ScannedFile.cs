@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -8,12 +6,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class StandaloneFile : IScanResults
+    public class ScannedFile : IScannedFile
     {
-        internal StandaloneFile()
+        internal ScannedFile()
         {
         }
 
+        public IProjectInfo BelongsTo { get; init; }
         public string SourceFilePath { get; init; }
         public SyntaxNode RootNode { get; init; }
 

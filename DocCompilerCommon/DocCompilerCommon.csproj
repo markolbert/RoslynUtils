@@ -13,4 +13,8 @@
 		<FileVersion>0.1.0.0</FileVersion>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis" Version="3.9.0" />
+	</ItemGroup>
+
 </Project>

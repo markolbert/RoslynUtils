@@ -23,6 +23,6 @@ namespace J4JSoftware.DocCompiler
 {
     public interface IScannedFileFactory
     {
-        bool Create( string sourceFilePath, out List<StandaloneFile>? result );
+        bool Create( string sourceFilePath, out List<ScannedFile>? result );
     }
 }

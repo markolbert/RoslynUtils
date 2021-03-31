@@ -17,33 +17,20 @@
 
 #endregion
 
-using J4JSoftware.EFCoreUtilities;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(ArgumentConfigurator))]
-    public class Argument : IDeprecation
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    public class DocumentedTypeAttribute : Attribute
     {
-        protected Argument()
+        public DocumentedTypeAttribute( string entityType, string backingField )
         {
+            EntityType = entityType;
+            BackingField = backingField;
         }
 
-        public int ID { get; set; }
-        public bool Deprecated { get; set; }
-        public bool HasThis {get; set; }
-        public int ArgumentTypeID { get; set; }
-        public NamedType ArgumentType { get; set; }
-    }
-
-    internal class ArgumentConfigurator : EntityConfigurator<Argument>
-    {
-        protected override void Configure( EntityTypeBuilder<Argument> builder )
-        {
-            builder.HasOne( x => x.ArgumentType )
-                .WithMany( x => x.UsedInArguments )
-                .HasForeignKey( x => x.ArgumentTypeID )
-                .HasPrincipalKey( x => x.ID );
-        }
+        public string EntityType { get; }
+        public string BackingField { get; }
     }
 }

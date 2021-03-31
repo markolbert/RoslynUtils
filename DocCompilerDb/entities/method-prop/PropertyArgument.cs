@@ -27,6 +27,7 @@ namespace J4JSoftware.DocCompiler
     {
         public int DeclaredInID { get; set; }
         public Property DeclaredIn { get; set; }
+        public Documentation Documentation { get; set; }
     }
 
     internal class PropertyArgumentConfigurator : EntityConfigurator<PropertyArgument>

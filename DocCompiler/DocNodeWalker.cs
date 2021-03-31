@@ -17,9 +17,6 @@
 
 #endregion
 
-using System.Collections.Generic;
-using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -27,10 +24,10 @@ namespace J4JSoftware.DocCompiler
 {
     public class DocNodeWalker : CSharpSyntaxWalker
     {
-        private StandaloneFile _scanFile;
+        private ScannedFile _scanFile;
 
         internal DocNodeWalker(
-            StandaloneFile scanFile )
+            ScannedFile scanFile )
         {
             _scanFile = scanFile;
         }

@@ -8,24 +8,19 @@ namespace Tests.DocCompiler
 {
     public class DocScanning
     {
-        [ Theory ]
-        //[ MemberData( nameof(TokenizerMemberData.GetTokenizerData), MemberType = typeof(TokenizerMemberData) ) ]
-        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\DelegateClass.cs", true)]
-        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\DelegateClassXXX.cs", false)]
-        public void SingleFile( string filePath, bool success )
-        {
-            var docScanner = CompositionRoot.Default.DocScanner;
-
-            docScanner.Scan( filePath ).Should().Be( success );
-        }
-
         [Theory]
-        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\TestLib.csproj", true)]
-        public void Project( string projFilePath, bool success )
+        [InlineData("C:\\Programming\\RoslynUtils\\TestLib\\TestLib.csproj", true, true)]
+        public void Project( string projFilePath, bool scanSuccess, bool updateSuccess )
         {
             var docScanner = CompositionRoot.Default.DocScanner;
+            var dbUpdater = CompositionRoot.Default.DbUpdater;
 
-            docScanner.Scan( projFilePath ).Should().Be( success );
+            docScanner.Scan( projFilePath ).Should().Be( scanSuccess );
+
+            if( !scanSuccess )
+                return;
+
+            dbUpdater.UpdateDatabase( docScanner ).Should().Be( updateSuccess );
         }
     }
 }

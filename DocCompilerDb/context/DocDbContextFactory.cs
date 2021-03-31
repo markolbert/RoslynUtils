@@ -2,7 +2,7 @@
 
 // Copyright 2021 Mark A. Olbert
 // 
-// This library or program 'DocCompiler' is free software: you can redistribute it
+// This library or program 'DocCompilerDb' is free software: you can redistribute it
 // and/or modify it under the terms of the GNU General Public License as
 // published by the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
@@ -17,18 +17,19 @@
 
 #endregion
 
-using System.Collections.Generic;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace J4JSoftware.DocCompiler
 {
-    public interface IScanResults
+    public class DocDbContextFactory : IDesignTimeDbContextFactory<DocDbContext>
     {
-        List<UsingStatementSyntax> Usings { get; }
-        List<NamespaceDeclarationSyntax> Namespaces { get; }
-        List<ClassDeclarationSyntax> Classes { get; }
-        List<InterfaceDeclarationSyntax> Interfaces { get; }
-        List<StructDeclarationSyntax> Structs { get; }
-        List<RecordDeclarationSyntax> Records { get; }
+        public DocDbContext CreateDbContext( string[] args )
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
+            optionsBuilder.UseSqlite($"Data Source={args[0]}");
+
+            return new DocDbContext( optionsBuilder.Options );
+        }
     }
 }

@@ -17,15 +17,24 @@
 
 #endregion
 
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectFile : ScannedFile
+    public interface IDocScanner
     {
-        internal ProjectFile( ProjectInfo projInfo )
-        {
-            BelongsTo = projInfo;
-        }
+        ReadOnlyCollection<IScannedFile> ScannedFiles { get; }
+        ReadOnlyCollection<IProjectInfo> Projects { get; }
 
-        public ProjectInfo BelongsTo { get; }
+        List<UsingStatementSyntax> Usings { get; }
+        List<NamespaceDeclarationSyntax> Namespaces { get; }
+        List<ClassDeclarationSyntax> Classes { get; }
+        List<InterfaceDeclarationSyntax> Interfaces { get; }
+        List<StructDeclarationSyntax> Structs { get; }
+        List<RecordDeclarationSyntax> Records { get; }
+
+        bool Scan( string fileToScan );
     }
 }

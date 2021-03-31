@@ -18,19 +18,56 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class Assembly
+    [EntityConfiguration(typeof(AssemblyConfigurator))]
+    public class Assembly : IDeprecation
     {
         public int ID { get; set; }
-        public string Name { get; set; }
         public bool Deprecated { get; set; }
-        public string Version { get; set; }
         public DateTime Timestamp { get; set; }
+
+        public string ProjectDirectory { get; set; }
+        public string AssemblyName { get; set; }
+        public string RootNamespace { get; set; }
+        public string TargetFrameworks { get; set; }
+        public NullableContextOptions NullableContextOptions { get; set; }
+
+        public string Authors { get; set; }
+        public string Company { get; set; }
+        public string Description { get; set; }
+        public string Copyright { get; set; }
+
+        public string PackageDescription { get;set; }
+        public string PackageLicense { get; set; }
+        public string RepositoryUrl { get; set; }
+        public string RepositoryType { get; set; }
+        
+        public string Version { get; set; }
+        public string AssemblyVersion { get; set; }
+        public string FileVersion { get; set; }
+        
         public ICollection<Namespace> Namespaces { get; set; }
         public ICollection<CodeFile> CodeFiles { get; set; }
+        public Documentation Documentation { get; set; }
+    }
+
+    internal class AssemblyConfigurator : EntityConfigurator<Assembly>
+    {
+        protected override void Configure( EntityTypeBuilder<Assembly> builder )
+        {
+            builder.Property( x => x.NullableContextOptions )
+                .HasConversion<string>();
+
+            builder.Property( x => x.Timestamp )
+                .HasDefaultValue( DateTime.Now );
+        }
     }
 }

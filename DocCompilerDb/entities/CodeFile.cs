@@ -17,14 +17,16 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(CodeFileConfigurator))]
-    public class CodeFile
+    public class CodeFile : IDeprecation
     {
         public int ID { get; set; }
         public bool Deprecated { get; set; }
@@ -45,6 +47,9 @@ namespace J4JSoftware.DocCompiler
                 .WithMany( x => x.CodeFiles )
                 .HasForeignKey( x => x.AssemblyID )
                 .HasPrincipalKey( x => x.ID );
+
+            builder.Property( x => x.FullPath )
+                .UseOsCollation();
         }
     }
 }

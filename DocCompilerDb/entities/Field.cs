@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using J4JSoftware.EFCoreUtilities;
+﻿using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(FieldConfigurator))]
-    public class Field
+    public class Field : IDeprecation
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -19,6 +13,7 @@ namespace J4JSoftware.DocCompiler
         public NamedType DeclaredIn { get; set; }
         public int FieldTypeID { get; set; }
         public NamedType FieldType { get; set; }
+        public Documentation Documentation { get; set; }
     }
 
     internal class FieldConfigurator : EntityConfigurator<Field>

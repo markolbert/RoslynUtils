@@ -2,7 +2,7 @@
 
 // Copyright 2021 Mark A. Olbert
 // 
-// This library or program 'DocCompiler' is free software: you can redistribute it
+// This library or program 'DocCompilerDb' is free software: you can redistribute it
 // and/or modify it under the terms of the GNU General Public License as
 // published by the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
@@ -19,13 +19,12 @@
 
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectFile : ScannedFile
+    public enum DocumentationEntryType
     {
-        internal ProjectFile( ProjectInfo projInfo )
-        {
-            BelongsTo = projInfo;
-        }
-
-        public ProjectInfo BelongsTo { get; }
+        Text,
+        FileReference,
+        SourceCodeDecoration,
+        SourceCodeXml,
+        SourceCodeInternal
     }
 }

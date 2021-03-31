@@ -22,16 +22,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Xml;
 using System.Xml.Linq;
-using J4JSoftware.Logging;
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.CodeAnalysis;
 #pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
-    public class ProjectInfo
+    public class ProjectInfo : IProjectInfo
     {
         public static string[] ExcludedProjectDirectories = new[] { "bin", "obj" };
 
@@ -41,8 +39,7 @@ namespace J4JSoftware.DocCompiler
         internal ProjectInfo(
             string projDir,
             XDocument projDoc,
-            XElement projElem,
-            StringComparison osFileComparison
+            XElement projElem
         )
         {
             ProjectDirectory = projDir;
@@ -51,10 +48,6 @@ namespace J4JSoftware.DocCompiler
 
             AssemblyName = ProjectElement.Descendants( "AssemblyName" ).FirstOrDefault()?.Value ?? string.Empty;
             RootNamespace = ProjectElement.Descendants( "RootNamespace" ).FirstOrDefault()?.Value ?? string.Empty;
-            Authors = ProjectElement.Descendants( "Authors" ).FirstOrDefault()?.Value ?? string.Empty;
-            Company = ProjectElement.Descendants( "Company" ).FirstOrDefault()?.Value ?? string.Empty;
-            Description = ProjectElement.Descendants( "Description" ).FirstOrDefault()?.Value ?? string.Empty;
-            Copyright = ProjectElement.Descendants( "Copyright" ).FirstOrDefault()?.Value ?? string.Empty;
 
             var nullableText = ProjectElement.Descendants( "Nullable" ).FirstOrDefault()?.Value;
 
@@ -65,6 +58,24 @@ namespace J4JSoftware.DocCompiler
                 NullableContextOptions = (NullableContextOptions) ncTemp!;
             else NullableContextOptions = NullableContextOptions.Disable;
 
+            TargetFrameworks = ProjectElement.Descendants( "TargetFramework" ).FirstOrDefault()?.Value ?? string.Empty;
+            if( string.IsNullOrEmpty(TargetFrameworks  ))
+                TargetFrameworks = ProjectElement.Descendants( "TargetFrameworks" ).FirstOrDefault()?.Value ?? string.Empty;
+            
+            Authors = ProjectElement.Descendants( "Authors" ).FirstOrDefault()?.Value ?? string.Empty;
+            Company = ProjectElement.Descendants( "Company" ).FirstOrDefault()?.Value ?? string.Empty;
+            Description = ProjectElement.Descendants( "Description" ).FirstOrDefault()?.Value ?? string.Empty;
+            Copyright = ProjectElement.Descendants( "Copyright" ).FirstOrDefault()?.Value ?? string.Empty;
+
+            PackageDescription = ProjectElement.Descendants( "PackageDescription" ).FirstOrDefault()?.Value ?? string.Empty;
+            PackageLicense = ProjectElement.Descendants( "PackageLicenseExpression" ).FirstOrDefault()?.Value ??
+                             string.Empty;
+            RepositoryUrl = ProjectElement.Descendants( "RepositoryUrl" ).FirstOrDefault()?.Value ?? string.Empty;
+            RepositoryType = ProjectElement.Descendants( "RepositoryType" ).FirstOrDefault()?.Value ?? string.Empty;
+            Version = ProjectElement.Descendants( "Version" ).FirstOrDefault()?.Value ?? string.Empty;
+            AssemblyVersion = ProjectElement.Descendants( "AssemblyVersion" ).FirstOrDefault()?.Value ?? string.Empty;
+            FileVersion = ProjectElement.Descendants( "FileVersion" ).FirstOrDefault()?.Value ?? string.Empty;
+            
             var excludedDirs = ExcludedProjectDirectories.Select( x => Path.Combine( ProjectDirectory, x ) )
                 .ToList();
 
@@ -74,25 +85,40 @@ namespace J4JSoftware.DocCompiler
                 .Select( e => e.Attribute( "Remove" )?.Value! )
                 .ToList();
 
+            var objDir = Path.Combine( ProjectDirectory, "obj" );
+
             _sourceFiles = Directory
                 .GetFiles( ProjectDirectory, "*.cs", SearchOption.AllDirectories )
                 .Where( f =>
-                    !excludedDirs.Any( x => x.Equals( Path.GetDirectoryName( f ), osFileComparison ) )
-                    && !ExcludedFiles.Any( x => x.Equals( f, osFileComparison ) ) )
+                    f.IndexOf( objDir, OsUtilities.FileSystemComparison ) != 0
+                    && !excludedDirs.Any(
+                        x => x.Equals( Path.GetDirectoryName( f ), OsUtilities.FileSystemComparison ) )
+                    && !ExcludedFiles.Any( x => x.Equals( f, OsUtilities.FileSystemComparison ) ) )
                 .ToList();
         }
 
         public string ProjectDirectory { get; }
         public XDocument ProjectDocument { get; }
         public XElement ProjectElement { get; }
-        public NullableContextOptions NullableContextOptions { get; }
 
         public string AssemblyName { get; }
         public string RootNamespace { get; }
+        public NullableContextOptions NullableContextOptions { get; }
+        public string TargetFrameworks { get; }
+
         public string Authors { get; }
         public string Company { get; }
         public string Description { get; }
         public string Copyright { get; }
+
+        public string PackageDescription { get; }
+        public string PackageLicense { get; }
+        public string RepositoryUrl { get; }
+        public string RepositoryType { get; }
+        
+        public string Version { get; }
+        public string AssemblyVersion { get; }
+        public string FileVersion { get; }
 
         public ReadOnlyCollection<string> ExcludedFiles => _excludedFiles.AsReadOnly();
         public ReadOnlyCollection<string> SourceCodeFiles => _sourceFiles.AsReadOnly();

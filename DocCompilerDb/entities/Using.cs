@@ -17,15 +17,13 @@
 
 #endregion
 
-using System;
-using System.Diagnostics;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(UsingConfigurator))]
-    public class Using
+    public class Using : IDeprecation
     {
         private int _containerID;
         private ContainerType _containerType = ContainerType.Undefined;
