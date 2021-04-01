@@ -18,21 +18,31 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
+using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.CSharp;
+using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
-    public interface IScannedFile
+    [TopologicalRoot()]
+    public class AddNamespaces : EntityProcessor<SyntaxNode>
     {
-        IProjectInfo BelongsTo { get; }
-        string SourceFilePath { get; }
-        SyntaxNode RootNode { get; }
-        List<UsingStatementSyntax> Usings { get; }
-        List<NamespaceDeclarationSyntax> Namespaces { get; }
-        List<ClassDeclarationSyntax> Classes { get; }
-        List<InterfaceDeclarationSyntax> Interfaces { get; }
-        List<StructDeclarationSyntax> Structs { get; }
-        List<RecordDeclarationSyntax> Records { get; }
+        public AddNamespaces( 
+            IDataLayer dataLayer, 
+            IJ4JLogger? logger ) 
+            : base( dataLayer, logger )
+        {
+        }
+
+        protected override IEnumerable<SyntaxNode> GetNodesToProcess( IDocScanner source ) =>
+            source.ScannedFiles.SelectMany( x => x.RootNode
+                .DescendantNodes()
+                .Where( n => CSharpExtensions.IsKind( (SyntaxNode?) n, SyntaxKind.NamespaceDeclaration ) )
+            );
+
+        protected override bool ProcessEntity( SyntaxNode srcEntity ) =>
+            DataLayer.UpdateNamespace( srcEntity );
     }
 }

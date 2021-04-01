@@ -2,7 +2,7 @@
 
 // Copyright 2021 Mark A. Olbert
 // 
-// This library or program 'RoslynNetStandardTestLib' is free software: you can redistribute it
+// This library or program 'DocCompiler' is free software: you can redistribute it
 // and/or modify it under the terms of the GNU General Public License as
 // published by the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
@@ -17,19 +17,12 @@
 
 #endregion
 
-// ReSharper disable TypeParameterCanBeVariant
-using System.Runtime.CompilerServices;
+using System;
 
-namespace J4JSoftware.Roslyn.Tests
+namespace J4JSoftware.DocCompiler
 {
-    public class DelegateClass
+    public interface IEntityProcessor : IEquatable<IEntityProcessor>
     {
-        public delegate void TestDelegate( int param1, string param2 );
-
-        public delegate T TestDelegate<T>( int param1, string param2 );
-
-        public delegate int TestDelegate2<T1, T2>( int param1, SimpleGeneric<T1, T2> param2 )
-            where T1 : struct
-            where T2 : struct;
+        bool UpdateDb( IDocScanner source );
     }
 }

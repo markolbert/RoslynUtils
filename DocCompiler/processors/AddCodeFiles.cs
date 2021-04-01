@@ -18,21 +18,24 @@
 #endregion
 
 using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using J4JSoftware.Logging;
 
 namespace J4JSoftware.DocCompiler
 {
-    public interface IScannedFile
+    [TopologicalPredecessor(typeof(AddAssemblies))]
+    public class AddCodeFiles : EntityProcessor<IScannedFile>
     {
-        IProjectInfo BelongsTo { get; }
-        string SourceFilePath { get; }
-        SyntaxNode RootNode { get; }
-        List<UsingStatementSyntax> Usings { get; }
-        List<NamespaceDeclarationSyntax> Namespaces { get; }
-        List<ClassDeclarationSyntax> Classes { get; }
-        List<InterfaceDeclarationSyntax> Interfaces { get; }
-        List<StructDeclarationSyntax> Structs { get; }
-        List<RecordDeclarationSyntax> Records { get; }
+        public AddCodeFiles( 
+            IDataLayer dataLayer, 
+            IJ4JLogger? logger ) 
+            : base( dataLayer, logger )
+        {
+        }
+
+        protected override IEnumerable<IScannedFile> GetNodesToProcess( IDocScanner source ) 
+            => source.ScannedFiles;
+
+        protected override bool ProcessEntity( IScannedFile srcEntity ) =>
+            DataLayer.UpdateCodeFile( srcEntity );
     }
 }

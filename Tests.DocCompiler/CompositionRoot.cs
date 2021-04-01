@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Autofac;
 using J4JSoftware.DependencyInjection;
 using J4JSoftware.DocCompiler;
@@ -101,6 +102,13 @@ namespace Tests.DocCompiler
                     return retVal;
                 } )
                 .AsSelf();
+
+            builder.RegisterAssemblyTypes( typeof(DocScanner).Assembly )
+                .Where( t => typeof(IEntityProcessor).IsAssignableFrom( t )
+                             && !t.IsAbstract
+                             && t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
+                             || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() )
+                .AsImplementedInterfaces();
         }
     }
 }

@@ -25,6 +25,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj" />
 		<ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
+		<ProjectReference Include="..\..\ProgrammingUtilities\TopologicalSort\TopologicalSort.csproj" />
 		<ProjectReference Include="..\DocCompilerCommon\DocCompilerCommon.csproj" />
 		<ProjectReference Include="..\DocCompilerDb\DocCompilerDb.csproj" />
 	</ItemGroup>
