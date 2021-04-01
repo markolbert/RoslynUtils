@@ -26,7 +26,8 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
-    [TopologicalRoot()]
+    [TopologicalPredecessor(typeof(AddAssemblies))]
+    [TopologicalPredecessor(typeof(AddCodeFiles))]
     public class AddNamespaces : EntityProcessor<SyntaxNode>
     {
         public AddNamespaces( 
@@ -39,7 +40,7 @@ namespace J4JSoftware.DocCompiler
         protected override IEnumerable<SyntaxNode> GetNodesToProcess( IDocScanner source ) =>
             source.ScannedFiles.SelectMany( x => x.RootNode
                 .DescendantNodes()
-                .Where( n => CSharpExtensions.IsKind( (SyntaxNode?) n, SyntaxKind.NamespaceDeclaration ) )
+                .Where( n => ((SyntaxNode?) n).IsKind( SyntaxKind.NamespaceDeclaration ) )
             );
 
         protected override bool ProcessEntity( SyntaxNode srcEntity ) =>
