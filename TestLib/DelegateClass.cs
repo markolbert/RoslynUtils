@@ -22,6 +22,10 @@ using System.Runtime.CompilerServices;
 
 namespace J4JSoftware.Roslyn.Tests
 {
+    namespace MyNamespace
+    {
+        
+    }
     public class DelegateClass
     {
         public delegate void TestDelegate( int param1, string param2 );

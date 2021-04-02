@@ -65,14 +65,8 @@ namespace J4JSoftware.DocCompiler
             var qualifiedName = node.ChildNodes()
                 .FirstOrDefault(x => x.Kind() == SyntaxKind.QualifiedName);
 
-            if (qualifiedName == null)
-            {
-                Logger?.Error("Supplied NamespaceDeclaration node has no QualifiedName");
-                return false;
-            }
-
-            var identifierNodes = qualifiedName.DescendantNodes()
-                .Where(x => x.Kind() == SyntaxKind.IdentifierName);
+            var identifierNodes = (qualifiedName ?? node).DescendantNodes()
+                    .Where( x => x.Kind() == SyntaxKind.IdentifierName );
 
             result = string.Join(".", identifierNodes);
 
