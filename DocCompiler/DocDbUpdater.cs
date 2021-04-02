@@ -22,6 +22,9 @@ namespace J4JSoftware.DocCompiler
             var topoSort = new Nodes<IEntityProcessor>();
             var tempProcessors = processors.ToList();
 
+            if( tempProcessors.Count == 0 )
+                throw new ArgumentException( "No IEntityProcessors are defined" );
+
             foreach( var procInfo in tempProcessors
                 .Select( p => new
                 {

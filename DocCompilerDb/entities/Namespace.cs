@@ -33,6 +33,7 @@ namespace J4JSoftware.DocCompiler
 
         public int ID { get; set; }
         public string Name { get; set; }
+        public string FullyQualifiedName { get; set; }
         public bool Deprecated { get; set; }
         public ICollection<Assembly> Assemblies { get; set; }
         public ICollection<NamedType> NamedTypes { get; set; }
@@ -73,7 +74,7 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<Namespace> builder )
         {
-            builder.HasIndex( x => x.Name )
+            builder.HasIndex( x => x.FullyQualifiedName )
                 .IsUnique();
 
             builder.HasMany( x => x.Assemblies )

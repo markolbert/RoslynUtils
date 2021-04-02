@@ -78,10 +78,6 @@ namespace Tests.DocCompiler
                 .As<IDocScanner>()
                 .SingleInstance();
 
-            builder.RegisterType<DataLayer>()
-                .As<IDataLayer>()
-                .SingleInstance();
-
             builder.RegisterType<DocDbUpdater>()
                 .As<IDocDbUpdater>()
                 .SingleInstance();
@@ -103,7 +99,7 @@ namespace Tests.DocCompiler
                 } )
                 .AsSelf();
 
-            builder.RegisterAssemblyTypes( typeof(DocScanner).Assembly )
+            builder.RegisterAssemblyTypes( typeof(DocDbContext).Assembly )
                 .Where( t => typeof(IEntityProcessor).IsAssignableFrom( t )
                              && !t.IsAbstract
                              && t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()

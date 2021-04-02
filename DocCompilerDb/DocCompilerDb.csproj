@@ -14,6 +14,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="datalayer\base\DataLayer.cs" />
+	  <Compile Remove="datalayer\base\IDataLayer.cs" />
+	  <Compile Remove="datalayer\DataLayer.UpdateAssembly.cs" />
+	  <Compile Remove="datalayer\DataLayer.UpdateCodeFile.cs" />
+	  <Compile Remove="datalayer\DataLayer.UpdateNamespace.cs" />
 	  <Compile Remove="entities\named-type\Class.cs" />
 	  <Compile Remove="entities\named-type\FieldContainingType.cs" />
 	  <Compile Remove="entities\named-type\Interface.cs" />
