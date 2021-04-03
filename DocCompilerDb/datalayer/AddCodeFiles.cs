@@ -27,16 +27,11 @@ namespace J4JSoftware.DocCompiler
     public class AddCodeFiles : EntityProcessor<IScannedFile>
     {
         public AddCodeFiles( 
+            IFullyQualifiedNamers fqNamers,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( dbContext, logger )
+            : base( fqNamers, dbContext, logger )
         {
-        }
-
-        public override bool GetFullyQualifiedName( IScannedFile scannedFile, out string? result )
-        {
-            result = scannedFile.SourceFilePath;
-            return true;
         }
 
         protected override IEnumerable<IScannedFile> GetNodesToProcess( IDocScanner source ) 

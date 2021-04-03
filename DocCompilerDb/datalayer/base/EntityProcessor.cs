@@ -17,22 +17,26 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Serilog;
 
 namespace J4JSoftware.DocCompiler
 {
     public abstract class EntityProcessor<TEntity> : IEntityProcessor
     {
         protected EntityProcessor(
+            IFullyQualifiedNamers fqNamers,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
+            Namers = fqNamers;
             DbContext = dbContext;
 
             Logger = logger;
@@ -41,6 +45,7 @@ namespace J4JSoftware.DocCompiler
 
         protected IJ4JLogger? Logger { get; }
         protected DocDbContext DbContext { get; }
+        protected IFullyQualifiedNamers Namers { get; }
 
         public virtual bool UpdateDb( IDocScanner source )
         {
@@ -55,25 +60,6 @@ namespace J4JSoftware.DocCompiler
 
         protected abstract IEnumerable<TEntity> GetNodesToProcess( IDocScanner source );
         protected abstract bool ProcessEntity( TEntity srcEntity );
-
-        protected bool GetName( SyntaxNode node, out string? result )
-        {
-            result = null;
-
-            // grab all the IdentifierToken child tokens as they contain the dotted
-            // elements of the namespace's name
-            var qualifiedName = node.ChildNodes()
-                .FirstOrDefault(x => x.Kind() == SyntaxKind.QualifiedName);
-
-            var identifierNodes = (qualifiedName ?? node).DescendantNodes()
-                    .Where( x => x.Kind() == SyntaxKind.IdentifierName );
-
-            result = string.Join(".", identifierNodes);
-
-            return true;
-        }
-
-        public abstract bool GetFullyQualifiedName( TEntity srcEntity, out string? result );
 
         public bool Equals( IEntityProcessor? other )
         {

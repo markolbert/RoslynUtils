@@ -24,10 +24,22 @@ namespace J4JSoftware.Roslyn.Tests
 {
     namespace MyNamespace
     {
-        
+        public record MyNamespaceRecord( string Name, int Index );
     }
+
     public class DelegateClass
     {
+        public record NestedRecord( string Name, int Index )
+        {
+            public class GrandchildClass
+            {
+            }
+
+            public struct GrandchildStruct
+            {
+            }
+        }
+
         public delegate void TestDelegate( int param1, string param2 );
 
         public delegate T TestDelegate<T>( int param1, string param2 );

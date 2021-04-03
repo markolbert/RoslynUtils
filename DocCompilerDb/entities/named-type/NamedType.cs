@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
@@ -35,10 +36,16 @@ namespace J4JSoftware.DocCompiler
 
         public int ID { get; set; }
         public string Name { get; set; }
+        public string FullyQualifiedName { get; set; }
 
         public bool Deprecated { get; set; }
         public NamedTypeKind Kind { get; set; }
         public Documentation Documentation { get; set; }
+
+        public Accessibility Accessibility { get; set; }
+        public bool IsStatic { get; set; }
+        public bool IsSealed { get; set; }
+        public bool IsAbstract { get; set; }
 
         public string? ExternalUrl { get; set; }
         public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );
@@ -121,6 +128,13 @@ namespace J4JSoftware.DocCompiler
             builder.Property("ContainerType")
                 .HasField( "_containerType" )
                 .HasConversion<string>();
+
+            builder.HasIndex( x => x.FullyQualifiedName )
+                .IsUnique();
+
+            builder.Property( x => x.Accessibility )
+                .HasConversion<string>()
+                .HasDefaultValue( Accessibility.Private );
         }
     }
 }

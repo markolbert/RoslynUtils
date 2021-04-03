@@ -28,16 +28,11 @@ namespace J4JSoftware.DocCompiler
     public class AddAssemblies : EntityProcessor<IProjectInfo >
     {
         public AddAssemblies( 
+            IFullyQualifiedNamers fqNamers,
             DocDbContext dbContext,
             IJ4JLogger? logger ) 
-            : base(dbContext, logger )
+            : base(fqNamers, dbContext, logger )
         {
-        }
-
-        public override bool GetFullyQualifiedName( IProjectInfo projInfo, out string? result )
-        {
-            result = projInfo.AssemblyName;
-            return true;
         }
 
         protected override IEnumerable<IProjectInfo> GetNodesToProcess( IDocScanner source ) => source.Projects;
