@@ -28,7 +28,7 @@ namespace J4JSoftware.DocCompiler
     public class AddAssemblies : EntityProcessor<IProjectInfo >
     {
         public AddAssemblies( 
-            IFullyQualifiedNamers fqNamers,
+            IFullyQualifiedNames fqNamers,
             DocDbContext dbContext,
             IJ4JLogger? logger ) 
             : base(fqNamers, dbContext, logger )

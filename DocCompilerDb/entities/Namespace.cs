@@ -17,7 +17,9 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -26,48 +28,19 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(NamespaceConfigurator))]
     public class Namespace : IDeprecation
     {
-        private int _containerID;
-        private ContainerType _containerType = ContainerType.Undefined;
-        private CodeFile? _codeFileContainer;
-        private Namespace? _nsContainer;
-
         public int ID { get; set; }
         public string Name { get; set; }
         public string FullyQualifiedName { get; set; }
         public bool Deprecated { get; set; }
         public ICollection<Assembly> Assemblies { get; set; }
-        public ICollection<NamedType> NamedTypes { get; set; }
+        public ICollection<DocumentedType> DocumentedTypes { get; set; }
 
         public Documentation Documentation { get; set; }
 
-        public string? ExternalUrl { get; set; }
-        public bool IsExternal => !string.IsNullOrEmpty( ExternalUrl );
+        public ICollection<Namespace> ChildNamespaces { get; set; }
 
-        public int ContainerID => _containerID;
-        public ContainerType ContainerType => _containerType;
-
-        public object? GetContainer() => _containerType switch
-        {
-            ContainerType.Namespace => _nsContainer,
-            ContainerType.CodeFile => _codeFileContainer,
-            _ => null
-        };
-
-        public void SetContainer( CodeFile codeFile )
-        {
-            _nsContainer = null;
-            _containerID = codeFile.ID;
-            _containerType = ContainerType.CodeFile;
-            _codeFileContainer = codeFile;
-        }
-
-        public void SetContainer( Namespace ns )
-        {
-            _codeFileContainer = null;
-            _containerID = ns.ID;
-            _containerType = ContainerType.Namespace;
-            _nsContainer = ns;
-        }
+        public int? ContainingNamespaceID { get; set; }
+        public Namespace? ContainingNamespace { get; set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>
@@ -80,12 +53,10 @@ namespace J4JSoftware.DocCompiler
             builder.HasMany( x => x.Assemblies )
                 .WithMany( x => x.Namespaces );
 
-            builder.Property("ContainerID")
-                .HasField( "_containerID" );
-
-            builder.Property("ContainerType")
-                .HasField( "_containerType" )
-                .HasConversion<string>();
+            builder.HasOne(x => x.ContainingNamespace)
+                .WithMany(x => x.ChildNamespaces)
+                .HasForeignKey(x => x.ContainingNamespaceID)
+                .HasPrincipalKey(x => x.ID);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
@@ -6,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class NamedTypeFQN : SyntaxNodeFQN
+    public class NamedTypeFQN : FullyQualifiedName
     {
         private readonly NamespaceFQN _nsFQN;
         private readonly TypeParameterListFQN _tplFQN;
@@ -28,15 +29,56 @@ namespace J4JSoftware.DocCompiler
 
         public override bool GetFullyQualifiedName( SyntaxNode node, out string? result )
         {
-            result = null;
-
             if( !base.GetFullyQualifiedName( node, out result ) )
                 return false;
 
-            if (!GetName(node, out var startName))
+            if( !GetName( node, out var startName ) )
                 return false;
 
-            var sb = new StringBuilder(startName!);
+            var sb = new StringBuilder( startName );
+
+            // move up the parent container tree until we find a namespace
+            // or have topped out
+            var containerNode = node.Parent;
+
+            while( true )
+            {
+                if( containerNode == null || containerNode.IsKind( SyntaxKind.NamespaceDeclaration ) )
+                    break;
+
+                containerNode = containerNode.Parent;
+            }
+
+            if( containerNode == null )
+            {
+                result = sb.ToString();
+                return true;
+            }
+
+            // if we hit a NamespaceDeclaration follow it up
+            if( !_nsFQN.GetFullyQualifiedName( containerNode, out var nsName ) )
+            {
+                Logger?.Error<string>( "Could not retrieve fully-qualified Namespace name for named type {0}",
+                    sb.ToString() );
+                return false;
+            }
+
+            sb.Insert( 0, $"{nsName}." );
+
+            result = sb.ToString();
+
+            return true;
+        }
+
+        public override bool GetName( SyntaxNode node, out string? result )
+        {
+            if( !base.GetName( node, out result ) )
+                return false;
+
+            if (!GetIdentifierTokens(node, out var idTokens))
+                return false;
+
+            var sb = new StringBuilder( idTokens.First().ToString() );
 
             var curNode = node;
 
@@ -49,25 +91,13 @@ namespace J4JSoftware.DocCompiler
                 sb.Insert( 0, $"{curName}." );
             }
 
-            // if we hit a NamespaceDeclaration follow it up
-            if( curNode.IsKind( SyntaxKind.NamespaceDeclaration ) )
-            {
-                if( !_nsFQN.GetFullyQualifiedName( curNode, out var nsName ) )
-                {
-                    Logger?.Error<string>( "Could not retrieve fully-qualified Namespace name for named type {0}",
-                        sb.ToString() );
-                    return false;
-                }
-
-                sb.Insert( 0, $"{nsName}." );
-            }
-
             // if we have a type parameter list append its textual representation
-            var tplNode = node.ChildNodes().FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
+            var tplNode = node.ChildNodes()
+                .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
             
             if( tplNode != null )
             {
-                if( !GetName( tplNode, out var tplText ) )
+                if( !_tplFQN.GetName( tplNode, out var tplText ) )
                 {
                     Logger?.Error<string>( "Could not get TypeParameterList text for {0}", sb.ToString() );
                     return false;
@@ -79,6 +109,16 @@ namespace J4JSoftware.DocCompiler
             result = sb.ToString();
 
             return !string.IsNullOrEmpty(result);
+        }
+
+        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result )
+        {
+            if( !base.GetIdentifierTokens( node, out result ) )
+                return false;
+
+            result = node.ChildTokens().Where( x => x.IsKind( SyntaxKind.IdentifierToken ) );
+
+            return true;
         }
     }
 }

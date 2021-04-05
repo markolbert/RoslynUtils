@@ -17,13 +17,10 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace J4JSoftware.DocCompiler
@@ -31,7 +28,7 @@ namespace J4JSoftware.DocCompiler
     public abstract class EntityProcessor<TEntity> : IEntityProcessor
     {
         protected EntityProcessor(
-            IFullyQualifiedNamers fqNamers,
+            IFullyQualifiedNames fqNamers,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
@@ -45,7 +42,7 @@ namespace J4JSoftware.DocCompiler
 
         protected IJ4JLogger? Logger { get; }
         protected DocDbContext DbContext { get; }
-        protected IFullyQualifiedNamers Namers { get; }
+        protected IFullyQualifiedNames Namers { get; }
 
         public virtual bool UpdateDb( IDocScanner source )
         {

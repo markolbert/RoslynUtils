@@ -28,38 +28,32 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(DocumentationConfigurator))]
     public class Documentation
     {
-        private int _assemblyID;
-        private int _eventID;
-        private int _fieldID;
-        private int _methodID;
-        private int _methodArgID;
-        private int _namespaceID;
-        private int _namedTypeID;
-        private int _propertyID;
-        private int _propertyArgID;
+        private int? _assemblyID;
+        private int? _eventID;
+        private int? _fieldID;
+        private int? _methodID;
+        private int? _methodArgID;
+        private int? _namespaceID;
+        private int? _documentedTypeID;
+        private int? _propertyID;
+        private int? _propertyArgID;
+        private DocumentationTarget _docTarget;
 
         public int ID { get; set; }
         public string? AssetRootPath { get;set; }
         public ICollection<DocumentationEntry> Entries { get; set; }
 
-        [DocumentedType("Assembly", "_assemblyID")]
-        public int AssemblyID => _assemblyID;
-        [DocumentedType("Event", "_eventID")]
-        public int EventID => _eventID;
-        [DocumentedType("Field", "_fieldID")]
-        public int FieldID => _fieldID;
-        [DocumentedType("Method", "_methodID")]
-        public int MethodID => _methodID;
-        [DocumentedType("MethodArgument", "_methodArgID")]
-        public int MethodArgumentID => _methodArgID;
-        [DocumentedType("Namespace", "_namespaceID")]
-        public int NamespaceID => _namespaceID;
-        [DocumentedType("NamedType", "_namedTypeID")]
-        public int NamedTypeID => _namedTypeID;
-        [DocumentedType("Property", "_propertyID")]
-        public int PropertyID => _propertyID;
-        [DocumentedType("PropertyArgument", "_propertyArgID")]
-        public int PropertyArgumentID => _propertyArgID;
+        public DocumentationTarget DocumentationTarget => _docTarget;
+
+        public int? AssemblyID => _assemblyID;
+        public int? EventID => _eventID;
+        public int? FieldID => _fieldID;
+        public int? MethodID => _methodID;
+        public int? MethodArgumentID => _methodArgID;
+        public int? NamespaceID => _namespaceID;
+        public int? DocumentedTypeID => _documentedTypeID;
+        public int? PropertyID => _propertyID;
+        public int? PropertyArgumentID => _propertyArgID;
 
         public Assembly? Assembly { get; set; }
         public Event? Event { get; set; }
@@ -67,64 +61,77 @@ namespace J4JSoftware.DocCompiler
         public Method? Method { get;set; }
         public MethodArgument? MethodArgument { get; set; }
         public Namespace? Namespace { get; set; }
-        public NamedType? NamedType { get; set; }
+        public DocumentedType? DocumentedType { get; set; }
         public Property? Property { get; set; }
         public PropertyArgument? PropertyArgument { get; set; }
 
-        public void AssociateWith( object entity )
+        private void ClearAssociatedIDs()
         {
-            _assemblyID = 0;
-            _eventID = 0;
-            _fieldID = 0;
-            _methodID = 0;
-            _methodArgID = 0;
-            _namedTypeID = 0;
-            _namespaceID = 0;
-            _propertyID = 0;
-            _propertyArgID = 0;
+            _assemblyID = null;
+            _eventID = null;
+            _fieldID = null;
+            _methodID = null;
+            _methodArgID = null;
+            _documentedTypeID = null;
+            _namespaceID = null;
+            _propertyID = null;
+            _propertyArgID = null;
+        }
 
-            switch( entity )
-            {
-                case Assembly anAssembly:
-                    _assemblyID = anAssembly.ID;
-                    break;
+        public void AssociateWith( Assembly target )
+        {
+            ClearAssociatedIDs();
+            _assemblyID = target.ID;
+            _docTarget = DocumentationTarget.Assembly;
+        }
 
-                case Event anEvent:
-                    _eventID = anEvent.ID;
-                    break;
+        public void AssociateWith(DocumentedType target)
+        {
+            ClearAssociatedIDs();
+            _documentedTypeID = target.ID;
+            _docTarget = DocumentationTarget.DocumentedType;
+        }
 
-                case Field aField:
-                    _fieldID = aField.ID;
-                    break;
+        public void AssociateWith(Event target)
+        {
+            ClearAssociatedIDs();
+            _eventID = target.ID;
+            _docTarget = DocumentationTarget.Event;
+        }
 
-                case Method aMethod:
-                    _methodID = aMethod.ID;
-                    break;
+        public void AssociateWith(Field target)
+        {
+            ClearAssociatedIDs();
+            _fieldID = target.ID;
+            _docTarget = DocumentationTarget.Field;
+        }
 
-                case MethodArgument aMethodArg:
-                    _methodArgID = aMethodArg.ID;
-                    break;
+        public void AssociateWith(Method target)
+        {
+            ClearAssociatedIDs();
+            _methodID = target.ID;
+            _docTarget = DocumentationTarget.Method;
+        }
 
-                case Namespace aNamespace:
-                    _namespaceID = aNamespace.ID;
-                    break;
+        public void AssociateWith(MethodArgument target)
+        {
+            ClearAssociatedIDs();
+            _methodArgID = target.ID;
+            _docTarget = DocumentationTarget.MethodArgument;
+        }
 
-                case NamedType aNamedType:
-                    _namedTypeID = aNamedType.ID;
-                    break;
+        public void AssociateWith(Property target)
+        {
+            ClearAssociatedIDs();
+            _propertyID = target.ID;
+            _docTarget = DocumentationTarget.Property;
+        }
 
-                case Property aProperty:
-                    _propertyID = aProperty.ID;
-                    break;
-
-                case PropertyArgument aPropertyArg:
-                    _propertyArgID = aPropertyArg.ID;
-                    break;
-
-                default:
-                    throw new ArgumentException(
-                        $"Trying to associate an unsupported entity type '{entity.GetType()}'with a Documentation instance" );
-            }
+        public void AssociateWith(PropertyArgument target)
+        {
+            ClearAssociatedIDs();
+            _propertyArgID = target.ID;
+            _docTarget = DocumentationTarget.PropertyArgument;
         }
     }
 
@@ -132,24 +139,81 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<Documentation> builder )
         {
-            var documentedProps = typeof(Documentation).GetProperties()
-                .Where( p => p.GetCustomAttributes( typeof(DocumentedTypeAttribute), false ).Any() )
-                .Select( p => new
-                {
-                    PropertyName = p.Name,
-                    AttributeInfo = (DocumentedTypeAttribute) p.GetCustomAttributes( typeof(DocumentedTypeAttribute), false ).First()
-                } );
+            builder.Property( x => x.DocumentationTarget )
+                .HasField( "_docTarget" );
 
-            foreach( var docPropInfo in documentedProps )
-            {
-                builder.Property( docPropInfo.PropertyName )
-                    .HasField( docPropInfo.AttributeInfo.BackingField );
+            builder.Property( x => x.AssemblyID )
+                .HasField( "_assemblyID" );
 
-                builder.HasOne( docPropInfo.AttributeInfo.EntityType )
-                    .WithOne( "Documentation" )
-                    .HasForeignKey( "Documentation", docPropInfo.PropertyName )
-                    .HasPrincipalKey( docPropInfo.AttributeInfo.EntityType, "ID" );
-            }
+            builder.HasOne( x => x.Assembly )
+                .WithOne( x => x.Documentation )
+                .HasForeignKey<Documentation>( x => x.AssemblyID )
+                .HasPrincipalKey<Assembly>( x => x.ID );
+
+            builder.Property(x => x.NamespaceID)
+                .HasField("_namespaceID");
+
+            builder.HasOne(x => x.Namespace)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.NamespaceID)
+                .HasPrincipalKey<Namespace>(x => x.ID);
+
+            builder.Property(x => x.DocumentedTypeID)
+                .HasField("_documentedTypeID");
+
+            builder.HasOne(x => x.DocumentedType)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.DocumentedTypeID)
+                .HasPrincipalKey<DocumentedType>(x => x.ID);
+
+            builder.Property(x => x.EventID)
+                .HasField("_eventID");
+
+            builder.HasOne(x => x.Event)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.EventID)
+                .HasPrincipalKey<Event>(x => x.ID);
+
+            builder.Property(x => x.FieldID)
+                .HasField("_fieldID");
+
+            builder.HasOne(x => x.Field)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.FieldID)
+                .HasPrincipalKey<Field>(x => x.ID);
+
+            builder.Property(x => x.MethodArgumentID)
+                .HasField("_methodArgID");
+
+            builder.HasOne(x => x.MethodArgument)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.MethodArgumentID)
+                .HasPrincipalKey<MethodArgument>(x => x.ID);
+
+            builder.Property(x => x.MethodID)
+                .HasField("_methodID");
+
+            builder.HasOne(x => x.Method)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.MethodID)
+                .HasPrincipalKey<Method>(x => x.ID);
+
+            builder.Property(x => x.PropertyArgumentID)
+                .HasField("_propertyArgID");
+
+            builder.HasOne(x => x.PropertyArgument)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.PropertyArgumentID)
+                .HasPrincipalKey<PropertyArgument>(x => x.ID);
+
+            builder.Property(x => x.PropertyID)
+                .HasField("_propertyID");
+
+            builder.HasOne(x => x.Property)
+                .WithOne(x => x.Documentation)
+                .HasForeignKey<Documentation>(x => x.PropertyID)
+                .HasPrincipalKey<Property>(x => x.ID);
+
         }
     }
 }

@@ -10,7 +10,7 @@ namespace J4JSoftware.DocCompiler
         public string Name { get; set; }
         public bool Deprecated { get; set; }
         public int DeclaredInID { get; set; }
-        public NamedType DeclaredIn { get; set; }
+        public DocumentedType DeclaredIn { get; set; }
         public int FieldTypeID { get; set; }
         public NamedType FieldType { get; set; }
         public Documentation Documentation { get; set; }

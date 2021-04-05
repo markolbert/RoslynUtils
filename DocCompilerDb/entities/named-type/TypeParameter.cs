@@ -29,7 +29,7 @@ namespace J4JSoftware.DocCompiler
         public int ID { get; set; }
         public bool Deprecated { get; set; }
         public int DefinedInID { get; set; }
-        public NamedType DefinedIn { get; set; }
+        public DocumentedType DefinedIn { get; set; }
 
         public int Index { get; set; }
         public string Name { get; set; }

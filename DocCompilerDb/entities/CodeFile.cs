@@ -33,7 +33,6 @@ namespace J4JSoftware.DocCompiler
         public string FullPath { get; set; }
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
-        public ICollection<NamedType> NamedTypes { get; set; }
     }
 
     internal class CodeFileConfigurator : EntityConfigurator<CodeFile>

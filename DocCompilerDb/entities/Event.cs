@@ -13,7 +13,7 @@ namespace J4JSoftware.DocCompiler
         public int EventTypeID { get; set; }
         public NamedType EventType { get; set; }
 
-        public ICollection<NamedType> DeclaredIn { get; set; }
+        public ICollection<DocumentedType> DeclaredIn { get; set; }
         public Documentation Documentation { get; set; }
     }
 

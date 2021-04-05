@@ -11,20 +11,9 @@ namespace J4JSoftware.DocCompiler
 {
     public interface IFullyQualifiedName
     {
-        Type SupportedType { get; }
-        bool GetName( object source, out string? result );
-        bool GetFullyQualifiedName( object source, out string? result );
-    }
-
-    public interface IFullyQualifiedName<in TSource> : IFullyQualifiedName
-    {
-        bool GetName( TSource source, out string? result );
-        bool GetFullyQualifiedName( TSource source, out string? result );
-    }
-
-    public interface IFullyQualifiedNameSyntaxNode : IFullyQualifiedName<SyntaxNode>
-    {
         ReadOnlyCollection<SyntaxKind> SupportedKinds { get; }
-        bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxNode>? result );
+        bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result );
+        bool GetName( SyntaxNode node, out string? result );
+        bool GetFullyQualifiedName( SyntaxNode node, out string? result );
     }
 }

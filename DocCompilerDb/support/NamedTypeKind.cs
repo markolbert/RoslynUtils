@@ -24,6 +24,7 @@ namespace J4JSoftware.DocCompiler
         Class,
         Interface,
         Record,
-        Struct
+        Struct,
+        Unsupported
     }
 }

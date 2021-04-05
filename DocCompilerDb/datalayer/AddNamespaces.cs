@@ -23,6 +23,7 @@ using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
@@ -30,10 +31,10 @@ namespace J4JSoftware.DocCompiler
 {
     [TopologicalPredecessor(typeof(AddAssemblies))]
     [TopologicalPredecessor(typeof(AddCodeFiles))]
-    public class AddNamespaces : EntityProcessor<NodeContext>
+    public class AddNamespaces : SyntaxNodeProcessor
     {
         public AddNamespaces( 
-            IFullyQualifiedNamers fqNamers,
+            IFullyQualifiedNames fqNamers,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
@@ -54,13 +55,28 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !Namers.GetFullyQualifiedName( nodeContext, out var fqName ) )
+            if( !Namers.GetFullyQualifiedName( nodeContext.Node, out var fqName ) )
                 return false;
 
             if (!Namers.GetName(nodeContext.Node, out var nsName))
                 return false;
 
+            var assemblyDb = DbContext.Assemblies
+                .FirstOrDefault( x => x.AssemblyName == nodeContext.ScannedFile.BelongsTo.AssemblyName );
+
+            if( assemblyDb == null )
+            {
+                Logger?.Error<string>( "Could not find Assembly '{0}' in database",
+                    nodeContext.ScannedFile.BelongsTo.AssemblyName );
+
+                return false;
+            }
+
+            if (!GetParentNamespace(nodeContext, out var nsParentDb))
+                return false;
+
             var nsDb = DbContext.Namespaces
+                .Include(x=>x.Assemblies)
                 .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
             if( nsDb == null )
@@ -68,81 +84,53 @@ namespace J4JSoftware.DocCompiler
                 nsDb = new Namespace
                 {
                     FullyQualifiedName = fqName!,
-                    Name = nsName!
+                    Name = nsName!,
+                    Assemblies = new List<Assembly> { assemblyDb },
+                    ContainingNamespaceID = nsParentDb?.ID
                 };
-
-                if( !SetContainer( nodeContext, nsDb ) )
-                    return false;
 
                 DbContext.Namespaces.Add( nsDb );
             }
-            else nsDb.Deprecated = false;
+            else
+            {
+                nsDb.Deprecated = false;
+
+                if( nsDb.Assemblies.All( x => x.ID != assemblyDb.ID ) )
+                    nsDb.Assemblies.Add( assemblyDb );
+
+                nsDb.ContainingNamespace = nsParentDb;
+            }
 
             DbContext.SaveChanges();
 
             return true;
         }
 
-        private bool SetContainer( NodeContext nodeContext, Namespace nsDb )
+        private bool GetParentNamespace( NodeContext nodeContext, out Namespace? result )
         {
-            if (nodeContext.Node.Parent == null)
-            {
-                Logger?.Error("Supplied NamespaceDeclaration node has no parent");
-                return false;
-            }
+            result = null;
+
+            if( nodeContext.Node.Parent == null )
+                return true;
 
             var parentKind= nodeContext.Node.Parent.Kind();
 
-            return parentKind switch
-            {
-                SyntaxKind.NamespaceDeclaration => SetNamespaceContainer( nodeContext, nsDb ),
-                SyntaxKind.CompilationUnit => SetCodeFileContainer( nodeContext, nsDb ),
-                _ => unsupported()
-            };
+            if (parentKind != SyntaxKind.NamespaceDeclaration)
+                return true;
 
-            bool unsupported()
+            if (!Namers.GetFullyQualifiedName(nodeContext.Node.Parent!, out var parentFQName))
             {
-                Logger?.Error( "Unsupported NamespaceDeclaration node parent kind '{0}'", parentKind );
-                return false;
-            }
-        }
-
-        private bool SetCodeFileContainer( NodeContext nodeContext, Namespace nsDb )
-        {
-            var cfParent = DbContext.CodeFiles
-                .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
-
-            if( cfParent == null )
-            {
-                Logger?.Error<string, string>( "Could not find containing CodeFile {0} for namespace {1}",
-                    nodeContext.ScannedFile.SourceFilePath, nsDb.FullyQualifiedName );
+                Logger?.Error("Could not determine fully-qualified name of NamespaceDeclarationSyntax node's parent");
                 return false;
             }
 
-            nsDb.SetContainer( cfParent );
+            result = DbContext.Namespaces.FirstOrDefault(x => x.FullyQualifiedName == parentFQName!);
 
-            return true;
-        }
-
-        private bool SetNamespaceContainer( NodeContext nodeContext, Namespace nsDb )
-        {
-            if( !Namers.GetFullyQualifiedName( new NodeContext( nodeContext.Node.Parent!, nodeContext.ScannedFile ),
-                out var parentFQName ) )
+            if (result == null)
             {
-                Logger?.Error( "Could not determine fully-qualified name of NamespaceDeclarationSyntax node's parent" );
+                Logger?.Error<string>("Could not find containing namespace {0}", parentFQName!);
                 return false;
             }
-
-            var nsParent = DbContext.Namespaces.FirstOrDefault( x => x.FullyQualifiedName == parentFQName! );
-
-            if( nsParent == null )
-            {
-                Logger?.Error<string, string>( "Could not find containing namespace {0} for namespace {1}", parentFQName!,
-                    nsDb.FullyQualifiedName );
-                return false;
-            }
-
-            nsDb.SetContainer( nsParent );
 
             return true;
         }

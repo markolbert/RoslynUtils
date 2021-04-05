@@ -18,19 +18,23 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
-    public class DocumentedTypeAttribute : Attribute
+    [EntityConfiguration(typeof(ExternalTypeConfigurator))]
+    public class ExternalType : NamedType
     {
-        public DocumentedTypeAttribute( string entityType, string backingField )
-        {
-            EntityType = entityType;
-            BackingField = backingField;
-        }
+        public string? ExternalUrl { get; set; }
+    }
 
-        public string EntityType { get; }
-        public string BackingField { get; }
+    internal class ExternalTypeConfigurator : EntityConfigurator<ExternalType>
+    {
+        protected override void Configure( EntityTypeBuilder<ExternalType> builder )
+        {
+        }
     }
 }

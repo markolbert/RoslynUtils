@@ -26,7 +26,7 @@ namespace J4JSoftware.DocCompiler
     public class TypeAncestor
     {
         public int ChildID { get; set; }
-        public NamedType ChildType { get; set; }
+        public DocumentedType ChildType { get; set; }
         public int AncestorID { get; set; }
         public NamedType AncestorType { get; set; }
     }

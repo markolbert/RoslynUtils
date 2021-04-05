@@ -1,47 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using J4JSoftware.Logging;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
-    public abstract class FullyQualifiedName<TSource> : IFullyQualifiedName<TSource>
+    public abstract class FullyQualifiedName : IFullyQualifiedName
     {
+        private readonly List<SyntaxKind> _supportedKinds;
+        
         protected FullyQualifiedName(
-            IJ4JLogger? logger
+            IJ4JLogger? logger,
+            params SyntaxKind[] syntaxKinds
         )
         {
             Logger = logger;
             Logger?.SetLoggedType( GetType() );
+
+            _supportedKinds = syntaxKinds.ToList();
+
+            if (_supportedKinds.Count == 0)
+                Logger?.Error("No supported SyntaxKinds defined");
         }
 
         protected IJ4JLogger? Logger { get; }
 
-        public Type SupportedType => typeof( TSource );
+        public ReadOnlyCollection<SyntaxKind> SupportedKinds => _supportedKinds.AsReadOnly();
 
-        public abstract bool GetName( TSource source, out string? result );
-        public abstract bool GetFullyQualifiedName( TSource source, out string? result );
-
-        bool IFullyQualifiedName.GetName( object source, out string? result )
+        public virtual bool GetName( SyntaxNode node, out string? result )
         {
             result = null;
 
-            if (source is TSource castSource)
-                return GetName(castSource, out result);
-
-            Logger?.Error("Expected a {0} but got a {1}", typeof(TSource), source.GetType());
-
-            return false;
+            return _supportedKinds.Any( node.IsKind );
         }
 
-        bool IFullyQualifiedName.GetFullyQualifiedName( object source, out string? result )
+        public virtual bool GetFullyQualifiedName( SyntaxNode node, out string? result )
         {
             result = null;
 
-            if( source is TSource castSource )
-                return GetFullyQualifiedName( castSource, out result );
+            return _supportedKinds.Any(node.IsKind);
+        }
 
-            Logger?.Error( "Expected a {0} but got a {1}", typeof( TSource ), source.GetType() );
+        public virtual bool GetIdentifierTokens(SyntaxNode node, out IEnumerable<SyntaxToken> result)
+        {
+            result = Enumerable.Empty<SyntaxToken>();
 
-            return false;
+            return _supportedKinds.Any(node.IsKind);
         }
     }
 }

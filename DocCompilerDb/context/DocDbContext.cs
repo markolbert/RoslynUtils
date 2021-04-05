@@ -37,7 +37,8 @@ namespace J4JSoftware.DocCompiler
         public DbSet<Namespace> Namespaces { get; set; }
         public DbSet<Using> Usings { get; set; }
 
-        public DbSet<NamedType> NamedTypes { get; set; }
+        public DbSet<DocumentedType> DocumentedTypes { get; set; }
+        public DbSet<ExternalType> ExternalTypes { get; set; }
 
         public DbSet<Event> Events { get; set; }
         public DbSet<Field> Fields { get; set; }

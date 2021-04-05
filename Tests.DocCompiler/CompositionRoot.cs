@@ -97,7 +97,8 @@ namespace Tests.DocCompiler
 
                     return retVal;
                 } )
-                .AsSelf();
+                .AsSelf()
+                .SingleInstance();
 
             builder.RegisterAssemblyTypes( typeof(DocDbContext).Assembly )
                 .Where( t => typeof(IEntityProcessor).IsAssignableFrom( t )
@@ -105,6 +106,25 @@ namespace Tests.DocCompiler
                              && t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
                              || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() )
                 .AsImplementedInterfaces();
+
+            builder.RegisterAssemblyTypes( typeof( DocDbContext ).Assembly )
+                .Where( t => typeof( IFullyQualifiedName ).IsAssignableFrom( t )
+                             && !t.IsAbstract
+                             && t.GetConstructors().Any() )
+                .AsImplementedInterfaces()
+                .SingleInstance();
+
+            builder.RegisterType<FullyQualifiedNames>()
+                .As<IFullyQualifiedNames>()
+                .SingleInstance();
+
+            builder.RegisterType<NamespaceFQN>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<TypeParameterListFQN>()
+                .AsSelf()
+                .SingleInstance();
         }
     }
 }

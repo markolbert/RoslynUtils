@@ -18,6 +18,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
@@ -31,7 +32,8 @@ namespace J4JSoftware.DocCompiler
 {
     [TopologicalPredecessor(typeof(AddAssemblies))]
     [TopologicalPredecessor(typeof(AddCodeFiles))]
-    public class AddNamedTypes : EntityProcessor<NodeContext>
+    [TopologicalPredecessor(typeof(AddNamespaces))]
+    public class AddDocumentedTypes : SyntaxNodeProcessor
     {
         public static SyntaxKind[] SupportedKinds = new[]
         {
@@ -41,8 +43,8 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.StructDeclaration
         };
 
-        public AddNamedTypes( 
-            IFullyQualifiedNamers fqNamers,
+        public AddDocumentedTypes( 
+            IFullyQualifiedNames fqNamers,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
@@ -63,36 +65,73 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !Namers.GetFullyQualifiedName( nodeContext, out var fqName ) )
+            if( !Namers.GetFullyQualifiedName( nodeContext.Node, out var fqName ) )
                 return false;
 
             if (!Namers.GetName(nodeContext.Node, out var nsName))
                 return false;
 
-            var ntDb = DbContext.NamedTypes
+            var codeFileDb = DbContext.CodeFiles
+                .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
+
+            if( codeFileDb == null )
+            {
+                Logger?.Error<string>( "Could not find CodeFile reference for '{0}'",
+                    nodeContext.ScannedFile.SourceFilePath );
+
+                return false;
+            }
+
+            var dtDb = DbContext.DocumentedTypes
                 .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
-            if( ntDb == null )
+            if( dtDb == null )
             {
-                ntDb = new NamedType
+                dtDb = new DocumentedType
                 {
                     FullyQualifiedName = fqName!,
-                    Name = nsName!
+                    Name = nsName!,
+                    //CodeFileID = codeFileDb.ID
                 };
 
-                if( !SetContainer( nodeContext, ntDb ) )
+                if( !SetContainer( nodeContext, dtDb ) )
                     return false;
 
-                DbContext.NamedTypes.Add( ntDb );
+                DbContext.DocumentedTypes.Add( dtDb );
             }
-            else ntDb.Deprecated = false;
+            else
+            {
+                dtDb.Deprecated = false;
+                //dtDb.CodeFile = codeFileDb;
+            }
+
+            dtDb.Kind = nodeContext.Node.Kind() switch
+            {
+                SyntaxKind.ClassDeclaration => NamedTypeKind.Class,
+                SyntaxKind.InterfaceDeclaration => NamedTypeKind.Interface,
+                SyntaxKind.RecordDeclaration => NamedTypeKind.Record,
+                SyntaxKind.StructDeclaration => NamedTypeKind.Struct,
+                _ => undefined_kind()
+            };
+
+            dtDb.Accessibility = GetAccessibility( nodeContext.Node );
+            dtDb.IsAbstract = HasChildNode( nodeContext, SyntaxKind.AbstractKeyword );
+            dtDb.IsSealed = HasChildNode( nodeContext, SyntaxKind.SealedKeyword );
+            dtDb.IsStatic = HasChildNode( nodeContext, SyntaxKind.StaticKeyword );
 
             DbContext.SaveChanges();
 
             return true;
+
+            NamedTypeKind undefined_kind()
+            {
+                Logger?.Error("Unsupported named type '{0}'", nodeContext.Node.Kind());
+
+                return NamedTypeKind.Unsupported;
+            }
         }
 
-        private bool SetContainer(NodeContext nodeContext, NamedType ntDb )
+        private bool SetContainer(NodeContext nodeContext, DocumentedType dtDb )
         {
             if (nodeContext.Node.Parent == null)
             {
@@ -104,12 +143,12 @@ namespace J4JSoftware.DocCompiler
 
             return parentKind switch
             {
-                SyntaxKind.NamespaceDeclaration => SetNamespaceContainer(nodeContext, ntDb),
-                SyntaxKind.CompilationUnit => SetCodeFileContainer(nodeContext, ntDb),
-                SyntaxKind.ClassDeclaration=>SetNamedTypeContainer(nodeContext, ntDb),
-                SyntaxKind.InterfaceDeclaration => SetNamedTypeContainer(nodeContext, ntDb),
-                SyntaxKind.RecordDeclaration => SetNamedTypeContainer(nodeContext, ntDb),
-                SyntaxKind.StructDeclaration => SetNamedTypeContainer(nodeContext, ntDb),
+                SyntaxKind.NamespaceDeclaration => SetNamespaceContainer(nodeContext, dtDb),
+                SyntaxKind.CompilationUnit => SetCodeFileContainer(nodeContext, dtDb),
+                SyntaxKind.ClassDeclaration=>SetNamedTypeContainer(nodeContext, dtDb),
+                SyntaxKind.InterfaceDeclaration => SetNamedTypeContainer(nodeContext, dtDb),
+                SyntaxKind.RecordDeclaration => SetNamedTypeContainer(nodeContext, dtDb),
+                SyntaxKind.StructDeclaration => SetNamedTypeContainer(nodeContext, dtDb),
                 _ => unsupported( parentKind )
             };
 
@@ -120,20 +159,18 @@ namespace J4JSoftware.DocCompiler
             }
         }
 
-        private bool SetNamedTypeContainer( NodeContext nodeContext, NamedType ntDb )
+        private bool SetNamedTypeContainer( NodeContext nodeContext, DocumentedType dtDb )
         {
-            if( !Namers.GetFullyQualifiedName(
-                new NodeContext( nodeContext.Node.Parent!, nodeContext.ScannedFile ),
-                out var parentFQName ) )
+            if( !Namers.GetFullyQualifiedName( nodeContext.Node.Parent!, out var parentFQName ) )
             {
                 Logger?.Error<string>(
                     "Could not determine fully-qualified name of parent named type node for {0}",
-                    ntDb.FullyQualifiedName );
+                    dtDb.FullyQualifiedName );
 
                 return false;
             }
 
-            var ntParent = DbContext.NamedTypes
+            var ntParent = DbContext.DocumentedTypes
                 .FirstOrDefault( x => x.FullyQualifiedName == parentFQName! );
 
             if( ntParent == null )
@@ -144,38 +181,37 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            ntDb.SetContainer( ntParent );
+            dtDb.SetContainer( ntParent );
 
             return true;
         }
 
-        private bool SetCodeFileContainer( NodeContext nodeContext, NamedType ntDb )
+        private bool SetCodeFileContainer(NodeContext nodeContext, DocumentedType dtDb)
         {
-            var cfParent = DbContext.CodeFiles
-                .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
+            //var cfParent = DbContext.CodeFiles
+            //    .FirstOrDefault(x => x.FullPath == nodeContext.ScannedFile.SourceFilePath);
 
-            if( cfParent == null )
-            {
-                Logger?.Error<string>(
-                    "Could not find parent NamespaceDeclarationSyntax node {0}",
-                    nodeContext.ScannedFile.SourceFilePath );
+            //if (cfParent == null)
+            //{
+            //    Logger?.Error<string>(
+            //        "Could not find parent NamespaceDeclarationSyntax node {0}",
+            //        nodeContext.ScannedFile.SourceFilePath);
 
-                return false;
-            }
+            //    return false;
+            //}
 
-            ntDb.SetContainer( cfParent );
+            dtDb.SetUncontained();
 
             return true;
         }
 
-        private bool SetNamespaceContainer( NodeContext nodeContext, NamedType ntDb )
+        private bool SetNamespaceContainer( NodeContext nodeContext, DocumentedType dtDb )
         {
-            if( !Namers.GetFullyQualifiedName( new NodeContext( nodeContext.Node.Parent!, nodeContext.ScannedFile ),
-                out var nsFQName ) )
+            if( !Namers.GetFullyQualifiedName( nodeContext.Node.Parent!, out var nsFQName ) )
             {
                 Logger?.Error<string>(
                     "Could not determine fully-qualified name of parent NamespaceDeclarationSyntax node for {0}",
-                    ntDb.FullyQualifiedName );
+                    dtDb.FullyQualifiedName );
 
                 return false;
             }
@@ -191,7 +227,7 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            ntDb.SetContainer( nsParent );
+            dtDb.SetContainer( nsParent );
             return true;
         }
     }

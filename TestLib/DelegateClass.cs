@@ -31,7 +31,7 @@ namespace J4JSoftware.Roslyn.Tests
     {
         public record NestedRecord( string Name, int Index )
         {
-            public class GrandchildClass
+            protected internal class GrandchildClass
             {
             }
 
