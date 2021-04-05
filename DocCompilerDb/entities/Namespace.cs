@@ -37,10 +37,11 @@ namespace J4JSoftware.DocCompiler
 
         public Documentation Documentation { get; set; }
 
-        public ICollection<Namespace> ChildNamespaces { get; set; }
-
         public int? ContainingNamespaceID { get; set; }
         public Namespace? ContainingNamespace { get; set; }
+        public ICollection<Namespace> ChildNamespaces { get; set; }
+
+        public ICollection<CodeFile> CodeFiles { get; set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>
@@ -51,6 +52,9 @@ namespace J4JSoftware.DocCompiler
                 .IsUnique();
 
             builder.HasMany( x => x.Assemblies )
+                .WithMany( x => x.Namespaces );
+
+            builder.HasMany( x => x.CodeFiles )
                 .WithMany( x => x.Namespaces );
 
             builder.HasOne(x => x.ContainingNamespace)

@@ -45,9 +45,6 @@ namespace J4JSoftware.DocCompiler
         public bool IsSealed { get; set; }
         public bool IsAbstract { get; set; }
 
-        //public int CodeFileID { get; set; }
-        //public CodeFile? CodeFile { get; set; }
-
         public int? ContainingNamespaceID => _namespaceID;
         public Namespace? ContainingNamespace { get; set; }
         
@@ -70,13 +67,6 @@ namespace J4JSoftware.DocCompiler
             _containerType = ContainerType.Undefined;
         }
 
-        //public void SetContainer( CodeFile container )
-        //{
-        //    _docTypeID = 0;
-        //    _namespaceID = 0;
-        //    _containerType = ContainerType.CodeFile;
-        //}
-
         public void SetContainer( DocumentedType container )
         {
             _namespaceID = null;
@@ -93,6 +83,8 @@ namespace J4JSoftware.DocCompiler
             };
         }
 
+        public ICollection<CodeFile> CodeFiles { get; set; }
+
         public ICollection<DocumentedType> ChildTypes { get; set; }
         public ICollection<Method> Methods { get; set; }
         public ICollection<Event> Events { get; set; }
@@ -107,10 +99,8 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<DocumentedType> builder )
         {
-            //builder.HasOne( x => x.CodeFile )
-            //    .WithMany( x => x.DocumentedTypes )
-            //    .HasForeignKey( x => x.CodeFileID )
-            //    .HasPrincipalKey( x => x.ID );
+            builder.HasMany( x => x.CodeFiles )
+                .WithMany( x => x.DocumentedTypes );
 
             builder.Property( x => x.ContainingDocumentedTypeID )
                 .HasField( "_docTypeID" );

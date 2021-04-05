@@ -72,11 +72,23 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
+            var codeFileDb = DbContext.CodeFiles
+                .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
+
+            if( codeFileDb == null )
+            {
+                Logger?.Error<string>("Could not find CodeFile '{0}' in database",
+                    nodeContext.ScannedFile.SourceFilePath);
+
+                return false;
+            }
+
             if (!GetParentNamespace(nodeContext, out var nsParentDb))
                 return false;
 
             var nsDb = DbContext.Namespaces
                 .Include(x=>x.Assemblies)
+                .Include(x=>x.CodeFiles)
                 .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
             if( nsDb == null )
@@ -86,6 +98,7 @@ namespace J4JSoftware.DocCompiler
                     FullyQualifiedName = fqName!,
                     Name = nsName!,
                     Assemblies = new List<Assembly> { assemblyDb },
+                    CodeFiles = new List<CodeFile> { codeFileDb},
                     ContainingNamespaceID = nsParentDb?.ID
                 };
 
@@ -97,6 +110,9 @@ namespace J4JSoftware.DocCompiler
 
                 if( nsDb.Assemblies.All( x => x.ID != assemblyDb.ID ) )
                     nsDb.Assemblies.Add( assemblyDb );
+
+                if( nsDb.CodeFiles.All( x => x.ID != codeFileDb.ID ) )
+                    nsDb.CodeFiles.Add( codeFileDb );
 
                 nsDb.ContainingNamespace = nsParentDb;
             }

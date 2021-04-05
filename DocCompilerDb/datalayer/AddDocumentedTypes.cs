@@ -25,6 +25,7 @@ using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
@@ -83,6 +84,7 @@ namespace J4JSoftware.DocCompiler
             }
 
             var dtDb = DbContext.DocumentedTypes
+                .Include(x=>x.CodeFiles)
                 .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
             if( dtDb == null )
@@ -91,7 +93,7 @@ namespace J4JSoftware.DocCompiler
                 {
                     FullyQualifiedName = fqName!,
                     Name = nsName!,
-                    //CodeFileID = codeFileDb.ID
+                    CodeFiles = new List<CodeFile> { codeFileDb}
                 };
 
                 if( !SetContainer( nodeContext, dtDb ) )
@@ -102,7 +104,9 @@ namespace J4JSoftware.DocCompiler
             else
             {
                 dtDb.Deprecated = false;
-                //dtDb.CodeFile = codeFileDb;
+
+                if (dtDb.CodeFiles.All(x => x.ID != codeFileDb.ID))
+                    dtDb.CodeFiles.Add(codeFileDb);
             }
 
             dtDb.Kind = nodeContext.Node.Kind() switch
