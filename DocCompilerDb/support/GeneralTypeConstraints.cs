@@ -22,10 +22,12 @@ using System;
 namespace J4JSoftware.DocCompiler
 {
     [Flags]
-    public enum OtherTypeConstraints
+    public enum GeneralTypeConstraints
     {
-        New,
-        Class,
-        Struct
+        New = 1 << 0,
+        Class = 1 << 1,
+        Struct = 1 << 2,
+
+        None = 0
     }
 }

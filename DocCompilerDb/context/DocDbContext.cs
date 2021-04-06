@@ -2,6 +2,7 @@
 using System.Linq;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore;
+#pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
@@ -39,6 +40,7 @@ namespace J4JSoftware.DocCompiler
 
         public DbSet<DocumentedType> DocumentedTypes { get; set; }
         public DbSet<ExternalType> ExternalTypes { get; set; }
+        public DbSet<TypeParameter> TypeParameters { get; set; }
 
         public DbSet<Event> Events { get; set; }
         public DbSet<Field> Fields { get; set; }

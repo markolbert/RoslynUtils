@@ -45,12 +45,16 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.StructDeclaration
         };
 
+        private readonly TypeParameterListFQN _tplFQN;
+
         public AddDocumentedTypes( 
             IFullyQualifiedNames fqNamers,
+            TypeParameterListFQN tplFQN,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
         {
+            _tplFQN = tplFQN;
         }
 
         protected override IEnumerable<NodeContext> GetNodesToProcess( IDocScanner source )
@@ -86,6 +90,7 @@ namespace J4JSoftware.DocCompiler
 
             var dtDb = DbContext.DocumentedTypes
                 .Include(x=>x.CodeFiles)
+                .Include(x=>x.TypeParameters)
                 .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
             if( dtDb == null )
@@ -97,18 +102,23 @@ namespace J4JSoftware.DocCompiler
                     CodeFiles = new List<CodeFile> { codeFileDb}
                 };
 
-                if( !SetContainer( nodeContext, dtDb ) )
-                    return false;
-
                 DbContext.DocumentedTypes.Add( dtDb );
             }
             else
             {
                 dtDb.Deprecated = false;
 
-                if (dtDb.CodeFiles.All(x => x.ID != codeFileDb.ID))
-                    dtDb.CodeFiles.Add(codeFileDb);
+                if( dtDb.CodeFiles == null )
+                    dtDb.CodeFiles = new List<CodeFile> { codeFileDb };
+                else
+                {
+                    if( dtDb.CodeFiles.All( x => x.ID != codeFileDb.ID ) )
+                        dtDb.CodeFiles.Add( codeFileDb );
+                }
             }
+
+            if( !SetContainer( nodeContext, dtDb ) )
+                return false;
 
             dtDb.Kind = nodeContext.Node.Kind() switch
             {
@@ -125,6 +135,8 @@ namespace J4JSoftware.DocCompiler
             dtDb.IsStatic = HasChildNode( nodeContext, SyntaxKind.StaticKeyword );
 
             DbContext.SaveChanges();
+
+            ProcessTypeParameterList( nodeContext.Node, dtDb );
 
             return true;
 
@@ -193,18 +205,6 @@ namespace J4JSoftware.DocCompiler
 
         private bool SetCodeFileContainer(NodeContext nodeContext, DocumentedType dtDb)
         {
-            //var cfParent = DbContext.CodeFiles
-            //    .FirstOrDefault(x => x.FullPath == nodeContext.ScannedFile.SourceFilePath);
-
-            //if (cfParent == null)
-            //{
-            //    Logger?.Error<string>(
-            //        "Could not find parent NamespaceDeclarationSyntax node {0}",
-            //        nodeContext.ScannedFile.SourceFilePath);
-
-            //    return false;
-            //}
-
             dtDb.SetUncontained();
 
             return true;
@@ -234,6 +234,73 @@ namespace J4JSoftware.DocCompiler
 
             dtDb.SetContainer( nsParent );
             return true;
+        }
+
+        private void ProcessTypeParameterList( SyntaxNode node, DocumentedType dtDb )
+        {
+            var tplNode = node.ChildNodes()
+                .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
+            
+            if( tplNode == null || !_tplFQN.GetIdentifierTokens(tplNode, out var temp ) )
+                return;
+
+            var idTokens = temp.ToList();
+
+            var constraintNodes = node.ChildNodes()
+                .Where( x => x.IsKind( SyntaxKind.TypeParameterConstraintClause ) )
+                .Select( x =>
+                {
+                    return new
+                    {
+                        Name = x.ChildNodes().First( y => y.IsKind( SyntaxKind.IdentifierName ) ).ChildTokens()
+                            .First( z => z.IsKind( SyntaxKind.IdentifierToken ) ).Text,
+                        ConstraintNode = x
+                    };
+                } )
+                .ToDictionary( x => x.Name, x => x.ConstraintNode );
+
+            dtDb.TypeParameters ??= new List<TypeParameter>();
+
+            for( var idx = 0; idx < idTokens!.Count(); idx++ )
+            {
+                var tpName = idTokens[ idx ].Text;
+
+                var tpDb = DbContext.TypeParameters
+                    .FirstOrDefault( x => x.DefinedInID == dtDb.ID && x.Name == tpName );
+
+                if( tpDb == null )
+                {
+                    tpDb = dtDb.ID == 0
+                        ? new TypeParameter
+                        {
+                            DefinedIn = dtDb,
+                            Name = tpName,
+                            Index = idx
+                        }
+                        : new TypeParameter
+                        {
+                            DefinedInID = dtDb.ID,
+                            Name = tpName,
+                            Index = idx
+                        };
+
+                    DbContext.TypeParameters.Add( tpDb );
+                }
+                else tpDb.Index = idx;
+
+                if( !constraintNodes.ContainsKey( tpName ) )
+                {
+                    DbContext.SaveChanges();
+                    continue;
+                }
+
+                var constraintNode = constraintNodes[ tpName ];
+
+                if( GetGeneralTypeConstraints( constraintNode, out var generalConstraints ) )
+                    tpDb.GeneralTypeConstraints = generalConstraints;
+
+                DbContext.SaveChanges();
+            }
         }
     }
 }

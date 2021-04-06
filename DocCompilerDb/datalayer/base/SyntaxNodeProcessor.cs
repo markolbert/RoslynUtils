@@ -62,5 +62,27 @@ namespace J4JSoftware.DocCompiler
 
         protected bool HasChildNode( NodeContext nodeContext, SyntaxKind kind )
             => nodeContext.Node.ChildNodes().Any( x => x.IsKind( kind ) );
+
+        protected bool HasChildNode( SyntaxNode node, SyntaxKind kind )
+            => node.ChildNodes().Any( x => x.IsKind( kind ) );
+
+        protected bool GetGeneralTypeConstraints( SyntaxNode node, out GeneralTypeConstraints result )
+        {
+            result = GeneralTypeConstraints.None;
+
+            if( !node.IsKind( SyntaxKind.TypeParameterConstraintClause ) )
+                return false;
+
+            if( HasChildNode( node, SyntaxKind.ConstructorConstraint ) )
+                result |= GeneralTypeConstraints.New;
+
+            if( HasChildNode( node, SyntaxKind.ClassConstraint ) )
+                result |= GeneralTypeConstraints.Class;
+
+            if( HasChildNode( node, SyntaxKind.StructConstraint ) )
+                result |= GeneralTypeConstraints.Struct;
+
+            return true;
+        }
     }
 }

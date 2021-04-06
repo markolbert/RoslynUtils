@@ -25,6 +25,8 @@ using System.Linq;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8602
+#pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
@@ -83,16 +85,16 @@ namespace J4JSoftware.DocCompiler
             };
         }
 
-        public ICollection<CodeFile> CodeFiles { get; set; }
+        public ICollection<CodeFile>? CodeFiles { get; set; }
 
-        public ICollection<DocumentedType> ChildTypes { get; set; }
-        public ICollection<Method> Methods { get; set; }
-        public ICollection<Event> Events { get; set; }
-        public ICollection<TypeParameter> TypeParameters { get; set; }
-        public ICollection<TypeArgument> TypeArguments { get; set; }
-        public ICollection<TypeAncestor> Ancestors { get; set; }
-        public ICollection<Property> Properties { get; set; }
-        public ICollection<Field> Fields { get; set; }
+        public ICollection<DocumentedType>? ChildTypes { get; set; }
+        public ICollection<Method>? Methods { get; set; }
+        public ICollection<Event>? Events { get; set; }
+        public ICollection<TypeParameter>? TypeParameters { get; set; }
+        public ICollection<TypeArgument>? TypeArguments { get; set; }
+        public ICollection<TypeAncestor>? Ancestors { get; set; }
+        public ICollection<Property>? Properties { get; set; }
+        public ICollection<Field>? Fields { get; set; }
     }
 
     internal class DocumentedTypeConfigurator : EntityConfigurator<DocumentedType>

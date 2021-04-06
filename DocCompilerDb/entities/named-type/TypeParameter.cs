@@ -20,6 +20,7 @@
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
@@ -35,16 +36,14 @@ namespace J4JSoftware.DocCompiler
         public string Name { get; set; }
 
         public ICollection<TypeConstraint> TypeConstraints { get; set; }
-        public OtherTypeConstraints OtherTypeConstraints { get; set; }
+        public GeneralTypeConstraints GeneralTypeConstraints { get; set; }
     }
 
     internal class TypeParameterConfigurator : EntityConfigurator<TypeParameter>
     {
         protected override void Configure( EntityTypeBuilder<TypeParameter> builder )
         {
-            builder.HasKey( x => new { x.DefinedInID, x.Index } );
-
-            builder.HasIndex( x => x.Name )
+            builder.HasIndex( x => new { x.DefinedInID, x.Name } )
                 .IsUnique();
 
             builder.HasOne( x => x.DefinedIn )
@@ -52,7 +51,7 @@ namespace J4JSoftware.DocCompiler
                 .HasForeignKey( x => x.DefinedInID )
                 .HasPrincipalKey( x => x.ID );
 
-            builder.Property( x => x.OtherTypeConstraints )
+            builder.Property( x => x.GeneralTypeConstraints )
                 .HasConversion<string>();
         }
     }
