@@ -17,6 +17,7 @@
 
 #endregion
 
+using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,40 +26,15 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(UsingConfigurator))]
     public class Using : IDeprecation
     {
-        private int _containerID;
-        private ContainerType _containerType = ContainerType.Undefined;
-        private CodeFile? _codeFileContainer;
-        private Namespace? _nsContainer;
-
         public int ID { get; set; }
         public string Name { get;set; }
         public bool Deprecated { get; set; }
 
-        public int ContainerID => _containerID;
-        public ContainerType ContainerType => _containerType;
+        public int AssemblyID { get; set; }
+        public Assembly Assembly { get; set; }
 
-        public object? GetContainer() => _containerType switch
-        {
-            ContainerType.Namespace => _nsContainer,
-            ContainerType.CodeFile => _codeFileContainer,
-            _ => null
-        };
-
-        public void SetContainer( CodeFile codeFile )
-        {
-            _nsContainer = null;
-            _containerID = codeFile.ID;
-            _containerType = ContainerType.CodeFile;
-            _codeFileContainer = codeFile;
-        }
-
-        public void SetContainer( Namespace ns )
-        {
-            _codeFileContainer = null;
-            _containerID = ns.ID;
-            _containerType = ContainerType.Namespace;
-            _nsContainer = ns;
-        }
+        public ICollection<Namespace>? Namespaces { get; set; }
+        public ICollection<CodeFile>? CodeFiles {get; set; }
     }
 
     internal class UsingConfigurator : EntityConfigurator<Using>
@@ -68,12 +44,16 @@ namespace J4JSoftware.DocCompiler
             builder.HasIndex( x => x.Name )
                 .IsUnique();
 
-            builder.Property( "ContainerID" )
-                .HasField( "_containerID" );
+            builder.HasMany( x => x.CodeFiles )
+                .WithMany( x => x.Usings );
 
-            builder.Property( "ContainerType" )
-                .HasField("_containerType")
-                .HasConversion<string>();
+            builder.HasMany( x => x.Namespaces )
+                .WithMany( x => x.Usings );
+
+            builder.HasOne( x => x.Assembly )
+                .WithMany( x => x.Usings )
+                .HasForeignKey( x => x.AssemblyID )
+                .HasPrincipalKey( x => x.ID );
         }
     }
 }

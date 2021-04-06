@@ -34,6 +34,7 @@ namespace J4JSoftware.DocCompiler
     [TopologicalPredecessor(typeof(AddAssemblies))]
     [TopologicalPredecessor(typeof(AddCodeFiles))]
     [TopologicalPredecessor(typeof(AddNamespaces))]
+    [TopologicalPredecessor(typeof(AddUsings))]
     public class AddDocumentedTypes : SyntaxNodeProcessor
     {
         public static SyntaxKind[] SupportedKinds = new[]

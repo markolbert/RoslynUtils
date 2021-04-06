@@ -7,12 +7,12 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class NamespaceFQN : FullyQualifiedName
+    public class NamespaceUsingFQN : FullyQualifiedName
     {
-        public NamespaceFQN(
+        public NamespaceUsingFQN(
             IJ4JLogger? logger
         )
-            : base( logger, SyntaxKind.NamespaceDeclaration )
+            : base( logger, SyntaxKind.NamespaceDeclaration, SyntaxKind.UsingDirective )
         {
         }
 

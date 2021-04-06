@@ -56,6 +56,7 @@ namespace J4JSoftware.DocCompiler
         
         public ICollection<Namespace> Namespaces { get; set; }
         public ICollection<CodeFile> CodeFiles { get; set; }
+        public ICollection<Using> Usings { get; set; }
         public Documentation Documentation { get; set; }
     }
 

@@ -118,7 +118,7 @@ namespace Tests.DocCompiler
                 .As<IFullyQualifiedNames>()
                 .SingleInstance();
 
-            builder.RegisterType<NamespaceFQN>()
+            builder.RegisterType<NamespaceUsingFQN>()
                 .AsSelf()
                 .SingleInstance();
 

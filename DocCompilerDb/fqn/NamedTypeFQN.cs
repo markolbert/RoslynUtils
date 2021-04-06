@@ -9,11 +9,11 @@ namespace J4JSoftware.DocCompiler
 {
     public class NamedTypeFQN : FullyQualifiedName
     {
-        private readonly NamespaceFQN _nsFQN;
+        private readonly NamespaceUsingFQN _nsFQN;
         private readonly TypeParameterListFQN _tplFQN;
 
         public NamedTypeFQN(
-            NamespaceFQN nsFQN,
+            NamespaceUsingFQN nsFQN,
             TypeParameterListFQN tplFQN,
             IJ4JLogger? logger
         )

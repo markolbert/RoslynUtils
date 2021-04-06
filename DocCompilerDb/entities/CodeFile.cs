@@ -36,6 +36,7 @@ namespace J4JSoftware.DocCompiler
 
         public ICollection<Namespace> Namespaces { get; set; }
         public ICollection<DocumentedType> DocumentedTypes { get; set; }
+        public ICollection<Using> Usings { get; set; }
     }
 
     internal class CodeFileConfigurator : EntityConfigurator<CodeFile>
