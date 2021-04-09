@@ -92,7 +92,9 @@ namespace Tests.DocCompiler
                     var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
                     optionsBuilder.UseSqlite( "Data Source=DocCompiler.db" );
 
-                    var retVal = new DocDbContext( optionsBuilder.Options );
+                    var logger = c.Resolve<IJ4JLogger>();
+
+                    var retVal = new DocDbContext( optionsBuilder.Options, logger );
                     retVal.Database.EnsureCreated();
 
                     return retVal;
@@ -118,7 +120,7 @@ namespace Tests.DocCompiler
                 .As<IFullyQualifiedNames>()
                 .SingleInstance();
 
-            builder.RegisterType<NamespaceUsingFQN>()
+            builder.RegisterType<NamespaceFQN>()
                 .AsSelf()
                 .SingleInstance();
 

@@ -98,6 +98,7 @@ namespace J4JSoftware.DocCompiler
                     FullyQualifiedName = fqName!,
                     Name = nsName!,
                     Assemblies = new List<Assembly> { assemblyDb },
+                    InDocumentationScope = true,
                     CodeFiles = new List<CodeFile> { codeFileDb},
                     ContainingNamespaceID = nsParentDb?.ID
                 };
@@ -107,12 +108,23 @@ namespace J4JSoftware.DocCompiler
             else
             {
                 nsDb.Deprecated = false;
+                nsDb.InDocumentationScope = true;
 
-                if( nsDb.Assemblies.All( x => x.ID != assemblyDb.ID ) )
-                    nsDb.Assemblies.Add( assemblyDb );
+                if( nsDb.Assemblies == null )
+                    nsDb.Assemblies = new List<Assembly> { assemblyDb };
+                else
+                {
+                    if( nsDb.Assemblies.All( x => x.ID != assemblyDb.ID ) )
+                        nsDb.Assemblies.Add( assemblyDb );
+                }
 
-                if( nsDb.CodeFiles.All( x => x.ID != codeFileDb.ID ) )
-                    nsDb.CodeFiles.Add( codeFileDb );
+                if( nsDb.CodeFiles == null )
+                    nsDb.CodeFiles = new List<CodeFile> { codeFileDb };
+                else
+                {
+                    if( nsDb.CodeFiles.All( x => x.ID != codeFileDb.ID ) )
+                        nsDb.CodeFiles.Add( codeFileDb );
+                }
 
                 nsDb.ContainingNamespace = nsParentDb;
             }

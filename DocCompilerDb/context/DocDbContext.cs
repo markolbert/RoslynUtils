@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using J4JSoftware.EFCoreUtilities;
+using J4JSoftware.Logging;
 using Microsoft.EntityFrameworkCore;
 #pragma warning disable 8618
 
@@ -9,11 +11,18 @@ namespace J4JSoftware.DocCompiler
     public class DocDbContext : DbContext
     {
         private readonly List<IQueryable> _deprecatable;
+        private readonly IJ4JLogger? _logger;
 
-        public DocDbContext( DbContextOptions<DocDbContext> contextOptions )
+        public DocDbContext( 
+            DbContextOptions<DocDbContext> contextOptions,
+            IJ4JLogger? logger
+            )
             : base( contextOptions )
         {
             _deprecatable = GetDeprecatable().ToList();
+
+            _logger = logger;
+            _logger?.SetLoggedType( GetType() );
         }
 
         private List<IQueryable> GetDeprecatable()
@@ -36,9 +45,11 @@ namespace J4JSoftware.DocCompiler
         public DbSet<CodeFile> CodeFiles { get; set; }
 
         public DbSet<Namespace> Namespaces { get; set; }
-        public DbSet<Using> Usings { get; set; }
+        //public DbSet<Using> Usings { get; set; }
+        //public DbSet<NamespaceUsing> NamespaceUsings { get; set; }
 
         public DbSet<DocumentedType> DocumentedTypes { get; set; }
+        //public DbSet<DocumentedTypeUsing> DocumentedTypeUsings { get; set; }
         public DbSet<ExternalType> ExternalTypes { get; set; }
         public DbSet<TypeParameter> TypeParameters { get; set; }
 

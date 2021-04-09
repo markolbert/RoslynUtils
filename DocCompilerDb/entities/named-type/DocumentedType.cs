@@ -62,7 +62,7 @@ namespace J4JSoftware.DocCompiler
             _containerType = ContainerType.Namespace;
         }
 
-        public void SetUncontained()
+        public void SetNotContained()
         {
             _docTypeID = null;
             _namespaceID = null;
@@ -95,6 +95,7 @@ namespace J4JSoftware.DocCompiler
         public ICollection<TypeAncestor>? Ancestors { get; set; }
         public ICollection<Property>? Properties { get; set; }
         public ICollection<Field>? Fields { get; set; }
+        //public ICollection<DocumentedTypeUsing> TypeUsings { get; set; }
     }
 
     internal class DocumentedTypeConfigurator : EntityConfigurator<DocumentedType>

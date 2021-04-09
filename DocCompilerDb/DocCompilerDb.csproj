@@ -20,11 +20,14 @@
 	  <Compile Remove="datalayer\DataLayer.UpdateCodeFile.cs" />
 	  <Compile Remove="datalayer\DataLayer.UpdateNamespace.cs" />
 	  <Compile Remove="entities\named-type\Class.cs" />
+	  <Compile Remove="entities\named-type\DocumentedTypeUsing.cs" />
 	  <Compile Remove="entities\named-type\FieldContainingType.cs" />
 	  <Compile Remove="entities\named-type\Interface.cs" />
 	  <Compile Remove="entities\named-type\NamedTypeReference.cs" />
 	  <Compile Remove="entities\named-type\Record.cs" />
 	  <Compile Remove="entities\named-type\Struct.cs" />
+	  <Compile Remove="entities\NamespaceUsing.cs" />
+	  <Compile Remove="entities\Using.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

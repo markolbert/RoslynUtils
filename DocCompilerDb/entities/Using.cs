@@ -34,8 +34,8 @@ namespace J4JSoftware.DocCompiler
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
 
-        public ICollection<Namespace>? Namespaces { get; set; }
         public ICollection<CodeFile>? CodeFiles {get; set; }
+        public ICollection<NamespaceUsing> NamespaceReferences { get; set; }
     }
 
     internal class UsingConfigurator : EntityConfigurator<Using>
@@ -46,9 +46,6 @@ namespace J4JSoftware.DocCompiler
                 .IsUnique();
 
             builder.HasMany( x => x.CodeFiles )
-                .WithMany( x => x.Usings );
-
-            builder.HasMany( x => x.Namespaces )
                 .WithMany( x => x.Usings );
 
             builder.HasOne( x => x.Assembly )

@@ -29,7 +29,7 @@ namespace J4JSoftware.DocCompiler
             var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
             optionsBuilder.UseSqlite($"Data Source={args[0]}");
 
-            return new DocDbContext( optionsBuilder.Options );
+            return new DocDbContext( optionsBuilder.Options, null );
         }
     }
 }

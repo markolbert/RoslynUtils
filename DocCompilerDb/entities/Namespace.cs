@@ -33,18 +33,22 @@ namespace J4JSoftware.DocCompiler
         public int ID { get; set; }
         public string Name { get; set; }
         public string FullyQualifiedName { get; set; }
+        public bool InDocumentationScope { get;set; }
         public bool Deprecated { get; set; }
-        public ICollection<Assembly> Assemblies { get; set; }
-        public ICollection<DocumentedType> DocumentedTypes { get; set; }
+        public ICollection<Assembly>? Assemblies { get; set; }
+        public ICollection<DocumentedType>? DocumentedTypes { get; set; }
 
         public Documentation Documentation { get; set; }
 
         public int? ContainingNamespaceID { get; set; }
         public Namespace? ContainingNamespace { get; set; }
-        public ICollection<Namespace> ChildNamespaces { get; set; }
+        public ICollection<Namespace>? ChildNamespaces { get; set; }
 
-        public ICollection<CodeFile> CodeFiles { get; set; }
-        public ICollection<Using> Usings { get; set; }
+        public ICollection<CodeFile>? CodeFiles { get; set; }
+        
+        public int? AliasedNamespaceID { get; set; }
+        public Namespace? AliasedNamespace { get;set; }
+        public ICollection<Namespace>? Aliases { get;set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>
@@ -58,7 +62,12 @@ namespace J4JSoftware.DocCompiler
                 .WithMany( x => x.Namespaces );
 
             builder.HasMany( x => x.CodeFiles )
-                .WithMany( x => x.Namespaces );
+                .WithMany( x => x.OuterNamespaces );
+
+            builder.HasOne( x => x.AliasedNamespace )
+                .WithMany( x => x.Aliases )
+                .HasForeignKey( x => x.AliasedNamespaceID )
+                .HasPrincipalKey( x => x.ID );
 
             builder.HasOne(x => x.ContainingNamespace)
                 .WithMany(x => x.ChildNamespaces)

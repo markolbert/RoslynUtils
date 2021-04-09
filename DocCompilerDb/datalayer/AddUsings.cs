@@ -56,7 +56,10 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if (!Namers.GetName(nodeContext.Node, out var usingName))
+            if( !Namers.GetFullyQualifiedName( nodeContext.Node, out var fqUsing ) )
+                return false;
+
+            if( !Namers.GetName( nodeContext.Node, out var usingName ) )
                 return false;
 
             var assemblyDb = DbContext.Assemblies
@@ -70,32 +73,82 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            var usingDB = DbContext.Usings
-                .Include(x=>x.CodeFiles)
-                .Include(x=>x.Namespaces  )
-                .FirstOrDefault(x => x.Name == usingName);
+            var extNsDb = DbContext.Namespaces
+                .Include( x => x.CodeFiles )
+                .Include( x => x.Assemblies )
+                .FirstOrDefault( x => x.FullyQualifiedName == fqUsing );
 
-            if( usingDB == null )
+            // if we find the namespace already listed it's defined within the scope of the
+            // documentation project and we're done
+            if( extNsDb != null )
+                return true;
+
+            extNsDb = new Namespace
             {
-                usingDB = new Using
-                {
-                    Name = usingName!,
-                    AssemblyID = assemblyDb.ID
-                };
+                Name = usingName!,
+                FullyQualifiedName = fqUsing!,
+                InDocumentationScope = false,
+                Assemblies = new List<Assembly> { assemblyDb }
+            };
 
-                DbContext.Usings.Add( usingDB );
-            }
-            else usingDB.Deprecated = false;
-
-            if( !SetContainer( nodeContext, usingDB ) )
+            if( !ProcessAlias( nodeContext.Node, extNsDb, assemblyDb ) )
                 return false;
+
+            if( !SetContainer( nodeContext, extNsDb ) )
+                return false;
+
+            DbContext.Namespaces.Add( extNsDb );
 
             DbContext.SaveChanges();
 
             return true;
         }
 
-        private bool SetContainer( NodeContext nodeContext, Using usingDb )
+        private bool ProcessAlias( SyntaxNode node, Namespace extNsDb, Assembly assemblyDb )
+        {
+            // a NameEquals node declares this Using to be an alias
+            var nameEqualsNode = node.ChildNodes().FirstOrDefault( x => x.IsKind( SyntaxKind.NameEquals ) );
+
+            if( nameEqualsNode == null )
+                return true;
+
+            // the target of the alias is contained in the next node, which must be either an 
+            // IdentifierName or a QualifiedName
+            var siblingNodes = node.ChildNodes().ToList();
+
+            var nameEqualsIndex = siblingNodes.FindIndex( x => ReferenceEquals( x, nameEqualsNode ) );
+
+            if( nameEqualsIndex < 0 )
+            {
+                Logger?.Error<string>(
+                    "Could not find NameEquals node in sibling node collection for Using alias '{0}'", extNsDb.Name );
+                return false;
+            }
+
+            var aliasSrcName = siblingNodes[ nameEqualsIndex + 1 ].ToString();
+
+            var aliasSrc = DbContext.Namespaces.FirstOrDefault( x => x.FullyQualifiedName == aliasSrcName );
+
+            if( aliasSrc == null )
+            {
+                aliasSrc = new Namespace
+                {
+                    Name = aliasSrcName,
+                    FullyQualifiedName = aliasSrcName,
+                    InDocumentationScope = false,
+                    Assemblies = new List<Assembly> { assemblyDb }
+                };
+
+                DbContext.Namespaces.Add( aliasSrc );
+
+                extNsDb.AliasedNamespace = aliasSrc;
+            }
+            else extNsDb.AliasedNamespaceID = aliasSrc.ID;
+
+            return true;
+        }
+
+        private bool SetContainer( NodeContext nodeContext, Namespace extNsDb )
         {
             if( nodeContext.Node.Parent == null )
             {
@@ -105,12 +158,23 @@ namespace J4JSoftware.DocCompiler
 
             var parentKind = nodeContext.Node.Parent.Kind();
 
-            return parentKind switch
-            {
-                SyntaxKind.CompilationUnit => SetCodeFileContainer(nodeContext.ScannedFile, usingDb),
-                SyntaxKind.NamespaceDeclaration=>SetNamespaceContainer(nodeContext.Node.Parent, usingDb),
-                _ => unsupported()
-            };
+            var cfDb = DbContext.CodeFiles
+                .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
+
+            if( cfDb != null )
+                return parentKind switch
+                {
+                    SyntaxKind.CompilationUnit => SetCodeFileContainer( cfDb, extNsDb ),
+                    SyntaxKind.NamespaceDeclaration => SetNamespaceContainer( nodeContext.Node.Parent, extNsDb ),
+                    _ => unsupported()
+                };
+
+            Logger?.Error<string, string>(
+                "Could not find containing code file '{0}' for using node '{1}' in database",
+                nodeContext.ScannedFile.SourceFilePath, 
+                extNsDb.Name );
+
+            return false;
 
             bool unsupported()
             {
@@ -119,56 +183,49 @@ namespace J4JSoftware.DocCompiler
             }
         }
 
-        private bool SetCodeFileContainer( IScannedFile scannedFile, Using usingDb )
+        private bool SetCodeFileContainer( CodeFile cfDb, Namespace extNsDb )
         {
-            var cfDb = DbContext.CodeFiles
-                .FirstOrDefault( x => x.FullPath == scannedFile.SourceFilePath );
-
-            if( cfDb == null )
-            {
-                Logger?.Error<string, string>(
-                    "Could not find containing code file '{0}' for using node '{1}' in database",
-                    scannedFile.SourceFilePath, 
-                    usingDb.Name );
-
-                return false;
-            }
-
-            if( usingDb.CodeFiles == null )
-                usingDb.CodeFiles = new List<CodeFile> { cfDb };
+            if( extNsDb.CodeFiles == null )
+                extNsDb.CodeFiles = new List<CodeFile> { cfDb };
             else
             {
-                if( usingDb.CodeFiles.All( x => x.ID != cfDb.ID ) )
-                    usingDb.CodeFiles.Add( cfDb );
+                if( extNsDb.CodeFiles.All( x => x.ID != cfDb.ID ) )
+                    extNsDb.CodeFiles.Add( cfDb );
             }
 
             return true;
         }
 
-        private bool SetNamespaceContainer( SyntaxNode containerNode, Using usingDb )
+        private bool SetNamespaceContainer( SyntaxNode containingNode, Namespace extNsDb )
         {
-            if( !Namers.GetFullyQualifiedName( containerNode, out var nsFQN ) )
-                return false;
-
-            var nsDb = DbContext.Namespaces
-                .FirstOrDefault( x => x.FullyQualifiedName == nsFQN );
-
-            if( nsDb == null )
+            if( !Namers.GetFullyQualifiedName( containingNode, out var fqContaining ) )
             {
-                Logger?.Error<string, string>(
-                    "Could not find containing namespace '{0}' for using node '{1}' in database",
-                    nsFQN!, 
-                    usingDb.Name );
-
+                Logger?.Error<string>( "Couldn't find containing Namespace for Using node '{0}'",
+                    extNsDb.FullyQualifiedName );
+                
                 return false;
             }
 
-            if( usingDb.Namespaces == null )
-                usingDb.Namespaces = new List<Namespace> { nsDb };
+            var containingNsDb = DbContext.Namespaces
+                .Include( x => x.ChildNamespaces )
+                .FirstOrDefault( x => x.FullyQualifiedName == fqContaining );
+
+            if( containingNsDb == null )
+            {
+                Logger?.Error<string, string>(
+                    "Couldn't find containing Namespace entity '{0}' in database for Using node '{1}'",
+                    fqContaining!,
+                    extNsDb.FullyQualifiedName );
+                
+                return false;
+            }
+
+            if( containingNsDb.ChildNamespaces == null )
+                containingNsDb.ChildNamespaces = new List<Namespace> { extNsDb };
             else
             {
-                if( usingDb.Namespaces.All( x => x.ID != nsDb.ID ) )
-                    usingDb.Namespaces.Add( nsDb );
+                if( containingNsDb.ChildNamespaces!.All( x => x.ID != extNsDb.ID ) )
+                    containingNsDb.ChildNamespaces!.Add( extNsDb );
             }
 
             return true;

@@ -139,6 +139,7 @@ namespace J4JSoftware.DocCompiler
             ProcessTypeParameterList( nodeContext.Node, dtDb );
 
             return true;
+            //return UpdateDocumentedTypeUsings( dtDb, nodeContext.ScannedFile );
 
             NamedTypeKind undefined_kind()
             {
@@ -205,7 +206,7 @@ namespace J4JSoftware.DocCompiler
 
         private bool SetCodeFileContainer(NodeContext nodeContext, DocumentedType dtDb)
         {
-            dtDb.SetUncontained();
+            dtDb.SetNotContained();
 
             return true;
         }
@@ -302,5 +303,113 @@ namespace J4JSoftware.DocCompiler
                 DbContext.SaveChanges();
             }
         }
+
+        //private bool UpdateDocumentedTypeUsings( DocumentedType dtDb, IScannedFile scannedFile )
+        //{
+        //    var cfDb = DbContext.CodeFiles
+        //        .FirstOrDefault( x => x.FullPath == scannedFile.SourceFilePath );
+
+        //    if( cfDb == null )
+        //    {
+        //        Logger?.Error<string>("Could not find CodeFile for DocumentedType '{0}'", dtDb.FullyQualifiedName);
+
+        //        return false;
+        //    }
+
+        //    // ascend through any containing DocumentedTypes
+        //    var curDT = DbContext.DocumentedTypes
+        //        .FirstOrDefault( x => x.ID == dtDb.ContainingDocumentedTypeID );
+
+        //    DbContext.DocumentedTypeUsings
+        //        .RemoveRange(
+        //            DbContext.DocumentedTypeUsings.Where( x => x.DocumentedTypeID == dtDb.ID )
+        //        );
+
+        //    var idx = 0;
+
+        //    while( curDT != null )
+        //    {
+        //        DbContext.DocumentedTypeUsings.Add( new DocumentedTypeUsing
+        //        {
+        //            DocumentedTypeID = dtDb.ID,
+        //            UsingText = curDT.FullyQualifiedName,
+        //            Index = idx
+        //        } );
+
+        //        idx++;
+
+        //        var parentDT = DbContext.DocumentedTypes
+        //            .FirstOrDefault( x => x.ID == curDT.ContainingDocumentedTypeID );
+
+        //        if( parentDT == null )
+        //        {
+        //            Logger?.Error<int, string>( "Could not find containing DocumentedType (ID = {0}) for {1} ",
+        //                curDT.ID,
+        //                curDT.FullyQualifiedName );
+
+        //            break;
+        //        }
+
+        //        curDT = parentDT;
+        //    }
+
+        //    curDT ??= dtDb;
+
+        //    // ascend through any containing Namespaces, also adding any Using statements they may harbor
+        //    var curNS = DbContext.Namespaces
+        //        .FirstOrDefault( x => x.ID == curDT.ContainingNamespaceID );
+
+        //    while( curNS != null )
+        //    {
+        //        DbContext.DocumentedTypeUsings.Add( new DocumentedTypeUsing
+        //        {
+        //            DocumentedTypeID = dtDb.ID,
+        //            UsingText = curNS.FullyQualifiedName,
+        //            Index = idx
+        //        } );
+
+        //        idx++;
+
+        //        var curID = curNS.ID;
+
+        //        foreach( var curNsRef in DbContext.NamespaceUsings
+        //            .Where(x=>x.CodeFileID == cfDb.ID  )
+        //            .Include(x=>x.InScopeNamespaces  )
+        //            .Where( x => x.NamespaceReferences!.Any( y => y.CodeFileID == curID && y.CodeFileID == cfDb.ID ) ) )
+        //        {
+        //            DbContext.DocumentedTypeUsings.Add( new DocumentedTypeUsing
+        //            {
+        //                DocumentedTypeID = dtDb.ID,
+        //                UsingText = curNsRef.Name,
+        //                Index = idx
+        //            } );
+
+        //            idx++;
+        //        }
+
+        //        var parentNS = DbContext.Namespaces
+        //            .FirstOrDefault( x => x.ID == curNS.ContainingNamespaceID );
+
+        //        curNS = parentNS;
+        //    }
+
+        //    // add any code-file usings
+        //    foreach( var curUsing in DbContext.Usings
+        //        .Where( x => x.CodeFiles!.Any( y => y.FullPath == scannedFile.SourceFilePath ) ) )
+        //    {
+        //        DbContext.DocumentedTypeUsings.Add( new DocumentedTypeUsing
+        //        {
+        //            DocumentedTypeID = dtDb.ID,
+        //            UsingText = curUsing.Name,
+        //            Index = idx
+        //        } );
+
+        //        idx++;
+        //    }
+
+        //    DbContext.SaveChanges();
+
+        //    return true;
+        //}
     }
 }

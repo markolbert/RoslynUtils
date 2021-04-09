@@ -35,9 +35,14 @@ namespace J4JSoftware.DocCompiler
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
 
-        public ICollection<Namespace> Namespaces { get; set; }
+        // OuterNamespaces are always the result of using statements 
+        // within the outermost level of a source code file (i.e., outside
+        // any namespace declarations)
+        public ICollection<Namespace>? OuterNamespaces { get; set; }
+
         public ICollection<DocumentedType> DocumentedTypes { get; set; }
-        public ICollection<Using> Usings { get; set; }
+        //public ICollection<Using> Usings { get; set; }
+        //public ICollection<NamespaceUsing> NamespaceUsingReferences { get; set; }
     }
 
     internal class CodeFileConfigurator : EntityConfigurator<CodeFile>
