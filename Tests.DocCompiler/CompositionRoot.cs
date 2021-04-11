@@ -84,11 +84,6 @@ namespace Tests.DocCompiler
 
             builder.Register( c =>
                 {
-                    //var dbPath = Path.Combine( Environment.CurrentDirectory, "DocCompiler.db" );
-
-                    //if( File.Exists(dbPath))
-                    //    File.Delete(dbPath);
-
                     var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
                     optionsBuilder.UseSqlite( "Data Source=DocCompiler.db" );
 
@@ -126,6 +121,10 @@ namespace Tests.DocCompiler
 
             builder.RegisterType<TypeParameterListFQN>()
                 .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<TypeFinder>()
+                .As<ITypeFinder>()
                 .SingleInstance();
         }
     }

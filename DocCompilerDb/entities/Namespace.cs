@@ -30,6 +30,25 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(NamespaceConfigurator))]
     public class Namespace : IDeprecation
     {
+        private sealed class FullyQualifiedNameEqualityComparer : IEqualityComparer<Namespace>
+        {
+            public bool Equals( Namespace x, Namespace y )
+            {
+                if( ReferenceEquals( x, y ) ) return true;
+                if( ReferenceEquals( x, null ) ) return false;
+                if( ReferenceEquals( y, null ) ) return false;
+                if( x.GetType() != y.GetType() ) return false;
+                return x.FullyQualifiedName == y.FullyQualifiedName;
+            }
+
+            public int GetHashCode( Namespace obj )
+            {
+                return obj.FullyQualifiedName.GetHashCode();
+            }
+        }
+
+        public static IEqualityComparer<Namespace> FullyQualifiedNameComparer { get; } = new FullyQualifiedNameEqualityComparer();
+
         public int ID { get; set; }
         public string Name { get; set; }
         public string FullyQualifiedName { get; set; }
@@ -49,6 +68,7 @@ namespace J4JSoftware.DocCompiler
         public int? AliasedNamespaceID { get; set; }
         public Namespace? AliasedNamespace { get;set; }
         public ICollection<Namespace>? Aliases { get;set; }
+        public ICollection<ExternalType> ExternalTypes { get; set; }
     }
 
     internal class NamespaceConfigurator : EntityConfigurator<Namespace>

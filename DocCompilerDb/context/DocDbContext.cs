@@ -45,13 +45,11 @@ namespace J4JSoftware.DocCompiler
         public DbSet<CodeFile> CodeFiles { get; set; }
 
         public DbSet<Namespace> Namespaces { get; set; }
-        //public DbSet<Using> Usings { get; set; }
-        //public DbSet<NamespaceUsing> NamespaceUsings { get; set; }
 
         public DbSet<DocumentedType> DocumentedTypes { get; set; }
-        //public DbSet<DocumentedTypeUsing> DocumentedTypeUsings { get; set; }
         public DbSet<ExternalType> ExternalTypes { get; set; }
         public DbSet<TypeParameter> TypeParameters { get; set; }
+        public DbSet<TypeAncestor> TypeAncestors { get; set; }
 
         public DbSet<Event> Events { get; set; }
         public DbSet<Field> Fields { get; set; }

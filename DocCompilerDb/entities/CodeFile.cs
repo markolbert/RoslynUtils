@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -35,14 +36,28 @@ namespace J4JSoftware.DocCompiler
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
 
+        public List<NamespaceContext> GetNamespaceContext( List<NamespaceContext>? retVal = null )
+        {
+            retVal ??= new List<NamespaceContext>();
+
+            if( OuterNamespaces == null )
+                return retVal;
+
+            foreach( var curNS in OuterNamespaces )
+            {
+                if( retVal.All( x => !x.Label.Equals( curNS.Name, StringComparison.Ordinal ) ) )
+                    retVal.Add( new NamespaceContext(curNS) );
+            }
+
+            return retVal;
+        }
+
         // OuterNamespaces are always the result of using statements 
         // within the outermost level of a source code file (i.e., outside
         // any namespace declarations)
         public ICollection<Namespace>? OuterNamespaces { get; set; }
 
         public ICollection<DocumentedType> DocumentedTypes { get; set; }
-        //public ICollection<Using> Usings { get; set; }
-        //public ICollection<NamespaceUsing> NamespaceUsingReferences { get; set; }
     }
 
     internal class CodeFileConfigurator : EntityConfigurator<CodeFile>

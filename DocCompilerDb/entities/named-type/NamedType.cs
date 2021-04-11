@@ -38,6 +38,8 @@ namespace J4JSoftware.DocCompiler
 
         public bool Deprecated { get; set; }
 
+        public ICollection<TypeArgument>? TypeArguments { get; set; }
+
         public ICollection<TypeConstraint> UsedInConstraints { get; set; }
         public ICollection<TypeReference> UsedInReferences { get;set; }
         public ICollection<TypeAncestor> UsedInAncestors { get; set; }

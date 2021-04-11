@@ -26,8 +26,8 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(TypeAncestorConfigurator))]
     public class TypeAncestor
     {
-        public int ChildID { get; set; }
-        public DocumentedType ChildType { get; set; }
+        public int DeclaredByID { get; set; }
+        public DocumentedType DeclaredBy { get; set; }
         public int AncestorID { get; set; }
         public NamedType AncestorType { get; set; }
     }
@@ -36,11 +36,11 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<TypeAncestor> builder )
         {
-            builder.HasKey( x => new { x.ChildID, x.AncestorID } );
+            builder.HasKey( x => new { ChildID = x.DeclaredByID, x.AncestorID } );
 
-            builder.HasOne( x => x.ChildType )
+            builder.HasOne( x => x.DeclaredBy )
                 .WithMany( x => x.Ancestors )
-                .HasForeignKey( x => x.ChildID )
+                .HasForeignKey( x => x.DeclaredByID )
                 .HasPrincipalKey( x => x.ID );
 
             builder.HasOne( x => x.AncestorType )

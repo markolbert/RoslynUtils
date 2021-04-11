@@ -17,28 +17,15 @@
 
 #endregion
 
-using System;
-using System.Collections.Generic;
-using J4JSoftware.EFCoreUtilities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(ExternalTypeConfigurator))]
-    public class ExternalType : NamedType
+    public interface ITypeFinder
     {
-        public string? ExternalUrl { get; set; }
-
-        public ICollection<Namespace>? PossibleNamespaces { get; set; }
-    }
-
-    internal class ExternalTypeConfigurator : EntityConfigurator<ExternalType>
-    {
-        protected override void Configure( EntityTypeBuilder<ExternalType> builder )
-        {
-            builder.HasMany( x => x.PossibleNamespaces )
-                .WithMany( x => x.ExternalTypes );
-        }
+        bool Resolve( SyntaxNode typeNode, 
+            DocumentedType dtContextDb, 
+            IScannedFile scannedFile,
+            bool createIfMissing = true );
     }
 }

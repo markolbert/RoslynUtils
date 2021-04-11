@@ -30,7 +30,7 @@ namespace J4JSoftware.DocCompiler
         public int ReferencedTypeID { get; set; }
         public TypeReference ReferencedType { get; set; }
         public int DeclaringTypeID { get; set; }
-        public DocumentedType DeclaringType { get; set; }
+        public NamedType DeclaringType { get; set; }
         public int Index { get; set; }
     }
 

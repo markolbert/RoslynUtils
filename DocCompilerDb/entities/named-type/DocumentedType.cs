@@ -85,17 +85,38 @@ namespace J4JSoftware.DocCompiler
             };
         }
 
+        public List<NamespaceContext> GetNamespaceContext( List<NamespaceContext>? retVal = null )
+        {
+            retVal ??= new List<NamespaceContext>();
+
+            var curNS = ContainingNamespace;
+
+            while( curNS != null )
+            {
+                if( curNS.ChildNamespaces != null )
+                {
+                    foreach( var childNS in curNS.ChildNamespaces )
+                    {
+                        if( retVal.All( x => !x.Label.Equals( childNS.Name, StringComparison.Ordinal ) ) )
+                            retVal.Add( new NamespaceContext( childNS ) );
+                    }
+                }
+
+                curNS = curNS.ContainingNamespace;
+            }
+
+            return retVal;
+        }
+
         public ICollection<CodeFile>? CodeFiles { get; set; }
 
         public ICollection<DocumentedType>? ChildTypes { get; set; }
         public ICollection<Method>? Methods { get; set; }
         public ICollection<Event>? Events { get; set; }
         public ICollection<TypeParameter>? TypeParameters { get; set; }
-        public ICollection<TypeArgument>? TypeArguments { get; set; }
         public ICollection<TypeAncestor>? Ancestors { get; set; }
         public ICollection<Property>? Properties { get; set; }
         public ICollection<Field>? Fields { get; set; }
-        //public ICollection<DocumentedTypeUsing> TypeUsings { get; set; }
     }
 
     internal class DocumentedTypeConfigurator : EntityConfigurator<DocumentedType>
