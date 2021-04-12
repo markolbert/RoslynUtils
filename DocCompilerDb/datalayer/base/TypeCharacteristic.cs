@@ -17,15 +17,12 @@
 
 #endregion
 
-using Microsoft.CodeAnalysis;
-
 namespace J4JSoftware.DocCompiler
 {
-    public interface ITypeFinder
+    public enum TypeCharacteristic
     {
-        bool Resolve( SyntaxNode typeNode, 
-            DocumentedType dtContextDb, 
-            IScannedFile scannedFile,
-            bool createIfMissing = true );
+        None,
+        Predefined,
+        Array
     }
 }

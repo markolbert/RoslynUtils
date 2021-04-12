@@ -25,11 +25,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(ExternalTypeConfigurator))]
+    [ EntityConfiguration( typeof(ExternalTypeConfigurator) ) ]
     public class ExternalType : NamedType
     {
         public string? ExternalUrl { get; set; }
-
+        public int NumTypeParameters { get; set; }
         public ICollection<Namespace>? PossibleNamespaces { get; set; }
     }
 
@@ -37,6 +37,9 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<ExternalType> builder )
         {
+            builder.HasIndex( x => new { x.Name, x.NumTypeParameters } )
+                .IsUnique();
+
             builder.HasMany( x => x.PossibleNamespaces )
                 .WithMany( x => x.ExternalTypes );
         }

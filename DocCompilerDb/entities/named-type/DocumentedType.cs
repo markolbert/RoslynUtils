@@ -33,11 +33,11 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(DocumentedTypeConfigurator))]
     public class DocumentedType : NamedType
     {
-        private int? _namespaceID;
         private int? _docTypeID;
-        private ContainerType _containerType = ContainerType.Undefined;
+        private ContainerType _containerType = ContainerType.Namespace;
 
         public string FullyQualifiedName { get; set; }
+        public string FullyQualifiedNameWithoutTypeParameters {get; set; }
 
         public NamedTypeKind Kind { get; set; }
         public Documentation Documentation { get; set; }
@@ -47,8 +47,8 @@ namespace J4JSoftware.DocCompiler
         public bool IsSealed { get; set; }
         public bool IsAbstract { get; set; }
 
-        public int? ContainingNamespaceID => _namespaceID;
-        public Namespace? ContainingNamespace { get; set; }
+        public int? NamespaceID { get; set; }
+        public Namespace? Namespace { get; set; }
         
         public int? ContainingDocumentedTypeID => _docTypeID;
         public DocumentedType? ContainingDocumentedType { get; set; }
@@ -58,20 +58,17 @@ namespace J4JSoftware.DocCompiler
         public void SetContainer( Namespace container )
         {
             _docTypeID = null;
-            _namespaceID = container.ID;
             _containerType = ContainerType.Namespace;
         }
 
         public void SetNotContained()
         {
             _docTypeID = null;
-            _namespaceID = null;
-            _containerType = ContainerType.Undefined;
+            _containerType = ContainerType.CodeFile;
         }
 
         public void SetContainer( DocumentedType container )
         {
-            _namespaceID = null;
             _docTypeID = container.ID;
 
             _containerType = container.Kind switch
@@ -89,7 +86,7 @@ namespace J4JSoftware.DocCompiler
         {
             retVal ??= new List<NamespaceContext>();
 
-            var curNS = ContainingNamespace;
+            var curNS = Namespace;
 
             while( curNS != null )
             {
@@ -123,6 +120,8 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<DocumentedType> builder )
         {
+            builder.HasIndex( x => x.FullyQualifiedNameWithoutTypeParameters );
+
             builder.HasMany( x => x.CodeFiles )
                 .WithMany( x => x.DocumentedTypes );
 
@@ -134,12 +133,9 @@ namespace J4JSoftware.DocCompiler
                 .HasForeignKey( x => x.ContainingDocumentedTypeID )
                 .HasPrincipalKey( x => x.ID );
 
-            builder.Property( x => x.ContainingNamespaceID )
-                .HasField( "_namespaceID" );
-
-            builder.HasOne( x => x.ContainingNamespace )
+            builder.HasOne( x => x.Namespace )
                 .WithMany( x => x.DocumentedTypes )
-                .HasForeignKey( x => x.ContainingNamespaceID )
+                .HasForeignKey( x => x.NamespaceID )
                 .HasPrincipalKey( x => x.ID );
 
             builder.Property("ContainerType")

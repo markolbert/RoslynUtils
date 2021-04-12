@@ -40,11 +40,6 @@ namespace J4JSoftware.DocCompiler
         {
             builder.HasKey( x => new { x.DeclaringTypeID, x.Index } );
 
-            builder.HasOne( x => x.DeclaringType )
-                .WithMany( x => x.TypeArguments )
-                .HasForeignKey( x => x.DeclaringTypeID )
-                .HasPrincipalKey( x => x.ID );
-
             builder.HasOne( x => x.ReferencedType )
                 .WithMany( x => x.UsedInTypeArguments )
                 .HasForeignKey( x => x.ReferencedTypeID )

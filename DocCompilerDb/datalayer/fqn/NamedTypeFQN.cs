@@ -27,7 +27,13 @@ namespace J4JSoftware.DocCompiler
             _tplFQN = tplFQN;
         }
 
+        public bool GetFullyQualifiedNameWithoutTypeParameters( SyntaxNode node, out string? result )
+            => GetFullyQualifiedNameInternal( node, false, out result );
+
         public override bool GetFullyQualifiedName( SyntaxNode node, out string? result )
+            => GetFullyQualifiedNameInternal( node, true, out result );
+
+        private bool GetFullyQualifiedNameInternal( SyntaxNode node, bool inclTypeParams, out string? result )
         {
             if( !base.GetFullyQualifiedName( node, out result ) )
                 return false;

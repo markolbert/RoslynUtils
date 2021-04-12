@@ -123,8 +123,12 @@ namespace Tests.DocCompiler
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<TypeFinder>()
-                .As<ITypeFinder>()
+            builder.RegisterType<NamedTypeFQN>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<NamedTypeResolver>()
+                .As<INamedTypeResolver>()
                 .SingleInstance();
         }
     }

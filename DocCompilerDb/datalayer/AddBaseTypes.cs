@@ -46,16 +46,16 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.StructDeclaration
         };
 
-        private readonly ITypeFinder _typeFinder;
+        private readonly INamedTypeResolver _namedTypeResolver;
 
         public AddBaseTypes( 
             IFullyQualifiedNames fqNamers,
-            ITypeFinder typeFinder,
+            INamedTypeResolver namedTypeResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
         {
-            _typeFinder = typeFinder;
+            _namedTypeResolver = namedTypeResolver;
         }
 
         protected override IEnumerable<NodeContext> GetNodesToProcess( IDocScanner source )
@@ -106,28 +106,29 @@ namespace J4JSoftware.DocCompiler
                 return true;
             }
 
-            var ancestors = new List<TypeAncestor>();
+            var ancestors = docTypeDb.Ancestors ?? new List<TypeAncestor>();
 
             foreach( var simpleBaseNode in simpleBaseNodes )
             {
-                if( !_typeFinder.GetNamedType( simpleBaseNode, docTypeDb, nodeContext.ScannedFile, out var foundType ) )
+                if( !_namedTypeResolver.Resolve( simpleBaseNode, docTypeDb, nodeContext.ScannedFile ) )
                     return false;
 
-                // see if the found type is contained in the list of ancestors
+                var foundType = _namedTypeResolver.ResolvedEntity!;
+
+                // no need to do anything if the ancestor is already on file
                 if( ancestors.Any( x => x.AncestorID == foundType!.ID ) )
                     continue;
 
-                ancestors.Add( new TypeAncestor { AncestorID = foundType!.ID, DeclaredByID = docTypeDb.ID } );
+                var newAncestor = new TypeAncestor { DeclaredByID = docTypeDb.ID };
+
+                if( foundType.ID == 0 )
+                    newAncestor.AncestorType = foundType;
+                else newAncestor.AncestorID = foundType.ID;
+
+                ancestors.Add( newAncestor );
             }
 
-            // remove any existing ancestors not in the ancestor list
-            var toDelete = docTypeDb.Ancestors!
-                .Where( x => ancestors.All( y => y.AncestorID == x.AncestorID ) );
-
-            DbContext.TypeAncestors.RemoveRange( toDelete );
-
-            // add the ancestors that were found
-            DbContext.TypeAncestors.AddRange( ancestors );
+            docTypeDb.Ancestors = ancestors;
 
             DbContext.SaveChanges();
 

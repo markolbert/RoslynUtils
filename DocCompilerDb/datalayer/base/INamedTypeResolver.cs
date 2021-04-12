@@ -17,15 +17,17 @@
 
 #endregion
 
+using Microsoft.CodeAnalysis;
+
 namespace J4JSoftware.DocCompiler
 {
-    public enum ContainerType
+    public interface INamedTypeResolver
     {
-        Class,
-        Interface,
-        Namespace,
-        Record,
-        CodeFile,
-        Struct
+        bool Resolve( SyntaxNode typeNode, 
+            DocumentedType dtContextDb, 
+            IScannedFile scannedFile,
+            bool createIfMissing = true );
+
+        NamedType? ResolvedEntity { get; }
     }
 }

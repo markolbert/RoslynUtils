@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -26,7 +27,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class TypeInfoContext : ITypeFinder
+    public class NamedTypeResolver : INamedTypeResolver
     {
         private readonly DocDbContext _dbContext;
         private readonly List<NamespaceContext> _cfNsContexts = new();
@@ -36,7 +37,7 @@ namespace J4JSoftware.DocCompiler
         private CodeFile? _codeFile;
         private bool _createIfMissing;
 
-        public TypeInfoContext(
+        public NamedTypeResolver(
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
@@ -47,12 +48,19 @@ namespace J4JSoftware.DocCompiler
             _logger?.SetLoggedType( GetType() );
         }
 
-        public bool IsValid { get; private set; }
-        public TypeInfo Root { get; } = new();
+        public NamedType? ResolvedEntity { get; private set; }
 
-        public bool Resolve( SyntaxNode typeNode, DocumentedType dtContextDb, IScannedFile scannedFile, bool createIfMissing = true )
+        public bool Resolve( SyntaxNode typeNode, DocumentedType dtContextDb, IScannedFile scannedFile,
+            bool createIfMissing = true )
         {
             _createIfMissing = createIfMissing;
+            ResolvedEntity = null;
+
+            if( !typeNode.IsKind( SyntaxKind.SimpleBaseType ) )
+            {
+                _logger?.Error( "SyntaxNode is not a SimpleBaseType" );
+                return false;
+            }
 
             _codeFile = _dbContext.CodeFiles.FirstOrDefault( x => x.FullPath == scannedFile.SourceFilePath );
 
@@ -67,35 +75,67 @@ namespace J4JSoftware.DocCompiler
             _cfNsContexts.Clear();
             _cfNsContexts.AddRange( _codeFile.GetNamespaceContext() );
 
-            if( !PopulateTypeInfo( typeNode, Root ) )
+            var root = new TypeInfo();
+
+            if( !PopulateTypeInfo( typeNode, root ) )
                 return false;
 
-            if( Root.Arguments.Count != 1 )
+            if( root.Arguments.Count != 1 )
             {
-                _logger?.Error("Invalid TypeInfo derived from scanning SyntaxNode");
+                _logger?.Error( "Invalid TypeInfo derived from scanning SyntaxNode" );
                 return false;
             }
 
-            IsValid = ResolveInternal( Root.Arguments.First(), dtContextDb );
+            if( !ResolveInternal( root.Arguments.First(), dtContextDb ) || root.Arguments[0].DbEntity == null )
+                return false;
 
-            return IsValid;
+            ResolvedEntity = root.Arguments[ 0 ].DbEntity;
+
+            return true;
         }
 
         private bool PopulateTypeInfo( SyntaxNode node, TypeInfo typeInfo )
         {
-            if( !node.GetChildNode( out var typeNode, 
-                SyntaxKind.GenericName, SyntaxKind.IdentifierName, SyntaxKind.PredefinedType ) )
+            switch( node.Kind() )
             {
-                _logger?.Error( "Type container node contains neither a GenericName, an IdentifierName node nor a PredefinedType node" );
-                return false;
+                case SyntaxKind.SimpleBaseType:
+                    return PopulateTypeInfo( node.ChildNodes().First(), typeInfo );
+                
+                case SyntaxKind.IdentifierName:
+                    typeInfo.AddChild( node.ToString() );
+                    return true;
+
+                case SyntaxKind.PredefinedType:
+                    typeInfo.AddChild( node.ToString(), TypeCharacteristic.Predefined );
+                    return true;
+
+                case SyntaxKind.ArrayType:
+                    typeInfo.AddChild( node.ToString(), TypeCharacteristic.Array );
+                    return true;
+
+                case SyntaxKind.GenericName:
+                    var childTypeInfo = typeInfo.AddChild( node.ToString() );
+
+                    if( node.GetChildNode( SyntaxKind.TypeArgumentList, out var talNode ) )
+                        return PopulateTypeInfo( talNode!, childTypeInfo );
+                    
+                    _logger?.Error("GenericName node does not contain a TypeArgumentList node"  );
+                    
+                    return false;
+
+                case SyntaxKind.TypeArgumentList:
+                    foreach( var childNode in node.ChildNodes() )
+                    {
+                        if( !PopulateTypeInfo( childNode, typeInfo ) )
+                            return false;
+                    }
+
+                    return true;
+
+                default:
+                    _logger?.Error("Unsupported SyntaxNode '{0}'", node.Kind()  );
+                    return false;
             }
-
-            var childTypeInfo = typeInfo.AddChild( typeNode!.ChildTokens().First().Text );
-
-            if( !typeNode!.GetChildNode( SyntaxKind.TypeParameterList, out var tplNode ) )
-                return true;
-
-            return tplNode!.ChildNodes().All( childNode => PopulateTypeInfo( childNode, childTypeInfo ) );
         }
 
         private bool ResolveInternal( TypeInfo typeInfo, NamedType ntContextDb )
@@ -125,30 +165,15 @@ namespace J4JSoftware.DocCompiler
         {
             result = null;
 
-            foreach( var fqInfo in nsContexts )
+            foreach( var nsContext in nsContexts )
             {
                 foreach( var dtMatch in _dbContext.DocumentedTypes
-                    .Where( x => x.FullyQualifiedName.StartsWith( fqInfo.NamespaceName ) )
-                )
+                    .Include( x => x.TypeParameters )
+                    .Where( x => x.FullyQualifiedNameWithoutTypeParameters == $"{nsContext.NamespaceName}.{typeInfo.Name}"
+                                 && ( x.TypeParameters == null && !typeInfo.Arguments.Any() 
+                                      || x.TypeParameters != null && x.TypeParameters.Count == typeInfo.Arguments.Count
+                                 ) ) )
                 {
-                    // can't test for this match in EF Core LINQ because it can't be translated
-                    if( !dtMatch.FullyQualifiedName.Equals( $"{fqInfo.NamespaceName}.{typeInfo.Name}" ) )
-                        continue;
-
-                    if( dtMatch.TypeParameters == null )
-                    {
-                        if( typeInfo.Arguments.Count != 0 )
-                            continue;
-
-                        result = dtMatch;
-                        return true;
-                    }
-
-                    if( typeInfo.Arguments.Count != dtMatch.TypeParameters.Count )
-                        continue;
-
-                    // recurse over all the arguments to ensure they have type entities
-                    // in the database
                     foreach( var argInfo in typeInfo.Arguments )
                     {
                         if( !ResolveInternal( argInfo, dtMatch ) )
@@ -168,51 +193,32 @@ namespace J4JSoftware.DocCompiler
         {
             result = null;
 
-            var sameNameTypes = _dbContext.ExternalTypes
+            var possibleNamedTypes = _dbContext.ExternalTypes
                 .Include( x => x.PossibleNamespaces )
-                .Include( x => x.TypeArguments )
-                .Where( x => x.Name == typeInfo.Name
-                             && ( x.TypeArguments == null && typeInfo.Arguments.Count == 0
-                                  || x.TypeArguments != null && x.TypeArguments.Count == typeInfo.Arguments.Count )
-                );
+                .Where( x => x.Name == typeInfo.Name && x.NumTypeParameters == typeInfo.Arguments.Count );
 
-            if( !sameNameTypes.Any() )
+            if( !possibleNamedTypes.Any() )
             {
                 result = _createIfMissing ? CreateExternalType( typeInfo, nsContexts ) : null;
 
                 return result != null;
             }
 
-            foreach( var extTypeDb in sameNameTypes )
+            foreach( var extTypeDb in possibleNamedTypes )
             {
-                if( extTypeDb.PossibleNamespaces?
-                    .Any( x => nsContexts.Any( y => y.NamespaceName == x.Name ) ) ?? false )
-                {
-                    // there's a match on the existing possible namespaces, so ensure 
-                    // any type arguments also exist
-                    foreach( var argInfo in typeInfo.Arguments )
-                    {
-                        if( !ResolveInternal( argInfo, extTypeDb ) )
-                            return false;
-                    }
+                if( !( extTypeDb.PossibleNamespaces?
+                    .Any( x => nsContexts.Any( y => y.NamespaceName == x.Name ) ) ?? false ) ) 
+                    continue;
 
-                    result = extTypeDb;
+                result = extTypeDb;
 
-                    return true;
-                }
-
-                // there's a match on the type name but not the possible namespaces so add the current
-                // namespace to the list of possibles and return the type
-                var possibleNS = extTypeDb.PossibleNamespaces?.ToList() ?? new List<Namespace>();
-                possibleNS.AddRange( nsContexts.Select( x => x.Namespace ) );
-
-                extTypeDb.PossibleNamespaces = possibleNS.Distinct( Namespace.FullyQualifiedNameComparer ).ToList();
-
-                return extTypeDb;
+                return true;
             }
 
             // if we get here there were no matches among the ExternalTypes in the database
-            return _createIfMissing ? CreateExternalType( typeInfo, nsContexts ) : null;
+            result = _createIfMissing ? CreateExternalType( typeInfo, nsContexts ) : null;
+
+            return result != null;
         }
 
         private ExternalType CreateExternalType( TypeInfo typeInfo, List<NamespaceContext> nsContexts )
@@ -220,6 +226,7 @@ namespace J4JSoftware.DocCompiler
             var retVal = new ExternalType
             {
                 Name = typeInfo.Name,
+                NumTypeParameters = typeInfo.Arguments.Count,
                 PossibleNamespaces = nsContexts.Select( x => x.Namespace ).ToList()
             };
 
