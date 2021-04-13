@@ -12,6 +12,7 @@ namespace J4JSoftware.DocCompiler
         Public,
         Protected,
         Internal,
-        ProtectedInternal
+        ProtectedInternal,
+        ExternallyDefined
     }
 }

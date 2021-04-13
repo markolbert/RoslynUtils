@@ -35,12 +35,12 @@ namespace J4JSoftware.DocCompiler
 
         public int ID { get; set; }
         public string Name { get; set; }
+        public Accessibility Accessibility { get; set; }
 
         public bool Deprecated { get; set; }
 
         public ICollection<TypeConstraint> UsedInConstraints { get; set; }
         public ICollection<TypeReference> UsedInReferences { get;set; }
-        public ICollection<TypeAncestor> UsedInAncestors { get; set; }
         public ICollection<Event> UsedInEvents { get;set; }
         public ICollection<Property> PropertyReturnTypes { get; set; }
         public ICollection<Method> MethodReturnTypes { get; set; }
@@ -52,6 +52,9 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<NamedType> builder )
         {
+            builder.Property( x => x.Accessibility )
+                .HasConversion<string>()
+                .HasDefaultValue( Accessibility.Private );
         }
     }
 }

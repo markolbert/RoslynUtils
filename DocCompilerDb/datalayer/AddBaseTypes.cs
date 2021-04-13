@@ -46,16 +46,16 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.StructDeclaration
         };
 
-        private readonly INamedTypeResolver _namedTypeResolver;
+        private readonly ITypeReferenceResolver _typeReferenceResolver;
 
         public AddBaseTypes( 
             IFullyQualifiedNames fqNamers,
-            INamedTypeResolver namedTypeResolver,
+            ITypeReferenceResolver typeReferenceResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
         {
-            _namedTypeResolver = namedTypeResolver;
+            _typeReferenceResolver = typeReferenceResolver;
         }
 
         protected override IEnumerable<NodeContext> GetNodesToProcess( IDocScanner source )
@@ -110,20 +110,18 @@ namespace J4JSoftware.DocCompiler
 
             foreach( var simpleBaseNode in simpleBaseNodes )
             {
-                if( !_namedTypeResolver.Resolve( simpleBaseNode, docTypeDb, nodeContext.ScannedFile ) )
+                if( !_typeReferenceResolver.Resolve( simpleBaseNode, docTypeDb, nodeContext.ScannedFile, out var typeRef ) )
                     return false;
 
-                var foundType = _namedTypeResolver.ResolvedEntity!;
-
                 // no need to do anything if the ancestor is already on file
-                if( ancestors.Any( x => x.AncestorID == foundType!.ID ) )
+                if( ancestors.Any( x => x.AncestorID == typeRef!.ID ) )
                     continue;
 
                 var newAncestor = new TypeAncestor { DeclaredByID = docTypeDb.ID };
 
-                if( foundType.ID == 0 )
-                    newAncestor.AncestorType = foundType;
-                else newAncestor.AncestorID = foundType.ID;
+                if( typeRef!.ID == 0 )
+                    newAncestor.AncestorType = typeRef;
+                else newAncestor.AncestorID = typeRef.ID;
 
                 ancestors.Add( newAncestor );
             }

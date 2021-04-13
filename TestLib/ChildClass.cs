@@ -24,7 +24,7 @@ namespace J4JSoftware.Roslyn.Tests
         }
     }
 
-    public class ListChildClass : List<int[]>
+    public class ListChildClass : List<int[,]>
     {
     }
 }

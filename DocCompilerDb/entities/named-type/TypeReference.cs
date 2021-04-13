@@ -30,7 +30,11 @@ namespace J4JSoftware.DocCompiler
         public int ID { get; set; }
         public int ReferencedTypeID { get; set; }
         public NamedType ReferencedType { get; set; }
+        public int ReferencedTypeRank {get;set;}
+
         public ICollection<TypeArgument> UsedInTypeArguments { get; set; }
+        public ICollection<TypeAncestor> UsedInAncestors { get; set; }
+
     }
 
     internal class TypeReferenceConfigurator : EntityConfigurator<TypeReference>

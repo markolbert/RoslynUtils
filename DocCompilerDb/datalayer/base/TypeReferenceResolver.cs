@@ -23,11 +23,12 @@ using System.Reflection.Metadata;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class NamedTypeResolver : INamedTypeResolver
+    public class TypeReferenceResolver : ITypeReferenceResolver
     {
         private readonly DocDbContext _dbContext;
         private readonly List<NamespaceContext> _cfNsContexts = new();
@@ -37,7 +38,7 @@ namespace J4JSoftware.DocCompiler
         private CodeFile? _codeFile;
         private bool _createIfMissing;
 
-        public NamedTypeResolver(
+        public TypeReferenceResolver(
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
@@ -48,13 +49,15 @@ namespace J4JSoftware.DocCompiler
             _logger?.SetLoggedType( GetType() );
         }
 
-        public NamedType? ResolvedEntity { get; private set; }
-
-        public bool Resolve( SyntaxNode typeNode, DocumentedType dtContextDb, IScannedFile scannedFile,
+        public bool Resolve( 
+            SyntaxNode typeNode, 
+            DocumentedType dtContextDb, 
+            IScannedFile scannedFile,
+            out TypeReference? result,
             bool createIfMissing = true )
         {
             _createIfMissing = createIfMissing;
-            ResolvedEntity = null;
+            result = null;
 
             if( !typeNode.IsKind( SyntaxKind.SimpleBaseType ) )
             {
@@ -75,65 +78,70 @@ namespace J4JSoftware.DocCompiler
             _cfNsContexts.Clear();
             _cfNsContexts.AddRange( _codeFile.GetNamespaceContext() );
 
-            var root = new TypeInfo();
-
-            if( !PopulateTypeInfo( typeNode, root ) )
+            if( !GetTypeInfo( typeNode, out var rootTypeInfo ) )
                 return false;
 
-            if( root.Arguments.Count != 1 )
-            {
-                _logger?.Error( "Invalid TypeInfo derived from scanning SyntaxNode" );
-                return false;
-            }
-
-            if( !ResolveInternal( root.Arguments.First(), dtContextDb ) || root.Arguments[0].DbEntity == null )
+            if( !ResolveInternal( rootTypeInfo!, dtContextDb ) )
                 return false;
 
-            ResolvedEntity = root.Arguments[ 0 ].DbEntity;
+            result = new TypeReference { ReferencedTypeRank = rootTypeInfo!.Rank };
+
+            if( rootTypeInfo.DbEntity!.ID == 0 )
+                result.ReferencedType = rootTypeInfo.DbEntity;
+            else result.ReferencedTypeID = rootTypeInfo.DbEntity.ID;
 
             return true;
         }
 
-        private bool PopulateTypeInfo( SyntaxNode node, TypeInfo typeInfo )
+        private bool GetTypeInfo( SyntaxNode node, out TypeInfo? result )
         {
             switch( node.Kind() )
             {
                 case SyntaxKind.SimpleBaseType:
-                    return PopulateTypeInfo( node.ChildNodes().First(), typeInfo );
+                    return GetTypeInfo( node.ChildNodes().First(), out result );
                 
                 case SyntaxKind.IdentifierName:
-                    typeInfo.AddChild( node.ToString() );
+                    result = new TypeInfo( node );
                     return true;
 
                 case SyntaxKind.PredefinedType:
-                    typeInfo.AddChild( node.ToString(), TypeCharacteristic.Predefined );
+                    result = new TypeInfo( node ) { IsPredefined = true };
                     return true;
 
                 case SyntaxKind.ArrayType:
-                    typeInfo.AddChild( node.ToString(), TypeCharacteristic.Array );
+                    // the first child node is supposed to be the "basic type name"
+                    if( !GetTypeInfo( node.ChildNodes().First(), out result ) )
+                        return false;
+
+                    result!.Rank = node.DescendantNodes()
+                        .Count( x => x.IsKind( SyntaxKind.OmittedArraySizeExpression ) );
+
                     return true;
 
                 case SyntaxKind.GenericName:
-                    var childTypeInfo = typeInfo.AddChild( node.ToString() );
+                    result = new TypeInfo( node.ChildTokens()
+                        .First( x => x.IsKind( SyntaxKind.IdentifierToken ) )
+                        .Text );
 
-                    if( node.GetChildNode( SyntaxKind.TypeArgumentList, out var talNode ) )
-                        return PopulateTypeInfo( talNode!, childTypeInfo );
-                    
-                    _logger?.Error("GenericName node does not contain a TypeArgumentList node"  );
-                    
-                    return false;
-
-                case SyntaxKind.TypeArgumentList:
-                    foreach( var childNode in node.ChildNodes() )
+                    if( !node.GetChildNode( SyntaxKind.TypeArgumentList, out var talNode ) )
+                        _logger?.Error("GenericName node does not contain a TypeArgumentList node"  );
+                    else
                     {
-                        if( !PopulateTypeInfo( childNode, typeInfo ) )
-                            return false;
+                        foreach( var taNode in talNode!.ChildNodes() )
+                        {
+                            if( !GetTypeInfo(taNode, out var taTypeInfo))
+                                return false;
+
+                            result.AddChild(taTypeInfo!);
+                        }
                     }
 
                     return true;
-
+                    
                 default:
+                    result = null;
                     _logger?.Error("Unsupported SyntaxNode '{0}'", node.Kind()  );
+
                     return false;
             }
         }
@@ -195,7 +203,8 @@ namespace J4JSoftware.DocCompiler
 
             var possibleNamedTypes = _dbContext.ExternalTypes
                 .Include( x => x.PossibleNamespaces )
-                .Where( x => x.Name == typeInfo.Name && x.NumTypeParameters == typeInfo.Arguments.Count );
+                .Where( x => x.Name == typeInfo.Name 
+                             && x.NumTypeParameters == typeInfo.Arguments.Count );
 
             if( !possibleNamedTypes.Any() )
             {
@@ -226,6 +235,7 @@ namespace J4JSoftware.DocCompiler
             var retVal = new ExternalType
             {
                 Name = typeInfo.Name,
+                Accessibility = Accessibility.ExternallyDefined,
                 NumTypeParameters = typeInfo.Arguments.Count,
                 PossibleNamespaces = nsContexts.Select( x => x.Namespace ).ToList()
             };

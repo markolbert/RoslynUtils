@@ -42,7 +42,6 @@ namespace J4JSoftware.DocCompiler
         public NamedTypeKind Kind { get; set; }
         public Documentation Documentation { get; set; }
 
-        public Accessibility Accessibility { get; set; }
         public bool IsStatic { get; set; }
         public bool IsSealed { get; set; }
         public bool IsAbstract { get; set; }
@@ -144,10 +143,6 @@ namespace J4JSoftware.DocCompiler
 
             builder.HasIndex( x => x.FullyQualifiedName )
                 .IsUnique();
-
-            builder.Property( x => x.Accessibility )
-                .HasConversion<string>()
-                .HasDefaultValue( Accessibility.Private );
 
             builder.Property( x => x.Kind )
                 .HasConversion<string>();

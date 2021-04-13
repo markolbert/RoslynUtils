@@ -21,13 +21,12 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.DocCompiler
 {
-    public interface INamedTypeResolver
+    public interface ITypeReferenceResolver
     {
         bool Resolve( SyntaxNode typeNode, 
             DocumentedType dtContextDb, 
             IScannedFile scannedFile,
+            out TypeReference? result,
             bool createIfMissing = true );
-
-        NamedType? ResolvedEntity { get; }
     }
 }

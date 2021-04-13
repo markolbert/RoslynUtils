@@ -127,8 +127,8 @@ namespace Tests.DocCompiler
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<NamedTypeResolver>()
-                .As<INamedTypeResolver>()
+            builder.RegisterType<TypeReferenceResolver>()
+                .As<ITypeReferenceResolver>()
                 .SingleInstance();
         }
     }

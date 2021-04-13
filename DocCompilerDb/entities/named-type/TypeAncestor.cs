@@ -29,7 +29,7 @@ namespace J4JSoftware.DocCompiler
         public int DeclaredByID { get; set; }
         public DocumentedType DeclaredBy { get; set; }
         public int AncestorID { get; set; }
-        public NamedType AncestorType { get; set; }
+        public TypeReference AncestorType { get; set; }
     }
 
     internal class TypeAncestorConfigurator : EntityConfigurator<TypeAncestor>
