@@ -38,7 +38,7 @@ namespace J4JSoftware.DocCompiler
             if( !base.GetFullyQualifiedName( node, out result ) )
                 return false;
 
-            if( !GetName( node, out var startName ) )
+            if( !GetName( node, inclTypeParams, out var startName ) )
                 return false;
 
             var sb = new StringBuilder( startName );
@@ -77,6 +77,12 @@ namespace J4JSoftware.DocCompiler
         }
 
         public override bool GetName( SyntaxNode node, out string? result )
+            => GetName( node, true, out result );
+
+        public bool GetNameWithoutTypeParameters( SyntaxNode node, out string? result )
+            => GetName( node, false, out result );
+
+        private bool GetName( SyntaxNode node, bool inclTypeParams, out string? result )
         {
             if( !base.GetName( node, out result ) )
                 return false;
@@ -97,21 +103,24 @@ namespace J4JSoftware.DocCompiler
                 sb.Insert( 0, $"{curName}." );
             }
 
-            // if we have a type parameter list append its textual representation
-            var tplNode = node.ChildNodes()
-                .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
-            
-            if( tplNode != null )
+            if( inclTypeParams )
             {
-                if( !_tplFQN.GetName( tplNode, out var tplText ) )
-                {
-                    Logger?.Error<string>( "Could not get TypeParameterList text for {0}", sb.ToString() );
-                    return false;
-                }
+                // if we have a type parameter list append its textual representation
+                var tplNode = node.ChildNodes()
+                    .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
 
-                sb.Append( tplText! );
+                if( tplNode != null )
+                {
+                    if( !_tplFQN.GetName( tplNode, out var tplText ) )
+                    {
+                        Logger?.Error<string>( "Could not get TypeParameterList text for {0}", sb.ToString() );
+                        return false;
+                    }
+
+                    sb.Append( tplText! );
+                }
             }
-            
+
             result = sb.ToString();
 
             return !string.IsNullOrEmpty(result);

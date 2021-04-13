@@ -25,6 +25,7 @@ using J4JSoftware.DependencyInjection;
 using J4JSoftware.DocCompiler;
 using J4JSoftware.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -51,24 +52,41 @@ namespace Tests.DocCompiler
         private CompositionRoot() 
             : base( "J4JSoftware", "Test.DocCompiler" )
         {
-            var loggerConfig = new J4JLoggerConfiguration
-            {
-                EventElements = EventElements.All,
-                MultiLineEvents = true,
-                SourceRootPath = "c:/Programming/RoslynUtils/Tests.DocCompiler",
-            };
+            //var loggerConfig = new J4JLoggerConfiguration
+            //{
+            //    EventElements = EventElements.All,
+            //    MultiLineEvents = true,
+            //    SourceRootPath = "c:/Programming/RoslynUtils/Tests.DocCompiler",
+            //};
 
-            loggerConfig.Channels.Add(new DebugConfig());
+            //loggerConfig.Channels.Add(new DebugConfig());
 
-            StaticConfiguredLogging( loggerConfig );
+            var channelProvider = new ChannelConfigProvider( "Logging" )
+                .AddChannel<DebugConfig>( "Channels:Debug" );
+
+            ConfigurationBasedLogging( channelProvider );
+
+            //StaticConfiguredLogging( loggerConfig );
         }
 
         public IDocScanner DocScanner => Host?.Services.GetRequiredService<IDocScanner>()!;
         public IDocDbUpdater DbUpdater => Host?.Services.GetRequiredService<IDocDbUpdater>()!;
+        public Configuration Configuration => Host?.Services.GetRequiredService<Configuration>()!;
+
+        protected override void SetupConfigurationEnvironment( IConfigurationBuilder builder )
+        {
+            base.SetupConfigurationEnvironment( builder );
+
+            builder.AddJsonFile( Path.Combine( ApplicationConfigurationFolder, "appConfig.json" ) );
+        }
 
         protected override void SetupDependencyInjection( HostBuilderContext hbc, ContainerBuilder builder )
         {
             base.SetupDependencyInjection( hbc, builder );
+
+            builder.Register( c => hbc.Configuration.Get<Configuration>() )
+                .AsSelf()
+                .SingleInstance();
 
             builder.RegisterType<ScannedFileFactory>()
                 .As<IScannedFileFactory>()
@@ -84,12 +102,17 @@ namespace Tests.DocCompiler
 
             builder.Register( c =>
                 {
+                    var config = c.Resolve<Configuration>();
+
+                    if( config.Database.CreateNew && File.Exists( config.Database.Path ) )
+                        File.Delete( config.Database.Path );
+
                     var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
-                    optionsBuilder.UseSqlite( "Data Source=DocCompiler.db" );
+                    optionsBuilder.UseSqlite( $"Data Source={config.Database.Path}" );
 
                     var logger = c.Resolve<IJ4JLogger>();
 
-                    var retVal = new DocDbContext( optionsBuilder.Options, logger );
+                    var retVal = new DocDbContext( optionsBuilder.Options, config.Database, logger );
                     retVal.Database.EnsureCreated();
 
                     return retVal;

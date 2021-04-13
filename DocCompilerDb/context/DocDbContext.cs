@@ -15,10 +15,13 @@ namespace J4JSoftware.DocCompiler
 
         public DocDbContext( 
             DbContextOptions<DocDbContext> contextOptions,
+            DatabaseConfig dbConfig,
             IJ4JLogger? logger
             )
             : base( contextOptions )
         {
+            DbConfig = dbConfig;
+
             _deprecatable = GetDeprecatable().ToList();
 
             _logger = logger;
@@ -40,6 +43,8 @@ namespace J4JSoftware.DocCompiler
                 .Select( p => (IQueryable) p.GetValue( this )! )
                 .ToList();
         }
+
+        public DatabaseConfig DbConfig { get; }
 
         public DbSet<Assembly> Assemblies { get; set; }
         public DbSet<CodeFile> CodeFiles { get; set; }

@@ -1,0 +1,15 @@
+{
+  "Database": {
+    "CreateNew": true
+  },
+  "Logger": {
+    "SourceRootPath": "C:/Programming/RoslynUtils",
+    "MultiLineEvents": true,
+    "EventElements": "All",
+    "Channels": {
+      "Debug": {
+        "MinimumLevel": "Verbose"
+      }
+    }
+  }
+}

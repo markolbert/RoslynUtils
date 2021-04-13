@@ -17,6 +17,9 @@
 
 #endregion
 
+using System.IO;
+using System.Runtime.CompilerServices;
+using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -27,9 +30,23 @@ namespace J4JSoftware.DocCompiler
         public DocDbContext CreateDbContext( string[] args )
         {
             var optionsBuilder = new DbContextOptionsBuilder<DocDbContext>();
-            optionsBuilder.UseSqlite($"Data Source={args[0]}");
+            optionsBuilder.UseSqlite( $"Data Source={args[ 0 ]}" );
 
-            return new DocDbContext( optionsBuilder.Options, null );
+            var srcFilePath = GetSourceFilePathName();
+            srcFilePath = srcFilePath == null
+                ? args[ 0 ]
+                : Path.Combine( Path.GetDirectoryName( srcFilePath )!, args[ 0 ] );
+
+            var dbConfig = new DatabaseConfig
+            {
+                CollationType = SqliteCollationType.CaseInsensitiveAtoZ,
+                CreateNew = true,
+                Path = srcFilePath
+            };
+
+            return new DocDbContext( optionsBuilder.Options, dbConfig, null );
         }
+
+        private string? GetSourceFilePathName( [ CallerFilePath ] string? callerFilePath = null ) => callerFilePath;
     }
 }

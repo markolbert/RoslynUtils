@@ -32,7 +32,7 @@ namespace J4JSoftware.DocCompiler
     {
         private sealed class FullyQualifiedNameEqualityComparer : IEqualityComparer<Namespace>
         {
-            public bool Equals( Namespace x, Namespace y )
+            public bool Equals( Namespace? x, Namespace? y )
             {
                 if( ReferenceEquals( x, y ) ) return true;
                 if( ReferenceEquals( x, null ) ) return false;

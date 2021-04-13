@@ -34,6 +34,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="appConfig.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Update="CSharpMetaData.db">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
