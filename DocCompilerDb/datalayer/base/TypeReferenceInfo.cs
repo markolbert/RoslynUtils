@@ -7,30 +7,30 @@ using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.DocCompiler
 {
-    public class TypeInfo
+    public class TypeReferenceInfo
     {
-        private readonly List<TypeInfo> _children = new();
+        private readonly List<TypeReferenceInfo> _children = new();
 
-        public TypeInfo( string name )
+        public TypeReferenceInfo( string name )
         {
             Name = name;
         }
 
-        public TypeInfo( SyntaxNode node )
+        public TypeReferenceInfo( SyntaxNode node )
         {
             Name = node.ToString();
         }
 
-        public TypeInfo? Parent { get; private set; }
+        public TypeReferenceInfo? Parent { get; private set; }
 
         public string Name { get; }
         public bool IsPredefined { get; set; }
         public int Rank { get; set; }
-        public ReadOnlyCollection<TypeInfo> Arguments => _children.AsReadOnly();
+        public ReadOnlyCollection<TypeReferenceInfo> Arguments => _children.AsReadOnly();
 
         public NamedType? DbEntity {get; set; }
 
-        public void AddChild( TypeInfo child )
+        public void AddChild( TypeReferenceInfo child )
         {
             child.Parent = this;
 

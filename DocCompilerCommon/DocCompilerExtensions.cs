@@ -16,6 +16,9 @@ namespace J4JSoftware.DocCompiler
         public static bool HasChildNode( this SyntaxNode node, SyntaxKind kind )
             => node.ChildNodes().Any( x => x.IsKind( kind ) );
 
+        public static List<SyntaxNode> GetChildNodes( this SyntaxNode node, SyntaxKind kind )
+            => node.ChildNodes().Where( x => x.IsKind( kind ) ).ToList();
+
         public static bool GetChildNode( this SyntaxNode node, SyntaxKind kind, out SyntaxNode? result )
         {
             result = node.ChildNodes().FirstOrDefault( x => x.IsKind( kind ) );
@@ -48,6 +51,27 @@ namespace J4JSoftware.DocCompiler
             }
 
             result = curNode;
+
+            return true;
+        }
+
+        public static bool GetGeneralTypeConstraints( 
+            this SyntaxNode typeConstraintNode,
+            out GeneralTypeConstraints result )
+        {
+            result = GeneralTypeConstraints.None;
+
+            if( !typeConstraintNode.IsKind( SyntaxKind.TypeParameterConstraintClause ) )
+                return false;
+
+            if( typeConstraintNode.HasChildNode( SyntaxKind.ConstructorConstraint ) )
+                result |= GeneralTypeConstraints.New;
+
+            if( typeConstraintNode.HasChildNode( SyntaxKind.ClassConstraint ) )
+                result |= GeneralTypeConstraints.Class;
+
+            if( typeConstraintNode.HasChildNode( SyntaxKind.StructConstraint ) )
+                result |= GeneralTypeConstraints.Struct;
 
             return true;
         }

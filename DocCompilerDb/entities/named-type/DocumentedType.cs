@@ -38,6 +38,7 @@ namespace J4JSoftware.DocCompiler
 
         public string FullyQualifiedName { get; set; }
         public string FullyQualifiedNameWithoutTypeParameters {get; set; }
+        public int NumTypeParameters { get; set; }
 
         public NamedTypeKind Kind { get; set; }
         public Documentation Documentation { get; set; }
@@ -119,8 +120,6 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<DocumentedType> builder )
         {
-            builder.HasIndex( x => x.FullyQualifiedNameWithoutTypeParameters );
-
             builder.HasMany( x => x.CodeFiles )
                 .WithMany( x => x.DocumentedTypes );
 
@@ -140,6 +139,12 @@ namespace J4JSoftware.DocCompiler
             builder.Property("ContainerType")
                 .HasField("_containerType")
                 .HasConversion<string>();
+
+            builder.HasIndex( x => new
+            {
+                x.FullyQualifiedNameWithoutTypeParameters, 
+                x.NumTypeParameters
+            } );
 
             builder.HasIndex( x => x.FullyQualifiedName )
                 .IsUnique();

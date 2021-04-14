@@ -21,7 +21,7 @@
 
 namespace J4JSoftware.Roslyn.Tests
 {
-    public class OpenGenericProperties<T1, T2>
+    public class OpenGenericProperties<T1, T2, T3>
         where T1 : struct
         where T2 : struct
     {

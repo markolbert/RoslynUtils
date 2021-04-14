@@ -93,7 +93,7 @@ namespace J4JSoftware.DocCompiler
             return true;
         }
 
-        private bool GetTypeInfo( SyntaxNode node, out TypeInfo? result )
+        private bool GetTypeInfo( SyntaxNode node, out TypeReferenceInfo? result )
         {
             switch( node.Kind() )
             {
@@ -101,11 +101,11 @@ namespace J4JSoftware.DocCompiler
                     return GetTypeInfo( node.ChildNodes().First(), out result );
                 
                 case SyntaxKind.IdentifierName:
-                    result = new TypeInfo( node );
+                    result = new TypeReferenceInfo( node );
                     return true;
 
                 case SyntaxKind.PredefinedType:
-                    result = new TypeInfo( node ) { IsPredefined = true };
+                    result = new TypeReferenceInfo( node ) { IsPredefined = true };
                     return true;
 
                 case SyntaxKind.ArrayType:
@@ -119,7 +119,7 @@ namespace J4JSoftware.DocCompiler
                     return true;
 
                 case SyntaxKind.GenericName:
-                    result = new TypeInfo( node.ChildTokens()
+                    result = new TypeReferenceInfo( node.ChildTokens()
                         .First( x => x.IsKind( SyntaxKind.IdentifierToken ) )
                         .Text );
 
@@ -146,7 +146,7 @@ namespace J4JSoftware.DocCompiler
             }
         }
 
-        private bool ResolveInternal( TypeInfo typeInfo, NamedType ntContextDb )
+        private bool ResolveInternal( TypeReferenceInfo typeInfo, NamedType ntContextDb )
         {
             // build the list of namespaces which define the context within which we'll be
             // searching for a NamedType
@@ -167,7 +167,7 @@ namespace J4JSoftware.DocCompiler
         }
 
         private bool FindDocumentedType(
-            TypeInfo typeInfo,
+            TypeReferenceInfo typeInfo,
             List<NamespaceContext> nsContexts,
             out DocumentedType? result )
         {
@@ -197,7 +197,7 @@ namespace J4JSoftware.DocCompiler
             return false;
         }
 
-        private bool FindExternalType( TypeInfo typeInfo, List<NamespaceContext> nsContexts, out ExternalType? result )
+        private bool FindExternalType( TypeReferenceInfo typeInfo, List<NamespaceContext> nsContexts, out ExternalType? result )
         {
             result = null;
 
@@ -230,7 +230,7 @@ namespace J4JSoftware.DocCompiler
             return result != null;
         }
 
-        private ExternalType CreateExternalType( TypeInfo typeInfo, List<NamespaceContext> nsContexts )
+        private ExternalType CreateExternalType( TypeReferenceInfo typeInfo, List<NamespaceContext> nsContexts )
         {
             var retVal = new ExternalType
             {

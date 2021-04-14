@@ -7,6 +7,12 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
+    public record TypeParameterInfo(
+        string Name,
+        int Index,
+        SyntaxNode? TypeConstraintNode
+    );
+
     public class TypeParameterListFQN : FullyQualifiedName
     {
         public TypeParameterListFQN(
@@ -40,6 +46,39 @@ namespace J4JSoftware.DocCompiler
             result = node.DescendantTokens().Where( x => x.IsKind( SyntaxKind.IdentifierToken ) );
 
             return true;
+        }
+
+        public List<TypeParameterInfo> GetTypeParameterInfo( SyntaxNode? typeParamListNode )
+        {
+            var retVal = new List<TypeParameterInfo>();
+
+            if( typeParamListNode == null )
+                return retVal;
+
+            if( !base.GetName( typeParamListNode, out _ ) )
+                return retVal;
+
+            var index = 0;
+
+            var constraintNodes = typeParamListNode
+                .GetChildNodes( SyntaxKind.TypeParameterConstraintClause )
+                .ToDictionary( x =>
+                    x.ChildNodes().First( y => y.IsKind( SyntaxKind.IdentifierName ) ).ToString() );
+
+            foreach( var tpNode in typeParamListNode.ChildNodes()
+                .Where( x => x.IsKind( SyntaxKind.TypeParameter ) ) )
+            {
+                var name = tpNode.ChildTokens().First( x => x.IsKind( SyntaxKind.IdentifierToken ) ).Text;
+
+                retVal.Add( new TypeParameterInfo(
+                    name,
+                    index,
+                    constraintNodes.ContainsKey( name ) ? constraintNodes[ name ] : null ) );
+
+                index++;
+            }
+
+            return retVal;
         }
     }
 }

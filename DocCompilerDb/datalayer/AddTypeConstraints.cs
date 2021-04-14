@@ -35,7 +35,9 @@ namespace J4JSoftware.DocCompiler
     [TopologicalPredecessor(typeof(AddCodeFiles))]
     [TopologicalPredecessor(typeof(AddNamespaces))]
     [TopologicalPredecessor(typeof(AddUsings))]
-    public class AddDocumentedTypes : SyntaxNodeProcessor
+    [TopologicalPredecessor(typeof(AddDocumentedTypes))]
+    [TopologicalPredecessor(typeof(AddBaseTypes))]
+    public class AddTypeConstraints : SyntaxNodeProcessor
     {
         public static SyntaxKind[] SupportedKinds = new[]
         {
@@ -48,7 +50,7 @@ namespace J4JSoftware.DocCompiler
         private readonly NamedTypeFQN _ntFQN;
         private readonly TypeParameterListFQN _tplFQN;
 
-        public AddDocumentedTypes( 
+        public AddTypeConstraints( 
             IFullyQualifiedNames fqNamers,
             NamedTypeFQN ntFQN,
             TypeParameterListFQN tplFQN,
@@ -65,7 +67,9 @@ namespace J4JSoftware.DocCompiler
             foreach( var scannedFile in source.ScannedFiles )
             {
                 foreach( var nsNode in scannedFile.RootNode.DescendantNodes()
-                    .Where( n => SupportedKinds.Any(x=>x == n.Kind()) ) )
+                    .Where( n => SupportedKinds.Any( x => x == n.Kind() )
+                                 && n.DescendantNodes().Any( x =>
+                                     x.IsKind( SyntaxKind.TypeParameterConstraintClause ) ) ) )
                 {
                     yield return new NodeContext( nsNode, scannedFile );
                 }
@@ -94,24 +98,18 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            var typeParameters = _tplFQN.GetTypeParameterInfo(
-                nodeContext.Node.ChildNodes()
-                    .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) )
-            );
-
             var dtDb = DbContext.DocumentedTypes
-                .Include( x => x.CodeFiles )
-                .Include( x => x.TypeParameters )
-                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericName
-                                      && x.NumTypeParameters == typeParameters.Count );
+                .Include(x=>x.CodeFiles)
+                .Include(x=>x.TypeParameters)
+                .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
             if( dtDb == null )
             {
                 dtDb = new DocumentedType
                 {
+                    FullyQualifiedName = fqName!,
                     FullyQualifiedNameWithoutTypeParameters = nonGenericName!,
                     Name = nsName!,
-                    NumTypeParameters = typeParameters.Count,
                     CodeFiles = new List<CodeFile> { codeFileDb}
                 };
 
@@ -130,9 +128,7 @@ namespace J4JSoftware.DocCompiler
                 }
             }
 
-            dtDb.FullyQualifiedName = fqName!;
-
-            if ( !SetContainer( nodeContext, dtDb ) )
+            if( !SetContainer( nodeContext, dtDb ) )
                 return false;
 
             if( !SetNamespace( nodeContext.Node, dtDb ) )
@@ -154,7 +150,7 @@ namespace J4JSoftware.DocCompiler
 
             DbContext.SaveChanges();
 
-            ProcessTypeParameterList( typeParameters, dtDb );
+            ProcessTypeParameterList( nodeContext.Node, dtDb );
 
             return true;
 
@@ -288,14 +284,37 @@ namespace J4JSoftware.DocCompiler
             return false;
         }
 
-        private void ProcessTypeParameterList( List<TypeParameterInfo> typeParams, DocumentedType dtDb )
+        private void ProcessTypeParameterList( SyntaxNode node, DocumentedType dtDb )
         {
+            var tplNode = node.ChildNodes()
+                .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
+            
+            if( tplNode == null || !_tplFQN.GetIdentifierTokens(tplNode, out var temp ) )
+                return;
+
+            var idTokens = temp.ToList();
+
+            var constraintNodes = node.ChildNodes()
+                .Where( x => x.IsKind( SyntaxKind.TypeParameterConstraintClause ) )
+                .Select( x =>
+                {
+                    return new
+                    {
+                        Name = x.ChildNodes().First( y => y.IsKind( SyntaxKind.IdentifierName ) ).ChildTokens()
+                            .First( z => z.IsKind( SyntaxKind.IdentifierToken ) ).Text,
+                        ConstraintNode = x
+                    };
+                } )
+                .ToDictionary( x => x.Name, x => x.ConstraintNode );
+
             dtDb.TypeParameters ??= new List<TypeParameter>();
 
-            for( var idx = 0; idx < typeParams.Count; idx++ )
+            for( var idx = 0; idx < idTokens!.Count(); idx++ )
             {
+                var tpName = idTokens[ idx ].Text;
+
                 var tpDb = DbContext.TypeParameters
-                    .FirstOrDefault( x => x.DefinedInID == dtDb.ID && x.Name == typeParams[ idx ].Name );
+                    .FirstOrDefault( x => x.DefinedInID == dtDb.ID && x.Name == tpName );
 
                 if( tpDb == null )
                 {
@@ -303,13 +322,13 @@ namespace J4JSoftware.DocCompiler
                         ? new TypeParameter
                         {
                             DefinedIn = dtDb,
-                            Name = typeParams[idx].Name,
+                            Name = tpName,
                             Index = idx
                         }
                         : new TypeParameter
                         {
                             DefinedInID = dtDb.ID,
-                            Name = typeParams[idx].Name,
+                            Name = tpName,
                             Index = idx
                         };
 
@@ -317,13 +336,16 @@ namespace J4JSoftware.DocCompiler
                 }
                 else tpDb.Index = idx;
 
-                if( typeParams[ idx ].TypeConstraintNode != null )
+                if( !constraintNodes.ContainsKey( tpName ) )
                 {
-                    typeParams[ idx ].TypeConstraintNode!
-                        .GetGeneralTypeConstraints( out var temp );
-
-                    tpDb.GeneralTypeConstraints = temp;
+                    DbContext.SaveChanges();
+                    continue;
                 }
+
+                var constraintNode = constraintNodes[ tpName ];
+
+                if( GetGeneralTypeConstraints( constraintNode, out var generalConstraints ) )
+                    tpDb.GeneralTypeConstraints = generalConstraints;
 
                 DbContext.SaveChanges();
             }
