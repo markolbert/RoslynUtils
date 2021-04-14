@@ -33,21 +33,13 @@ namespace Tests.DocCompiler
 {
     public class CompositionRoot : J4JCompositionRoot<J4JLoggerConfiguration>
     {
-        public static CompositionRoot? _default;
-
-        public static CompositionRoot Default
+        static CompositionRoot()
         {
-            get
-            {
-                if( _default != null ) 
-                    return _default;
-
-                _default = new CompositionRoot();
-                _default.Initialize();
-
-                return _default;
-            }
+            Default = new CompositionRoot();
+            Default.Initialize();
         }
+
+        public static CompositionRoot Default { get; }
 
         private CompositionRoot() 
             : base( "J4JSoftware", "Test.DocCompiler" )

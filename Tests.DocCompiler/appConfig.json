@@ -2,7 +2,7 @@
   "Database": {
     "CreateNew": true
   },
-  "Logger": {
+  "Logging": {
     "SourceRootPath": "C:/Programming/RoslynUtils",
     "MultiLineEvents": true,
     "EventElements": "All",
