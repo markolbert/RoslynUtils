@@ -30,6 +30,8 @@ namespace J4JSoftware.DocCompiler
 {
     public class TypeReferenceResolver : ITypeReferenceResolver
     {
+        public static SyntaxKind[] SupportedKinds = { SyntaxKind.SimpleBaseType, SyntaxKind.TypeConstraint };
+
         private readonly DocDbContext _dbContext;
         private readonly List<NamespaceContext> _cfNsContexts = new();
 
@@ -59,9 +61,9 @@ namespace J4JSoftware.DocCompiler
             _createIfMissing = createIfMissing;
             result = null;
 
-            if( !typeNode.IsKind( SyntaxKind.SimpleBaseType ) )
+            if( SupportedKinds.All( x => !typeNode.IsKind( x ) ) )
             {
-                _logger?.Error( "SyntaxNode is not a SimpleBaseType" );
+                _logger?.Error( "SyntaxNode is not a supported type of node for TypeReference resolution" );
                 return false;
             }
 
@@ -69,7 +71,7 @@ namespace J4JSoftware.DocCompiler
 
             if( _codeFile == null )
             {
-                _logger?.Error<string>( "Could not find CodeFile entity in database for DocumentedType '{0}'",
+                _logger?.Error<string>( "Could not find CodeFile entity in database for NamedType '{0}'",
                     dtContextDb.FullyQualifiedName );
 
                 return false;
@@ -98,6 +100,9 @@ namespace J4JSoftware.DocCompiler
             switch( node.Kind() )
             {
                 case SyntaxKind.SimpleBaseType:
+                    return GetTypeInfo( node.ChildNodes().First(), out result );
+
+                case SyntaxKind.TypeConstraint:
                     return GetTypeInfo( node.ChildNodes().First(), out result );
                 
                 case SyntaxKind.IdentifierName:

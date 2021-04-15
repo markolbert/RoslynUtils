@@ -28,7 +28,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(NamespaceConfigurator))]
-    public class Namespace : IDeprecation
+    public class Namespace 
     {
         private sealed class FullyQualifiedNameEqualityComparer : IEqualityComparer<Namespace>
         {

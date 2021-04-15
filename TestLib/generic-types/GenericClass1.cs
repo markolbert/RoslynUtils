@@ -17,7 +17,7 @@
 
 #endregion
 
-using System;
+using System.Collections;
 using System.Collections.Generic;
 
 #pragma warning disable 169
@@ -26,7 +26,7 @@ using System.Collections.Generic;
 namespace J4JSoftware.Roslyn.Tests
 {
     public class GenericClass1<T1, T2>
-        where T1 : IEnumerable<T1>
+        where T1 : IEnumerable<T1>, IEnumerable
         where T2 : new()
     {
         private T1 generic_field1;
@@ -41,19 +41,5 @@ namespace J4JSoftware.Roslyn.Tests
         public T Property { get; set; }
         public T[] OneDimensionalArray { get; set; }
         public T[,] TwoDimensionalArray { get; set; }
-    }
-
-    public class DefinedGenericClass1 : GenericClass1<int>
-    {
-    }
-
-    public class ComplexGeneric<T>
-        where T : IEnumerable<T>
-    {
-        public TMethod SomeMethod<TMethod>( TMethod item )
-            where TMethod : GenericClass1<T, int>
-        {
-            throw new NotImplementedException();
-        }
     }
 }

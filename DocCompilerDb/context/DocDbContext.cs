@@ -10,7 +10,6 @@ namespace J4JSoftware.DocCompiler
 {
     public class DocDbContext : DbContext
     {
-        private readonly List<IQueryable> _deprecatable;
         private readonly IJ4JLogger? _logger;
 
         public DocDbContext( 
@@ -22,26 +21,8 @@ namespace J4JSoftware.DocCompiler
         {
             DbConfig = dbConfig;
 
-            _deprecatable = GetDeprecatable().ToList();
-
             _logger = logger;
             _logger?.SetLoggedType( GetType() );
-        }
-
-        private List<IQueryable> GetDeprecatable()
-        {
-            return this.GetType().GetProperties().Where( p =>
-                {
-                    if( !p.PropertyType.IsGenericType 
-                        || p.PropertyType.GetGenericTypeDefinition() != typeof(DbSet<>) )
-                        return false;
-
-                    var typeArgs = p.PropertyType.GetGenericArguments();
-
-                    return typeArgs.Length == 1 && typeof(IDeprecation).IsAssignableFrom( typeArgs[ 0 ] );
-                } )
-                .Select( p => (IQueryable) p.GetValue( this )! )
-                .ToList();
         }
 
         public DatabaseConfig DbConfig { get; }
@@ -53,7 +34,11 @@ namespace J4JSoftware.DocCompiler
 
         public DbSet<DocumentedType> DocumentedTypes { get; set; }
         public DbSet<ExternalType> ExternalTypes { get; set; }
+
         public DbSet<TypeParameter> TypeParameters { get; set; }
+        public DbSet<TypeConstraint> TypeConstraints { get; set; }
+        public DbSet<TypeArgument> TypeArguments { get; set; }
+        public DbSet<TypeReference> TypeReferences { get; set; }
         public DbSet<TypeAncestor> TypeAncestors { get; set; }
 
         public DbSet<Event> Events { get; set; }
@@ -68,19 +53,6 @@ namespace J4JSoftware.DocCompiler
         public DbSet<Author> Authors { get; set; }
         public DbSet<Documentation> Documentation { get; set; }
         public DbSet<DocumentationEntry> DocumentationEntries { get; set; }
-
-        public void Deprecate()
-        {
-            foreach( var dbSet in _deprecatable )
-            {
-                foreach( var item in dbSet )
-                {
-                    ( (IDeprecation) item ).Deprecated = true;
-                }
-            }
-
-            SaveChanges();
-        }
 
         protected override void OnModelCreating( ModelBuilder modelBuilder )
         {

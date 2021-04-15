@@ -65,7 +65,6 @@ namespace J4JSoftware.DocCompiler
             }
             else
             {
-                codeFileDb.Deprecated = false;
                 codeFileDb.Assembly = assemblyDb;
             }
 

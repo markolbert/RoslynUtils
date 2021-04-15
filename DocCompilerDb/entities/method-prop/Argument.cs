@@ -18,13 +18,14 @@
 #endregion
 
 using J4JSoftware.EFCoreUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 #pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(ArgumentConfigurator))]
-    public class Argument : IDeprecation
+    public class Argument 
     {
         protected Argument()
         {
@@ -35,12 +36,15 @@ namespace J4JSoftware.DocCompiler
         public bool HasThis {get; set; }
         public int ArgumentTypeID { get; set; }
         public NamedType ArgumentType { get; set; }
+        public Documentation Documentation { get; set; }
     }
 
     internal class ArgumentConfigurator : EntityConfigurator<Argument>
     {
         protected override void Configure( EntityTypeBuilder<Argument> builder )
         {
+            builder.ToTable( "Arguments" );
+
             builder.HasOne( x => x.ArgumentType )
                 .WithMany( x => x.UsedInArguments )
                 .HasForeignKey( x => x.ArgumentTypeID )

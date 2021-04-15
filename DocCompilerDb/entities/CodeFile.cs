@@ -28,10 +28,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(CodeFileConfigurator))]
-    public class CodeFile : IDeprecation
+    public class CodeFile
     {
         public int ID { get; set; }
-        public bool Deprecated { get; set; }
         public string FullPath { get; set; }
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }

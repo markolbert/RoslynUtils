@@ -87,7 +87,7 @@ namespace J4JSoftware.DocCompiler
 
             if( docTypeDb == null )
             {
-                Logger?.Error<string>("Could not find DocumentedType '{0}' in the database", fqnDocType!);
+                Logger?.Error<string>("Could not find NamedType '{0}' in the database", fqnDocType!);
                 return false;
             }
 

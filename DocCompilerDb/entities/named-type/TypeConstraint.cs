@@ -26,27 +26,27 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(TypeConstraintConfigurator))]
     public class TypeConstraint
     {
-        public int ConstrainedTypeParameterID { get; set; }
-        public TypeParameter ConstrainedTypeParameter { get; set; }
+        public int TypeParameterID { get; set; }
+        public TypeParameter TypeParameter { get; set; }
 
-        public int ConstraintID { get; set; }
-        public NamedType Constraint { get; set; }
+        public int ConstrainingTypeReferenceID { get; set; }
+        public TypeReference ConstrainingTypeReference { get; set; }
     }
 
     internal class TypeConstraintConfigurator : EntityConfigurator<TypeConstraint>
     {
         protected override void Configure( EntityTypeBuilder<TypeConstraint> builder )
         {
-            builder.HasKey( x => new { x.ConstrainedTypeParameterID, x.ConstraintID } );
+            builder.HasKey( x => new { ConstrainedTypeParameterID = x.TypeParameterID, ConstraintID = x.ConstrainingTypeReferenceID } );
 
-            builder.HasOne( x => x.Constraint )
+            builder.HasOne( x => x.ConstrainingTypeReference )
                 .WithMany( x => x.UsedInConstraints )
-                .HasForeignKey( x => x.ConstraintID )
+                .HasForeignKey( x => x.ConstrainingTypeReferenceID )
                 .HasPrincipalKey( x => x.ID );
 
-            builder.HasOne( x => x.ConstrainedTypeParameter )
+            builder.HasOne( x => x.TypeParameter )
                 .WithMany( x => x.TypeConstraints )
-                .HasForeignKey( x => x.ConstrainedTypeParameterID )
+                .HasForeignKey( x => x.TypeParameterID )
                 .HasPrincipalKey( x => x.ID );
         }
     }

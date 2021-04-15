@@ -25,7 +25,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(MethodConfigurator))]
-    public class Method : IDeprecation
+    public class Method 
     {
         public int ID { get;set; }
         public string Name { get;set; }

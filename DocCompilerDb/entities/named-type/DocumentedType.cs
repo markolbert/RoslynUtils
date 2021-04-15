@@ -41,7 +41,6 @@ namespace J4JSoftware.DocCompiler
         public int NumTypeParameters { get; set; }
 
         public NamedTypeKind Kind { get; set; }
-        public Documentation Documentation { get; set; }
 
         public bool IsStatic { get; set; }
         public bool IsSealed { get; set; }

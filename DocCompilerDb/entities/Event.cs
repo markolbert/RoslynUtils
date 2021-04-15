@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(EventConfigurator))]
-    public class Event : IDeprecation
+    public class Event
     {
         public int ID { get; set; }
         public string Name { get; set; }

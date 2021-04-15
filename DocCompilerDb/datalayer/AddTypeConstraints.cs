@@ -17,6 +17,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -49,17 +50,20 @@ namespace J4JSoftware.DocCompiler
 
         private readonly NamedTypeFQN _ntFQN;
         private readonly TypeParameterListFQN _tplFQN;
+        private readonly ITypeReferenceResolver _typeRefResolver;
 
         public AddTypeConstraints( 
             IFullyQualifiedNames fqNamers,
             NamedTypeFQN ntFQN,
             TypeParameterListFQN tplFQN,
+            ITypeReferenceResolver typeRefResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
         {
             _ntFQN = ntFQN;
             _tplFQN = tplFQN;
+            _typeRefResolver = typeRefResolver;
         }
 
         protected override IEnumerable<NodeContext> GetNodesToProcess( IDocScanner source )
@@ -68,8 +72,9 @@ namespace J4JSoftware.DocCompiler
             {
                 foreach( var nsNode in scannedFile.RootNode.DescendantNodes()
                     .Where( n => SupportedKinds.Any( x => x == n.Kind() )
-                                 && n.DescendantNodes().Any( x =>
-                                     x.IsKind( SyntaxKind.TypeParameterConstraintClause ) ) ) )
+                                 && n.ChildNodes()
+                                     .Any( x => x.IsKind( SyntaxKind.TypeParameterConstraintClause ) ) )
+                )
                 {
                     yield return new NodeContext( nsNode, scannedFile );
                 }
@@ -78,277 +83,82 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !_ntFQN.GetFullyQualifiedName( nodeContext.Node, out var fqName ) )
-                return false;
-
-            if (!_ntFQN.GetName(nodeContext.Node, out var nsName))
-                return false;
-
             if( !_ntFQN.GetFullyQualifiedNameWithoutTypeParameters(nodeContext.Node, out var nonGenericName))
                 return false;
 
-            var codeFileDb = DbContext.CodeFiles
-                .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
-
-            if( codeFileDb == null )
-            {
-                Logger?.Error<string>( "Could not find CodeFile reference for '{0}'",
-                    nodeContext.ScannedFile.SourceFilePath );
-
-                return false;
-            }
+            var typeParametersInfo = _tplFQN.GetTypeParameterInfo(
+                nodeContext.Node.ChildNodes()
+                    .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) )
+            );
 
             var dtDb = DbContext.DocumentedTypes
-                .Include(x=>x.CodeFiles)
-                .Include(x=>x.TypeParameters)
-                .FirstOrDefault(x => x.FullyQualifiedName== fqName);
+                .Include(x=>x.TypeParameters  )
+                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericName
+                                      && x.NumTypeParameters == typeParametersInfo.Count );
 
             if( dtDb == null )
             {
-                dtDb = new DocumentedType
+                Logger?.Error( "Could not find generic type '{0}' with '{1}' type parameters in the database",
+                    nonGenericName, 
+                    typeParametersInfo.Count );
+
+                return false;
+            }
+
+            foreach( var tpDb in dtDb.TypeParameters ?? Enumerable.Empty<TypeParameter>() )
+            {
+                //DbContext.Entry( tpDb )
+                //    .Collection( x => x.TypeConstraints )
+                //    .Load();
+
+                var tpi = typeParametersInfo.FirstOrDefault( x => x.Name == tpDb.Name );
+
+                if( tpi == null )
                 {
-                    FullyQualifiedName = fqName!,
-                    FullyQualifiedNameWithoutTypeParameters = nonGenericName!,
-                    Name = nsName!,
-                    CodeFiles = new List<CodeFile> { codeFileDb}
-                };
+                    Logger?.Error<string, string>(
+                        "Could not find reference to type parameter '{0}' (entity '{1}') in source code",
+                        tpDb.Name, 
+                        dtDb.FullyQualifiedName );
 
-                DbContext.DocumentedTypes.Add( dtDb );
-            }
-            else
-            {
-                dtDb.Deprecated = false;
-
-                if( dtDb.CodeFiles == null )
-                    dtDb.CodeFiles = new List<CodeFile> { codeFileDb };
-                else
-                {
-                    if( dtDb.CodeFiles.All( x => x.ID != codeFileDb.ID ) )
-                        dtDb.CodeFiles.Add( codeFileDb );
-                }
-            }
-
-            if( !SetContainer( nodeContext, dtDb ) )
-                return false;
-
-            if( !SetNamespace( nodeContext.Node, dtDb ) )
-                return false;
-
-            dtDb.Kind = nodeContext.Node.Kind() switch
-            {
-                SyntaxKind.ClassDeclaration => NamedTypeKind.Class,
-                SyntaxKind.InterfaceDeclaration => NamedTypeKind.Interface,
-                SyntaxKind.RecordDeclaration => NamedTypeKind.Record,
-                SyntaxKind.StructDeclaration => NamedTypeKind.Struct,
-                _ => undefined_kind()
-            };
-
-            dtDb.Accessibility = GetAccessibility( nodeContext.Node );
-            dtDb.IsAbstract = HasChildNode( nodeContext, SyntaxKind.AbstractKeyword );
-            dtDb.IsSealed = HasChildNode( nodeContext, SyntaxKind.SealedKeyword );
-            dtDb.IsStatic = HasChildNode( nodeContext, SyntaxKind.StaticKeyword );
-
-            DbContext.SaveChanges();
-
-            ProcessTypeParameterList( nodeContext.Node, dtDb );
-
-            return true;
-
-            NamedTypeKind undefined_kind()
-            {
-                Logger?.Error("Unsupported named type '{0}'", nodeContext.Node.Kind());
-
-                return NamedTypeKind.Unsupported;
-            }
-        }
-
-        private bool SetNamespace( SyntaxNode node, DocumentedType dtDb )
-        {
-            // find our containing namespace, which may not be our parent
-            var curNode = node;
-
-            while( curNode != null && !curNode.IsKind( SyntaxKind.NamespaceDeclaration ) )
-            {
-                curNode = curNode.Parent;
-            }
-
-            if( curNode == null )
-                return true;
-
-            if( !GetNamespace( curNode, out var theNs ) )
-                return false;
-
-            if( dtDb.Namespace == null )
-                dtDb.NamespaceID = theNs!.ID;
-            else dtDb.Namespace = theNs;
-
-            return true;
-        }
-
-        private bool SetContainer(NodeContext nodeContext, DocumentedType dtDb )
-        {
-            if (nodeContext.Node.Parent == null)
-            {
-                Logger?.Error("Supplied named type declaration node has no parent");
-                return false;
-            }
-
-            var parentKind = nodeContext.Node.Parent.Kind();
-
-            return parentKind switch
-            {
-                SyntaxKind.NamespaceDeclaration => SetNamespaceContainer(nodeContext, dtDb),
-                SyntaxKind.CompilationUnit => SetCodeFileContainer(nodeContext, dtDb),
-                SyntaxKind.ClassDeclaration=>SetNamedTypeContainer(nodeContext, dtDb),
-                SyntaxKind.InterfaceDeclaration => SetNamedTypeContainer(nodeContext, dtDb),
-                SyntaxKind.RecordDeclaration => SetNamedTypeContainer(nodeContext, dtDb),
-                SyntaxKind.StructDeclaration => SetNamedTypeContainer(nodeContext, dtDb),
-                _ => unsupported( parentKind )
-            };
-
-            bool unsupported( SyntaxKind theKind )
-            {
-                Logger?.Error("Unsupported NamespaceDeclaration node parent kind '{0}'", nodeContext.Node.Parent.Kind());
-                return false;
-            }
-        }
-
-        private bool SetNamedTypeContainer( NodeContext nodeContext, DocumentedType dtDb )
-        {
-            if( !Namers.GetFullyQualifiedName( nodeContext.Node.Parent!, out var parentFQName ) )
-            {
-                Logger?.Error<string>(
-                    "Could not determine fully-qualified name of parent named type node for {0}",
-                    dtDb.FullyQualifiedName );
-
-                return false;
-            }
-
-            var ntParent = DbContext.DocumentedTypes
-                .FirstOrDefault( x => x.FullyQualifiedName == parentFQName! );
-
-            if( ntParent == null )
-            {
-                Logger?.Error<string>(
-                    "Could not find parent named type node {0}", parentFQName! );
-
-                return false;
-            }
-
-            dtDb.SetContainer( ntParent );
-
-            return true;
-        }
-
-        private bool SetCodeFileContainer(NodeContext nodeContext, DocumentedType dtDb)
-        {
-            dtDb.SetNotContained();
-
-            return true;
-        }
-
-        private bool SetNamespaceContainer( NodeContext nodeContext, DocumentedType dtDb )
-        {
-            if( !GetNamespace( nodeContext.Node.Parent!, out var nsParent ) )
-                return false;
-
-            dtDb.SetContainer( nsParent! );
-            return true;
-        }
-
-        private bool GetNamespace( SyntaxNode node, out Namespace? result )
-        {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.NamespaceDeclaration ) )
-            {
-                Logger?.Error("SyntaxNode is not a NamespaceDeclaration"  );
-                return false;
-            }
-
-            if( !Namers.GetFullyQualifiedName( node, out var nsFQName ) )
-            {
-                Logger?.Error( "Could not determine fully-qualified name of NamespaceDeclaration node" );
-                return false;
-            }
-
-            result = DbContext.Namespaces.FirstOrDefault( x => x.FullyQualifiedName == nsFQName! );
-
-            if( result != null ) 
-                return true;
-
-            Logger?.Error<string>(
-                "Could not find parent NamespaceDeclarationSyntax node {0}",
-                nsFQName! );
-
-            return false;
-        }
-
-        private void ProcessTypeParameterList( SyntaxNode node, DocumentedType dtDb )
-        {
-            var tplNode = node.ChildNodes()
-                .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
-            
-            if( tplNode == null || !_tplFQN.GetIdentifierTokens(tplNode, out var temp ) )
-                return;
-
-            var idTokens = temp.ToList();
-
-            var constraintNodes = node.ChildNodes()
-                .Where( x => x.IsKind( SyntaxKind.TypeParameterConstraintClause ) )
-                .Select( x =>
-                {
-                    return new
-                    {
-                        Name = x.ChildNodes().First( y => y.IsKind( SyntaxKind.IdentifierName ) ).ChildTokens()
-                            .First( z => z.IsKind( SyntaxKind.IdentifierToken ) ).Text,
-                        ConstraintNode = x
-                    };
-                } )
-                .ToDictionary( x => x.Name, x => x.ConstraintNode );
-
-            dtDb.TypeParameters ??= new List<TypeParameter>();
-
-            for( var idx = 0; idx < idTokens!.Count(); idx++ )
-            {
-                var tpName = idTokens[ idx ].Text;
-
-                var tpDb = DbContext.TypeParameters
-                    .FirstOrDefault( x => x.DefinedInID == dtDb.ID && x.Name == tpName );
-
-                if( tpDb == null )
-                {
-                    tpDb = dtDb.ID == 0
-                        ? new TypeParameter
-                        {
-                            DefinedIn = dtDb,
-                            Name = tpName,
-                            Index = idx
-                        }
-                        : new TypeParameter
-                        {
-                            DefinedInID = dtDb.ID,
-                            Name = tpName,
-                            Index = idx
-                        };
-
-                    DbContext.TypeParameters.Add( tpDb );
-                }
-                else tpDb.Index = idx;
-
-                if( !constraintNodes.ContainsKey( tpName ) )
-                {
-                    DbContext.SaveChanges();
-                    continue;
+                    return false;
                 }
 
-                var constraintNode = constraintNodes[ tpName ];
-
-                if( GetGeneralTypeConstraints( constraintNode, out var generalConstraints ) )
-                    tpDb.GeneralTypeConstraints = generalConstraints;
+                if( !UpdateTypeParameter( dtDb, nodeContext.ScannedFile, tpDb, tpi ) )
+                    return false;
 
                 DbContext.SaveChanges();
             }
+
+            return true;
+        }
+
+        private bool UpdateTypeParameter( DocumentedType dtContextDb, IScannedFile scannedFile, TypeParameter tpDb, TypeParameterInfo tpi )
+        {
+            tpDb.Index = tpi.Index;
+
+            var constraints = new List<TypeConstraint>();
+
+            foreach( var tci in tpi.TypeConstraintNode?
+                                    .ChildNodes()
+                                    .Where( x => x.IsKind( SyntaxKind.TypeConstraint ) )
+                                    .ToList()
+                                ?? Enumerable.Empty<SyntaxNode>() )
+            {
+                if( !_typeRefResolver.Resolve( tci, dtContextDb, scannedFile, out var typeRef ) )
+                    return false;
+
+                var tcDb = new TypeConstraint { TypeParameterID = tpDb.ID };
+
+                if( typeRef!.ID == 0 )
+                    tcDb.ConstrainingTypeReference = typeRef;
+                else tcDb.ConstrainingTypeReferenceID = typeRef.ID;
+
+                constraints.Add( tcDb );
+            }
+
+            tpDb.TypeConstraints = constraints;
+
+            return true;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 // Copyright 2021 Mark A. Olbert
 // 
-// This library or program 'DocCompilerDb' is free software: you can redistribute it
+// This library or program 'TestLib' is free software: you can redistribute it
 // and/or modify it under the terms of the GNU General Public License as
 // published by the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
@@ -17,15 +17,9 @@
 
 #endregion
 
-namespace J4JSoftware.DocCompiler
+namespace J4JSoftware.Roslyn.Tests
 {
-    public enum DocumentationEntryType
+    public class DefinedGenericClass1 : GenericClass1<int>
     {
-        Text,
-        FileReference,
-        UrlReference,
-        SourceCodeDecoration,
-        SourceCodeXml,
-        SourceCodeInternal
     }
 }

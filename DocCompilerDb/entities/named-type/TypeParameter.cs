@@ -26,10 +26,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(TypeParameterConfigurator))]
-    public class TypeParameter : IDeprecation
+    public class TypeParameter
     {
         public int ID { get; set; }
-        public bool Deprecated { get; set; }
         public int DefinedInID { get; set; }
         public DocumentedType DefinedIn { get; set; }
 

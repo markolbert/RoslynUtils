@@ -34,11 +34,10 @@ namespace J4JSoftware.DocCompiler
         private int? _eventID;
         private int? _fieldID;
         private int? _methodID;
-        private int? _methodArgID;
+        private int? _argID;
         private int? _namespaceID;
-        private int? _documentedTypeID;
+        private int? _namedTypeID;
         private int? _propertyID;
-        private int? _propertyArgID;
         private DocumentationTarget _docTarget;
 
         public int ID { get; set; }
@@ -51,21 +50,19 @@ namespace J4JSoftware.DocCompiler
         public int? EventID => _eventID;
         public int? FieldID => _fieldID;
         public int? MethodID => _methodID;
-        public int? MethodArgumentID => _methodArgID;
+        public int? ArgumentID => _argID;
         public int? NamespaceID => _namespaceID;
-        public int? DocumentedTypeID => _documentedTypeID;
+        public int? NamedTypeID => _namedTypeID;
         public int? PropertyID => _propertyID;
-        public int? PropertyArgumentID => _propertyArgID;
 
         public Assembly? Assembly { get; set; }
         public Event? Event { get; set; }
         public Field? Field { get; set; }
         public Method? Method { get;set; }
-        public MethodArgument? MethodArgument { get; set; }
+        public Argument? Argument { get; set; }
         public Namespace? Namespace { get; set; }
-        public DocumentedType? DocumentedType { get; set; }
+        public NamedType? NamedType { get; set; }
         public Property? Property { get; set; }
-        public PropertyArgument? PropertyArgument { get; set; }
 
         private void ClearAssociatedIDs()
         {
@@ -73,11 +70,10 @@ namespace J4JSoftware.DocCompiler
             _eventID = null;
             _fieldID = null;
             _methodID = null;
-            _methodArgID = null;
-            _documentedTypeID = null;
+            _argID = null;
+            _namedTypeID = null;
             _namespaceID = null;
             _propertyID = null;
-            _propertyArgID = null;
         }
 
         public void AssociateWith( Assembly target )
@@ -87,11 +83,18 @@ namespace J4JSoftware.DocCompiler
             _docTarget = DocumentationTarget.Assembly;
         }
 
-        public void AssociateWith(DocumentedType target)
+        public void AssociateWith(Namespace target)
         {
             ClearAssociatedIDs();
-            _documentedTypeID = target.ID;
-            _docTarget = DocumentationTarget.DocumentedType;
+            _namespaceID = target.ID;
+            _docTarget = DocumentationTarget.Namespace;
+        }
+
+        public void AssociateWith(NamedType target)
+        {
+            ClearAssociatedIDs();
+            _namedTypeID = target.ID;
+            _docTarget = DocumentationTarget.NamedType;
         }
 
         public void AssociateWith(Event target)
@@ -115,11 +118,17 @@ namespace J4JSoftware.DocCompiler
             _docTarget = DocumentationTarget.Method;
         }
 
-        public void AssociateWith(MethodArgument target)
+        public void AssociateWith( Argument target )
         {
             ClearAssociatedIDs();
-            _methodArgID = target.ID;
-            _docTarget = DocumentationTarget.MethodArgument;
+            _argID = target.ID;
+
+            _docTarget = target switch
+            {
+                MethodArgument methodArg => DocumentationTarget.MethodArgument,
+                PropertyArgument propArg => DocumentationTarget.PropertyArgument,
+                _ => throw new ArgumentException( $"Unsupported Argument type '{target.GetType()}'" )
+            };
         }
 
         public void AssociateWith(Property target)
@@ -127,13 +136,6 @@ namespace J4JSoftware.DocCompiler
             ClearAssociatedIDs();
             _propertyID = target.ID;
             _docTarget = DocumentationTarget.Property;
-        }
-
-        public void AssociateWith(PropertyArgument target)
-        {
-            ClearAssociatedIDs();
-            _propertyArgID = target.ID;
-            _docTarget = DocumentationTarget.PropertyArgument;
         }
     }
 
@@ -160,13 +162,13 @@ namespace J4JSoftware.DocCompiler
                 .HasForeignKey<Documentation>(x => x.NamespaceID)
                 .HasPrincipalKey<Namespace>(x => x.ID);
 
-            builder.Property(x => x.DocumentedTypeID)
-                .HasField("_documentedTypeID");
+            builder.Property(x => x.NamedTypeID)
+                .HasField("_namedTypeID");
 
-            builder.HasOne(x => x.DocumentedType)
+            builder.HasOne(x => x.NamedType)
                 .WithOne(x => x.Documentation)
-                .HasForeignKey<Documentation>(x => x.DocumentedTypeID)
-                .HasPrincipalKey<DocumentedType>(x => x.ID);
+                .HasForeignKey<Documentation>(x => x.NamedTypeID)
+                .HasPrincipalKey<NamedType>(x => x.ID);
 
             builder.Property(x => x.EventID)
                 .HasField("_eventID");
@@ -184,13 +186,13 @@ namespace J4JSoftware.DocCompiler
                 .HasForeignKey<Documentation>(x => x.FieldID)
                 .HasPrincipalKey<Field>(x => x.ID);
 
-            builder.Property(x => x.MethodArgumentID)
-                .HasField("_methodArgID");
+            builder.Property(x => x.ArgumentID)
+                .HasField("_argID");
 
-            builder.HasOne(x => x.MethodArgument)
+            builder.HasOne(x => x.Argument)
                 .WithOne(x => x.Documentation)
-                .HasForeignKey<Documentation>(x => x.MethodArgumentID)
-                .HasPrincipalKey<MethodArgument>(x => x.ID);
+                .HasForeignKey<Documentation>(x => x.ArgumentID)
+                .HasPrincipalKey<Argument>(x => x.ID);
 
             builder.Property(x => x.MethodID)
                 .HasField("_methodID");
@@ -200,14 +202,6 @@ namespace J4JSoftware.DocCompiler
                 .HasForeignKey<Documentation>(x => x.MethodID)
                 .HasPrincipalKey<Method>(x => x.ID);
 
-            builder.Property(x => x.PropertyArgumentID)
-                .HasField("_propertyArgID");
-
-            builder.HasOne(x => x.PropertyArgument)
-                .WithOne(x => x.Documentation)
-                .HasForeignKey<Documentation>(x => x.PropertyArgumentID)
-                .HasPrincipalKey<PropertyArgument>(x => x.ID);
-
             builder.Property(x => x.PropertyID)
                 .HasField("_propertyID");
 
@@ -215,7 +209,6 @@ namespace J4JSoftware.DocCompiler
                 .WithOne(x => x.Documentation)
                 .HasForeignKey<Documentation>(x => x.PropertyID)
                 .HasPrincipalKey<Property>(x => x.ID);
-
         }
     }
 }

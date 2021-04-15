@@ -34,7 +34,7 @@ namespace J4JSoftware.DocCompiler
 
         public ICollection<TypeArgument> UsedInTypeArguments { get; set; }
         public ICollection<TypeAncestor> UsedInAncestors { get; set; }
-
+        public ICollection<TypeConstraint> UsedInConstraints { get; set; }
     }
 
     internal class TypeReferenceConfigurator : EntityConfigurator<TypeReference>

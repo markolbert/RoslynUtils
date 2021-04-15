@@ -17,10 +17,13 @@
 
 #endregion
 
+using Microsoft.CodeAnalysis;
+
 namespace J4JSoftware.DocCompiler
 {
-    public interface IDeprecation
-    {
-        bool Deprecated { get; set; }
-    }
+    public record TypeParameterInfo(
+        string Name,
+        int Index,
+        SyntaxNode? TypeConstraintNode
+    );
 }

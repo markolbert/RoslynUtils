@@ -3,7 +3,7 @@
     public enum DocumentationTarget
     {
         Assembly,
-        DocumentedType,
+        NamedType,
         Event,
         Field,
         Method,

@@ -94,7 +94,7 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            var typeParameters = _tplFQN.GetTypeParameterInfo(
+            var typeConstraints = _tplFQN.GetTypeParameterInfo(
                 nodeContext.Node.ChildNodes()
                     .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) )
             );
@@ -103,7 +103,7 @@ namespace J4JSoftware.DocCompiler
                 .Include( x => x.CodeFiles )
                 .Include( x => x.TypeParameters )
                 .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericName
-                                      && x.NumTypeParameters == typeParameters.Count );
+                                      && x.NumTypeParameters == typeConstraints.Count );
 
             if( dtDb == null )
             {
@@ -111,7 +111,7 @@ namespace J4JSoftware.DocCompiler
                 {
                     FullyQualifiedNameWithoutTypeParameters = nonGenericName!,
                     Name = nsName!,
-                    NumTypeParameters = typeParameters.Count,
+                    NumTypeParameters = typeConstraints.Count,
                     CodeFiles = new List<CodeFile> { codeFileDb}
                 };
 
@@ -154,7 +154,7 @@ namespace J4JSoftware.DocCompiler
 
             DbContext.SaveChanges();
 
-            ProcessTypeParameterList( typeParameters, dtDb );
+            ProcessTypeParameters( typeConstraints, dtDb );
 
             return true;
 
@@ -288,14 +288,14 @@ namespace J4JSoftware.DocCompiler
             return false;
         }
 
-        private void ProcessTypeParameterList( List<TypeParameterInfo> typeParams, DocumentedType dtDb )
+        private void ProcessTypeParameters( List<TypeParameterInfo> typeParameters, DocumentedType dtDb )
         {
             dtDb.TypeParameters ??= new List<TypeParameter>();
 
-            for( var idx = 0; idx < typeParams.Count; idx++ )
+            for( var idx = 0; idx < typeParameters.Count; idx++ )
             {
                 var tpDb = DbContext.TypeParameters
-                    .FirstOrDefault( x => x.DefinedInID == dtDb.ID && x.Name == typeParams[ idx ].Name );
+                    .FirstOrDefault( x => x.DefinedInID == dtDb.ID && x.Name == typeParameters[ idx ].Name );
 
                 if( tpDb == null )
                 {
@@ -303,13 +303,13 @@ namespace J4JSoftware.DocCompiler
                         ? new TypeParameter
                         {
                             DefinedIn = dtDb,
-                            Name = typeParams[idx].Name,
+                            Name = typeParameters[idx].Name,
                             Index = idx
                         }
                         : new TypeParameter
                         {
                             DefinedInID = dtDb.ID,
-                            Name = typeParams[idx].Name,
+                            Name = typeParameters[idx].Name,
                             Index = idx
                         };
 
@@ -317,9 +317,9 @@ namespace J4JSoftware.DocCompiler
                 }
                 else tpDb.Index = idx;
 
-                if( typeParams[ idx ].TypeConstraintNode != null )
+                if( typeParameters[ idx ].TypeConstraintNode != null )
                 {
-                    typeParams[ idx ].TypeConstraintNode!
+                    typeParameters[ idx ].TypeConstraintNode!
                         .GetGeneralTypeConstraints( out var temp );
 
                     tpDb.GeneralTypeConstraints = temp;

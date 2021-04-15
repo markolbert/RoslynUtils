@@ -30,7 +30,6 @@ namespace J4JSoftware.DocCompiler
         public int Index { get; set; }
         public int DeclaredInID { get; set; }
         public Method DeclaredIn { get; set; }
-        public Documentation Documentation { get; set; }
     }
 
     internal class MethodArgumentConfigurator : EntityConfigurator<MethodArgument>

@@ -28,7 +28,6 @@ namespace J4JSoftware.DocCompiler
     [ EntityConfiguration( typeof(ExternalTypeConfigurator) ) ]
     public class ExternalType : NamedType
     {
-        public string? ExternalUrl { get; set; }
         public int NumTypeParameters { get; set; }
         public ICollection<Namespace>? PossibleNamespaces { get; set; }
     }

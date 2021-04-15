@@ -26,7 +26,6 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(TypeArgumentConfigurator))]
     public class TypeArgument
     {
-        public bool Deprecated { get; set; }
         public int ReferencedTypeID { get; set; }
         public TypeReference ReferencedType { get; set; }
         public int DeclaringTypeID { get; set; }

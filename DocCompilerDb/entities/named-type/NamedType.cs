@@ -27,7 +27,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(NamedTypeConfigurator))]
-    public class NamedType : IDeprecation
+    public class NamedType 
     {
         protected NamedType()
         {
@@ -38,8 +38,8 @@ namespace J4JSoftware.DocCompiler
         public Accessibility Accessibility { get; set; }
 
         public bool Deprecated { get; set; }
+        public Documentation Documentation { get; set; }
 
-        public ICollection<TypeConstraint> UsedInConstraints { get; set; }
         public ICollection<TypeReference> UsedInReferences { get;set; }
         public ICollection<Event> UsedInEvents { get;set; }
         public ICollection<Property> PropertyReturnTypes { get; set; }
@@ -55,6 +55,8 @@ namespace J4JSoftware.DocCompiler
             builder.Property( x => x.Accessibility )
                 .HasConversion<string>()
                 .HasDefaultValue( Accessibility.Private );
+
+            builder.ToTable( "NamedTypes" );
         }
     }
 }

@@ -24,7 +24,7 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.DocCompiler
 {
-    [TopologicalRoot()]
+    [TopologicalPredecessor(typeof(InitializeForUpdate))]
     public class AddAssemblies : EntityProcessor<IProjectInfo >
     {
         public AddAssemblies( 

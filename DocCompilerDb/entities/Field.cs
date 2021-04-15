@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace J4JSoftware.DocCompiler
 {
     [EntityConfiguration(typeof(FieldConfigurator))]
-    public class Field : IDeprecation
+    public class Field
     {
         public int ID { get; set; }
         public string Name { get; set; }
