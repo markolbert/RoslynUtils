@@ -32,11 +32,6 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
-    [TopologicalPredecessor(typeof(AddAssemblies))]
-    [TopologicalPredecessor(typeof(AddCodeFiles))]
-    [TopologicalPredecessor(typeof(AddNamespaces))]
-    [TopologicalPredecessor(typeof(AddUsings))]
-    [TopologicalPredecessor(typeof(AddDocumentedTypes))]
     [TopologicalPredecessor(typeof(AddBaseTypes))]
     public class AddTypeConstraints : SyntaxNodeProcessor
     {
@@ -110,10 +105,6 @@ namespace J4JSoftware.DocCompiler
 
             foreach( var tpDb in dtDb.TypeParameters ?? Enumerable.Empty<TypeParameter>() )
             {
-                //DbContext.Entry( tpDb )
-                //    .Collection( x => x.TypeConstraints )
-                //    .Load();
-
                 var tpi = typeParametersInfo.FirstOrDefault( x => x.Name == tpDb.Name );
 
                 if( tpi == null )
@@ -139,13 +130,15 @@ namespace J4JSoftware.DocCompiler
         {
             tpDb.Index = tpi.Index;
 
-            var constraints = new List<TypeConstraint>();
+            var tcNodes = tpi.TypeConstraintNode?
+                .ChildNodes()
+                .Where( x => x.IsKind( SyntaxKind.TypeConstraint ) )
+                .ToList() ?? new List<SyntaxNode>();
 
-            foreach( var tci in tpi.TypeConstraintNode?
-                                    .ChildNodes()
-                                    .Where( x => x.IsKind( SyntaxKind.TypeConstraint ) )
-                                    .ToList()
-                                ?? Enumerable.Empty<SyntaxNode>() )
+            if( !tcNodes.Any() )
+                return true;
+
+            foreach( var tci in tcNodes )
             {
                 if( !_nodeAnalayzer.Analyze( tci, dtContextDb, scannedFile, true ) )
                     return false;
@@ -159,10 +152,8 @@ namespace J4JSoftware.DocCompiler
                     tcDb.ConstrainingTypeReference = typeRef;
                 else tcDb.ConstrainingTypeReferenceID = typeRef.ID;
 
-                constraints.Add( tcDb );
+                DbContext.TypeConstraints.Add( tcDb );
             }
-
-            tpDb.TypeConstraints = constraints;
 
             return true;
         }

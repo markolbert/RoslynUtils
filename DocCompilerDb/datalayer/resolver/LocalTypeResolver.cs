@@ -45,24 +45,34 @@ namespace J4JSoftware.DocCompiler
                     .Collection( x => x.TypeParameters )
                     .Load();
 
-            if( dtDb.TypeParameters?.Any() ?? false )
+            if( !dtDb.TypeParameters?.Any() ?? false )
                 return false;
 
             var tpDb = dtDb.TypeParameters!.FirstOrDefault( x => x.Name == typeInfo.Name );
 
             if( tpDb == null )
-            {
-                Logger?.Error<string>("Could not find TypeParameter '{0}' in database", typeInfo.Name);
                 return false;
-            }
 
-            result = new LocalType { TypeParameterIndex = typeInfo.Index };
+            result = DbContext.LocalTypes.FirstOrDefault( x =>
+                x.DeclaringTypeID == dtDb.ID && x.TypeParameterIndex == tpDb.Index );
+
+            if( result != null )
+                return true;
+
+            result = new LocalType
+            {
+                Name = typeInfo.Name, 
+                TypeParameterIndex = tpDb.Index 
+
+            };
 
             if( dtDb.ID == 0 )
                 result.DeclaringType = dtDb;
             else result.DeclaringTypeID = dtDb.ID;
 
             DbContext.LocalTypes.Add( result );
+
+            DbContext.SaveChanges();
 
             return true;
         }

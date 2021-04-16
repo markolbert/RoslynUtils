@@ -25,14 +25,12 @@ namespace J4JSoftware.DocCompiler
 
         public string Name { get; }
         public bool IsPredefined { get; set; }
-        public int Index { get; private set; }
         public int Rank { get; set; }
         public ReadOnlyCollection<TypeReferenceInfo> Arguments => _children.AsReadOnly();
 
         public void AddChild( TypeReferenceInfo child )
         {
             child.Parent = this;
-            child.Index = _children.Count;
 
             _children.Add( child );
         }

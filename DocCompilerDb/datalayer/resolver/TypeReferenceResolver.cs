@@ -85,7 +85,6 @@ namespace J4JSoftware.DocCompiler
 
                 result = new TypeReference
                 {
-                    Index = analyzer.RootTypeReference!.Index,
                     ReferencedTypeRank = analyzer.RootTypeReference.Rank
                 };
 

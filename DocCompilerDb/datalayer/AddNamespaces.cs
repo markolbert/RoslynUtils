@@ -29,7 +29,6 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
-    [TopologicalPredecessor(typeof(AddAssemblies))]
     [TopologicalPredecessor(typeof(AddCodeFiles))]
     public class AddNamespaces : SyntaxNodeProcessor
     {

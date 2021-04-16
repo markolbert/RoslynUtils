@@ -104,8 +104,8 @@ namespace Tests.DocCompiler
             builder.RegisterAssemblyTypes( typeof(DocDbContext).Assembly )
                 .Where( t => typeof(IEntityProcessor).IsAssignableFrom( t )
                              && !t.IsAbstract
-                             && t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
-                             || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() )
+                             && ( t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
+                                  || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() ) )
                 .AsImplementedInterfaces();
 
             builder.RegisterAssemblyTypes( typeof( DocDbContext ).Assembly )
@@ -130,8 +130,8 @@ namespace Tests.DocCompiler
             builder.RegisterAssemblyTypes( typeof(DocDbContext).Assembly )
                 .Where( t => typeof(ITypeResolver).IsAssignableFrom( t )
                              && !t.IsAbstract
-                             && t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
-                             || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() )
+                             && ( t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
+                                  || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() ) )
                 .AsImplementedInterfaces();
 
             builder.RegisterType<FullyQualifiedNames>()

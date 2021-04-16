@@ -31,10 +31,6 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
-    [TopologicalPredecessor(typeof(AddAssemblies))]
-    [TopologicalPredecessor(typeof(AddCodeFiles))]
-    [TopologicalPredecessor(typeof(AddNamespaces))]
-    [TopologicalPredecessor(typeof(AddUsings))]
     [TopologicalPredecessor(typeof(AddDocumentedTypes))]
     public class AddBaseTypes : SyntaxNodeProcessor
     {

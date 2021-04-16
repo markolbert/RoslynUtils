@@ -34,7 +34,7 @@ namespace J4JSoftware.DocCompiler
         
         public int ReferencedTypeRank { get; set; }
 
-        public int Index { get; set; }
+        //public int Index { get; set; }
         public int? ParentReferenceID { get; set; }
         public TypeReference? ParentReference { get; set; }
         public ICollection<TypeReference> ChildReferences { get; set; }
