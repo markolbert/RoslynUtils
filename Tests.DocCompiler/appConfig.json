@@ -1,6 +1,6 @@
 {
   "Database": {
-    "CreateNew": false
+    "CreateNew": true
   },
   "Logging": {
     "SourceRootPath": "C:/Programming/RoslynUtils",

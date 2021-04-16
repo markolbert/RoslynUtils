@@ -17,16 +17,24 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.DocCompiler
 {
-    public interface ITypeReferenceResolver
+    public interface ITypeNodeAnalyzer
     {
-        bool Resolve( SyntaxNode typeNode, 
-            DocumentedType dtContextDb, 
+        bool IsValid { get; }
+        DocumentedType? DocumentedTypeContext { get; }
+        bool CreateIfMissing { get; }
+        List<NamespaceContext>? CodeFileNamespaceContexts { get; }
+        List<TypeParameter>? TypeParameters { get; }
+        TypeReferenceInfo? RootTypeReference { get; }
+
+        bool Analyze(
+            SyntaxNode typeNode,
+            DocumentedType dtContextDb,
             IScannedFile scannedFile,
-            out TypeReference? result,
             bool createIfMissing = true );
     }
 }

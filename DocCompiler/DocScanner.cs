@@ -29,6 +29,7 @@ namespace J4JSoftware.DocCompiler
     {
         private readonly IScannedFileFactory _scannerFactory;
         private readonly List<IScannedFile> _scanResults = new();
+        private readonly List<IProjectInfo> _projects = new();
 
         public DocScanner(
             IScannedFileFactory scannerFactory
@@ -39,20 +40,22 @@ namespace J4JSoftware.DocCompiler
 
         public bool Scan( string fileToScan )
         {
+            _scanResults.Clear();
+            _projects.Clear();
+
             if( !_scannerFactory.Create( fileToScan, out var scannedFiles ) )
                 return false;
 
             _scanResults.AddRange( scannedFiles! );
 
+            _projects.AddRange( _scanResults.Select( x => x.BelongsTo )
+                .Distinct( ProjectInfo.ProjectInfoComparer ) );
+
             return true;
         }
 
         public ReadOnlyCollection<IScannedFile> ScannedFiles => _scanResults.AsReadOnly();
-
-        public ReadOnlyCollection<IProjectInfo> Projects => _scanResults
-            .Select( x => x.BelongsTo )
-            .ToList()
-            .AsReadOnly();
+        public ReadOnlyCollection<IProjectInfo> Projects => _projects.AsReadOnly();
 
         public List<UsingStatementSyntax> Usings => _scanResults.SelectMany( x => x.Usings ).ToList();
         public List<NamespaceDeclarationSyntax> Namespaces => _scanResults.SelectMany( x => x.Namespaces ).ToList();

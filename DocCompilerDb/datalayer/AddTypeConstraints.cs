@@ -50,20 +50,23 @@ namespace J4JSoftware.DocCompiler
 
         private readonly NamedTypeFQN _ntFQN;
         private readonly TypeParameterListFQN _tplFQN;
-        private readonly ITypeReferenceResolver _typeRefResolver;
+        private readonly ITypeNodeAnalyzer _nodeAnalayzer;
+        private readonly ITypeReferenceResolver _typeResolver;
 
         public AddTypeConstraints( 
             IFullyQualifiedNames fqNamers,
             NamedTypeFQN ntFQN,
             TypeParameterListFQN tplFQN,
-            ITypeReferenceResolver typeRefResolver,
+            ITypeNodeAnalyzer nodeAnalzyer,
+            ITypeReferenceResolver typeResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
         {
             _ntFQN = ntFQN;
             _tplFQN = tplFQN;
-            _typeRefResolver = typeRefResolver;
+            _nodeAnalayzer = nodeAnalzyer;
+            _typeResolver = typeResolver;
         }
 
         protected override IEnumerable<NodeContext> GetNodesToProcess( IDocScanner source )
@@ -144,7 +147,10 @@ namespace J4JSoftware.DocCompiler
                                     .ToList()
                                 ?? Enumerable.Empty<SyntaxNode>() )
             {
-                if( !_typeRefResolver.Resolve( tci, dtContextDb, scannedFile, out var typeRef ) )
+                if( !_nodeAnalayzer.Analyze( tci, dtContextDb, scannedFile, true ) )
+                    return false;
+
+                if( !_typeResolver.Resolve( _nodeAnalayzer, dtContextDb, null, out var typeRef ) )
                     return false;
 
                 var tcDb = new TypeConstraint { TypeParameterID = tpDb.ID };

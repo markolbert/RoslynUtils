@@ -31,6 +31,29 @@ namespace J4JSoftware.DocCompiler
 {
     public class ProjectInfo : IProjectInfo
     {
+        private sealed class ProjectInfoEqualityComparer : IEqualityComparer<IProjectInfo>
+        {
+            public bool Equals( IProjectInfo? x, IProjectInfo? y )
+            {
+                if( ReferenceEquals( x, y ) ) return true;
+                if( ReferenceEquals( x, null ) ) return false;
+                if( ReferenceEquals( y, null ) ) return false;
+                if( x.GetType() != y.GetType() ) return false;
+
+                return x.AssemblyName == y.AssemblyName 
+                       && x.Version == y.Version 
+                       && x.AssemblyVersion == y.AssemblyVersion 
+                       && x.FileVersion == y.FileVersion;
+            }
+
+            public int GetHashCode( IProjectInfo obj )
+            {
+                return HashCode.Combine( obj.AssemblyName, obj.Version, obj.AssemblyVersion, obj.FileVersion );
+            }
+        }
+
+        public static IEqualityComparer<IProjectInfo> ProjectInfoComparer { get; } = new ProjectInfoEqualityComparer();
+
         public static string[] ExcludedProjectDirectories = new[] { "bin", "obj" };
 
         private readonly List<string> _excludedFiles;

@@ -32,7 +32,10 @@ namespace J4JSoftware.DocCompiler
             { "Assemblies", "Namespaces", "NamedTypes", "Arguments", "Methods", "Properties", "Events", "Fields" };
 
         public static readonly string[] RelationshipTables =
-            { "TypeAncestors", "TypeConstraints", "TypeParameters", "TypeArguments", "TypeReferences"  };
+            { "TypeAncestors", "TypeConstraints", "TypeParameters", "TypeArguments" };
+
+        public static readonly string[] AutoIncrementTables =
+            { "TypeParameters", "TypeReferences"  };
 
         public InitializeForUpdate(
             IFullyQualifiedNames fqNamers,
@@ -48,7 +51,11 @@ namespace J4JSoftware.DocCompiler
         // newly added, and delete all entries in relationship/linking tables
         protected override bool ProcessEntity( IProjectInfo projInfo )
             => DoBulkProcessing( DocumentedTables, "update {0} set Deprecated = 0", "deprecating" )
-               && DoBulkProcessing( RelationshipTables, "delete from {0}", "truncating" );
+               && DoBulkProcessing( RelationshipTables, "delete from {0}", "truncating" )
+               && DoBulkProcessing( AutoIncrementTables,
+                   "delete from sqlite_sequence where name = '{0}'",
+                   "resetting autoincrement index" )
+               && ClearTypeReferences();
 
         private bool DoBulkProcessing( string[] tables, string cmdText, string text )
         {
@@ -63,11 +70,35 @@ namespace J4JSoftware.DocCompiler
 
                     DbContext.Database.ExecuteSqlRaw( cmd );
                 }
+
+                DbContext.SaveChanges();
             }
             catch( Exception e )
             {
                 Logger?.Error(
                     $"Exception thrown while {text} {curTable!}. Message was '{e.Message}'" );
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ClearTypeReferences()
+        {
+            // we have to do this in three steps because the table is self-referential
+            try
+            {
+                DbContext.Database.ExecuteSqlRaw( "update TypeReferences set ParentReferenceID = null" );
+                DbContext.Database.ExecuteSqlRaw( "delete from TypeReferences" );
+                DbContext.Database.ExecuteSqlRaw( "delete from sqlite_sequence where name = 'TypeReferences'" );
+
+                DbContext.SaveChanges();
+            }
+            catch( Exception e )
+            {
+                Logger?.Error(
+                    $"Exception thrown while clearing TypeReferences. Message was '{e.Message}'" );
 
                 return false;
             }

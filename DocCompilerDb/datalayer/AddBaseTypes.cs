@@ -46,16 +46,19 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.StructDeclaration
         };
 
-        private readonly ITypeReferenceResolver _typeReferenceResolver;
+        private readonly ITypeNodeAnalyzer _nodeAnalayzer;
+        private readonly ITypeReferenceResolver _typeResolver;
 
         public AddBaseTypes( 
             IFullyQualifiedNames fqNamers,
-            ITypeReferenceResolver typeReferenceResolver,
+            ITypeNodeAnalyzer nodeAnalzyer,
+            ITypeReferenceResolver typeResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
             : base( fqNamers, dbContext, logger )
         {
-            _typeReferenceResolver = typeReferenceResolver;
+            _nodeAnalayzer = nodeAnalzyer;
+            _typeResolver = typeResolver;
         }
 
         protected override IEnumerable<NodeContext> GetNodesToProcess( IDocScanner source )
@@ -106,16 +109,19 @@ namespace J4JSoftware.DocCompiler
                 return true;
             }
 
-            var ancestors = docTypeDb.Ancestors ?? new List<TypeAncestor>();
+            var ancestors = /*docTypeDb.Ancestors ?? */new List<TypeAncestor>();
 
             foreach( var simpleBaseNode in simpleBaseNodes )
             {
-                if( !_typeReferenceResolver.Resolve( simpleBaseNode, docTypeDb, nodeContext.ScannedFile, out var typeRef ) )
+                if( !_nodeAnalayzer.Analyze( simpleBaseNode, docTypeDb, nodeContext.ScannedFile, true ) )
                     return false;
 
-                // no need to do anything if the ancestor is already on file
-                if( ancestors.Any( x => x.AncestorID == typeRef!.ID ) )
-                    continue;
+                if( !_typeResolver.Resolve( _nodeAnalayzer, docTypeDb, null, out var typeRef ) )
+                    return false;
+
+                //// no need to do anything if the ancestor is already on file
+                //if( ancestors.Any( x => x.AncestorID == typeRef!.ID ) )
+                //    continue;
 
                 var newAncestor = new TypeAncestor { DeclaredByID = docTypeDb.ID };
 

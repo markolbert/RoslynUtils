@@ -24,13 +24,20 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler
 {
-    [EntityConfiguration(typeof(TypeReferenceConfigurator))]
+    [ EntityConfiguration( typeof(TypeReferenceConfigurator) ) ]
     public class TypeReference
     {
         public int ID { get; set; }
+     
         public int ReferencedTypeID { get; set; }
         public NamedType ReferencedType { get; set; }
-        public int ReferencedTypeRank {get;set;}
+        
+        public int ReferencedTypeRank { get; set; }
+
+        public int Index { get; set; }
+        public int? ParentReferenceID { get; set; }
+        public TypeReference? ParentReference { get; set; }
+        public ICollection<TypeReference> ChildReferences { get; set; }
 
         public ICollection<TypeArgument> UsedInTypeArguments { get; set; }
         public ICollection<TypeAncestor> UsedInAncestors { get; set; }
@@ -44,6 +51,11 @@ namespace J4JSoftware.DocCompiler
             builder.HasOne( x => x.ReferencedType )
                 .WithMany( x => x.UsedInReferences )
                 .HasForeignKey( x => x.ReferencedTypeID )
+                .HasPrincipalKey( x => x.ID );
+
+            builder.HasOne( x => x.ParentReference )
+                .WithMany( x => x.ChildReferences )
+                .HasForeignKey( x => x.ParentReferenceID )
                 .HasPrincipalKey( x => x.ID );
         }
     }

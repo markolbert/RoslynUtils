@@ -44,21 +44,10 @@ namespace Tests.DocCompiler
         private CompositionRoot() 
             : base( "J4JSoftware", "Test.DocCompiler" )
         {
-            //var loggerConfig = new J4JLoggerConfiguration
-            //{
-            //    EventElements = EventElements.All,
-            //    MultiLineEvents = true,
-            //    SourceRootPath = "c:/Programming/RoslynUtils/Tests.DocCompiler",
-            //};
-
-            //loggerConfig.Channels.Add(new DebugConfig());
-
             var channelProvider = new ChannelConfigProvider( "Logging" )
                 .AddChannel<DebugConfig>( "Channels:Debug" );
 
             ConfigurationBasedLogging( channelProvider );
-
-            //StaticConfiguredLogging( loggerConfig );
         }
 
         public IDocScanner DocScanner => Host?.Services.GetRequiredService<IDocScanner>()!;
@@ -126,6 +115,25 @@ namespace Tests.DocCompiler
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
+            builder.RegisterType<TopologicalSortFactory>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<TypeNodeAnalyzer>()
+                .As<ITypeNodeAnalyzer>()
+                .SingleInstance();
+
+            builder.RegisterType<TypeReferenceResolver>()
+                .As<ITypeReferenceResolver>()
+                .SingleInstance();
+
+            builder.RegisterAssemblyTypes( typeof(DocDbContext).Assembly )
+                .Where( t => typeof(ITypeResolver).IsAssignableFrom( t )
+                             && !t.IsAbstract
+                             && t.GetCustomAttributes( typeof(TopologicalPredecessorAttribute), false ).Any()
+                             || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() )
+                .AsImplementedInterfaces();
+
             builder.RegisterType<FullyQualifiedNames>()
                 .As<IFullyQualifiedNames>()
                 .SingleInstance();
@@ -140,10 +148,6 @@ namespace Tests.DocCompiler
 
             builder.RegisterType<NamedTypeFQN>()
                 .AsSelf()
-                .SingleInstance();
-
-            builder.RegisterType<TypeReferenceResolver>()
-                .As<ITypeReferenceResolver>()
                 .SingleInstance();
         }
     }

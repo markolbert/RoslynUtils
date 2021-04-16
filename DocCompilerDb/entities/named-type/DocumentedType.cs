@@ -110,6 +110,7 @@ namespace J4JSoftware.DocCompiler
         public ICollection<Method>? Methods { get; set; }
         public ICollection<Event>? Events { get; set; }
         public ICollection<TypeParameter>? TypeParameters { get; set; }
+        public ICollection<LocalType> LocalTypes { get; set; }
         public ICollection<TypeAncestor>? Ancestors { get; set; }
         public ICollection<Property>? Properties { get; set; }
         public ICollection<Field>? Fields { get; set; }
