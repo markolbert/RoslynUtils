@@ -28,7 +28,15 @@ namespace J4JSoftware.DocCompiler
 {
     public class TypeNodeAnalyzer : ITypeNodeAnalyzer
     {
-        public static SyntaxKind[] SupportedKinds = { SyntaxKind.SimpleBaseType, SyntaxKind.TypeConstraint };
+        public static SyntaxKind[] SupportedKinds =
+        {
+            SyntaxKind.SimpleBaseType, 
+            SyntaxKind.TypeConstraint,
+            SyntaxKind.IdentifierName,
+            SyntaxKind.PredefinedType,
+            SyntaxKind.ArrayType,
+            SyntaxKind.GenericName,
+        };
 
         private readonly DocDbContext _dbContext;
         private readonly IJ4JLogger? _logger;

@@ -33,6 +33,42 @@ namespace J4JSoftware.Roslyn.Tests
             set => _items[ idx ] = value;
         }
 
+        public void SomeMethod1()
+        {
+        }
+
+        public int SomeMethod2()
+        {
+            return 0;
+        }
+
+        public (int IntProp, bool BoolProp) SomeMethod3()
+        {
+            return ( 0, true );
+        }
+
+        public void SomeMethod4( int arg1, string[] arg2, List<bool> arg3 )
+        {
+        }
+
+        public T1 SomeMethod5<T1>( T arg1, out string? result )
+            where T1 : class, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public T1 SomeMethod6<T1>( T1 arg1, ref string[] result )
+            where T1 : class, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public T1 SomeMethod7<T1>( T1 arg1, ref List<string> result )
+            where T1 : class, new()
+        {
+            throw new NotImplementedException();
+        }
+
         public IEnumerator<EnumerableClass<T>> GetEnumerator()
         {
             throw new NotImplementedException();

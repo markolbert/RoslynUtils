@@ -14,6 +14,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="datalayer\base\SyntaxNodeProcessor.cs" />
+	  <Compile Remove="support\Accessibility.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.4" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.4">
 			<PrivateAssets>all</PrivateAssets>

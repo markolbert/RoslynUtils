@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,14 @@ namespace J4JSoftware.DocCompiler
 {
     public static class DocCompilerExtensions
     {
+        public static SyntaxKind[] AccessKinds = new[]
+        {
+            SyntaxKind.PublicKeyword,
+            SyntaxKind.PrivateKeyword,
+            SyntaxKind.ProtectedKeyword,
+            SyntaxKind.InternalKeyword
+        };
+
         public static SyntaxToken GetChildToken( this SyntaxNode node, SyntaxKind kind )
             => node.ChildTokens().FirstOrDefault( x => x.IsKind( kind ) );
 
@@ -74,6 +83,41 @@ namespace J4JSoftware.DocCompiler
                 result |= GeneralTypeConstraints.Struct;
 
             return true;
+        }
+
+        public static Accessibility GetAccessibility( this SyntaxNode node )
+        {
+            var accessTokens = node.ChildTokens()
+                .Where( x => AccessKinds.Any( y => x.RawKind == (int) y ) )
+                .ToList();
+
+            return accessTokens.Count switch
+            {
+                0 => Accessibility.Private,
+                1 => accessTokens[ 0 ].Kind() switch
+                {
+                    SyntaxKind.PublicKeyword => Accessibility.Public,
+                    SyntaxKind.PrivateKeyword => Accessibility.Private,
+                    SyntaxKind.InternalKeyword => Accessibility.Internal,
+                    SyntaxKind.ProtectedKeyword => Accessibility.Protected,
+                    _ => throw new InvalidEnumArgumentException(
+                        $"Unsupported access token type {accessTokens[ 0 ].Kind()}" )
+                },
+                2 => protected_internal(),
+                _ => throw new ArgumentException( "More than two access tokens encountered" )
+            };
+
+            Accessibility protected_internal()
+            {
+                var numProtected = accessTokens.Count( x => x.IsKind( SyntaxKind.ProtectedKeyword ) );
+                var numInternal = accessTokens.Count( x => x.IsKind( SyntaxKind.InternalKeyword ) );
+
+                if( numProtected == 1 && numInternal == 1 )
+                    return Accessibility.ProtectedInternal;
+
+                throw new ArgumentException(
+                    "Unsupported combination of protected and internal access tokens encountered" );
+            }
         }
     }
 }

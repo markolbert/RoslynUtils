@@ -32,7 +32,7 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 namespace J4JSoftware.DocCompiler
 {
     [TopologicalPredecessor(typeof(AddUsings))]
-    public class AddDocumentedTypes : SyntaxNodeProcessor
+    public class AddDocumentedTypes : EntityProcessor<NodeContext>
     {
         public static SyntaxKind[] SupportedKinds = new[]
         {
@@ -144,10 +144,10 @@ namespace J4JSoftware.DocCompiler
                 _ => undefined_kind()
             };
 
-            dtDb.Accessibility = GetAccessibility( nodeContext.Node );
-            dtDb.IsAbstract = HasChildNode( nodeContext, SyntaxKind.AbstractKeyword );
-            dtDb.IsSealed = HasChildNode( nodeContext, SyntaxKind.SealedKeyword );
-            dtDb.IsStatic = HasChildNode( nodeContext, SyntaxKind.StaticKeyword );
+            dtDb.Accessibility = nodeContext.Node.GetAccessibility();
+            dtDb.IsAbstract = nodeContext.Node.HasChildNode(SyntaxKind.AbstractKeyword );
+            dtDb.IsSealed = nodeContext.Node.HasChildNode(SyntaxKind.SealedKeyword );
+            dtDb.IsStatic = nodeContext.Node.HasChildNode(SyntaxKind.StaticKeyword );
 
             DbContext.SaveChanges();
 

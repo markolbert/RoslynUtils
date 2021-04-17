@@ -30,7 +30,7 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 namespace J4JSoftware.DocCompiler
 {
     [TopologicalPredecessor(typeof(AddNamespaces))]
-    public class AddUsings : SyntaxNodeProcessor
+    public class AddUsings : EntityProcessor<NodeContext>
     {
         public AddUsings( 
             IFullyQualifiedNames fqNamers,

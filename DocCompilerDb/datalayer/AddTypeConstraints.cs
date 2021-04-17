@@ -33,7 +33,7 @@ using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 namespace J4JSoftware.DocCompiler
 {
     [TopologicalPredecessor(typeof(AddBaseTypes))]
-    public class AddTypeConstraints : SyntaxNodeProcessor
+    public class AddTypeConstraints : EntityProcessor<NodeContext>
     {
         public static SyntaxKind[] SupportedKinds = new[]
         {

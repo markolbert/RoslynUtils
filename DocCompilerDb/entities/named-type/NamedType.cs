@@ -43,7 +43,6 @@ namespace J4JSoftware.DocCompiler
         public ICollection<TypeReference> UsedInReferences { get;set; }
         public ICollection<Event> UsedInEvents { get;set; }
         public ICollection<Property> PropertyReturnTypes { get; set; }
-        public ICollection<Method> MethodReturnTypes { get; set; }
         public ICollection<Argument> UsedInArguments { get; set; }
         public ICollection<Field> FieldTypes { get; set; }
     }

@@ -28,12 +28,22 @@ namespace J4JSoftware.DocCompiler
     public class Method 
     {
         public int ID { get;set; }
-        public string Name { get;set; }
+        public string Name { get; set; }
+        public string FullyQualifiedName { get; set; }
         public bool Deprecated { get; set; }
+
+        public Accessibility Accessibility { get; set; }
+        public bool IsAbstract { get; set; }
+        public bool IsNew { get; set; }
+        public bool IsVirtual { get; set; }
+        public bool IsOverride { get; set; }
+        public bool IsHidden { get; set; }
+        public bool IsStatic { get; set; }
+
         public ICollection<DocumentedType> DeclaredIn { get; set; }
         public ICollection<MethodArgument> Arguments { get; set; }
         public int ReturnTypeID { get; set; }
-        public NamedType ReturnType { get; set; }
+        public TypeReference ReturnType { get; set; }
         public Documentation Documentation { get; set; }
     }
 
@@ -41,6 +51,9 @@ namespace J4JSoftware.DocCompiler
     {
         protected override void Configure( EntityTypeBuilder<Method> builder )
         {
+            builder.HasIndex( x => x.FullyQualifiedName )
+                .IsUnique();
+
             builder.HasMany( x => x.DeclaredIn )
                 .WithMany( x => x.Methods );
 
