@@ -34,14 +34,6 @@ namespace J4JSoftware.DocCompiler
     [TopologicalPredecessor(typeof(AddUsings))]
     public class AddDocumentedTypes : EntityProcessor<NodeContext>
     {
-        public static SyntaxKind[] SupportedKinds = new[]
-        {
-            SyntaxKind.ClassDeclaration,
-            SyntaxKind.InterfaceDeclaration,
-            SyntaxKind.RecordDeclaration,
-            SyntaxKind.StructDeclaration
-        };
-
         private readonly NamedTypeFQN _ntFQN;
         private readonly TypeParameterListFQN _tplFQN;
 
@@ -62,7 +54,7 @@ namespace J4JSoftware.DocCompiler
             foreach( var scannedFile in source.ScannedFiles )
             {
                 foreach( var nsNode in scannedFile.RootNode.DescendantNodes()
-                    .Where( n => SupportedKinds.Any(x=>x == n.Kind()) ) )
+                    .Where( n => SyntaxCollections.DocumentedTypeKinds.Any(x=>x == n.Kind()) ) )
                 {
                     yield return new NodeContext( nsNode, scannedFile );
                 }

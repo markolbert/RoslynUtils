@@ -8,6 +8,6 @@ namespace J4JSoftware.DocCompiler
         bool Supports( SyntaxNode node );
         bool GetName( SyntaxNode node, out string? result );
         bool GetFullyQualifiedName( SyntaxNode node, out string? result );
-        bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result );
+        bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<IIdentifier> result );
     }
 }

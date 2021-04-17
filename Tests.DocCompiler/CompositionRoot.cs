@@ -149,6 +149,14 @@ namespace Tests.DocCompiler
             builder.RegisterType<NamedTypeFQN>()
                 .AsSelf()
                 .SingleInstance();
+
+            builder.RegisterType<ParameterFQN>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<ParameterListFQN>()
+                .AsSelf()
+                .SingleInstance();
         }
     }
 }

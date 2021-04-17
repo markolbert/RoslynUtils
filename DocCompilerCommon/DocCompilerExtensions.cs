@@ -11,14 +11,6 @@ namespace J4JSoftware.DocCompiler
 {
     public static class DocCompilerExtensions
     {
-        public static SyntaxKind[] AccessKinds = new[]
-        {
-            SyntaxKind.PublicKeyword,
-            SyntaxKind.PrivateKeyword,
-            SyntaxKind.ProtectedKeyword,
-            SyntaxKind.InternalKeyword
-        };
-
         public static SyntaxToken GetChildToken( this SyntaxNode node, SyntaxKind kind )
             => node.ChildTokens().FirstOrDefault( x => x.IsKind( kind ) );
 
@@ -88,7 +80,7 @@ namespace J4JSoftware.DocCompiler
         public static Accessibility GetAccessibility( this SyntaxNode node )
         {
             var accessTokens = node.ChildTokens()
-                .Where( x => AccessKinds.Any( y => x.RawKind == (int) y ) )
+                .Where( x => SyntaxCollections.AccessKinds.Any( y => x.RawKind == (int) y ) )
                 .ToList();
 
             return accessTokens.Count switch

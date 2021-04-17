@@ -28,24 +28,17 @@ namespace J4JSoftware.DocCompiler
 {
     public class TypeNodeAnalyzer : ITypeNodeAnalyzer
     {
-        public static SyntaxKind[] SupportedKinds =
-        {
-            SyntaxKind.SimpleBaseType, 
-            SyntaxKind.TypeConstraint,
-            SyntaxKind.IdentifierName,
-            SyntaxKind.PredefinedType,
-            SyntaxKind.ArrayType,
-            SyntaxKind.GenericName,
-        };
-
+        private readonly IFullyQualifiedNames _namers;
         private readonly DocDbContext _dbContext;
         private readonly IJ4JLogger? _logger;
 
         public TypeNodeAnalyzer(
+            IFullyQualifiedNames namers,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
+            _namers = namers;
             _dbContext = dbContext;
 
             _logger = logger;
@@ -71,7 +64,7 @@ namespace J4JSoftware.DocCompiler
             TypeParameters = null;
             RootTypeReference = null;
 
-            if( SupportedKinds.All( x => !typeNode.IsKind( x ) ) )
+            if( SyntaxCollections.TypeAnalyzerKinds.All( x => !typeNode.IsKind( x ) ) )
             {
                 _logger?.Error( "SyntaxNode is not a supported type of node for TypeReference resolution" );
                 return false;
@@ -116,11 +109,12 @@ namespace J4JSoftware.DocCompiler
             return node.Kind() switch
             {
                 SyntaxKind.SimpleBaseType => GetTypeInfo( node.ChildNodes().First(), out result ),
-                SyntaxKind.TypeConstraint =>GetTypeInfo( node.ChildNodes().First(), out result ),
-                SyntaxKind.IdentifierName => ProcessIdentifierName(node, out result),
-                SyntaxKind.PredefinedType=> ProcessPredefinedType(node, out result),
-                SyntaxKind.ArrayType=>ProcessArrayType(node, out result),
-                SyntaxKind.GenericName=>ProcessGenericName(node, out result),
+                SyntaxKind.TypeConstraint => GetTypeInfo( node.ChildNodes().First(), out result ),
+                SyntaxKind.IdentifierName => ProcessIdentifierName( node, out result ),
+                SyntaxKind.PredefinedType => ProcessPredefinedType( node, out result ),
+                SyntaxKind.ArrayType => ProcessArrayType( node, out result ),
+                SyntaxKind.GenericName => ProcessGenericName( node, out result ),
+                SyntaxKind.TupleType => ProcessTupleType( node, out result ),
                 _ => unsupported()
             };
 
@@ -191,6 +185,32 @@ namespace J4JSoftware.DocCompiler
 
                     result.AddChild(taTypeInfo!);
                 }
+            }
+
+            return true;
+        }
+
+        protected virtual bool ProcessTupleType( SyntaxNode node, out TypeReferenceInfo? result )
+        {
+            result = null;
+
+            if( !node.IsKind( SyntaxKind.TupleType ) )
+                return false;
+
+            if( !_namers.GetName( node, out var tupleName ) )
+            {
+                _logger?.Error("Could not get name for TupleType node");
+                return false;
+            }
+
+            result = new TypeReferenceInfo( node, tupleName! );
+
+            foreach( var teNode in node.ChildNodes().Where( x => x.IsKind( SyntaxKind.TupleElement ) ) )
+            {
+                if( !GetTypeInfo( teNode, out var teTypeInfo ) )
+                    return false;
+
+                result.AddChild( teTypeInfo! );
             }
 
             return true;

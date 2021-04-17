@@ -34,14 +34,6 @@ namespace J4JSoftware.DocCompiler
     [TopologicalPredecessor(typeof(AddTypeConstraints))]
     public class AddMethods : EntityProcessor<NodeContext>
     {
-        public static SyntaxKind[] ReturnTypeKinds = new[]
-        {
-            SyntaxKind.GenericName,
-            SyntaxKind.IdentifierName,
-            SyntaxKind.PredefinedType,
-            SyntaxKind.TupleElement
-        };
-
         private readonly ITypeNodeAnalyzer _tnAnalyzer;
         private readonly ITypeReferenceResolver _trResolver;
 
@@ -74,7 +66,7 @@ namespace J4JSoftware.DocCompiler
             // find our containing node
             var containerNode = nodeContext.Node;
 
-            while( AddDocumentedTypes.SupportedKinds.All( x => !containerNode.IsKind( x ) ) )
+            while( SyntaxCollections.DocumentedTypeKinds.All( x => !containerNode.IsKind( x ) ) )
             {
                 containerNode = containerNode!.Parent;
 
@@ -145,7 +137,7 @@ namespace J4JSoftware.DocCompiler
         private bool SetReturnType( SyntaxNode node, DocumentedType dtDb, IScannedFile scannedFile, Method methodDb )
         {
             var rtNode = node.ChildNodes()
-                .FirstOrDefault( x => ReturnTypeKinds.Any( x.IsKind ) );
+                .FirstOrDefault( x => SyntaxCollections.TypeNodeKinds.Any( x.IsKind ) );
 
             if( rtNode == null )
             {
@@ -168,7 +160,7 @@ namespace J4JSoftware.DocCompiler
                 methodDb.ReturnType = typeRef;
             else methodDb.ReturnTypeID = typeRef.ID;
 
-            return false;
+            return true;
         }
 
         private bool ProcessArguments( SyntaxNode node, Method methodDb )

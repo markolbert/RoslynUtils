@@ -34,14 +34,6 @@ namespace J4JSoftware.DocCompiler
     [TopologicalPredecessor(typeof(AddDocumentedTypes))]
     public class AddBaseTypes : EntityProcessor<NodeContext>
     {
-        public static SyntaxKind[] SupportedParentKinds = new[]
-        {
-            SyntaxKind.ClassDeclaration,
-            SyntaxKind.InterfaceDeclaration,
-            SyntaxKind.RecordDeclaration,
-            SyntaxKind.StructDeclaration
-        };
-
         private readonly ITypeNodeAnalyzer _nodeAnalayzer;
         private readonly ITypeReferenceResolver _typeResolver;
 
@@ -71,7 +63,7 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !SupportedParentKinds.Any( x => nodeContext.Node.Parent.IsKind( x ) ) )
+            if( !SyntaxCollections.DocumentedTypeKinds.Any( x => nodeContext.Node.Parent.IsKind( x ) ) )
             {
                 Logger?.Error("BaseList node is not a child of a Class, Interface, Record or Struct");
                 return false;

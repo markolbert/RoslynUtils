@@ -32,12 +32,14 @@ namespace J4JSoftware.DocCompiler
             return true;
         }
 
-        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result )
+        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<IIdentifier> result )
         {
             if( !base.GetIdentifierTokens( node, out result ) )
                 return false;
 
-            result = node.DescendantTokens().Where( x => x.IsKind( SyntaxKind.IdentifierToken ) );
+            result = node.DescendantTokens()
+                .Where( x => x.IsKind( SyntaxKind.IdentifierToken ) )
+                .Select( x => new BasicIdentifier( x ) );
 
             return true;
         }

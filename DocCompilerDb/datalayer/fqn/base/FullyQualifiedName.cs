@@ -44,9 +44,9 @@ namespace J4JSoftware.DocCompiler
             return _supportedKinds.Any(node.IsKind);
         }
 
-        public virtual bool GetIdentifierTokens(SyntaxNode node, out IEnumerable<SyntaxToken> result)
+        public virtual bool GetIdentifierTokens(SyntaxNode node, out IEnumerable<IIdentifier> result)
         {
-            result = Enumerable.Empty<SyntaxToken>();
+            result = Enumerable.Empty<IIdentifier>();
 
             return _supportedKinds.Any(node.IsKind);
         }

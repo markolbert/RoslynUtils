@@ -126,12 +126,13 @@ namespace J4JSoftware.DocCompiler
             return !string.IsNullOrEmpty(result);
         }
 
-        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result )
+        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<IIdentifier> result )
         {
             if( !base.GetIdentifierTokens( node, out result ) )
                 return false;
 
-            result = node.ChildTokens().Where( x => x.IsKind( SyntaxKind.IdentifierToken ) );
+            result = node.ChildTokens().Where( x => x.IsKind( SyntaxKind.IdentifierToken ) )
+                .Select( x => new BasicIdentifier( x ) );
 
             return true;
         }

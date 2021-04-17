@@ -35,14 +35,6 @@ namespace J4JSoftware.DocCompiler
     [TopologicalPredecessor(typeof(AddBaseTypes))]
     public class AddTypeConstraints : EntityProcessor<NodeContext>
     {
-        public static SyntaxKind[] SupportedKinds = new[]
-        {
-            SyntaxKind.ClassDeclaration,
-            SyntaxKind.InterfaceDeclaration,
-            SyntaxKind.RecordDeclaration,
-            SyntaxKind.StructDeclaration
-        };
-
         private readonly NamedTypeFQN _ntFQN;
         private readonly TypeParameterListFQN _tplFQN;
         private readonly ITypeNodeAnalyzer _nodeAnalayzer;
@@ -69,7 +61,7 @@ namespace J4JSoftware.DocCompiler
             foreach( var scannedFile in source.ScannedFiles )
             {
                 foreach( var nsNode in scannedFile.RootNode.DescendantNodes()
-                    .Where( n => SupportedKinds.Any( x => x == n.Kind() )
+                    .Where( n => SyntaxCollections.DocumentedTypeKinds.Any( x => x == n.Kind() )
                                  && n.ChildNodes()
                                      .Any( x => x.IsKind( SyntaxKind.TypeParameterConstraintClause ) ) )
                 )

@@ -56,7 +56,7 @@ namespace J4JSoftware.DocCompiler
             return true;
         }
 
-        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result )
+        public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<IIdentifier> result )
         {
             if( !base.GetIdentifierTokens( node, out result ) )
                 return false;
@@ -71,7 +71,8 @@ namespace J4JSoftware.DocCompiler
                 return false;
 
             result = containerNode.DescendantTokens()
-                .Where( x => x.IsKind( SyntaxKind.IdentifierToken ) );
+                .Where( x => x.IsKind( SyntaxKind.IdentifierToken ) )
+                .Select(x=>new BasicIdentifier(x)  );
 
             return result.Any();
         }

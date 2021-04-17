@@ -2,7 +2,7 @@
 
 // Copyright 2021 Mark A. Olbert
 // 
-// This library or program 'RoslynNetStandardTestLib' is free software: you can redistribute it
+// This library or program 'DocCompilerDb' is free software: you can redistribute it
 // and/or modify it under the terms of the GNU General Public License as
 // published by the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
@@ -18,29 +18,24 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using J4JSoftware.EFCoreUtilities;
+using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace J4JSoftware.Roslyn.Tests
+namespace J4JSoftware.DocCompiler
 {
-    public class EnumerableClass<T> : IEnumerable<EnumerableClass<T>>
+    [ EntityConfiguration( typeof(TupleTypeConfigurator) ) ]
+    public class TupleType : NamedType
     {
-        private readonly List<T> _items = new();
+        public ICollection<TupleElement>? TupleElements { get; set; }
+    }
 
-        public T this[ int idx ]
+    internal class TupleTypeConfigurator : EntityConfigurator<TupleType>
+    {
+        protected override void Configure( EntityTypeBuilder<TupleType> builder )
         {
-            get => _items[ idx ];
-            set => _items[ idx ] = value;
-        }
-
-        public IEnumerator<EnumerableClass<T>> GetEnumerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

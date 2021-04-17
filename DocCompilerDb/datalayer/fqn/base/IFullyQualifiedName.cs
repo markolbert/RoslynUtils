@@ -12,7 +12,7 @@ namespace J4JSoftware.DocCompiler
     public interface IFullyQualifiedName
     {
         ReadOnlyCollection<SyntaxKind> SupportedKinds { get; }
-        bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<SyntaxToken> result );
+        bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<IIdentifier> result );
         bool GetName( SyntaxNode node, out string? result );
         bool GetFullyQualifiedName( SyntaxNode node, out string? result );
     }
