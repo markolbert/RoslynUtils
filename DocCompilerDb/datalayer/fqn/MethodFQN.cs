@@ -75,7 +75,7 @@ namespace J4JSoftware.DocCompiler
             if (!GetIdentifierTokens(node, out var idTokens))
                 return false;
 
-            var sb = new StringBuilder( idTokens.First().ToString() );
+            var sb = new StringBuilder( idTokens.First().Name );
             sb.Append( "(" );
 
             if( inclParams )

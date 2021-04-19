@@ -19,30 +19,33 @@
 
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
     [ EntityConfiguration( typeof(TupleElementConfigurator) ) ]
-    public class TupleElement : NamedType
+    public class TupleElement : TypeReference
     {
-        public int ID { get; set; }
         public string Name { get; set; }
         public int Index { get; set; }
 
-        public int ReferencedTypeID { get; set; }
-        public TypeReference ReferencedType { get; set; }
+        public int TupleTypeID { get; set; }
+        public TupleType TupleType { get; set; }
     }
 
     internal class TupleElementConfigurator : EntityConfigurator<TupleElement>
     {
         protected override void Configure( EntityTypeBuilder<TupleElement> builder )
         {
+            builder.HasIndex( x => new { x.ID, x.Name } )
+                .IsUnique();
+
             builder.HasIndex( x => new { x.ID, x.Index } )
                 .IsUnique();
 
-            builder.HasOne( x => x.ReferencedType )
-                .WithMany( x => x.UsedInTuples )
-                .HasForeignKey( x => x.ReferencedTypeID )
+            builder.HasOne( x => x.TupleType )
+                .WithMany( x => x.TupleElements )
+                .HasForeignKey( x => x.TupleTypeID )
                 .HasPrincipalKey( x => x.ID );
         }
     }

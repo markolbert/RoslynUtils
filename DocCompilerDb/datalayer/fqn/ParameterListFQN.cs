@@ -32,15 +32,13 @@ namespace J4JSoftware.DocCompiler
             if( !GetIdentifierTokens( node, out var idTokens ) )
                 return false;
 
-            result = string.Join( ", ", idTokens );
+            result = string.Join( ", ", idTokens.Select(x=>x.Name) );
 
             return true;
         }
 
         public override bool GetIdentifierTokens( SyntaxNode node, out IEnumerable<IIdentifier> result )
         {
-            throw new NotImplementedException();
-
             if( !base.GetIdentifierTokens( node, out result ) )
                 return false;
 

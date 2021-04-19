@@ -44,7 +44,7 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.GenericName,
             SyntaxKind.IdentifierName,
             SyntaxKind.PredefinedType,
-            SyntaxKind.TupleElement
+            SyntaxKind.TupleType
         };
 
         public static SyntaxKind[] ArgumentModifiers = new[]
@@ -61,6 +61,7 @@ namespace J4JSoftware.DocCompiler
             SyntaxKind.PredefinedType,
             SyntaxKind.ArrayType,
             SyntaxKind.GenericName,
+            SyntaxKind.TupleType
         };
 
         public static SyntaxKind[] TupleKinds =

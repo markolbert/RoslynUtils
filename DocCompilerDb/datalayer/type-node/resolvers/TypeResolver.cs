@@ -18,7 +18,9 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 using J4JSoftware.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -54,10 +56,76 @@ namespace J4JSoftware.DocCompiler
 
             CreateIfMissing = analyzer.CreateIfMissing;
 
+            return FindTypeOrTuple( typeInfo, ntDb, out result );
+        }
+
+        private bool FindTypeOrTuple( TypeReferenceInfo typeInfo, NamedType ntDb, out T? result )
+        {
+            result = null;
+
+            if( typeInfo.IsTuple )
+            {
+                if( FindTupleType( typeInfo, ntDb, out var tupleResult ) )
+                {
+                    result = tupleResult;
+                    return true;
+                }
+
+                return false;
+            }
+
             return FindTypeInternal( typeInfo, ntDb, out result );
         }
 
         protected abstract bool FindTypeInternal( TypeReferenceInfo typeInfo, NamedType ntDb, out T? result );
+
+        private bool FindTupleType( TypeReferenceInfo typeInfo, NamedType ntDb, out T? result )
+        {
+            result = null;
+
+            if( !typeInfo.IsTuple )
+                return false;
+
+            var elementTypes = new List<NamedType>();
+
+            // tuples are defined by having the same list of types
+            var tuples = DbContext.TupleTypes
+                .Include( x => x.TupleElements )
+                .Include( x => x.TupleElements!.Select( y => y.ReferencedType ) )
+                .Where( x => x.TupleElements != null && x.TupleElements.Count == typeInfo.Arguments.Count )
+                .ToList();
+
+            foreach( var tuple in tuples )
+            {
+                var allMatch = true;
+
+                var elements = tuple.TupleElements!.ToList();
+
+                for( var idx = 0; idx < elements.Count; idx++ )
+                {
+                    if( !FindTypeOrTuple( typeInfo.Arguments[ idx ], ntDb, out var elementType ) )
+                    {
+                        Logger?.Error<string>( "Could not resolve tuple element '{0}'",
+                            typeInfo.Arguments[ idx ].Name );
+                        return false;
+                    }
+
+                    if( elements[ idx ].ReferencedType.Name == elementType!.Name ) 
+                        continue;
+
+                    allMatch = false;
+                    break;
+                }
+
+                if( !allMatch ) 
+                    continue;
+
+                result = tuple as T;
+                break;
+            }
+
+            return true;
+        }
 
         bool ITypeResolver.FindType( ITypeNodeAnalyzer analyzer, TypeReferenceInfo typeInfo, NamedType ntDb, out NamedType? result )
         {

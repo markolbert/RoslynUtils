@@ -134,6 +134,10 @@ namespace Tests.DocCompiler
                                   || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() ) )
                 .AsImplementedInterfaces();
 
+            builder.RegisterType<TypeResolvers>()
+                .AsSelf()
+                .SingleInstance();
+
             builder.RegisterType<FullyQualifiedNames>()
                 .As<IFullyQualifiedNames>()
                 .SingleInstance();

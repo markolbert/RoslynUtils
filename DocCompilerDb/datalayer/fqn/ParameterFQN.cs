@@ -27,7 +27,7 @@ namespace J4JSoftware.DocCompiler
             if( !GetIdentifierTokens( node, out var idTokens ) )
                 return false;
 
-            result = $"<{string.Join( ", ", idTokens )}>";
+            result = $"<{string.Join( ", ", idTokens.Select(x=>x.Name) )}>";
 
             return true;
         }

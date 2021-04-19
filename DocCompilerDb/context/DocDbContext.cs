@@ -36,6 +36,7 @@ namespace J4JSoftware.DocCompiler
         public DbSet<ExternalType> ExternalTypes { get; set; }
         public DbSet<LocalType> LocalTypes { get; set; }
         public DbSet<TupleType> TupleTypes { get; set; }
+        public DbSet<TupleElement> TupleElements { get; set; }
 
         public DbSet<TypeParameter> TypeParameters { get; set; }
         public DbSet<TypeConstraint> TypeConstraints { get; set; }

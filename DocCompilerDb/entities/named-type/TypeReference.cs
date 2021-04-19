@@ -20,6 +20,7 @@
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable 8602
 #pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
@@ -34,7 +35,6 @@ namespace J4JSoftware.DocCompiler
         
         public int ReferencedTypeRank { get; set; }
 
-        //public int Index { get; set; }
         public int? ParentReferenceID { get; set; }
         public TypeReference? ParentReference { get; set; }
         public ICollection<TypeReference> ChildReferences { get; set; }
@@ -42,7 +42,6 @@ namespace J4JSoftware.DocCompiler
         public ICollection<TypeArgument> UsedInTypeArguments { get; set; }
         public ICollection<TypeAncestor> UsedInAncestors { get; set; }
         public ICollection<TypeConstraint> UsedInConstraints { get; set; }
-        public ICollection<TupleElement> UsedInTuples { get; set; }
         public ICollection<Method> MethodReturnTypes { get; set; }
     }
 
