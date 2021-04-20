@@ -17,41 +17,31 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
     [TopologicalPredecessor(typeof(AddBaseTypes))]
     public class AddTypeConstraints : EntityProcessor<NodeContext>
     {
-        private readonly NamedTypeFQN _ntFQN;
-        private readonly TypeParameterListFQN _tplFQN;
         private readonly ITypeNodeAnalyzer _nodeAnalayzer;
         private readonly ITypeReferenceResolver _typeResolver;
 
         public AddTypeConstraints( 
-            IFullyQualifiedNames fqNamers,
-            NamedTypeFQN ntFQN,
-            TypeParameterListFQN tplFQN,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             ITypeNodeAnalyzer nodeAnalzyer,
             ITypeReferenceResolver typeResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( fqNamers, dbContext, logger )
+            : base( fqNamers, namers, nodeTokens, dbContext, logger )
         {
-            _ntFQN = ntFQN;
-            _tplFQN = tplFQN;
             _nodeAnalayzer = nodeAnalzyer;
             _typeResolver = typeResolver;
         }
@@ -73,23 +63,30 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !_ntFQN.GetFullyQualifiedNameWithoutTypeParameters(nodeContext.Node, out var nonGenericName))
+            if( !FullyQualifiedNames.GetName(nodeContext.Node, out var nonGenericNames, false))
                 return false;
 
-            var typeParametersInfo = _tplFQN.GetTypeParameterInfo(
-                nodeContext.Node.ChildNodes()
-                    .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) )
-            );
+            if( nonGenericNames!.Count != 1 )
+            {
+                Logger?.Error("Multiple alternative names for a DocumentedType node");
+                return false;
+            }
+
+            var typeParametersInfo = nodeContext.Node.ChildNodes()
+                    .Where( x => x.IsKind( SyntaxKind.TypeParameterList ) )
+                    .ToList()
+                    .SelectMany(x=>x.GetTypeParameterInfo())
+                    .ToList();
 
             var dtDb = DbContext.DocumentedTypes
                 .Include(x=>x.TypeParameters  )
-                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericName
+                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericNames[0]
                                       && x.NumTypeParameters == typeParametersInfo.Count );
 
             if( dtDb == null )
             {
                 Logger?.Error( "Could not find generic type '{0}' with '{1}' type parameters in the database",
-                    nonGenericName, 
+                    nonGenericNames[0], 
                     typeParametersInfo.Count );
 
                 return false;

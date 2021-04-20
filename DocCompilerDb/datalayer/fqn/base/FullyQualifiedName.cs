@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using J4JSoftware.Logging;
@@ -8,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
-    public abstract class FullyQualifiedName : IFullyQualifiedName
+    public abstract class FullyQualifiedName : IFullyQualifiedNodeName
     {
         private readonly List<SyntaxKind> _supportedKinds;
         

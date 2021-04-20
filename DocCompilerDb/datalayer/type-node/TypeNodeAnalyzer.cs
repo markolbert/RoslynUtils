@@ -22,23 +22,22 @@ using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
     public class TypeNodeAnalyzer : ITypeNodeAnalyzer
     {
-        private readonly IFullyQualifiedNames _namers;
+        private readonly INodeNames _names;
         private readonly DocDbContext _dbContext;
         private readonly IJ4JLogger? _logger;
 
         public TypeNodeAnalyzer(
-            IFullyQualifiedNames namers,
+            INodeNames names,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
-            _namers = namers;
+            _names = names;
             _dbContext = dbContext;
 
             _logger = logger;
@@ -197,7 +196,7 @@ namespace J4JSoftware.DocCompiler
             if( !node.IsKind( SyntaxKind.TupleType ) )
                 return false;
 
-            if( !_namers.GetName( node, out var tupleName ) )
+            if( !_names.GetName( node, out var tupleName ) )
             {
                 _logger?.Error("Could not get name for TupleType node");
                 return false;

@@ -28,10 +28,12 @@ namespace J4JSoftware.DocCompiler
     public class AddAssemblies : EntityProcessor<IProjectInfo >
     {
         public AddAssemblies( 
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             DocDbContext dbContext,
             IJ4JLogger? logger ) 
-            : base(fqNamers, dbContext, logger )
+            : base(fqNamers, namers, nodeTokens, dbContext, logger )
         {
         }
 

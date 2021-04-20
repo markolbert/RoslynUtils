@@ -19,7 +19,6 @@
 
 using System.Linq;
 using J4JSoftware.Logging;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.DocCompiler
 {

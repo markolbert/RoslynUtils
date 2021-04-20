@@ -18,16 +18,11 @@
 #endregion
 
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -38,12 +33,14 @@ namespace J4JSoftware.DocCompiler
         private readonly ITypeReferenceResolver _trResolver;
 
         public AddMethods( 
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             ITypeNodeAnalyzer tnAnalyzer,
             ITypeReferenceResolver trResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( fqNamers, dbContext, logger )
+            : base( fqNamers, namers, nodeTokens, dbContext, logger )
         {
             _tnAnalyzer = tnAnalyzer;
             _trResolver = trResolver;
@@ -80,26 +77,39 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( !Namers.GetFullyQualifiedName( containerNode, out var fqnContainer ) )
+            if( !FullyQualifiedNames.GetName( containerNode, out var containerFQNames ) )
                 return false;
 
-            var containerDb = DbContext.DocumentedTypes.FirstOrDefault( x => x.FullyQualifiedName == fqnContainer );
-
-            if( containerDb == null )
+            if( containerFQNames!.Count != 1 )
             {
-                Logger?.Error<string>("DocumentedType '{0}' not found in database", fqnContainer!  );
+                Logger?.Error("Multiple alternative DocumentedType node names");
                 return false;
             }
 
-            if( !Namers.GetFullyQualifiedName( nodeContext.Node, out var fqnMethod ) )
+            var containerDb = DbContext.DocumentedTypes
+                    .FirstOrDefault( x => x.FullyQualifiedName == containerFQNames[ 0 ] );
+
+            if( containerDb == null )
+            {
+                Logger?.Error<string>("DocumentedType '{0}' not found in database", containerFQNames[0]  );
+                return false;
+            }
+
+            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var methodFQNames ) )
                 return false;
 
-            if( !Namers.GetName( nodeContext.Node, out var methodName ) )
+            if( methodFQNames!.Count != 1 )
+            {
+                Logger?.Error("Multiple alternative fully-qualified method names");
+                return false;
+            }
+
+            if( !Names.GetName( nodeContext.Node, out var methodName ) )
                 return false;
 
             var methodDb = DbContext.Methods
                 .Include( x => x.Arguments )
-                .FirstOrDefault( x => x.FullyQualifiedName == fqnMethod );
+                .FirstOrDefault( x => x.FullyQualifiedName == methodFQNames[0] );
 
             if( methodDb == null )
             {
@@ -113,7 +123,7 @@ namespace J4JSoftware.DocCompiler
             }
             else methodDb.Deprecated = false;
 
-            methodDb.FullyQualifiedName = fqnMethod!;
+            methodDb.FullyQualifiedName = methodFQNames[0];
 
             methodDb.Accessibility = nodeContext.Node.GetAccessibility();
             methodDb.IsAbstract = nodeContext.Node.HasChildNode( SyntaxKind.AbstractKeyword );

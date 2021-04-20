@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -39,7 +38,7 @@ namespace J4JSoftware.DocCompiler
 
             result = node.DescendantTokens()
                 .Where( x => x.IsKind( SyntaxKind.IdentifierToken ) )
-                .Select( x => new BasicIdentifier( x ) );
+                .Select( x => new SingleTokenIdentifier( x ) );
 
             return true;
         }

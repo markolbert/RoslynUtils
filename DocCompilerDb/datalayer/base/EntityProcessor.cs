@@ -18,22 +18,26 @@
 #endregion
 
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using J4JSoftware.Logging;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
     public abstract class EntityProcessor<TEntity> : IEntityProcessor
     {
         protected EntityProcessor(
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
-            Namers = fqNamers;
+            FullyQualifiedNames = fqNamers;
+            Names = namers;
+            NodeIdentifierTokens = nodeTokens;
             DbContext = dbContext;
 
             Logger = logger;
@@ -42,7 +46,9 @@ namespace J4JSoftware.DocCompiler
 
         protected IJ4JLogger? Logger { get; }
         protected DocDbContext DbContext { get; }
-        protected IFullyQualifiedNames Namers { get; }
+        protected IFullyQualifiedNodeNames FullyQualifiedNames { get; }
+        protected INodeNames Names { get; }
+        protected INodeIdentifierTokens NodeIdentifierTokens { get; }
 
         public virtual bool UpdateDb( IDocScanner source )
         {

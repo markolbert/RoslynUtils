@@ -19,13 +19,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -33,10 +30,12 @@ namespace J4JSoftware.DocCompiler
     public class AddUsings : EntityProcessor<NodeContext>
     {
         public AddUsings( 
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( fqNamers, dbContext, logger )
+            : base( fqNamers, namers, nodeTokens, dbContext, logger )
         {
         }
 
@@ -54,10 +53,16 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !Namers.GetFullyQualifiedName( nodeContext.Node, out var fqUsing ) )
+            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var usingFQNames ) )
                 return false;
 
-            if( !Namers.GetName( nodeContext.Node, out var usingName ) )
+            if( usingFQNames!.Count != 1 )
+            {
+                Logger?.Error("Multiple fully-qualified Using names");
+                return false;
+            }
+
+            if( !Names.GetName( nodeContext.Node, out var usingName ) )
                 return false;
 
             var assemblyDb = DbContext.Assemblies
@@ -74,7 +79,7 @@ namespace J4JSoftware.DocCompiler
             var extNsDb = DbContext.Namespaces
                 .Include( x => x.CodeFiles )
                 .Include( x => x.Assemblies )
-                .FirstOrDefault( x => x.FullyQualifiedName == fqUsing );
+                .FirstOrDefault( x => x.FullyQualifiedName == usingFQNames[0] );
 
             // if we find the namespace already listed it's defined within the scope of the
             // documentation project and we're done
@@ -84,7 +89,7 @@ namespace J4JSoftware.DocCompiler
             extNsDb = new Namespace
             {
                 Name = usingName!,
-                FullyQualifiedName = fqUsing!,
+                FullyQualifiedName = usingFQNames[0],
                 InDocumentationScope = false,
                 Assemblies = new List<Assembly> { assemblyDb }
             };
@@ -196,7 +201,7 @@ namespace J4JSoftware.DocCompiler
 
         private bool SetNamespaceContainer( SyntaxNode containingNode, Namespace extNsDb )
         {
-            if( !Namers.GetFullyQualifiedName( containingNode, out var fqContaining ) )
+            if( !FullyQualifiedNames.GetName( containingNode, out var containingFQNames ) )
             {
                 Logger?.Error<string>( "Couldn't find containing Namespace for Using node '{0}'",
                     extNsDb.FullyQualifiedName );
@@ -204,15 +209,21 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
+            if( containingFQNames!.Count != 1 )
+            {
+                Logger?.Error("Multiple alternative containing Namespace node names");
+                return false;
+            }
+
             var containingNsDb = DbContext.Namespaces
                 .Include( x => x.ChildNamespaces )
-                .FirstOrDefault( x => x.FullyQualifiedName == fqContaining );
+                .FirstOrDefault( x => x.FullyQualifiedName == containingFQNames[0] );
 
             if( containingNsDb == null )
             {
                 Logger?.Error<string, string>(
                     "Couldn't find containing Namespace entity '{0}' in database for Using node '{1}'",
-                    fqContaining!,
+                    containingFQNames[0],
                     extNsDb.FullyQualifiedName );
                 
                 return false;

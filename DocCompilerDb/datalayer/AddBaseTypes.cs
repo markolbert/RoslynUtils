@@ -18,16 +18,12 @@
 #endregion
 
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -38,12 +34,14 @@ namespace J4JSoftware.DocCompiler
         private readonly ITypeReferenceResolver _typeResolver;
 
         public AddBaseTypes( 
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             ITypeNodeAnalyzer nodeAnalzyer,
             ITypeReferenceResolver typeResolver,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( fqNamers, dbContext, logger )
+            : base( fqNamers,namers, nodeTokens, dbContext, logger )
         {
             _nodeAnalayzer = nodeAnalzyer;
             _typeResolver = typeResolver;
@@ -69,16 +67,22 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( !Namers.GetFullyQualifiedName( nodeContext.Node.Parent!, out var fqnDocType ) )
+            if( !FullyQualifiedNames.GetName( nodeContext.Node.Parent!, out var dtNames ) )
                 return false;
+
+            if( dtNames!.Count != 1 )
+            {
+                Logger?.Error("Multiple alternative names for DocumentedType");
+                return false;
+            }
 
             var docTypeDb = DbContext.DocumentedTypes
                 .Include(x=>x.Ancestors  )
-                .FirstOrDefault( x => x.FullyQualifiedName == fqnDocType! );
+                .FirstOrDefault( x => x.FullyQualifiedName == dtNames[0] );
 
             if( docTypeDb == null )
             {
-                Logger?.Error<string>("Could not find NamedType '{0}' in the database", fqnDocType!);
+                Logger?.Error<string>("Could not find DocumentedType '{0}' in the database", dtNames[0]);
                 return false;
             }
 

@@ -101,6 +101,18 @@ namespace Tests.DocCompiler
                 .AsSelf()
                 .SingleInstance();
 
+            builder.RegisterType<FullyQualifiedNodeNames>()
+                .As<IFullyQualifiedNodeNames>()
+                .SingleInstance();
+
+            builder.RegisterType<NodeNames>()
+                .As<INodeNames>()
+                .SingleInstance();
+
+            builder.RegisterType<INodeIdentifierTokens>()
+                .As<INodeIdentifierTokens>()
+                .SingleInstance();
+
             builder.RegisterAssemblyTypes( typeof(DocDbContext).Assembly )
                 .Where( t => typeof(IEntityProcessor).IsAssignableFrom( t )
                              && !t.IsAbstract
@@ -108,12 +120,12 @@ namespace Tests.DocCompiler
                                   || t.GetCustomAttributes( typeof(TopologicalRootAttribute), false ).Any() ) )
                 .AsImplementedInterfaces();
 
-            builder.RegisterAssemblyTypes( typeof( DocDbContext ).Assembly )
-                .Where( t => typeof( IFullyQualifiedName ).IsAssignableFrom( t )
-                             && !t.IsAbstract
-                             && t.GetConstructors().Any() )
-                .AsImplementedInterfaces()
-                .SingleInstance();
+            //builder.RegisterAssemblyTypes( typeof( DocDbContext ).Assembly )
+            //    .Where( t => typeof( IFullyQualifiedNodeName ).IsAssignableFrom( t )
+            //                 && !t.IsAbstract
+            //                 && t.GetConstructors().Any() )
+            //    .AsImplementedInterfaces()
+            //    .SingleInstance();
 
             builder.RegisterType<TopologicalSortFactory>()
                 .AsSelf()
@@ -138,29 +150,29 @@ namespace Tests.DocCompiler
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<FullyQualifiedNames>()
-                .As<IFullyQualifiedNames>()
-                .SingleInstance();
+            //builder.RegisterType<FullyQualifiedNodeNames>()
+            //    .As<IFullyQualifiedNodeNames>()
+            //    .SingleInstance();
 
-            builder.RegisterType<NamespaceFQN>()
-                .AsSelf()
-                .SingleInstance();
+            //builder.RegisterType<NamespaceFQN>()
+            //    .AsSelf()
+            //    .SingleInstance();
 
-            builder.RegisterType<TypeParameterListFQN>()
-                .AsSelf()
-                .SingleInstance();
+            //builder.RegisterType<TypeParameterListFQN>()
+            //    .AsSelf()
+            //    .SingleInstance();
 
-            builder.RegisterType<NamedTypeFQN>()
-                .AsSelf()
-                .SingleInstance();
+            //builder.RegisterType<NamedTypeFQN>()
+            //    .AsSelf()
+            //    .SingleInstance();
 
-            builder.RegisterType<ParameterFQN>()
-                .AsSelf()
-                .SingleInstance();
+            //builder.RegisterType<ParameterFQN>()
+            //    .AsSelf()
+            //    .SingleInstance();
 
-            builder.RegisterType<ParameterListFQN>()
-                .AsSelf()
-                .SingleInstance();
+            //builder.RegisterType<ParameterListFQN>()
+            //    .AsSelf()
+            //    .SingleInstance();
         }
     }
 }

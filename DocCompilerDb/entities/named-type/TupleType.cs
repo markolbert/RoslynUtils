@@ -17,11 +17,8 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using J4JSoftware.EFCoreUtilities;
-using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace J4JSoftware.DocCompiler

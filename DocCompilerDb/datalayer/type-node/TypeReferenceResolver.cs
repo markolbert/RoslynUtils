@@ -17,15 +17,7 @@
 
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.DotNet.PlatformAbstractions;
-using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.DocCompiler
 {

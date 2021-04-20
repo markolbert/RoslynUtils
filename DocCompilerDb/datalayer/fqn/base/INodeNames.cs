@@ -17,14 +17,13 @@
 
 #endregion
 
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
+
 namespace J4JSoftware.DocCompiler
 {
-    public interface ITypeReferenceResolver
+    public interface INodeNames
     {
-        bool Resolve(
-            ITypeNodeAnalyzer analyzer,
-            DocumentedType dtContextDb,
-            TypeReference? parentRef,
-            out TypeReference? result );
+        bool GetName( SyntaxNode node, out string? result, bool includeTypeParams = true );
     }
 }

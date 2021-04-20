@@ -19,13 +19,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -33,10 +30,12 @@ namespace J4JSoftware.DocCompiler
     public class AddNamespaces : EntityProcessor<NodeContext>
     {
         public AddNamespaces( 
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( fqNamers, dbContext, logger )
+            : base( fqNamers, namers, nodeTokens, dbContext, logger )
         {
         }
 
@@ -54,10 +53,16 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !Namers.GetFullyQualifiedName( nodeContext.Node, out var fqName ) )
+            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var fqNames ) )
                 return false;
 
-            if (!Namers.GetName(nodeContext.Node, out var nsName))
+            if( fqNames!.Count != 1 )
+            {
+                Logger?.Error("Multiple alternative Namespace names");
+                return false;
+            }
+
+            if (!Names.GetName(nodeContext.Node, out var nsName))
                 return false;
 
             var assemblyDb = DbContext.Assemblies
@@ -88,13 +93,13 @@ namespace J4JSoftware.DocCompiler
             var nsDb = DbContext.Namespaces
                 .Include(x=>x.Assemblies)
                 .Include(x=>x.CodeFiles)
-                .FirstOrDefault(x => x.FullyQualifiedName== fqName);
+                .FirstOrDefault(x => x.FullyQualifiedName== fqNames[0]);
 
             if( nsDb == null )
             {
                 nsDb = new Namespace
                 {
-                    FullyQualifiedName = fqName!,
+                    FullyQualifiedName = fqNames[0],
                     Name = nsName!,
                     Assemblies = new List<Assembly> { assemblyDb },
                     InDocumentationScope = true,
@@ -145,21 +150,25 @@ namespace J4JSoftware.DocCompiler
             if (parentKind != SyntaxKind.NamespaceDeclaration)
                 return true;
 
-            if (!Namers.GetFullyQualifiedName(nodeContext.Node.Parent!, out var parentFQName))
+            if (!FullyQualifiedNames.GetName(nodeContext.Node.Parent!, out var parentFQNames))
             {
                 Logger?.Error("Could not determine fully-qualified name of NamespaceDeclarationSyntax node's parent");
                 return false;
             }
 
-            result = DbContext.Namespaces.FirstOrDefault(x => x.FullyQualifiedName == parentFQName!);
-
-            if (result == null)
+            if( parentFQNames!.Count != 1 )
             {
-                Logger?.Error<string>("Could not find containing namespace {0}", parentFQName!);
+                Logger?.Error("Multiple alternative fully-qualified parent Namespace names");
                 return false;
             }
 
-            return true;
+            result = DbContext.Namespaces.FirstOrDefault(x => x.FullyQualifiedName == parentFQNames[0]);
+
+            if( result != null ) 
+                return true;
+
+            Logger?.Error<string>("Could not find containing namespace {0}", parentFQNames[0]);
+            return false;
         }
     }
 }

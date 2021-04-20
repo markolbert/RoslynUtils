@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +27,8 @@ namespace J4JSoftware.DocCompiler
     [ TopologicalRoot() ]
     public class InitializeForUpdate : EntityProcessor<IProjectInfo>
     {
+        private bool _dbInitialized;
+
         public static readonly string[] DocumentedTables =
             { "Assemblies", "Namespaces", "NamedTypes", "Arguments", "Methods", "Properties", "Events", "Fields" };
 
@@ -38,10 +39,12 @@ namespace J4JSoftware.DocCompiler
             { "TypeParameters", "TypeReferences"  };
 
         public InitializeForUpdate(
-            IFullyQualifiedNames fqNamers,
-            DocDbContext dbContext,
-            IJ4JLogger? logger )
-            : base( fqNamers, dbContext, logger )
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
+            DocDbContext dbContext, 
+            IJ4JLogger? logger ) 
+            : base( fqNamers, namers, nodeTokens, dbContext, logger )
         {
         }
 
@@ -50,12 +53,25 @@ namespace J4JSoftware.DocCompiler
         // mark all documentable items as deprecated so we can tell which items are
         // newly added, and delete all entries in relationship/linking tables
         protected override bool ProcessEntity( IProjectInfo projInfo )
-            => DoBulkProcessing( DocumentedTables, "update {0} set Deprecated = 0", "deprecating" )
-               && DoBulkProcessing( RelationshipTables, "delete from {0}", "truncating" )
-               && DoBulkProcessing( AutoIncrementTables,
-                   "delete from sqlite_sequence where name = '{0}'",
-                   "resetting autoincrement index" )
-               && ClearTypeReferences();
+        {
+            // we actually want to to this initialization, which is for the database, only once
+            // so keep track of whether we've run before, in case we're processing multiple projects
+            var allOkay = true;
+
+            if( !_dbInitialized )
+            {
+                allOkay &= DoBulkProcessing( DocumentedTables, "update {0} set Deprecated = 0", "deprecating" )
+                           && DoBulkProcessing( RelationshipTables, "delete from {0}", "truncating" )
+                           && DoBulkProcessing( AutoIncrementTables,
+                               "delete from sqlite_sequence where name = '{0}'",
+                               "resetting autoincrement index" )
+                           && ClearTypeReferences();
+
+                _dbInitialized = true;
+            }
+
+            return allOkay;
+        }
 
         private bool DoBulkProcessing( string[] tables, string cmdText, string text )
         {

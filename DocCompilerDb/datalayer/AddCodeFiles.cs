@@ -27,10 +27,12 @@ namespace J4JSoftware.DocCompiler
     public class AddCodeFiles : EntityProcessor<IScannedFile>
     {
         public AddCodeFiles( 
-            IFullyQualifiedNames fqNamers,
+            IFullyQualifiedNodeNames fqNamers,
+            INodeNames namers,
+            INodeIdentifierTokens nodeTokens,
             DocDbContext dbContext, 
             IJ4JLogger? logger ) 
-            : base( fqNamers, dbContext, logger )
+            : base( fqNamers, namers, nodeTokens, dbContext, logger )
         {
         }
 

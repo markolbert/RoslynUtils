@@ -15,7 +15,17 @@
 
 	<ItemGroup>
 	  <Compile Remove="datalayer\base\SyntaxNodeProcessor.cs" />
+	  <Compile Remove="datalayer\fqn\base\FullyQualifiedName.cs" />
+	  <Compile Remove="datalayer\fqn\base\IFullyQualifiedNodeName.cs" />
+	  <Compile Remove="datalayer\fqn\MethodFQN.cs" />
+	  <Compile Remove="datalayer\fqn\NamedTypeFQN.cs" />
+	  <Compile Remove="datalayer\fqn\NamespaceFQN.cs" />
+	  <Compile Remove="datalayer\fqn\ParameterFQN.cs" />
+	  <Compile Remove="datalayer\fqn\ParameterListFQN.cs" />
+	  <Compile Remove="datalayer\fqn\TypeParameterListFQN.cs" />
+	  <Compile Remove="datalayer\fqn\UsingFQN.cs" />
 	  <Compile Remove="support\Accessibility.cs" />
+	  <Compile Remove="support\TypeParameterInfo.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

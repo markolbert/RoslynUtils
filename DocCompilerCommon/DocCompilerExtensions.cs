@@ -111,5 +111,35 @@ namespace J4JSoftware.DocCompiler
                     "Unsupported combination of protected and internal access tokens encountered" );
             }
         }
+
+        public static List<TypeParameterInfo> GetTypeParameterInfo( this SyntaxNode node )
+        {
+            var retVal = new List<TypeParameterInfo>();
+
+            if( !node.IsKind( SyntaxKind.TypeParameterList ) )
+                return retVal;
+
+            var index = 0;
+
+            var constraintNodes = node.Parent!
+                .GetChildNodes( SyntaxKind.TypeParameterConstraintClause )
+                .ToDictionary( x =>
+                    x.ChildNodes().First( y => y.IsKind( SyntaxKind.IdentifierName ) ).ToString() );
+
+            foreach( var tpNode in node.ChildNodes()
+                .Where( x => x.IsKind( SyntaxKind.TypeParameter ) ) )
+            {
+                var name = tpNode.ChildTokens().First( x => x.IsKind( SyntaxKind.IdentifierToken ) ).Text;
+
+                retVal.Add( new TypeParameterInfo(
+                    name,
+                    index,
+                    constraintNodes.ContainsKey( name ) ? constraintNodes[ name ] : null ) );
+
+                index++;
+            }
+
+            return retVal;
+        }
     }
 }

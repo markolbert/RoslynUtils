@@ -17,14 +17,13 @@
 
 #endregion
 
+using Microsoft.CodeAnalysis;
+
 namespace J4JSoftware.DocCompiler
 {
-    public interface ITypeReferenceResolver
-    {
-        bool Resolve(
-            ITypeNodeAnalyzer analyzer,
-            DocumentedType dtContextDb,
-            TypeReference? parentRef,
-            out TypeReference? result );
-    }
+    public record TypeParameterInfo(
+        string Name,
+        int Index,
+        SyntaxNode? TypeConstraintNode
+    );
 }

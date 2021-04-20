@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using J4JSoftware.EFCoreUtilities;
+#pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
