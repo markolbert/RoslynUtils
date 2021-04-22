@@ -30,6 +30,17 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(DocumentedTypeConfigurator))]
     public class DocumentedType : NamedType
     {
+        private readonly DocDbContext? _dbContext;
+
+        public DocumentedType()
+        {
+        }
+
+        private DocumentedType( DocDbContext dbContext )
+        {
+            _dbContext = dbContext;
+        }
+
         private int? _docTypeID;
         private ContainerType _containerType = ContainerType.Namespace;
 
@@ -82,17 +93,26 @@ namespace J4JSoftware.DocCompiler
         {
             retVal ??= new List<NamespaceContext>();
 
+            if( Namespace == null )
+                _dbContext.Entry( this )
+                    .Reference( x => x.Namespace )
+                    .Load();
+
             var curNS = Namespace;
 
             while( curNS != null )
             {
-                if( curNS.ChildNamespaces != null )
+                // load child namespaces if that wasn't done and we have a DocDBContext
+                // we can use to do so
+                if( curNS.ChildNamespaces == null && _dbContext != null )
+                    _dbContext.Entry( curNS )
+                        .Collection( x => x.ChildNamespaces )
+                        .Load();
+
+                foreach( var childNS in curNS.ChildNamespaces )
                 {
-                    foreach( var childNS in curNS.ChildNamespaces )
-                    {
-                        if( retVal.All( x => !x.Label.Equals( childNS.Name, StringComparison.Ordinal ) ) )
-                            retVal.Add( new NamespaceContext( childNS ) );
-                    }
+                    if( retVal.All( x => !x.Label.Equals( childNS.Name, StringComparison.Ordinal ) ) )
+                        retVal.Add( new NamespaceContext( childNS ) );
                 }
 
                 curNS = curNS.ContainingNamespace;

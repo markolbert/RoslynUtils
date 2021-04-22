@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 
 namespace J4JSoftware.DocCompiler
 {
     public interface IFullyQualifiedNodeNames
     {
-        bool GetName( SyntaxNode node, 
-            out List<string>? result, 
+        ResolvedNameState GetName( SyntaxNode node,
+            out string? result, 
             bool includeTypeParams = true );
     }
 }

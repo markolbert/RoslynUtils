@@ -27,17 +27,17 @@ namespace J4JSoftware.DocCompiler
 {
     public class TypeNodeAnalyzer : ITypeNodeAnalyzer
     {
-        private readonly INodeNames _names;
+        private readonly INodeNames _simpleNames;
         private readonly DocDbContext _dbContext;
         private readonly IJ4JLogger? _logger;
 
         public TypeNodeAnalyzer(
-            INodeNames names,
+            INodeNames simpleNames,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
-            _names = names;
+            _simpleNames = simpleNames;
             _dbContext = dbContext;
 
             _logger = logger;
@@ -196,7 +196,7 @@ namespace J4JSoftware.DocCompiler
             if( !node.IsKind( SyntaxKind.TupleType ) )
                 return false;
 
-            if( !_names.GetName( node, out var tupleName ) )
+            if( _simpleNames.GetName( node, out var tupleName ) == ResolvedNameState.Failed )
             {
                 _logger?.Error("Could not get name for TupleType node");
                 return false;

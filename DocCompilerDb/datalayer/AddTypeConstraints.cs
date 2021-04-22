@@ -63,14 +63,10 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !FullyQualifiedNames.GetName(nodeContext.Node, out var nonGenericNames, false))
+            if( FullyQualifiedNames.GetName( nodeContext.Node, 
+                    out var nonGenericName, 
+                    false ) == ResolvedNameState.Failed )
                 return false;
-
-            if( nonGenericNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative names for a DocumentedType node");
-                return false;
-            }
 
             var typeParametersInfo = nodeContext.Node.ChildNodes()
                     .Where( x => x.IsKind( SyntaxKind.TypeParameterList ) )
@@ -80,13 +76,13 @@ namespace J4JSoftware.DocCompiler
 
             var dtDb = DbContext.DocumentedTypes
                 .Include(x=>x.TypeParameters  )
-                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericNames[0]
+                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericName
                                       && x.NumTypeParameters == typeParametersInfo.Count );
 
             if( dtDb == null )
             {
                 Logger?.Error( "Could not find generic type '{0}' with '{1}' type parameters in the database",
-                    nonGenericNames[0], 
+                    nonGenericName!, 
                     typeParametersInfo.Count );
 
                 return false;

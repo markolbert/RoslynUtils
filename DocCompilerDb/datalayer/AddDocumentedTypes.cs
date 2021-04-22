@@ -53,26 +53,16 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var dtFQNames ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node, out var dtFQName ) != ResolvedNameState.FullyResolved )
                 return false;
 
-            if( dtFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative names for DocumentedType");
-                return false;
-            }
-
-            if (!Names.GetName(nodeContext.Node, out var dtSimpleName))
+            if( Names.GetName( nodeContext.Node, out var dtSimpleName ) != ResolvedNameState.FullyResolved )
                 return false;
 
-            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var nonGenericNames, false ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node,
+                out var nonGenericName,
+                false ) != ResolvedNameState.FullyResolved )
                 return false;
-
-            if( nonGenericNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative non-generic names for DocumentedType");
-                return false;
-            }
 
             var codeFileDb = DbContext.CodeFiles
                 .FirstOrDefault( x => x.FullPath == nodeContext.ScannedFile.SourceFilePath );
@@ -94,14 +84,14 @@ namespace J4JSoftware.DocCompiler
             var dtDb = DbContext.DocumentedTypes
                 .Include( x => x.CodeFiles )
                 .Include( x => x.TypeParameters )
-                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericNames[0]
+                .FirstOrDefault( x => x.FullyQualifiedNameWithoutTypeParameters == nonGenericName!
                                       && x.NumTypeParameters == typeConstraints.Count );
 
             if( dtDb == null )
             {
                 dtDb = new DocumentedType
                 {
-                    FullyQualifiedNameWithoutTypeParameters = nonGenericNames[0],
+                    FullyQualifiedNameWithoutTypeParameters = nonGenericName!,
                     Name = dtSimpleName!,
                     NumTypeParameters = typeConstraints.Count,
                     CodeFiles = new List<CodeFile> { codeFileDb}
@@ -122,7 +112,7 @@ namespace J4JSoftware.DocCompiler
                 }
             }
 
-            dtDb.FullyQualifiedName = dtFQNames[0];
+            dtDb.FullyQualifiedName = dtFQName!;
 
             if ( !SetContainer( nodeContext, dtDb ) )
                 return false;
@@ -211,7 +201,7 @@ namespace J4JSoftware.DocCompiler
 
         private bool SetNamedTypeContainer( NodeContext nodeContext, DocumentedType dtDb )
         {
-            if( !FullyQualifiedNames.GetName( nodeContext.Node.Parent!, out var parentFQNames ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node.Parent!, out var parentFQName ) != ResolvedNameState.FullyResolved )
             {
                 Logger?.Error<string>(
                     "Could not determine fully-qualified name of parent named type node for {0}",
@@ -220,19 +210,13 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( parentFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative fully-qualified names for SyntaxNode parent");
-                return false;
-            }
-
             var ntParent = DbContext.DocumentedTypes
-                .FirstOrDefault( x => x.FullyQualifiedName == parentFQNames[0] );
+                .FirstOrDefault( x => x.FullyQualifiedName == parentFQName );
 
             if( ntParent == null )
             {
                 Logger?.Error<string>(
-                    "Could not find parent named type node {0}", parentFQNames[0] );
+                    "Could not find parent named type node {0}", parentFQName! );
 
                 return false;
             }
@@ -268,26 +252,20 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( !FullyQualifiedNames.GetName( node, out var nsFQNames ) )
+            if( FullyQualifiedNames.GetName( node, out var nsFQName ) != ResolvedNameState.FullyResolved )
             {
                 Logger?.Error( "Could not determine fully-qualified name of NamespaceDeclaration node" );
                 return false;
             }
 
-            if( nsFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative containing Namespace names"  );
-                return false;
-            }
-
-            result = DbContext.Namespaces.FirstOrDefault( x => x.FullyQualifiedName == nsFQNames[0] );
+            result = DbContext.Namespaces.FirstOrDefault( x => x.FullyQualifiedName == nsFQName );
 
             if( result != null ) 
                 return true;
 
             Logger?.Error<string>(
                 "Could not find parent NamespaceDeclarationSyntax node {0}",
-                nsFQNames[0] );
+                nsFQName! );
 
             return false;
         }

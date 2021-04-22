@@ -18,10 +18,7 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Linq;
 using J4JSoftware.Logging;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {

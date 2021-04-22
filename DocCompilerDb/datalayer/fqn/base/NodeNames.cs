@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using J4JSoftware.Logging;
+﻿using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -9,14 +7,13 @@ namespace J4JSoftware.DocCompiler
     {
         public NodeNames(
             INodeIdentifierTokens idTokens,
-            DocDbContext dbContext,
             IJ4JLogger? logger
         )
-        :base(idTokens, dbContext, logger)
+            : base( idTokens, logger )
         {
         }
 
-        public bool GetName( SyntaxNode node, out string? result, bool includeTypeParams = true )
+        public ResolvedNameState GetName( SyntaxNode node, out string? result, bool includeTypeParams = true )
         {
             IncludeTypeParameters = includeTypeParams;
 

@@ -53,16 +53,10 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var fqNames ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node, out var fqName ) != ResolvedNameState.FullyResolved )
                 return false;
 
-            if( fqNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative Namespace names");
-                return false;
-            }
-
-            if (!Names.GetName(nodeContext.Node, out var nsName))
+            if( Names.GetName( nodeContext.Node, out var nsName ) != ResolvedNameState.FullyResolved )
                 return false;
 
             var assemblyDb = DbContext.Assemblies
@@ -93,13 +87,13 @@ namespace J4JSoftware.DocCompiler
             var nsDb = DbContext.Namespaces
                 .Include(x=>x.Assemblies)
                 .Include(x=>x.CodeFiles)
-                .FirstOrDefault(x => x.FullyQualifiedName== fqNames[0]);
+                .FirstOrDefault(x => x.FullyQualifiedName== fqName);
 
             if( nsDb == null )
             {
                 nsDb = new Namespace
                 {
-                    FullyQualifiedName = fqNames[0],
+                    FullyQualifiedName = fqName!,
                     Name = nsName!,
                     Assemblies = new List<Assembly> { assemblyDb },
                     InDocumentationScope = true,
@@ -150,24 +144,18 @@ namespace J4JSoftware.DocCompiler
             if (parentKind != SyntaxKind.NamespaceDeclaration)
                 return true;
 
-            if (!FullyQualifiedNames.GetName(nodeContext.Node.Parent!, out var parentFQNames))
+            if (FullyQualifiedNames.GetName(nodeContext.Node.Parent!, out var parentFQName) != ResolvedNameState.FullyResolved)
             {
                 Logger?.Error("Could not determine fully-qualified name of NamespaceDeclarationSyntax node's parent");
                 return false;
             }
 
-            if( parentFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative fully-qualified parent Namespace names");
-                return false;
-            }
-
-            result = DbContext.Namespaces.FirstOrDefault(x => x.FullyQualifiedName == parentFQNames[0]);
+            result = DbContext.Namespaces.FirstOrDefault(x => x.FullyQualifiedName == parentFQName);
 
             if( result != null ) 
                 return true;
 
-            Logger?.Error<string>("Could not find containing namespace {0}", parentFQNames[0]);
+            Logger?.Error<string>("Could not find containing namespace {0}", parentFQName!);
             return false;
         }
     }

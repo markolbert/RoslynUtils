@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
@@ -11,14 +10,16 @@ namespace J4JSoftware.DocCompiler
     {
         public FullyQualifiedNodeNames(
             INodeIdentifierTokens idTokens,
-            DocDbContext dbContext,
             IJ4JLogger? logger
         )
-        :base(idTokens, dbContext, logger)
+            : base( idTokens, logger )
         {
         }
 
-        public bool GetName( SyntaxNode node, out List<string>? result, bool includeTypeParams = true )
+        public ResolvedNameState GetName( 
+            SyntaxNode node, 
+            out string? result, 
+            bool includeTypeParams = true )
         {
             result = null;
 
@@ -33,50 +34,45 @@ namespace J4JSoftware.DocCompiler
                 SyntaxKind.InterfaceDeclaration => GetNamedTypeName(node, out result),
                 SyntaxKind.MethodDeclaration => GetMethodName( node, out result ),
                 SyntaxKind.NamespaceDeclaration => GetNamespaceName(node, out result),
-                //SyntaxKind.ParameterList => GetParameterListName( node, out result),
-                //SyntaxKind.Parameter => GetParameterName( node, out result),
+                SyntaxKind.Parameter => GetParameterName( node, out result),
                 SyntaxKind.RecordDeclaration => GetNamedTypeName(node, out result),
                 SyntaxKind.StructDeclaration => GetNamedTypeName(node, out result),
                 SyntaxKind.TupleElement => GetTupleElementName( node, out result),
-                SyntaxKind.TupleType => GetTupleTypeName( node, out result),
-                //SyntaxKind.TypeParameterList => GetTypeParameterListName(node, out result),
-                //SyntaxKind.UsingDirective => GetUsingName( node, out result),
+                SyntaxKind.UsingDirective => GetUsingName( node, out result),
+
+                SyntaxKind.ParameterList => ResolvedNameState.MultiplyAmbiguous,
+                SyntaxKind.TypeParameterList => ResolvedNameState.MultiplyAmbiguous,
 
                 _ => unsupported()
             };
 
-            bool unsupported()
+            ResolvedNameState unsupported()
             {
                 Logger?.Error( "Unsupported SyntaxKind {0}", nodeKind );
 
                 if( ThrowOnUnsupported )
                     throw new SyntaxNodeException( "Unsupported SyntaxNode", null, nodeKind );
 
-                return false;
+                return ResolvedNameState.Failed;
             }
         }
 
-        private bool GetMethodName( SyntaxNode node, out List<string>? result )
+        protected override ResolvedNameState GetMethodName( SyntaxNode node, out string? result )
         {
             result = null;
 
-            if( !base.GetMethodName( node, out var name ) )
-                return false;
+            if( base.GetMethodName( node, out var name ) == ResolvedNameState.Failed )
+                return ResolvedNameState.Failed;
 
-            result = GetMethodPaths( node ).Select( x => $"{x}.{name}" ).ToList();
+            result = $"{GetMethodPath(node)}.{name}";
 
-            return result.Any();
+            return ResolvedNameState.FullyResolved;
         }
 
-        private List<string> GetMethodPaths( SyntaxNode node )
+        private string GetMethodPath( SyntaxNode node )
         {
-            var retVal = new List<string>();
-
-            if( !node.IsKind(SyntaxKind.MethodDeclaration  ))
-            {
-                Logger?.Error( "SyntaxNode is not a MethodDeclaration" );
-                return retVal;
-            }
+            if( !ValidateNode( node, SyntaxKind.MethodDeclaration ) )
+                return string.Empty;
 
             // find our declaring node's DocumentedType
             var sb = new StringBuilder();
@@ -87,15 +83,15 @@ namespace J4JSoftware.DocCompiler
                 || !SyntaxCollections.DocumentedTypeKinds.Any( x => curNode.IsKind( x ) ) )
             {
                 Logger?.Error( "MethodDeclaration node is not contained withing a type node" );
-                return retVal;
+                return string.Empty;
             }
 
             while( curNode != null )
             {
-                if( !base.GetNameInternal( curNode, out var curName ) )
+                if( base.GetNameInternal( curNode, out var curName ) == ResolvedNameState.Failed )
                 {
                     Logger?.Error( "Could not get name for {0}", curNode.Kind() );
-                    return retVal;
+                    return string.Empty;
                 }
 
                 sb.Insert( 0, $"{curName}." );
@@ -103,32 +99,25 @@ namespace J4JSoftware.DocCompiler
                 curNode = curNode.Parent;
             }
 
-            retVal.Add(sb.ToString());
-
-            return retVal;
+            return sb.ToString();
         }
 
-        private bool GetNamespaceName( SyntaxNode node, out List<string>? result )
+        protected override ResolvedNameState GetNamespaceName( SyntaxNode node, out string? result )
         {
             result = null;
 
-            if( !base.GetNamespaceName( node, out var name ) )
-                return false;
+            if( base.GetNamespaceName( node, out var name ) == ResolvedNameState.Failed )
+                return ResolvedNameState.Failed;
 
-            result = GetNamespacePaths( node ).Select( x => $"{x}.{name}" ).ToList();
+            result = $"{GetNamespacePath(node)}.{name}";
 
-            return result.Any();
+            return ResolvedNameState.FullyResolved;
         }
 
-        private List<string> GetNamespacePaths( SyntaxNode node )
+        private string GetNamespacePath( SyntaxNode node )
         {
-            var retVal = new List<string>();
-
-            if( !node.IsKind(SyntaxKind.NamespaceDeclaration  ))
-            {
-                Logger?.Error( "SyntaxNode is not a NamespaceDeclaration" );
-                return retVal;
-            }
+            if( !ValidateNode( node, SyntaxKind.NamespaceDeclaration ) )
+                return string.Empty;
 
             var sb = new StringBuilder();
             var curNode = node.Parent;
@@ -138,10 +127,10 @@ namespace J4JSoftware.DocCompiler
                 // we call the base version of GetNamespaceName() because 
                 // we don't want the fully-qualified name since that's what
                 // we're building
-                if( !base.GetNamespaceName(curNode, out var curName ) )
+                if( base.GetNamespaceName(curNode, out var curName ) == ResolvedNameState.Failed )
                 {
                     Logger?.Error("Could not get name for NamespaceDeclaration");
-                    return retVal;
+                    return string.Empty;
                 }
 
                 sb.Insert( 0, $"{curName}." );
@@ -149,31 +138,81 @@ namespace J4JSoftware.DocCompiler
                 curNode = curNode.Parent;
             }
 
-            retVal.Add(sb.ToString());
-
-            return retVal;
+            return sb.ToString();
         }
 
-        private bool GetNamedTypeName( SyntaxNode node, out List<string>? result )
+        protected override ResolvedNameState GetParameterName( SyntaxNode node, out string? result )
         {
             result = null;
 
-            if( !base.GetNamedTypeName( node, out var name ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.Parameter ) )
+                return ResolvedNameState.Failed;
 
-            result = GetNamedTypePaths( node ).Select( x => $"{x}.{name}" ).ToList();
-
-            return result.Any();
+            return base.GetParameterName( node, out result ) == ResolvedNameState.Failed
+                ? ResolvedNameState.Failed
+                : ResolvedNameState.Ambiguous;
         }
 
-        private List<string> GetNamedTypePaths( SyntaxNode node )
-        {
-            var retVal = new List<string>();
+        //private IEnumerable<NamespaceContext> GetCodeFileNamespaces( SyntaxNode node, IScannedFile scannedFile )
+        //{
+        //    var cfDb = DbContext.CodeFiles
+        //        .Include( x => x.OuterNamespaces )
+        //        .FirstOrDefault( x => x.FullPath == scannedFile.SourceFilePath );
 
+        //    if( cfDb == null )
+        //        Logger?.Error<string>(
+        //            "Could not find code file '{0}' in the database, outer namespaces not added",
+        //            scannedFile.SourceFilePath );
+
+        //    return cfDb?.GetNamespaceContext() ?? Enumerable.Empty<NamespaceContext>();
+        //}
+
+        //private IEnumerable<NamespaceContext> GetContainingTypeNamespaces( SyntaxNode node )
+        //{
+        //    // now find the namespace paths in the containing named type
+        //    var curNode = node.Parent;
+
+        //    while( curNode != null
+        //           && !SyntaxCollections.DocumentedTypeKinds.Any( x => curNode.IsKind( x ) ) )
+        //    {
+        //        curNode = curNode.Parent;
+        //    }
+
+        //    if( curNode == null )
+        //    {
+        //        Logger?.Error( "Couldn't find a supported named type node containing the Parameter" );
+        //        return Enumerable.Empty<NamespaceContext>();
+        //    }
+
+        //    if( base.GetNamedTypeName( curNode, out var simpleDtName ) == ResolvedNameState.Failed )
+        //        return Enumerable.Empty<NamespaceContext>();
+
+        //    var dtDb = DbContext.DocumentedTypes
+        //        .Include( x => x.Namespace )
+        //        .Include( x => x.Namespace!.ChildNamespaces )
+        //        .FirstOrDefault( x => x.FullyQualifiedName == simpleDtName );
+
+        //    return dtDb?.GetNamespaceContext() ?? Enumerable.Empty<NamespaceContext>();
+        //}
+
+        protected override ResolvedNameState GetNamedTypeName( SyntaxNode node, out string? result )
+        {
+            result = null;
+
+            if( base.GetNamedTypeName( node, out var name ) == ResolvedNameState.Failed )
+                return ResolvedNameState.Failed;
+
+            result = $"{GetNamedTypePath(node)}.{name}";
+
+            return ResolvedNameState.FullyResolved;
+        }
+
+        private string GetNamedTypePath( SyntaxNode node )
+        {
             if( !SyntaxCollections.DocumentedTypeKinds.Any(node.IsKind) )
             {
                 Logger?.Error( "SyntaxNode is not supported documented type node" );
-                return retVal;
+                return string.Empty;
             }
 
             var sb = new StringBuilder();
@@ -182,15 +221,15 @@ namespace J4JSoftware.DocCompiler
             if( curNode == null) 
             {
                 Logger?.Error( "Named type node is not contained within a SyntaxNode" );
-                return retVal;
+                return string.Empty;
             }
 
             while( curNode != null )
             {
-                if( !base.GetNameInternal( curNode, out var curName ) )
+                if( base.GetNameInternal( curNode, out var curName ) == ResolvedNameState.Failed )
                 {
                     Logger?.Error( "Could not get name for {0}", curNode.Kind() );
-                    return retVal;
+                    return string.Empty;
                 }
 
                 sb.Insert( 0, $"{curName}." );
@@ -198,38 +237,22 @@ namespace J4JSoftware.DocCompiler
                 curNode = curNode.Parent;
             }
 
-            retVal.Add(sb.ToString());
-
-            return retVal;
+            return sb.ToString();
         }
 
-        private bool GetTupleElementName( SyntaxNode node, out List<string>? result )
+        protected override ResolvedNameState GetTupleElementName( SyntaxNode node, out string? result ) =>
+            base.GetTupleElementName( node, out result ) == ResolvedNameState.Failed
+                ? ResolvedNameState.Failed
+                : ResolvedNameState.Ambiguous;
+
+        private bool ValidateNode( SyntaxNode node, SyntaxKind kind )
         {
-            result = null;
+            if( node.IsKind( kind ) )
+                return true;
 
-            if( !base.GetTupleElementName( node, out var name ) )
-                return false;
+            Logger?.Error("SyntaxNode is not a {0}", kind);
 
-            result = GetTupleElementPaths( node ).Select( x => $"{x}.{name}" ).ToList();
-
-            return result.Any();
+            return false;
         }
-
-        private List<string> GetTupleElementPaths( SyntaxNode node ) => new List<string>();
-
-        private bool GetTupleTypeName( SyntaxNode node, out List<string>? result )
-        {
-            result = null;
-
-            if( !base.GetTupleTypeName( node, out var name ) )
-                return false;
-
-            result = GetTupleTypePaths( node ).Select( x => $"{x}.{name}" ).ToList();
-
-            return result.Any();
-        }
-
-        private List<string> GetTupleTypePaths( SyntaxNode node ) => new List<string>();
-
     }
 }

@@ -77,39 +77,27 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( !FullyQualifiedNames.GetName( containerNode, out var containerFQNames ) )
+            if( FullyQualifiedNames.GetName( containerNode, out var containerFQName ) != ResolvedNameState.FullyResolved )
                 return false;
-
-            if( containerFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative DocumentedType node names");
-                return false;
-            }
 
             var containerDb = DbContext.DocumentedTypes
-                    .FirstOrDefault( x => x.FullyQualifiedName == containerFQNames[ 0 ] );
+                    .FirstOrDefault( x => x.FullyQualifiedName == containerFQName );
 
             if( containerDb == null )
             {
-                Logger?.Error<string>("DocumentedType '{0}' not found in database", containerFQNames[0]  );
+                Logger?.Error<string>("DocumentedType '{0}' not found in database", containerFQName!  );
                 return false;
             }
 
-            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var methodFQNames ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node, out var methodFQName ) != ResolvedNameState.FullyResolved )
                 return false;
 
-            if( methodFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative fully-qualified method names");
-                return false;
-            }
-
-            if( !Names.GetName( nodeContext.Node, out var methodName ) )
+            if( Names.GetName( nodeContext.Node, out var methodName ) != ResolvedNameState.FullyResolved )
                 return false;
 
             var methodDb = DbContext.Methods
                 .Include( x => x.Arguments )
-                .FirstOrDefault( x => x.FullyQualifiedName == methodFQNames[0] );
+                .FirstOrDefault( x => x.FullyQualifiedName == methodFQName );
 
             if( methodDb == null )
             {
@@ -123,7 +111,7 @@ namespace J4JSoftware.DocCompiler
             }
             else methodDb.Deprecated = false;
 
-            methodDb.FullyQualifiedName = methodFQNames[0];
+            methodDb.FullyQualifiedName = methodFQName!;
 
             methodDb.Accessibility = nodeContext.Node.GetAccessibility();
             methodDb.IsAbstract = nodeContext.Node.HasChildNode( SyntaxKind.AbstractKeyword );

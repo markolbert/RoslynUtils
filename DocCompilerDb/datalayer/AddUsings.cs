@@ -53,16 +53,10 @@ namespace J4JSoftware.DocCompiler
 
         protected override bool ProcessEntity( NodeContext nodeContext )
         {
-            if( !FullyQualifiedNames.GetName( nodeContext.Node, out var usingFQNames ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node, out var usingFQName ) != ResolvedNameState.FullyResolved )
                 return false;
 
-            if( usingFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple fully-qualified Using names");
-                return false;
-            }
-
-            if( !Names.GetName( nodeContext.Node, out var usingName ) )
+            if( Names.GetName( nodeContext.Node, out var usingName ) != ResolvedNameState.FullyResolved )
                 return false;
 
             var assemblyDb = DbContext.Assemblies
@@ -79,7 +73,7 @@ namespace J4JSoftware.DocCompiler
             var extNsDb = DbContext.Namespaces
                 .Include( x => x.CodeFiles )
                 .Include( x => x.Assemblies )
-                .FirstOrDefault( x => x.FullyQualifiedName == usingFQNames[0] );
+                .FirstOrDefault( x => x.FullyQualifiedName == usingFQName );
 
             // if we find the namespace already listed it's defined within the scope of the
             // documentation project and we're done
@@ -89,7 +83,7 @@ namespace J4JSoftware.DocCompiler
             extNsDb = new Namespace
             {
                 Name = usingName!,
-                FullyQualifiedName = usingFQNames[0],
+                FullyQualifiedName = usingFQName!,
                 InDocumentationScope = false,
                 Assemblies = new List<Assembly> { assemblyDb }
             };
@@ -201,7 +195,7 @@ namespace J4JSoftware.DocCompiler
 
         private bool SetNamespaceContainer( SyntaxNode containingNode, Namespace extNsDb )
         {
-            if( !FullyQualifiedNames.GetName( containingNode, out var containingFQNames ) )
+            if( FullyQualifiedNames.GetName( containingNode, out var containingFQName ) != ResolvedNameState.FullyResolved )
             {
                 Logger?.Error<string>( "Couldn't find containing Namespace for Using node '{0}'",
                     extNsDb.FullyQualifiedName );
@@ -209,21 +203,15 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( containingFQNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative containing Namespace node names");
-                return false;
-            }
-
             var containingNsDb = DbContext.Namespaces
                 .Include( x => x.ChildNamespaces )
-                .FirstOrDefault( x => x.FullyQualifiedName == containingFQNames[0] );
+                .FirstOrDefault( x => x.FullyQualifiedName == containingFQName );
 
             if( containingNsDb == null )
             {
                 Logger?.Error<string, string>(
                     "Couldn't find containing Namespace entity '{0}' in database for Using node '{1}'",
-                    containingFQNames[0],
+                    containingFQName!,
                     extNsDb.FullyQualifiedName );
                 
                 return false;

@@ -17,12 +17,13 @@
 
 #endregion
 
-using Microsoft.CodeAnalysis;
-
 namespace J4JSoftware.DocCompiler
 {
-    public interface INodeNames
+    public enum ResolvedNameState
     {
-        ResolvedNameState GetName( SyntaxNode node, out string? result, bool includeTypeParams = true );
+        FullyResolved,
+        Ambiguous,
+        MultiplyAmbiguous,
+        Failed
     }
 }

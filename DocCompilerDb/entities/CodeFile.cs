@@ -29,6 +29,17 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(CodeFileConfigurator))]
     public class CodeFile
     {
+        private readonly DocDbContext? _dbContext;
+
+        public CodeFile()
+        {
+        }
+
+        private CodeFile( DocDbContext dbContext )
+        {
+            _dbContext = dbContext;
+        }
+
         public int ID { get; set; }
         public string FullPath { get; set; }
         public int AssemblyID { get; set; }
@@ -38,10 +49,14 @@ namespace J4JSoftware.DocCompiler
         {
             retVal ??= new List<NamespaceContext>();
 
-            if( OuterNamespaces == null )
-                return retVal;
+            // load outer namespaces if that wasn't done and we have a DocDBContext
+            // we can use to do so
+            if( OuterNamespaces == null && _dbContext != null )
+                _dbContext.Entry( this )
+                    .Collection( x => x.OuterNamespaces )
+                    .Load();
 
-            foreach( var curNS in OuterNamespaces )
+            foreach( var curNS in OuterNamespaces! )
             {
                 if( retVal.All( x => !x.Label.Equals( curNS.Name, StringComparison.Ordinal ) ) )
                     retVal.Add( new NamespaceContext(curNS) );

@@ -17,13 +17,12 @@
 
 #endregion
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.FlowAnalysis;
+#pragma warning disable 8618
 
 namespace J4JSoftware.DocCompiler
 {
@@ -31,25 +30,24 @@ namespace J4JSoftware.DocCompiler
     {
         protected NodeNamesBase(
             INodeIdentifierTokens idTokens,
-            DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
             IdentifierTokens = idTokens;
-            DbContext = dbContext;
 
             Logger = logger;
             Logger?.SetLoggedType( GetType() );
         }
 
-        protected IJ4JLogger? Logger { get; }
-        protected INodeIdentifierTokens IdentifierTokens { get; }
-        protected DocDbContext DbContext { get; }
-        protected bool IncludeTypeParameters { get; set; }
-
         public bool ThrowOnUnsupported { get; set; }
 
-        protected virtual bool GetNameInternal( SyntaxNode node, out string? result )
+        protected IJ4JLogger? Logger { get; }
+        protected INodeIdentifierTokens IdentifierTokens { get; }
+
+        protected SyntaxNode CurrentNode { get; set; }
+        protected bool IncludeTypeParameters { get; set; }
+
+        protected virtual ResolvedNameState GetNameInternal( SyntaxNode node, out string? result )
         {
             result = null;
 
@@ -74,23 +72,21 @@ namespace J4JSoftware.DocCompiler
                 _ => unsupported()
             };
 
-            bool unsupported()
+            ResolvedNameState unsupported()
             {
                 Logger?.Error( "Unsupported SyntaxKind {0}", nodeKind );
 
                 if( ThrowOnUnsupported )
                     throw new SyntaxNodeException( "Unsupported SyntaxNode", null, nodeKind );
 
-                return false;
+                return ResolvedNameState.Failed;
             }
         }
 
-        protected virtual bool GetMethodName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetMethodName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.MethodDeclaration ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.MethodDeclaration, out result ) )
+                return ResolvedNameState.Failed;
 
             var sb = new StringBuilder( IdentifierTokens.GetTokens( node ).First().Name );
             sb.Append( "(" );
@@ -103,10 +99,10 @@ namespace J4JSoftware.DocCompiler
 
                 if( plNode != null )
                 {
-                    if( !GetParameterListName( plNode, out var plText ) )
+                    if( GetParameterListName( plNode, out var plText ) == ResolvedNameState.Failed )
                     {
                         Logger?.Error<string>( "Could not get ParameterList text for {0}", sb.ToString() );
-                        return false;
+                        return ResolvedNameState.Failed;
                     }
 
                     if( !string.IsNullOrEmpty( plText! ) )
@@ -119,70 +115,64 @@ namespace J4JSoftware.DocCompiler
             return ValidateName( sb.ToString(), out result );
         }
 
-        protected virtual bool GetNamedTypeName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetNamedTypeName( SyntaxNode node, out string? result )
         {
             result = null;
 
             if( !SyntaxCollections.DocumentedTypeKinds.Any( node.IsKind ) )
             {
                 Logger?.Error( "SyntaxNode is not a supported kind of named type node" );
-                return false;
+                return ResolvedNameState.Failed;
             }
 
             var idTokens = IdentifierTokens.GetTokens( node );
 
             var sb = new StringBuilder( idTokens.First().Name );
 
-            if( IncludeTypeParameters )
+            if( !IncludeTypeParameters ) 
+                return ValidateName( sb.ToString(), out result );
+
+            // if we have a type parameter list append its textual representation
+            var tplNode = node.ChildNodes()
+                .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
+
+            if( tplNode != null )
             {
-                // if we have a type parameter list append its textual representation
-                var tplNode = node.ChildNodes()
-                    .FirstOrDefault( x => x.IsKind( SyntaxKind.TypeParameterList ) );
-
-                if( tplNode != null )
+                if( GetNameInternal( tplNode, out var tplText ) == ResolvedNameState.Failed )
                 {
-                    if( !GetNameInternal( tplNode, out var tplText ) )
-                    {
-                        Logger?.Error<string>( "Could not get TypeParameterList name for {0}", sb.ToString() );
-                        return false;
-                    }
-
-                    sb.Append( tplText! );
+                    Logger?.Error<string>( "Could not get TypeParameterList name for {0}", sb.ToString() );
+                    return ResolvedNameState.Failed;
                 }
+
+                sb.Append( tplText! );
             }
 
             return ValidateName( sb.ToString(), out result );
         }
 
-        protected virtual bool GetNamespaceName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetNamespaceName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.NamespaceDeclaration ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.NamespaceDeclaration, out result ) )
+                return ResolvedNameState.Failed;
 
             var idTokens = IdentifierTokens.GetTokens( node );
 
             return ValidateName( string.Join( ".", idTokens.Select( x => x.Name ) ), out result );
         }
 
-        protected virtual bool GetParameterListName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetParameterListName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.ParameterList ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.ParameterList, out result ) )
+                return ResolvedNameState.Failed;
 
             return ValidateName( string.Join( ", ", 
                 IdentifierTokens.GetTokens( node ).Select( x => x.Name ) ), out result );
         }
 
-        protected virtual bool GetParameterName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetParameterName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.Parameter ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.Parameter, out result ) )
+                return ResolvedNameState.Failed;
 
             return ValidateName( IdentifierTokens.GetTokens( node )
                     .Select( x => x.Name )
@@ -209,45 +199,40 @@ namespace J4JSoftware.DocCompiler
             return result != null;
         }
 
-        protected virtual bool GetTupleElementName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetTupleElementName( SyntaxNode node, out string? result )
         {
             result = null;
 
             if( !GetTypeNodeFromTupleElement( node, out var typeNode ) )
-                return false;
+                return ResolvedNameState.Failed;
 
             if( typeNode == null )
             {
                 Logger?.Error( "Could not find type node within TupleElement node" );
-                return false;
+                return ResolvedNameState.Failed;
             }
 
-            if( !GetNameInternal( typeNode, out var typeName ) )
+            if( GetNameInternal( typeNode, out var typeName ) == ResolvedNameState.Failed )
             {
                 Logger?.Error( "Could not get name for type node" );
-                return false;
+                return ResolvedNameState.Failed;
             }
 
             return ValidateName($"{typeName} {IdentifierTokens.GetTokens( node ).First().Name}", out result);
         }
 
-        protected virtual bool GetTupleTypeName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetTupleTypeName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.TupleType ) )
-            {
-                Logger?.Error("SyntaxNode is not a TupleType");
-                return false;
-            }
+            if( !ValidateNode( node, SyntaxKind.TupleType, out result ) )
+                return ResolvedNameState.Failed;
 
             var sb = new StringBuilder();
 
             foreach( var elementNode in node.ChildNodes()
                 .Where( x => x.IsKind( SyntaxKind.TupleElement ) ) )
             {
-                if( !GetTupleElementName( elementNode, out var elementName ) )
-                    return false;
+                if( GetTupleElementName( elementNode, out var elementName ) == ResolvedNameState.Failed )
+                    return ResolvedNameState.Failed;
 
                 if( sb.Length > 0 )
                     sb.Append( ", " );
@@ -258,43 +243,51 @@ namespace J4JSoftware.DocCompiler
             return ValidateName( sb.ToString(), out result );
         }
 
-        protected virtual bool GetTypeParameterListName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetTypeParameterListName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.TypeParameterList ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.TypeParameterList, out result ) )
+                return ResolvedNameState.Failed;
 
             var idTokens = IdentifierTokens.GetTokens( node );
 
             return ValidateName( $"<{string.Join( ", ", idTokens.Select( x => x.Name ) )}>", out result );
         }
 
-        protected virtual bool GetUsingName( SyntaxNode node, out string? result )
+        protected virtual ResolvedNameState GetUsingName( SyntaxNode node, out string? result )
         {
-            result = null;
-
-            if( !node.IsKind( SyntaxKind.UsingDirective ) )
-                return false;
+            if( !ValidateNode( node, SyntaxKind.UsingDirective, out result ) )
+                return ResolvedNameState.Failed;
 
             var idTokens = IdentifierTokens.GetTokens( node );
 
             return ValidateName( string.Join( ".", idTokens.Select( x => x.Name ) ), out result );
         }
 
-        protected bool ValidateName( string? text, out string? result )
+        private bool ValidateNode( SyntaxNode node, SyntaxKind kind, out string? result )
+        {
+            result = null;
+
+            if( node.IsKind( kind ) )
+                return true;
+
+            Logger?.Error("SyntaxNode is not a {0}", kind);
+
+            return false;
+        }
+
+        protected ResolvedNameState ValidateName( string? text, out string? result )
         {
             result = null;
 
             if( string.IsNullOrEmpty( text ) )
             {
                 Logger?.Error("Empty or undefined name");
-                return false;
+                return ResolvedNameState.Failed;
             }
 
             result = text;
 
-            return true;
+            return ResolvedNameState.FullyResolved;
         }
     }
 }

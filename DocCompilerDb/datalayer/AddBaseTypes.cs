@@ -23,7 +23,6 @@ using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace J4JSoftware.DocCompiler
 {
@@ -67,22 +66,16 @@ namespace J4JSoftware.DocCompiler
                 return false;
             }
 
-            if( !FullyQualifiedNames.GetName( nodeContext.Node.Parent!, out var dtNames ) )
+            if( FullyQualifiedNames.GetName( nodeContext.Node.Parent!, out var dtName ) != ResolvedNameState.FullyResolved )
                 return false;
-
-            if( dtNames!.Count != 1 )
-            {
-                Logger?.Error("Multiple alternative names for DocumentedType");
-                return false;
-            }
 
             var docTypeDb = DbContext.DocumentedTypes
                 .Include(x=>x.Ancestors  )
-                .FirstOrDefault( x => x.FullyQualifiedName == dtNames[0] );
+                .FirstOrDefault( x => x.FullyQualifiedName == dtName );
 
             if( docTypeDb == null )
             {
-                Logger?.Error<string>("Could not find DocumentedType '{0}' in the database", dtNames[0]);
+                Logger?.Error<string>("Could not find DocumentedType '{0}' in the database", dtName!);
                 return false;
             }
 
