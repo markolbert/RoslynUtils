@@ -30,16 +30,16 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(DocumentedTypeConfigurator))]
     public class DocumentedType : NamedType
     {
-        private readonly DocDbContext? _dbContext;
+        //private readonly DocDbContext? _dbContext;
 
-        public DocumentedType()
-        {
-        }
+        //public DocumentedType()
+        //{
+        //}
 
-        private DocumentedType( DocDbContext dbContext )
-        {
-            _dbContext = dbContext;
-        }
+        //private DocumentedType( DocDbContext dbContext )
+        //{
+        //    _dbContext = dbContext;
+        //}
 
         private int? _docTypeID;
         private ContainerType _containerType = ContainerType.Namespace;
@@ -89,12 +89,12 @@ namespace J4JSoftware.DocCompiler
             };
         }
 
-        public List<NamespaceContext> GetNamespaceContext( List<NamespaceContext>? retVal = null )
+        public List<NamespaceContext> GetNamespaceContext( DocDbContext dbContext, List<NamespaceContext>? retVal = null )
         {
             retVal ??= new List<NamespaceContext>();
 
             if( Namespace == null )
-                _dbContext.Entry( this )
+                dbContext.Entry( this )
                     .Reference( x => x.Namespace )
                     .Load();
 
@@ -104,8 +104,8 @@ namespace J4JSoftware.DocCompiler
             {
                 // load child namespaces if that wasn't done and we have a DocDBContext
                 // we can use to do so
-                if( curNS.ChildNamespaces == null && _dbContext != null )
-                    _dbContext.Entry( curNS )
+                if( curNS.ChildNamespaces == null  )
+                    dbContext.Entry( curNS )
                         .Collection( x => x.ChildNamespaces )
                         .Load();
 

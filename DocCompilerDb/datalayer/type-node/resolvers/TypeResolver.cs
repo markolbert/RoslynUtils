@@ -51,7 +51,7 @@ namespace J4JSoftware.DocCompiler
             out T? result )
         {
             if( ntDb is DocumentedType dtDb )
-                NamespaceContexts = dtDb.GetNamespaceContext( analyzer.CodeFileNamespaceContexts );
+                NamespaceContexts = dtDb.GetNamespaceContext( DbContext, analyzer.CodeFileNamespaceContexts );
             else NamespaceContexts = analyzer.CodeFileNamespaceContexts;
 
             CreateIfMissing = analyzer.CreateIfMissing;

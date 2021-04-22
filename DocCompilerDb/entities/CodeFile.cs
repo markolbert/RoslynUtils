@@ -29,30 +29,30 @@ namespace J4JSoftware.DocCompiler
     [EntityConfiguration(typeof(CodeFileConfigurator))]
     public class CodeFile
     {
-        private readonly DocDbContext? _dbContext;
+        //private readonly DocDbContext? _dbContext;
 
-        public CodeFile()
-        {
-        }
+        //public CodeFile()
+        //{
+        //}
 
-        private CodeFile( DocDbContext dbContext )
-        {
-            _dbContext = dbContext;
-        }
+        //private CodeFile( DocDbContext dbContext )
+        //{
+        //    _dbContext = dbContext;
+        //}
 
         public int ID { get; set; }
         public string FullPath { get; set; }
         public int AssemblyID { get; set; }
         public Assembly Assembly { get; set; }
 
-        public List<NamespaceContext> GetNamespaceContext( List<NamespaceContext>? retVal = null )
+        public List<NamespaceContext> GetNamespaceContext( DocDbContext dbContext, List<NamespaceContext>? retVal = null )
         {
             retVal ??= new List<NamespaceContext>();
 
             // load outer namespaces if that wasn't done and we have a DocDBContext
             // we can use to do so
-            if( OuterNamespaces == null && _dbContext != null )
-                _dbContext.Entry( this )
+            if( OuterNamespaces == null )
+                dbContext.Entry( this )
                     .Collection( x => x.OuterNamespaces )
                     .Load();
 

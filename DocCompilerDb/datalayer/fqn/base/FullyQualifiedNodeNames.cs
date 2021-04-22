@@ -153,48 +153,6 @@ namespace J4JSoftware.DocCompiler
                 : ResolvedNameState.Ambiguous;
         }
 
-        //private IEnumerable<NamespaceContext> GetCodeFileNamespaces( SyntaxNode node, IScannedFile scannedFile )
-        //{
-        //    var cfDb = DbContext.CodeFiles
-        //        .Include( x => x.OuterNamespaces )
-        //        .FirstOrDefault( x => x.FullPath == scannedFile.SourceFilePath );
-
-        //    if( cfDb == null )
-        //        Logger?.Error<string>(
-        //            "Could not find code file '{0}' in the database, outer namespaces not added",
-        //            scannedFile.SourceFilePath );
-
-        //    return cfDb?.GetNamespaceContext() ?? Enumerable.Empty<NamespaceContext>();
-        //}
-
-        //private IEnumerable<NamespaceContext> GetContainingTypeNamespaces( SyntaxNode node )
-        //{
-        //    // now find the namespace paths in the containing named type
-        //    var curNode = node.Parent;
-
-        //    while( curNode != null
-        //           && !SyntaxCollections.DocumentedTypeKinds.Any( x => curNode.IsKind( x ) ) )
-        //    {
-        //        curNode = curNode.Parent;
-        //    }
-
-        //    if( curNode == null )
-        //    {
-        //        Logger?.Error( "Couldn't find a supported named type node containing the Parameter" );
-        //        return Enumerable.Empty<NamespaceContext>();
-        //    }
-
-        //    if( base.GetNamedTypeName( curNode, out var simpleDtName ) == ResolvedNameState.Failed )
-        //        return Enumerable.Empty<NamespaceContext>();
-
-        //    var dtDb = DbContext.DocumentedTypes
-        //        .Include( x => x.Namespace )
-        //        .Include( x => x.Namespace!.ChildNamespaces )
-        //        .FirstOrDefault( x => x.FullyQualifiedName == simpleDtName );
-
-        //    return dtDb?.GetNamespaceContext() ?? Enumerable.Empty<NamespaceContext>();
-        //}
-
         protected override ResolvedNameState GetNamedTypeName( SyntaxNode node, out string? result )
         {
             result = null;

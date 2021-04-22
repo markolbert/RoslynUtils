@@ -22,22 +22,23 @@ using System.Linq;
 using J4JSoftware.Logging;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.EntityFrameworkCore;
 
 namespace J4JSoftware.DocCompiler
 {
     public class TypeNodeAnalyzer : ITypeNodeAnalyzer
     {
-        private readonly INodeNames _simpleNames;
+        private readonly IFullyQualifiedNodeNames _fqNames;
         private readonly DocDbContext _dbContext;
         private readonly IJ4JLogger? _logger;
 
         public TypeNodeAnalyzer(
-            INodeNames simpleNames,
+            IFullyQualifiedNodeNames fqNames,
             DocDbContext dbContext,
             IJ4JLogger? logger
         )
         {
-            _simpleNames = simpleNames;
+            _fqNames = fqNames;
             _dbContext = dbContext;
 
             _logger = logger;
@@ -81,7 +82,7 @@ namespace J4JSoftware.DocCompiler
 
             DocumentedTypeContext = dtContextDb;
             CreateIfMissing = createIfMissing;
-            CodeFileNamespaceContexts = codeFile.GetNamespaceContext();
+            CodeFileNamespaceContexts = codeFile.GetNamespaceContext( _dbContext );
             
             if( dtContextDb.NumTypeParameters > 0 )
             {
@@ -131,7 +132,22 @@ namespace J4JSoftware.DocCompiler
             if( !node.IsKind( SyntaxKind.IdentifierName ) )
                 return false;
 
-            result = new TypeReferenceInfo( node );
+            var resolvedState = _fqNames.GetName( node, out var name );
+
+            if( resolvedState == ResolvedNameState.Failed )
+            {
+                _logger?.Error("Could not resolve IdentifierName node");
+                return false;
+            }
+
+            result = new TypeReferenceInfo( name! )
+            {
+                ResolvedNameState = resolvedState,
+                NamespaceContext = resolvedState == ResolvedNameState.FullyResolved
+                    ? null
+                    : MergeNamespaceContexts( node )
+            };
+
             return true;
         }
 
@@ -142,7 +158,23 @@ namespace J4JSoftware.DocCompiler
             if( !node.IsKind( SyntaxKind.PredefinedType ) )
                 return false;
 
-            result = new TypeReferenceInfo( node ) { IsPredefined = true };
+            var resolvedState = _fqNames.GetName( node, out var name );
+
+            if( resolvedState == ResolvedNameState.Failed )
+            {
+                _logger?.Error("Could not resolve PredefinedType node");
+                return false;
+            }
+
+            result = new TypeReferenceInfo( name! )
+            {
+                IsPredefined = true, 
+                ResolvedNameState = resolvedState,
+                NamespaceContext = resolvedState == ResolvedNameState.FullyResolved
+                    ? null
+                    : MergeNamespaceContexts( node )
+            };
+
             return true;
         }
 
@@ -170,8 +202,21 @@ namespace J4JSoftware.DocCompiler
             if( !node.IsKind( SyntaxKind.GenericName ) )
                 return false;
 
-            result = new TypeReferenceInfo( node.ChildTokens()
-                .First( x => x.IsKind( SyntaxKind.IdentifierToken ) ) );
+            var resolvedState = _fqNames.GetName( node, out var name );
+
+            if( resolvedState == ResolvedNameState.Failed )
+            {
+                _logger?.Error("Could not resolve GenericName node");
+                return false;
+            }
+
+            result = new TypeReferenceInfo( name! )
+            {
+                ResolvedNameState = resolvedState,
+                NamespaceContext = resolvedState == ResolvedNameState.FullyResolved
+                    ? null
+                    : MergeNamespaceContexts( node )
+            };
 
             if( !node.GetChildNode( SyntaxKind.TypeArgumentList, out var talNode ) )
                 _logger?.Error("GenericName node does not contain a TypeArgumentList node"  );
@@ -196,13 +241,20 @@ namespace J4JSoftware.DocCompiler
             if( !node.IsKind( SyntaxKind.TupleType ) )
                 return false;
 
-            if( _simpleNames.GetName( node, out var tupleName ) == ResolvedNameState.Failed )
+            var resolvedState = _fqNames.GetName( node, out var tupleName );
+
+            if( resolvedState == ResolvedNameState.Failed )
             {
                 _logger?.Error("Could not get name for TupleType node");
                 return false;
             }
 
-            result = new TypeReferenceInfo( node, tupleName! );
+            result = new TypeReferenceInfo( tupleName! )
+            {
+                ResolvedNameState = resolvedState, 
+                IsTuple = true,
+                NamespaceContext = resolvedState ==ResolvedNameState.FullyResolved ? null : MergeNamespaceContexts(node)
+            };
 
             foreach( var teNode in node.ChildNodes().Where( x => x.IsKind( SyntaxKind.TupleElement ) ) )
             {
@@ -213,6 +265,44 @@ namespace J4JSoftware.DocCompiler
             }
 
             return true;
+        }
+
+        private List<NamespaceContext> MergeNamespaceContexts( SyntaxNode node )
+        {
+            var retVal = new List<NamespaceContext>();
+
+            retVal.AddRange( CodeFileNamespaceContexts! );
+            retVal.AddRange(GetContainingTypeNamespaces(node));
+
+            return retVal;
+        }
+
+        private IEnumerable<NamespaceContext> GetContainingTypeNamespaces(SyntaxNode node)
+        {
+            // now find the namespace paths in the containing named type
+            var curNode = node.Parent;
+
+            while (curNode != null
+                   && !SyntaxCollections.DocumentedTypeKinds.Any(x => curNode.IsKind(x)))
+            {
+                curNode = curNode.Parent;
+            }
+
+            if (curNode == null)
+            {
+                _logger?.Error("Couldn't find a supported named type node containing the Parameter");
+                return Enumerable.Empty<NamespaceContext>();
+            }
+
+            if (_fqNames.GetName(curNode, out var dtFqName) == ResolvedNameState.Failed)
+                return Enumerable.Empty<NamespaceContext>();
+
+            var dtDb = _dbContext.DocumentedTypes
+                .Include( x => x.Namespace )
+                .Include( x => x.Namespace!.ChildNamespaces )
+                .FirstOrDefault( x => x.FullyQualifiedName == dtFqName );
+
+            return dtDb?.GetNamespaceContext( _dbContext ) ?? Enumerable.Empty<NamespaceContext>();
         }
     }
 }
